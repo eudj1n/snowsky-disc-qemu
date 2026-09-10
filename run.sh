@@ -16,12 +16,10 @@
 # The firmware is NOT included — see firmware/README.md to obtain it.
 set -euo pipefail
 REPO_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-IMAGE="diskos-qemu"
-CTR="diskos-qemu"
-VOL="diskos-work"                # named volume for /work (rootfs + state), survives container recreation
+CTR="diskos-qemu"                # container_name set in docker-compose.yml
 
-exists(){ docker ps -a --format '{{.Names}}' | grep -qx "$CTR"; }
 running(){ docker ps --format '{{.Names}}' | grep -qx "$CTR"; }
+exists(){  docker ps -a --format '{{.Names}}' | grep -qx "$CTR"; }
 need_ctr(){
   running && return 0
   if exists; then echo "==> starting stopped container '$CTR'"; docker start "$CTR" >/dev/null && return 0; fi
@@ -31,23 +29,17 @@ need_ctr(){
 cmd="${1:-}"; shift || true
 case "$cmd" in
   up)
-    OTA="${1:?usage: ./run.sh up <path-to-ota_v240-dir>}"
+    # OTA dir from arg, else $OTA_DIR, else .env
+    OTA="${1:-${OTA_DIR:-}}"
+    [ -n "$OTA" ] || OTA="$(sed -n 's/^OTA_DIR=//p' "$REPO_DIR/.env" 2>/dev/null | head -1)"
+    [ -n "$OTA" ] || { echo "usage: ./run.sh up <path-to-ota_v240-dir>   (or set OTA_DIR in .env — see .env.example)"; exit 1; }
     OTA="$(cd "$OTA" && pwd)"
     ls "$OTA"/rootfs.squashfs.*.enc >/dev/null 2>&1 || { echo "no rootfs.squashfs.*.enc in $OTA (point at main_os/ota_v240)"; exit 1; }
-    echo "==> building image"; docker build -t "$IMAGE" "$REPO_DIR/docker"
-    docker volume create "$VOL" >/dev/null
-    if exists; then
-      echo "==> reusing existing container '$CTR' (down+up to change mounts)"
-      running || docker start "$CTR" >/dev/null
-    else
-      echo "==> creating container (privileged)"
-      docker run -d --name "$CTR" --privileged \
-        -v "$OTA":/ota:ro -v "$REPO_DIR":/repo -v "$VOL":/work \
-        "$IMAGE" sleep infinity >/dev/null
-    fi
+    grep -qx "OTA_DIR=$OTA" "$REPO_DIR/.env" 2>/dev/null || printf 'OTA_DIR=%s\n' "$OTA" > "$REPO_DIR/.env"
+    echo "==> docker compose up (build)"
+    ( cd "$REPO_DIR" && OTA_DIR="$OTA" docker compose up -d --build )
     echo "==> extracting rootfs (first run only takes a minute)"
-    docker exec "$CTR" bash -lc '[ -x /repo/scripts/00_extract_rootfs.sh ] && \
-      { [ -e /work/rootfs/usr/bin/mq_ui ] || /repo/scripts/00_extract_rootfs.sh /ota; }'
+    docker exec "$CTR" bash -lc '[ -e /work/rootfs/usr/bin/mq_ui ] || /repo/scripts/00_extract_rootfs.sh /ota'
     echo "==> setting up environment"
     docker exec "$CTR" bash -lc '/repo/scripts/10_setup_env.sh'
     echo "==> ready. Try: ./run.sh boot"
@@ -79,7 +71,7 @@ case "$cmd" in
     echo "==> PNGs copied to $REPO_DIR/shots/"
     ;;
   stop) need_ctr; docker exec "$CTR" bash -lc '/repo/scripts/99_stop.sh' ;;
-  down) docker rm -f "$CTR" >/dev/null 2>&1 || true; echo "container removed (volume '$VOL' kept)";;
-  nuke) docker rm -f "$CTR" >/dev/null 2>&1 || true; docker volume rm "$VOL" >/dev/null 2>&1 || true; echo "container + volume removed";;
+  down) ( cd "$REPO_DIR" && OTA_DIR="${OTA_DIR:-unused}" docker compose down );          echo "container stopped & removed (work volume kept)";;
+  nuke) ( cd "$REPO_DIR" && OTA_DIR="${OTA_DIR:-unused}" docker compose down -v );       echo "container + work volume removed";;
   *) sed -n '2,20p' "$0" ;;
 esac

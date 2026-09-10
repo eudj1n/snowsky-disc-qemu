@@ -42,6 +42,20 @@ Requires Docker (macOS or Linux). The firmware is **not** in this repo — get i
 `run.sh` builds the container, extracts+verifies the rootfs, applies every fix needed to
 reach the main screen, boots the two UI processes, and copies screenshots out.
 
+**Prefer Docker Compose?** The container is also defined in `docker-compose.yml` (which builds
+`docker/Dockerfile`). Set the firmware path once and use compose for lifecycle, `run.sh` for the
+pipeline:
+
+```sh
+cp .env.example .env      # then edit OTA_DIR to your …/main_os/ota_v240
+docker compose up -d --build
+./run.sh up               # extracts+sets up (reads OTA_DIR from .env); then boot/tap as above
+```
+
+Compose also **exposes the device's FiiO Link ports** — TCP **12100** (raw control), TCP **12103**
+(HTTP/WS), UDP **12101** (discovery) — so a host client (e.g. a FiiO-YMD-style bridge) can reach the
+emulated player. See [docs/PROTOCOL.md](docs/PROTOCOL.md). (`./run.sh up <dir>` writes `.env` for you.)
+
 > **Why `--privileged`?** qemu-user needs a large contiguous VA reservation, writable
 > `binfmt_misc`, and mountable POSIX mqueues. The container registers **only** a mipsel
 > binfmt handler — see [docs/EMULATION.md](docs/EMULATION.md) for why not to auto-register all.
@@ -49,8 +63,10 @@ reach the main screen, boots the two UI processes, and copies screenshots out.
 ## Repository layout
 
 ```
-run.sh                 host orchestrator (build / up / boot / tap / shell / down)
+run.sh                 host orchestrator (up / boot / tap / capture / diag / shell / stop / down / nuke)
 docker/Dockerfile      reproducible environment (qemu-user, mipsel toolchain, tools)
+docker-compose.yml     container definition (builds the Dockerfile) + FiiO Link port mappings
+.env.example           OTA_DIR (firmware path) for compose; copy to .env
 scripts/               in-container pipeline
   00_extract_rootfs.sh   decrypt+assemble+unsquashfs the firmware (sha256-verified)
   10_setup_env.sh        binfmt, mounts, /dev + sysfs stubs, battery, LOCAL_IMG_ANIM, shim

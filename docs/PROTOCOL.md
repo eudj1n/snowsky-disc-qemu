@@ -53,6 +53,8 @@ Note: `cipherSign`/RSA+AES in the FiiO Control APK is the **cloud** API (SCConne
 
 ## Emulating the network side
 
-Not done yet. Under user-mode qemu the two processes bind their TCP/UDP sockets on the
-container's network namespace, so a client on the host could reach 12100/12103 if the ports
-are published — untested. See [STATUS.md](STATUS.md) "Next".
+Under user-mode qemu the two processes bind their TCP/UDP sockets on the container's network
+namespace, so a host client can reach them once the ports are published. `docker-compose.yml`
+**publishes 12100 (TCP), 12103 (TCP), 12101 (UDP)** to the host for exactly this. Whether the
+emulated `mq_player` actually binds/serves them is **not yet verified** — that's the next thing
+to test (then build a FiiO-YMD-style bridge against the emulator). See [STATUS.md](STATUS.md) "Next".

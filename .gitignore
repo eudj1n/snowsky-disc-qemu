@@ -32,3 +32,6 @@ Thumbs.db
 # Python cache
 __pycache__/
 *.pyc
+
+# Local compose env (machine-specific OTA path)
+.env
