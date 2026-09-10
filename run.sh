@@ -64,6 +64,12 @@ case "$cmd" in
     mkdir -p "$REPO_DIR/shots"; docker cp "$CTR":/work/shots/. "$REPO_DIR/shots/" 2>/dev/null || true
     echo "==> PNGs copied to $REPO_DIR/shots/"
     ;;
+  diag)
+    need_ctr
+    docker exec "$CTR" bash -lc '/repo/scripts/10_setup_env.sh >/dev/null 2>&1; /repo/scripts/diag_tap.sh'
+    mkdir -p "$REPO_DIR/shots"; docker cp "$CTR":/work/shots/. "$REPO_DIR/shots/" 2>/dev/null || true
+    echo "==> PNGs copied to $REPO_DIR/shots/ (see d0-*.png before, d1-*.png after)"
+    ;;
   stop) need_ctr; docker exec "$CTR" bash -lc '/repo/scripts/99_stop.sh' ;;
   down) docker rm -f "$CTR" >/dev/null 2>&1 || true; echo "container removed (volume '$VOL' kept)";;
   nuke) docker rm -f "$CTR" >/dev/null 2>&1 || true; docker volume rm "$VOL" >/dev/null 2>&1 || true; echo "container + volume removed";;
