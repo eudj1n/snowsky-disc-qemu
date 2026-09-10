@@ -30,7 +30,7 @@ timeout $((WAIT+36)) chroot "$ROOTFS" /usr/bin/mq_player >"$WORK/mq_player.log" 
 log "Waiting ${WAIT}s for the UI to reach the main screen..."
 sleep "$WAIT"
 
-mkdir -p "$SHOTS"
+mkdir -p "$SHOTS"; rm -f "$SHOTS"/*.png "$SHOTS"/*.snap 2>/dev/null || true  # fresh set each boot
 cp "$ROOTFS/dev/fb0" "$WORK/fb0.snap"
 log "Framebuffer captured. Rendering PNGs:"
 python3 "$REPO/tools/fb2png.py" "$WORK/fb0.snap" "$SHOTS" boot

@@ -8,7 +8,7 @@ apply_ulimits; kill_guest
 rm -f "$ROOTFS/dev/mqueue/"* 2>/dev/null || true
 head -c $((SCR_W*SCR_VY*4)) /dev/zero > "$ROOTFS/dev/fb0"
 : > "$ROOTFS/dev/input/event1"
-mkdir -p "$SHOTS"
+mkdir -p "$SHOTS"; rm -f "$SHOTS"/*.png "$SHOTS"/*.snap 2>/dev/null || true
 
 log "boot mq_ui (strace) + mq_player"
 QEMU_STRACE=1 timeout 50 chroot "$ROOTFS" /usr/bin/mq_ui 2>"$WORK/ui_str.log" >/dev/null &
@@ -30,4 +30,4 @@ echo "   >0  => events reach mq_ui (coordinate/logic issue)"
 echo "   ==0 => events NOT read (mechanism issue)"
 echo "=========================================="
 cp "$ROOTFS/dev/fb0" "$WORK/d1.snap"; python3 "$REPO/tools/fb2png.py" "$WORK/d1.snap" "$SHOTS" d1
-kill_guest
+log "guests left running — you can now ./run.sh tap <x> <y> or ./run.sh capture"

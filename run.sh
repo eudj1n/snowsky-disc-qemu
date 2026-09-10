@@ -7,6 +7,8 @@
 #   ./run.sh shell                       open a shell inside the running container
 #   ./run.sh boot [seconds]              boot to the main screen and capture PNGs into ./shots/
 #   ./run.sh tap <x> <y>                 inject a tap at a screen coordinate, re-capture into ./shots/
+#   ./run.sh capture [prefix]            re-capture the current framebuffer into ./shots/
+#   ./run.sh diag                        touch diagnostic (leaves guests running)
 #   ./run.sh stop                        stop the guest processes
 #   ./run.sh down                        stop & remove the container (the /work volume is kept)
 #   ./run.sh nuke                        also delete the /work volume (rootfs)
@@ -69,6 +71,12 @@ case "$cmd" in
     docker exec "$CTR" bash -lc '/repo/scripts/10_setup_env.sh >/dev/null 2>&1; /repo/scripts/diag_tap.sh'
     mkdir -p "$REPO_DIR/shots"; docker cp "$CTR":/work/shots/. "$REPO_DIR/shots/" 2>/dev/null || true
     echo "==> PNGs copied to $REPO_DIR/shots/ (see d0-*.png before, d1-*.png after)"
+    ;;
+  capture)
+    need_ctr
+    docker exec "$CTR" bash -lc "/repo/scripts/capture.sh ${1:-cap}"
+    mkdir -p "$REPO_DIR/shots"; docker cp "$CTR":/work/shots/. "$REPO_DIR/shots/" 2>/dev/null || true
+    echo "==> PNGs copied to $REPO_DIR/shots/"
     ;;
   stop) need_ctr; docker exec "$CTR" bash -lc '/repo/scripts/99_stop.sh' ;;
   down) docker rm -f "$CTR" >/dev/null 2>&1 || true; echo "container removed (volume '$VOL' kept)";;
