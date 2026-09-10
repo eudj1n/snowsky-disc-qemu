@@ -52,14 +52,30 @@ printf Battery > "$B/type";     printf 100 > "$B/capacity"; printf Full > "$B/st
 printf Good    > "$B/health";   printf 1   > "$B/present";  printf Li-ion > "$B/technology"
 printf 4200000 > "$B/voltage_now"; printf 250 > "$B/temp";  printf 1 > "$B/online"
 
-# 6) Config DB: disable the boot logo animation (it is an infinite-loop overlay
-#    drawn on top of the already-built main screen; it never auto-clears under emu).
-log "sysconfig.db: LOCAL_IMG_ANIM=0, BATTERY=100"
+# 6) Config DB: disable the boot logo animation (an infinite-loop overlay drawn on top
+#    of the already-built main screen; it never auto-clears under emu).
+#    /usr/data is a SEPARATE UBIFS partition on the device (S21mount_ubifs) and is empty
+#    in the squashfs, so on a fresh rootfs sysconfig.db does not exist yet — mq_player
+#    creates it on first boot with LOCAL_IMG_ANIM=1. We must prime it (one throwaway boot
+#    to create the DB) BEFORE we can set the flag; otherwise the very first real boot is
+#    stuck on the splash. Idempotent: skipped once the DB exists.
 DB="$ROOTFS/usr/data/fiio/db/sysconfig.db"
+if [ ! -f "$DB" ]; then
+  log "sysconfig.db absent (fresh /usr/data) — priming boot to create it (~20s)..."
+  apply_ulimits
+  rm -f "$ROOTFS/dev/mqueue/"* 2>/dev/null || true
+  timeout 45 chroot "$ROOTFS" /usr/bin/mq_ui     >/dev/null 2>&1 &
+  sleep 3
+  timeout 42 chroot "$ROOTFS" /usr/bin/mq_player >/dev/null 2>&1 &
+  for i in $(seq 1 35); do [ -f "$DB" ] && break; sleep 1; done
+  kill_guest
+  [ -f "$DB" ] && log "  sysconfig.db created" || err "  DB still absent after priming (see $WORK/*.log)"
+fi
 if [ -f "$DB" ]; then
+  log "sysconfig.db: LOCAL_IMG_ANIM=0, BATTERY=100"
   sqlite3 "$DB" "UPDATE SYSCONFIG SET LOCAL_IMG_ANIM=0, BATTERY=100;" || err "  sqlite update failed"
 else
-  err "  $DB missing (fresh rootfs? it is created on first boot)"
+  err "  could not create/find sysconfig.db — first real boot may stay on the splash"
 fi
 
 log "Environment ready. Next: scripts/20_boot.sh"

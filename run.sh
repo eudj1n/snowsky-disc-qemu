@@ -2,7 +2,8 @@
 # Host-side orchestrator for the Snowsky Disc qemu emulator.
 # Works on macOS or Linux with Docker installed.
 #
-#   ./run.sh up <path-to-ota_v240-dir>   build image, (re)create container, extract rootfs, set up env
+#   ./run.sh up <path-to-ota_v240-dir>   build image, create/reuse container, extract rootfs, set up env
+#   ./run.sh start                       start the existing (stopped) container without re-extracting
 #   ./run.sh shell                       open a shell inside the running container
 #   ./run.sh boot [seconds]              boot to the main screen and capture PNGs into ./shots/
 #   ./run.sh tap <x> <y>                 inject a tap at a screen coordinate, re-capture into ./shots/
@@ -17,7 +18,13 @@ IMAGE="diskos-qemu"
 CTR="diskos-qemu"
 VOL="diskos-work"                # named volume for /work (rootfs + state), survives container recreation
 
-need_ctr(){ docker ps --format '{{.Names}}' | grep -qx "$CTR" || { echo "container '$CTR' not running — run: ./run.sh up <ota_dir>"; exit 1; }; }
+exists(){ docker ps -a --format '{{.Names}}' | grep -qx "$CTR"; }
+running(){ docker ps --format '{{.Names}}' | grep -qx "$CTR"; }
+need_ctr(){
+  running && return 0
+  if exists; then echo "==> starting stopped container '$CTR'"; docker start "$CTR" >/dev/null && return 0; fi
+  echo "container '$CTR' not running — run: ./run.sh up <ota_dir>"; exit 1
+}
 
 cmd="${1:-}"; shift || true
 case "$cmd" in
@@ -27,11 +34,15 @@ case "$cmd" in
     ls "$OTA"/rootfs.squashfs.*.enc >/dev/null 2>&1 || { echo "no rootfs.squashfs.*.enc in $OTA (point at main_os/ota_v240)"; exit 1; }
     echo "==> building image"; docker build -t "$IMAGE" "$REPO_DIR/docker"
     docker volume create "$VOL" >/dev/null
-    docker rm -f "$CTR" >/dev/null 2>&1 || true
-    echo "==> starting container (privileged)"
-    docker run -d --name "$CTR" --privileged \
-      -v "$OTA":/ota:ro -v "$REPO_DIR":/repo -v "$VOL":/work \
-      "$IMAGE" sleep infinity >/dev/null
+    if exists; then
+      echo "==> reusing existing container '$CTR' (down+up to change mounts)"
+      running || docker start "$CTR" >/dev/null
+    else
+      echo "==> creating container (privileged)"
+      docker run -d --name "$CTR" --privileged \
+        -v "$OTA":/ota:ro -v "$REPO_DIR":/repo -v "$VOL":/work \
+        "$IMAGE" sleep infinity >/dev/null
+    fi
     echo "==> extracting rootfs (first run only takes a minute)"
     docker exec "$CTR" bash -lc '[ -x /repo/scripts/00_extract_rootfs.sh ] && \
       { [ -e /work/rootfs/usr/bin/mq_ui ] || /repo/scripts/00_extract_rootfs.sh /ota; }'
@@ -39,6 +50,7 @@ case "$cmd" in
     docker exec "$CTR" bash -lc '/repo/scripts/10_setup_env.sh'
     echo "==> ready. Try: ./run.sh boot"
     ;;
+  start) need_ctr; echo "container '$CTR' running";;
   shell) need_ctr; docker exec -it "$CTR" bash ;;
   boot)
     need_ctr

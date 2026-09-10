@@ -98,6 +98,13 @@ loops observed). The config key `LOCAL_IMG_ANIM` controls it.
 **Fix:** `sqlite3 sysconfig.db "UPDATE SYSCONFIG SET LOCAL_IMG_ANIM=0"` → the overlay is
 skipped and the real first-boot flow appears: **splash → language wizard → main menu**.
 
+**Catch on a fresh rootfs:** `/usr/data` is a **separate UBIFS partition** on the device
+(`etc/init.d/S21mount_ubifs`), and it is *empty* in the squashfs. So `sysconfig.db` does not
+exist until `mq_player` creates it on first boot — with `LOCAL_IMG_ANIM=1`. Setting the flag
+therefore requires a **priming boot** first: boot once (throwaway) to create the DB, then set
+`LOCAL_IMG_ANIM=0`, then boot for real. `scripts/10_setup_env.sh` does this automatically when
+the DB is absent. (The language choice, and this flag, then persist in the `/work` volume.)
+
 ## What mq_player sends at boot
 
 Sniffing the `ui` queue (see `tools/uisniff.c`) shows the backend push these FiiO-Link
@@ -136,3 +143,18 @@ language screen / main menu takes ~20–24 s under qemu — allow ≥24 s before
 `gpio_get_value fail`, `Failed to open …/brightness` — all from absent hardware; the
 backend keeps running. `/dev/jz_adc_aux_0` and `/dev/gpio` are not stubbed and are not
 needed to reach or use the main screen.
+
+## Troubleshooting
+
+- **`fb2png` prints `…-b2 non_black_px=0`** — normal. There are three sub-buffers; `mq_ui`
+  only ever draws to buf0/buf1 (alternating), so buf2 stays black. The current screen is
+  whichever of `-b0`/`-b1` has the higher non-black count.
+- **`sysconfig.db missing` on the very first `10_setup_env` of a fresh rootfs** — expected
+  (see the `/usr/data` catch above); the script primes it. If it still reports missing after
+  priming, check `/work/mq_player.log`.
+- **`docker run`/`docker start`/`docker exec` hangs and a new container is stuck in
+  `Created`** — the Docker Desktop VM got wedged (often after an earlier OOM or a killed
+  `docker` operation left a zombie containerd-shim). Existing containers keep working, but new
+  ones won't start. Fix: **restart Docker Desktop**, then `./run.sh up …` again. Give the VM
+  ≥8 GB (two qemu-user MIPS processes plus the popen/`cmd_watchdog` children are memory-hungry;
+  running out is what wedges it).
