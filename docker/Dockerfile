@@ -26,6 +26,9 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
       file \
       procps \
       util-linux \
+      iproute2 \
+      netcat-openbsd \
+      curl \
       ca-certificates \
  && rm -rf /var/lib/apt/lists/*
 
