@@ -102,8 +102,13 @@ if [ ! -f "$DB" ]; then
   [ -f "$DB" ] && log "  sysconfig.db created" || err "  DB still absent after priming (see $WORK/*.log)"
 fi
 if [ -f "$DB" ]; then
-  log "sysconfig.db: LOCAL_IMG_ANIM=0, BATTERY=100"
-  sqlite3 "$DB" "UPDATE SYSCONFIG SET LOCAL_IMG_ANIM=0, BATTERY=100;" || err "  sqlite update failed"
+  # Also preset LANGUAGE so the first-boot language wizard is skipped (it shows while
+  # LANGUAGE is at its unset default). Codes are sequential from 100 (verified in mq_ui):
+  #   100 zh(简体)  101 tw(繁體)  102 en  103 ja  104 ko  105 es  106 pt  107 it  108 de  109 fr  110 ru
+  # Override with LANG_CODE=<n>. Default 102 = English.
+  LANG_CODE="${LANG_CODE:-102}"
+  log "sysconfig.db: LOCAL_IMG_ANIM=0, BATTERY=100, LANGUAGE=$LANG_CODE"
+  sqlite3 "$DB" "UPDATE SYSCONFIG SET LOCAL_IMG_ANIM=0, BATTERY=100, LANGUAGE=$LANG_CODE;" || err "  sqlite update failed"
 else
   err "  could not create/find sysconfig.db — first real boot may stay on the splash"
 fi
