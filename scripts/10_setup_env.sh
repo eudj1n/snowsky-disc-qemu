@@ -110,13 +110,15 @@ if [ ! -f "$DB" ]; then
   [ -f "$DB" ] && log "  sysconfig.db created" || err "  DB still absent after priming (see $WORK/*.log)"
 fi
 if [ -f "$DB" ]; then
-  # Also preset LANGUAGE so the first-boot language wizard is skipped (it shows while
-  # LANGUAGE is at its unset default). Codes are sequential from 100 (verified in mq_ui):
-  #   100 zh(简体)  101 tw(繁體)  102 en  103 ja  104 ko  105 es  106 pt  107 it  108 de  109 fr  110 ru
-  # Override with LANG_CODE=<n>. Default 102 = English.
-  LANG_CODE="${LANG_CODE:-102}"
-  log "sysconfig.db: LOCAL_IMG_ANIM=0, BATTERY=100, LANGUAGE=$LANG_CODE"
-  sqlite3 "$DB" "UPDATE SYSCONFIG SET LOCAL_IMG_ANIM=0, BATTERY=100, LANGUAGE=$LANG_CODE;" || err "  sqlite update failed"
+  log "sysconfig.db: LOCAL_IMG_ANIM=0, BATTERY=100${LANG_CODE:+, LANGUAGE=$LANG_CODE}"
+  sqlite3 "$DB" "UPDATE SYSCONFIG SET LOCAL_IMG_ANIM=0, BATTERY=100;" || err "  sqlite update failed"
+  # LANGUAGE: only force it if LANG_CODE is given. The integer codes are NOT a simple
+  # sequence (102 falls back to Chinese), so the reliable way to pick a language is the
+  # first-boot wizard (tap the option + 确定); that writes the correct code and persists it.
+  # Once you know the code you want, set LANG_CODE=<n> to skip the wizard on fresh volumes.
+  if [ -n "${LANG_CODE:-}" ]; then
+    sqlite3 "$DB" "UPDATE SYSCONFIG SET LANGUAGE=$LANG_CODE;" || err "  LANGUAGE update failed"
+  fi
 else
   err "  could not create/find sysconfig.db — first real boot may stay on the splash"
 fi
