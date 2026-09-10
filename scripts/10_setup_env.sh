@@ -68,10 +68,17 @@ if [ -d /sdcard ]; then
       && log "SD: ./sdcard -> guest /tmp/sdcard (real: $SD_REAL)" || err "  SD bind failed (continuing)"
   fi
   # Signal "card inserted": mq_ui's init runs system("[ -e /dev/mmcblk0 ]") (FUN_004891b8)
-  # and sets its SD-present flag from that. A plain file satisfies `-e`, so the File Browser
-  # treats the bind at /tmp/sdcard as an inserted card.
+  # and sets its SD-present flag from that. A plain file satisfies `-e`.
   : > "$ROOTFS/dev/mmcblk0"
   : > "$ROOTFS/dev/mmcblk0p1"
+  # The guest also verifies the card is MOUNTED by searching /proc/mounts for the exact
+  # mountpoint "/tmp/sdcard" (FUN_004147ac). Under chroot, /proc/mounts shows the bind above as
+  # "$ROOTFS/tmp/sdcard", which won't match. So ALSO bind the same source at the container's own
+  # /tmp/sdcard, making a "/tmp/sdcard" line appear in /proc/mounts (the guest reads its content
+  # via the first bind). Harmless duplicate of the same folder.
+  mkdir -p /tmp/sdcard
+  mountpoint -q /tmp/sdcard || mount --bind /sdcard /tmp/sdcard \
+    && log "SD: also bound at container /tmp/sdcard for /proc/mounts match" || true
 fi
 
 # 5) Battery fuel gauge (cw2215). Without a healthy capacity the UI shows the
