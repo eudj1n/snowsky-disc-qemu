@@ -67,6 +67,11 @@ if [ -d /sdcard ]; then
     mount --bind /sdcard "$ROOTFS$SD_REAL" \
       && log "SD: ./sdcard -> guest /tmp/sdcard (real: $SD_REAL)" || err "  SD bind failed (continuing)"
   fi
+  # Signal "card inserted": mq_ui's init runs system("[ -e /dev/mmcblk0 ]") (FUN_004891b8)
+  # and sets its SD-present flag from that. A plain file satisfies `-e`, so the File Browser
+  # treats the bind at /tmp/sdcard as an inserted card.
+  : > "$ROOTFS/dev/mmcblk0"
+  : > "$ROOTFS/dev/mmcblk0p1"
 fi
 
 # 5) Battery fuel gauge (cw2215). Without a healthy capacity the UI shows the
