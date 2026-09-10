@@ -98,12 +98,23 @@ loops observed). The config key `LOCAL_IMG_ANIM` controls it.
 **Fix:** `sqlite3 sysconfig.db "UPDATE SYSCONFIG SET LOCAL_IMG_ANIM=0"` → the overlay is
 skipped and the real first-boot flow appears: **splash → language wizard → main menu**.
 
-**Catch on a fresh rootfs:** `/usr/data` is a **separate UBIFS partition** on the device
-(`etc/init.d/S21mount_ubifs`), and it is *empty* in the squashfs. So `sysconfig.db` does not
-exist until `mq_player` creates it on first boot — with `LOCAL_IMG_ANIM=1`. Setting the flag
-therefore requires a **priming boot** first: boot once (throwaway) to create the DB, then set
-`LOCAL_IMG_ANIM=0`, then boot for real. `scripts/10_setup_env.sh` does this automatically when
-the DB is absent. (The language choice, and this flag, then persist in the `/work` volume.)
+**Catch on a fresh rootfs (two parts):** `/usr/data` is a **separate UBIFS partition** on the
+device (`etc/init.d/S21mount_ubifs`) and is *empty* in the squashfs. On hardware the init
+scripts `S98FIIO` + `fiio_init.sh` populate it from templates in the read-only rootfs. We
+don't run init, so:
+
+1. **Seed `/usr/data`** — most importantly copy the zlog configs
+   `usr/project/config/zlog_{player,ui}.conf` → `usr/data/fiio/log/` (and `usr/project/db/*`,
+   e.g. `dic.db`, → `usr/data/fiio/db/`). Without the zlog config, `mq_player`'s `zlog_init()`
+   fails (`Error: zlog_init`), the backend never starts, and **no `sysconfig.db` is ever
+   created** — so on a truly fresh rootfs you're stuck on the splash with an empty
+   `usr/data/fiio/db/`.
+2. **Priming boot** — even seeded, `sysconfig.db` is created by `mq_player` on first boot with
+   `LOCAL_IMG_ANIM=1`. So a throwaway boot creates the DB, then we set `LOCAL_IMG_ANIM=0`, then
+   boot for real.
+
+`scripts/10_setup_env.sh` does both automatically. (The language choice and this flag then
+persist in the `/work` volume.)
 
 ## What mq_player sends at boot
 
@@ -150,8 +161,12 @@ needed to reach or use the main screen.
   only ever draws to buf0/buf1 (alternating), so buf2 stays black. The current screen is
   whichever of `-b0`/`-b1` has the higher non-black count.
 - **`sysconfig.db missing` on the very first `10_setup_env` of a fresh rootfs** — expected
-  (see the `/usr/data` catch above); the script primes it. If it still reports missing after
-  priming, check `/work/mq_player.log`.
+  (see the `/usr/data` catch above); the script seeds `/usr/data` then primes the DB. If it
+  still reports missing after priming, check `/work/mq_player.log`.
+- **`/work/mq_player.log` = `Error: zlog_init`** — the backend can't init logging because the
+  zlog config isn't in `usr/data/fiio/log/`. `10_setup_env.sh` seeds it from
+  `usr/project/config/zlog_{player,ui}.conf`; if the seed step didn't run (older checkout),
+  `git pull` and re-run, or copy those two files manually.
 - **`docker run`/`docker start`/`docker exec` hangs and a new container is stuck in
   `Created`** — the Docker Desktop VM got wedged (often after an earlier OOM or a killed
   `docker` operation left a zombie containerd-shim). Existing containers keep working, but new

@@ -46,10 +46,12 @@ looks right / has the higher non-black pixel count printed by `fb2png.py`.
   `30_tap.sh` flips it for you.
 - The language choice **persists** after the first successful Confirm tap, so later boots go
   straight to the main menu (no wizard).
-- `/usr/data` is a **separate partition** (empty in the squashfs), so `sysconfig.db` doesn't
-  exist on a fresh rootfs — it's created on first boot with `LOCAL_IMG_ANIM=1`. So the flag
-  needs a **priming boot** to take effect; `10_setup_env.sh` does this automatically. State
-  lives in the `/work` Docker volume, so it survives container recreation.
+- `/usr/data` is a **separate partition** (empty in the squashfs). Two consequences on a fresh
+  rootfs, both handled by `10_setup_env.sh`: (a) it must be **seeded** with the zlog configs
+  (`usr/project/config/zlog_{player,ui}.conf` → `usr/data/fiio/log/`) + `usr/project/db/*`, or
+  `mq_player` dies at `zlog_init` and never creates `sysconfig.db`; (b) `sysconfig.db` is then
+  created on first boot with `LOCAL_IMG_ANIM=1`, so a **priming boot** is needed before the flag
+  can be set to 0. State persists in the `/work` Docker volume.
 - If `docker run`/`start`/`exec` hangs and a new container is stuck in `Created` (existing ones
   still work), the Docker Desktop VM is wedged — **restart Docker Desktop**, then retry. Give it
   ≥8 GB. This is the same OOM-adjacent failure seen mid-project.

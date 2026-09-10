@@ -52,6 +52,19 @@ printf Battery > "$B/type";     printf 100 > "$B/capacity"; printf Full > "$B/st
 printf Good    > "$B/health";   printf 1   > "$B/present";  printf Li-ion > "$B/technology"
 printf 4200000 > "$B/voltage_now"; printf 250 > "$B/temp";  printf 1 > "$B/online"
 
+# 5b) Seed /usr/data as the device's first boot does. On hardware /usr/data is a blank
+#     UBIFS partition that init scripts S98FIIO + fiio_init.sh populate from templates
+#     shipped in the rootfs. We don't run init, so replicate the essential parts — above
+#     all the zlog configs: without them mq_player's zlog_init() fails ("Error: zlog_init"),
+#     the backend never starts, and sysconfig.db is never created (UI stays on the splash).
+log "Seeding /usr/data (zlog configs + db templates), like S98FIIO/fiio_init.sh"
+mkdir -p "$ROOTFS/usr/data/fiio/log" "$ROOTFS/usr/data/fiio/db" "$ROOTFS/usr/data/fiio/wifi"
+cp -f "$ROOTFS/usr/project/config/zlog_player.conf" "$ROOTFS/usr/data/fiio/log/" 2>/dev/null || err "  zlog_player.conf template missing"
+cp -f "$ROOTFS/usr/project/config/zlog_ui.conf"     "$ROOTFS/usr/data/fiio/log/" 2>/dev/null || err "  zlog_ui.conf template missing"
+cp -f "$ROOTFS"/usr/project/db/*          "$ROOTFS/usr/data/fiio/db/"   2>/dev/null || true  # dic.db etc.
+cp -f "$ROOTFS"/usr/project/config/wifi/* "$ROOTFS/usr/data/fiio/wifi/" 2>/dev/null || true
+cp -f "$ROOTFS/etc/hostapd.conf"          "$ROOTFS/usr/data/"           2>/dev/null || true
+
 # 6) Config DB: disable the boot logo animation (an infinite-loop overlay drawn on top
 #    of the already-built main screen; it never auto-clears under emu).
 #    /usr/data is a SEPARATE UBIFS partition on the device (S21mount_ubifs) and is empty
