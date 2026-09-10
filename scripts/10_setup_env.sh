@@ -50,6 +50,7 @@ echo cst816t   > "$ROOTFS/sys/class/input/event1/device/name"   # capacitive tou
 : > "$ROOTFS/dev/gpio"
 : > "$ROOTFS/dev/jz_adc_aux_0"
 : > "$ROOTFS/dev/jz_watchdog"
+: > "$ROOTFS/dev/key_ioctl"   # physical-key handler (echo_key_handler); non-fatal but noisy
 
 # 5) Battery fuel gauge (cw2215). Without a healthy capacity the UI shows the
 #    "battery too low, shutting down" countdown instead of booting.
