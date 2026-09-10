@@ -52,6 +52,15 @@ echo cst816t   > "$ROOTFS/sys/class/input/event1/device/name"   # capacitive tou
 : > "$ROOTFS/dev/jz_watchdog"
 : > "$ROOTFS/dev/key_ioctl"   # physical-key handler (echo_key_handler); non-fatal but noisy
 
+# SD card: the File Browser reads the guest's /tmp/sdcard. compose bind-mounts the host
+# ./sdcard folder to /sdcard (outside the rootfs volume, so it can't clobber the unpack);
+# here we bind it into the rootfs at /tmp/sdcard AFTER extraction. Drop media into ./sdcard
+# and it shows up in the browser (re-boot to rescan). Idempotent; re-done each setup.
+mkdir -p "$ROOTFS/tmp/sdcard"
+if [ -d /sdcard ] && ! mountpoint -q "$ROOTFS/tmp/sdcard"; then
+  mount --bind /sdcard "$ROOTFS/tmp/sdcard" && log "SD: ./sdcard -> guest /tmp/sdcard" || err "  SD bind-mount failed (continuing)"
+fi
+
 # 5) Battery fuel gauge (cw2215). Without a healthy capacity the UI shows the
 #    "battery too low, shutting down" countdown instead of booting.
 log "Battery sysfs: cw221X-bat = 100%, Full"

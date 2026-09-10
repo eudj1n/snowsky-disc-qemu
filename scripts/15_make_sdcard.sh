@@ -5,9 +5,13 @@
 # a short tone as one track under an artist folder.
 set -euo pipefail
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"; source "$HERE/lib.sh"
-[ -d "$ROOTFS" ] || { err "no rootfs — run 00_extract_rootfs.sh first"; exit 1; }
 
-SD="$ROOTFS/tmp/sdcard"
+# Write into the compose-mounted /sdcard (so it also appears in the host ./sdcard folder);
+# fall back to the guest path if that mount isn't present.
+if [ -d /sdcard ]; then SD="/sdcard"; else
+  [ -d "$ROOTFS" ] || { err "no rootfs — run 00_extract_rootfs.sh first"; exit 1; }
+  SD="$ROOTFS/tmp/sdcard"
+fi
 ART="$SD/Test Artist"
 mkdir -p "$ART"
 log "Generating a test track under $ART"

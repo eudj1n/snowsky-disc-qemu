@@ -35,3 +35,8 @@ __pycache__/
 
 # Local compose env (machine-specific OTA path)
 .env
+
+# SD card drop folder: keep the folder + docs, ignore the media the user drops in
+/sdcard/*
+!/sdcard/.gitkeep
+!/sdcard/README.md

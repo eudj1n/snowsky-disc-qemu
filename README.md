@@ -73,6 +73,7 @@ scripts/               in-container pipeline
   20_boot.sh             run mq_ui + mq_player, capture the framebuffer
   30_tap.sh              inject a tap at a screen coordinate, re-capture
   capture.sh 99_stop.sh lib.sh
+sdcard/                drop media here -> appears as the device's SD card (/tmp/sdcard) in the File Browser
 shim/                  freestanding MIPS ioctl shim (fbshim.c) + build script; mqshim.c (diag)
 tools/                 inject.py (touch), uisniff.c (mqueue sniffer), fb2png.py (fb → PNG)
 ghidra/                headless decompile scripts + RE notes
