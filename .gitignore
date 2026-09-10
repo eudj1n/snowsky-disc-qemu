@@ -1,0 +1,34 @@
+# Firmware and anything derived from it — NEVER commit (copyrighted; download per firmware/README.md)
+*.enc
+*.squashfs
+rootfs/
+work/
+/ota/
+
+# FiiO binaries / assets that might get copied around during RE
+mq_ui
+mq_player
+*.gpr
+*.rep/
+ghidra_proj*/
+*.gzf
+
+# Runtime captures (throwaway; curated shots live in docs/images/)
+shots/
+*.snap
+*.bin
+fb0*
+*.log
+
+# Build artifacts
+*.so
+*.o
+a.out
+
+# OS cruft
+.DS_Store
+Thumbs.db
+
+# Python cache
+__pycache__/
+*.pyc
