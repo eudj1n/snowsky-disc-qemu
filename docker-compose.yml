@@ -30,3 +30,5 @@ services:
 
 volumes:
   work:
+    name: diskos-work        # explicit (unprefixed) name = reuse the volume the old run.sh made
+
