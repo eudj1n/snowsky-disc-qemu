@@ -44,10 +44,11 @@ looks right / has the higher non-black pixel count printed by `fb2png.py`.
   read-cb drains all queued events per call, so **inject press → sleep ~1s → release**, else
   LVGL only sees the net (released). Tap point = `(359-x, 359-y)` of what you see;
   `30_tap.sh` flips it for you.
-- The first-boot **language wizard** is gated on the `LANGUAGE` column (unset default → wizard).
-  `10_setup_env.sh` presets it (`LANG_CODE`, default 102 = English; codes are sequential from
-  100 = zh, verified in mq_ui), so even a fresh `/work` volume boots **straight to the main menu**.
-  A manual Confirm tap also persists it, but the preset means you never need one.
+- The first-boot **language wizard** is gated on the `LANGUAGE` column: it shows only while
+  LANGUAGE is out of range (the fresh default is 100). `LANGUAGE` is a **0-based index** (switch
+  in mq_ui `FUN_004776e4`): `0 zh · 1 tw · 2 en · 3 ja · 4 ko · 5 es · 6 it · 7 de · 8 pt · 9 ru`.
+  `10_setup_env.sh` presets it (`LANG_CODE`, default **2 = English**), which both picks the
+  language AND skips the wizard, so a fresh `/work` volume boots straight to the English main menu.
 - `/usr/data` is a **separate partition** (empty in the squashfs). Two consequences on a fresh
   rootfs, both handled by `10_setup_env.sh`: (a) it must be **seeded** with the zlog configs
   (`usr/project/config/zlog_{player,ui}.conf` → `usr/data/fiio/log/`) + `usr/project/db/*`, or

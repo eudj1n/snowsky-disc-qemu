@@ -116,6 +116,13 @@ don't run init, so:
 `scripts/10_setup_env.sh` does both automatically. (The language choice and this flag then
 persist in the `/work` volume.)
 
+The first-boot **language wizard** is gated on the same DB: it shows only while `LANGUAGE` is
+out of range (fresh default 100). `LANGUAGE` is a **0-based index** (switch in mq_ui
+`FUN_004776e4`): `0 zh · 1 tw · 2 en · 3 ja · 4 ko · 5 es · 6 it · 7 de · 8 pt · 9 ru`. Setting
+any valid value picks the language and skips the wizard; `10_setup_env.sh` presets `LANG_CODE`
+(default 2 = English). (Out-of-range codes like 100/102 fall back to Chinese — which is why the
+"language index = code − 100" guess was wrong.)
+
 ## What mq_player sends at boot
 
 Sniffing the `ui` queue (see `tools/uisniff.c`) shows the backend push these FiiO-Link
