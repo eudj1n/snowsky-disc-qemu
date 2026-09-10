@@ -152,8 +152,11 @@ language screen / main menu takes ~20–24 s under qemu — allow ≥24 s before
 
 `WATCHDOG: feed failed`, `adc get voltage failed: Bad file descriptor`,
 `gpio_get_value fail`, `Failed to open …/brightness` — all from absent hardware; the
-backend keeps running. `/dev/jz_adc_aux_0` and `/dev/gpio` are not stubbed and are not
-needed to reach or use the main screen.
+backend keeps running. Note the *ioctl* failures on these devices are harmless, but the
+initial **`open("/dev/gpio")` must succeed** or `mq_player` aborts with `failed to open
+device` before it inits the DAC / pushes UI state (→ stuck splash). So `10_setup_env.sh`
+creates 0-byte stubs for `/dev/gpio`, `/dev/jz_adc_aux_0`, `/dev/jz_watchdog` (open works,
+later ioctls fail harmlessly). `/dev/jz_adc_aux_0`'s ADC reads still fail — not needed.
 
 ## Troubleshooting
 

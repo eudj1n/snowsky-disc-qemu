@@ -44,6 +44,13 @@ mkdir -p "$ROOTFS/dev/input" \
 echo x2000_key > "$ROOTFS/sys/class/input/event0/device/name"   # GPIO keys
 echo cst816t   > "$ROOTFS/sys/class/input/event1/device/name"   # capacitive touch
 
+# char-device stubs mq_player opens (0-byte files: open() succeeds, later ioctls fail
+# harmlessly). Without /dev/gpio, mq_player aborts at "failed to open device" BEFORE it
+# inits the DAC and pushes UI state, so the UI never leaves the splash.
+: > "$ROOTFS/dev/gpio"
+: > "$ROOTFS/dev/jz_adc_aux_0"
+: > "$ROOTFS/dev/jz_watchdog"
+
 # 5) Battery fuel gauge (cw2215). Without a healthy capacity the UI shows the
 #    "battery too low, shutting down" countdown instead of booting.
 log "Battery sysfs: cw221X-bat = 100%, Full"
