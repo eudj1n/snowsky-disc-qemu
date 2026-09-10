@@ -52,26 +52,34 @@ echo cst816t   > "$ROOTFS/sys/class/input/event1/device/name"   # capacitive tou
 : > "$ROOTFS/dev/jz_watchdog"
 : > "$ROOTFS/dev/key_ioctl"   # physical-key handler (echo_key_handler); non-fatal but noisy
 
-# SD card: the File Browser reads the guest's /tmp/sdcard. compose bind-mounts the host
-# ./sdcard folder to /sdcard (outside the rootfs volume, so it can't clobber the unpack);
-# here we bind it into the rootfs at /tmp/sdcard AFTER extraction. Drop media into ./sdcard
-# and it shows up in the browser (re-boot to rescan). Idempotent; re-done each setup.
-if [ -d /sdcard ]; then
-  # (1) Content: bind ./sdcard onto the guest's /tmp/sdcard (chroot => $ROOTFS/tmp/sdcard),
-  #     which is where the File Browser reads. /tmp is a real dir in this rootfs.
-  mkdir -p "$ROOTFS/tmp/sdcard"
-  mountpoint -q "$ROOTFS/tmp/sdcard" || mount --bind /sdcard "$ROOTFS/tmp/sdcard"
-  # (2) /proc/mounts match: the guest verifies the card by searching /proc/mounts for the exact
-  #     mountpoint "/tmp/sdcard" (FUN_004147ac). Under chroot it otherwise sees only
-  #     "$ROOTFS/tmp/sdcard". So ALSO bind the same source at the container's own /tmp/sdcard.
-  mkdir -p /tmp/sdcard
-  mountpoint -q /tmp/sdcard || mount --bind /sdcard /tmp/sdcard
-  # (3) "card inserted" flag: mq_ui init runs system("[ -e /dev/mmcblk0 ]") (FUN_004891b8).
-  : > "$ROOTFS/dev/mmcblk0"
-  : > "$ROOTFS/dev/mmcblk0p1"
-  M1=no; mountpoint -q "$ROOTFS/tmp/sdcard" && M1=yes
-  M2=no; mountpoint -q /tmp/sdcard && M2=yes
-  log "SD: guest-bind=$M1 procmounts-bind=$M2 + mmcblk stubs"
+# SD card: a REAL FAT block device (not a bind). Once mq_ui sees the card flag it runs
+# mount_sdcard, which `umount /tmp/sdcard`s and remounts /dev/mmcblk0p1 — so a plain bind gets
+# torn down and, with only a stub device, can't be remounted (browser ends up empty). Instead
+# build a FAT image from ./sdcard, expose it as /dev/mmcblk0[p1], and mount that loop at
+# /tmp/sdcard — both the guest's rootfs path (content the browser reads) AND the container's own
+# /tmp/sdcard (so the guest's /proc/mounts check for the exact mountpoint "/tmp/sdcard" matches,
+# see FUN_004147ac / FUN_004891b8).  Rebuilt each setup so ./sdcard edits show up on next boot.
+IMG="$WORK/sdcard.img"
+for m in "$ROOTFS/tmp/sdcard" /tmp/sdcard; do mountpoint -q "$m" && umount -l "$m" 2>/dev/null || true; done
+for l in $(losetup -j "$IMG" 2>/dev/null | cut -d: -f1); do losetup -d "$l" 2>/dev/null || true; done
+SD_CONTENT=""; [ -d /sdcard ] && SD_CONTENT="$(ls -A /sdcard 2>/dev/null | grep -vxE 'README.md|.gitkeep' | head -1)"
+if [ -n "$SD_CONTENT" ]; then
+  SZ=$(( $(du -sm /sdcard 2>/dev/null | cut -f1) + 32 ))
+  rm -f "$IMG"; truncate -s "${SZ}M" "$IMG"
+  mkfs.vfat -n SNOWSKY "$IMG" >/dev/null 2>&1
+  T="$(mktemp -d)"; mount -o loop "$IMG" "$T"
+  cp -r /sdcard/. "$T"/ 2>/dev/null || true
+  rm -f "$T/README.md" "$T/.gitkeep" 2>/dev/null || true
+  sync; umount "$T"; rmdir "$T"
+  LOOP="$(losetup -f --show "$IMG")"
+  ln -sf "$LOOP" "$ROOTFS/dev/mmcblk0"
+  ln -sf "$LOOP" "$ROOTFS/dev/mmcblk0p1"
+  mkdir -p "$ROOTFS/tmp/sdcard" /tmp/sdcard
+  mount "$LOOP" "$ROOTFS/tmp/sdcard" 2>/dev/null || err "  SD mount (guest path) failed"
+  mount "$LOOP" /tmp/sdcard        2>/dev/null || true   # /proc/mounts "/tmp/sdcard" match
+  log "SD: FAT from ./sdcard on $LOOP as /dev/mmcblk0p1, mounted at /tmp/sdcard"
+else
+  rm -f "$ROOTFS/dev/mmcblk0" "$ROOTFS/dev/mmcblk0p1"    # no card
 fi
 
 # 5) Battery fuel gauge (cw2215). Without a healthy capacity the UI shows the
