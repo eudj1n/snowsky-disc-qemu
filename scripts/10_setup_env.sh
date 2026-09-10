@@ -56,9 +56,17 @@ echo cst816t   > "$ROOTFS/sys/class/input/event1/device/name"   # capacitive tou
 # ./sdcard folder to /sdcard (outside the rootfs volume, so it can't clobber the unpack);
 # here we bind it into the rootfs at /tmp/sdcard AFTER extraction. Drop media into ./sdcard
 # and it shows up in the browser (re-boot to rescan). Idempotent; re-done each setup.
-mkdir -p "$ROOTFS/tmp/sdcard"
-if [ -d /sdcard ] && ! mountpoint -q "$ROOTFS/tmp/sdcard"; then
-  mount --bind /sdcard "$ROOTFS/tmp/sdcard" && log "SD: ./sdcard -> guest /tmp/sdcard" || err "  SD bind-mount failed (continuing)"
+if [ -d /sdcard ]; then
+  # /tmp may be a symlink in the rootfs (e.g. -> /var/volatile/tmp), so resolve where the
+  # guest's /tmp/sdcard REALLY lives via chroot (the guest's own view) and bind there.
+  timeout 10 chroot "$ROOTFS" mkdir -p /tmp/sdcard 2>/dev/null || mkdir -p "$ROOTFS/tmp/sdcard"
+  SD_REAL="$(timeout 10 chroot "$ROOTFS" sh -c 'cd /tmp/sdcard 2>/dev/null && pwd -P' 2>/dev/null)"
+  [ -n "$SD_REAL" ] || SD_REAL="/tmp/sdcard"
+  mkdir -p "$ROOTFS$SD_REAL"
+  if ! mountpoint -q "$ROOTFS$SD_REAL"; then
+    mount --bind /sdcard "$ROOTFS$SD_REAL" \
+      && log "SD: ./sdcard -> guest /tmp/sdcard (real: $SD_REAL)" || err "  SD bind failed (continuing)"
+  fi
 fi
 
 # 5) Battery fuel gauge (cw2215). Without a healthy capacity the UI shows the
