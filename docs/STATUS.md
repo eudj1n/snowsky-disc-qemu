@@ -26,8 +26,8 @@ boots go **straight to the main menu** (~24 s), skipping the wizard.
 | | screen |
 |---|---|
 | ![splash](images/01-splash.png) | Boot splash (SNOWSKY / FIIO OWNED BRAND) |
-| ![low battery](images/02-low-battery.png) | Low-battery shutdown (before the battery sysfs fix) |
-| ![language](images/03-language.png) | First-boot language wizard (简/繁/EN/日 + 确定) |
+| ![low battery](images/02-low-battery.png) | Critically-low-battery warning (before the battery sysfs fix) |
+| ![language](images/03-language.png) | First-boot language wizard, **English** selected (options stay in their native scripts; the 确定 button is the fallback locale until you confirm) |
 | ![main](images/04-main-menu.png) | **Main menu** carousel (Settings / Browse files / Now playing), battery 100%, volume 120 |
 | ![files](images/05-file-browser.png) | **File browser** at `/tmp/sdcard` showing the `Test Artist` folder from `./sdcard` |
 | ![tracks](images/06-sd-tracks.png) | Two levels in — `/tmp/sdcard/Test Artist/Greatest Hits` listing the `.wav` tracks |
