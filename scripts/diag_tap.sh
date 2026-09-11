@@ -11,9 +11,9 @@ head -c $((SCR_W*SCR_VY*4)) /dev/zero > "$ROOTFS/dev/fb0"
 mkdir -p "$SHOTS"; rm -f "$SHOTS"/*.png "$SHOTS"/*.snap 2>/dev/null || true
 
 log "boot mq_ui (strace) + mq_player"
-QEMU_STRACE=1 timeout 50 chroot "$ROOTFS" /usr/bin/mq_ui 2>"$WORK/ui_str.log" >/dev/null &
+QEMU_STRACE=1 guest_run 50 /usr/bin/mq_ui 2>"$WORK/ui_str.log" >/dev/null &
 sleep 4
-timeout 46 chroot "$ROOTFS" /usr/bin/mq_player >/dev/null 2>&1 &
+guest_run 46 /usr/bin/mq_player >/dev/null 2>&1 &
 sleep 22
 
 cp "$ROOTFS/dev/fb0" "$WORK/d0.snap"; python3 "$REPO/tools/fb2png.py" "$WORK/d0.snap" "$SHOTS" d0

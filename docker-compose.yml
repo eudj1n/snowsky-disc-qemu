@@ -16,21 +16,23 @@ services:
     privileged: true                     # qemu-user needs binfmt_misc, POSIX mqueue, a large VA reservation
     command: sleep infinity
     stop_grace_period: 2s
+    networks:
+      default:
+        interface_name: eth1             # stock wired path; requires Compose >= 2.36
     volumes:
       - ${OTA_DIR:?set OTA_DIR in .env (path to the firmware main_os/ota_v240 dir)}:/ota:ro
       - ./:/repo                         # this repository (scripts, shim, tools)
       - ./sdcard:/sdcard                 # drop media here -> appears as the device's /tmp/sdcard (File Browser)
       - work:/work                       # extracted rootfs + runtime state (persists across restarts)
     ports:
-      # FiiO Link services the emulated device binds. Forward-looking: lets a host client
+      # FiiO Link services the emulated device binds. Lets a host client
       # (e.g. a FiiO-YMD-style bridge) reach the emulated player. See docs/PROTOCOL.md.
       # Comment out any that clash with something already on your host.
-      - "12100:12100"                    # raw FiiO Link  (TCP, auth-free device control)
-      - "12103:12103"                    # HTTP/WS control (TCP, Mongoose mg_dash)
-      - "12101:12101/udp"                # discovery       (UDP)
-      - "8080:8080"                      # live viewer + touch bridge (./run.sh view)
+      - "127.0.0.1:12100:12100"          # auth-free control: never expose to LAN by default
+      - "127.0.0.1:12103:12103"          # HTTP/WS (Mongoose mg_dash)
+      - "127.0.0.1:12101:12101/udp"      # does not relay LAN multicast discovery
+      - "127.0.0.1:8080:8080"            # live viewer + touch bridge
 
 volumes:
   work:
     name: diskos-work        # explicit (unprefixed) name = reuse the volume the old run.sh made
-

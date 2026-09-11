@@ -1,8 +1,17 @@
 # Status
 
-_Updated 2026-09-11 after live physical-control tests._
+_Updated 2026-09-11 after network, media-library and physical-control tests._
 
 ## Working ✅
+
+- **Local FiiO Link TCP 12100** — host handshake, settings, indexed library, now-playing
+  path, absolute volume and play/pause. Compose provides real `eth1`; startup re-announces
+  its IP via netlink. No Wi-Fi DB overrides or network binary patches. HTTP 12103 also
+  listens; WebSocket is not yet verified. Ports are localhost-only. See [NETWORK.md](NETWORK.md).
+- **Manual media-library synchronization** — Settings → Update media lib → Update now
+  found all **4 test WAVs**; TCP returned the same four records. Fixed the scanner's extra
+  SD gate: the mount source must be guest-accessible `/dev/mmcblk0p1`, not
+  `/work/rootfs/dev/mmcblk0p1`. Browse files alone had not exposed this problem.
 
 - **Firmware unpack** — decrypt + assemble + `unsquashfs` the V2.40 rootfs, sha256-verified.
 - **Boot under qemu-user** — `mq_player` + `mq_ui` run; POSIX-mqueue IPC between them works.
@@ -69,17 +78,36 @@ browser click/double-click, GPIO holds, settings changes/persistence, DAC gain, 
 off/on cycle. Viewer screenshots were captured from the actual browser page.
 The full track/position/gesture matrix and physical-device timing were not exhaustively tested.
 
+## Network and library checks — 2026-09-11
+
+| Actual browser capture | Result |
+|---|---|
+| ![Media-library settings](images/11-media-library-settings.jpg) | **Update now / Auto update** in the stock application. The indicator alone is not proof that automatic scanning is enabled or implemented. |
+| ![Library scan completed](images/12-media-library-scanned.jpg) | **4 songs scanned**, using the stock scanner after the mount-source fix; all four returned by TCP 0401. |
+| ![TCP-controlled playback](images/13-network-playback-paused.jpg) | **01 - Tone A.wav**, selected through TCP from the indexed library, left paused after the play/pause test. The central Play icon agrees with wire state 1 and internal state 2. |
+
+Passed: **28 Python tests + 7 JavaScript tests**, Compose validation, image rebuild /
+container recreation, repeated setup/boot and viewer Power-on. The live host check
+`python3 tools/verify_network.py --control --start-library` verifies protocol 3.06,
+volume **119 → 118 → 119**, the same track's wire state **0 → 1 → 0**, and HTTP 12103.
+The test leaves playback paused. Guest memory independently confirmed volume 119,
+player state 2 (paused), network-ready=1, Docker IP and dropped dangerous capabilities.
+Automatic scanning did not ingest the fifth test file; WebSocket returned 200 instead
+of 101. Those are recorded limitations, not passing checks.
+
 ## Not done yet / next
 
 - **Additional audio routes** — USB/BT, DSD, and hardware-accurate timing still need separate
   validation. Local PCM works; see [AUDIO.md](AUDIO.md).
-- **Network services** — the emulated `mq_player` does **not** yet bind 12100/12103 (gated on the
-  network being up). Next: a `40_network.sh` that adds a dummy `wlan0` + sets
-  `NETWORK_MODE=1`/`WIFI_STATUS=1` (this got 12103 answering `GET /api/hi → 200` in an earlier
-  throwaway container), then build a "FiiO YMD"-style bridge against the emulator. The protocol
-  itself is already reversed and verified against the real device — device control is **auth-free**
-  on 12100, and there is **no file-upload command** in the device protocol (see
-  [PROTOCOL.md](PROTOCOL.md) and [DEVICE.md](DEVICE.md)).
+- **Auto update (media library)** — the menu option was inspected/clicked, but adding a
+  generated fifth WAV and rebooting did not update the index or start a scan. Its effective
+  on/off state and startup/hotplug trigger are not yet established. Manual Update now works.
+  The fixture was removed and SD rebuilt; the original four indexed tracks remain.
+- **Remaining network work** — standard WebSocket Upgrade on `/api/websocket` returns
+  HTTP **200**, not 101; LAN multicast discovery, Wi-Fi association and cloud streaming
+  are not implemented/tested. Raw TCP control works independently. Automatic OTA/NTP helpers
+  are blocked in the emulator; OTA downloads/installations were not tested. Next: a small
+  bridge using the now-working localhost client, or investigation of Auto update / WS.
 - **Carousel swipes** — ✅ done via the viewer's drag/`/swipe` (intermediate position events
   over time).
 - **Power fidelity** — viewer power-off is a deliberate guest-only process stop, not stock

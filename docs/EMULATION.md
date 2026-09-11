@@ -160,6 +160,16 @@ rootfs path — the container-path mount survives and keeps the exact `/tmp/sdca
 `FUN_004147ac` looks for present across the whole boot. The browser then lists the card and is
 navigable all the way to the leaf tracks (`Test Artist / Greatest Hits / *.wav`).
 
+## Scanner source-path fix (2026-09-11)
+
+Browse files only needed the mountpoint above; **Update media lib** also checks
+that the mount source is accessible inside chroot. The old container-side mount
+recorded `/work/rootfs/dev/mmcblk0p1`, which fails that check. `sd_mount()` now mounts
+the guest SD **inside chroot**, recording source `/dev/mmcblk0p1`. This fixed the
+scanner stuck at zero: the stock scan found four tracks, and the same four appeared
+over FiiO Link. Existing old-source mounts are migrated; the container-side helper
+mount is retained. See [NETWORK.md](NETWORK.md).
+
 ## What mq_player sends at boot
 
 Sniffing the `ui` queue (see `tools/uisniff.c`) shows the backend push these FiiO-Link

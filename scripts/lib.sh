@@ -29,6 +29,15 @@ apply_ulimits(){
 # Do not pkill every qemu process: another rootfs may be running in this container.
 kill_guest(){ ROOTFS="$ROOTFS" python3 "$REPO/tools/keys.py" stop; }
 
+# qemu-user shares the Docker VM kernel. Firmware children must not reconfigure
+# interfaces, set wall/RTC clocks, reboot the VM, or load modules. Keep SYS_ADMIN
+# for the existing guest SD mount workflow; this is not a complete sandbox.
+guest_run(){
+  local ttl="$1"; shift
+  timeout "$ttl" setpriv --bounding-set=-net_admin,-sys_time,-sys_boot,-sys_module,-sys_rawio \
+    --no-new-privs chroot "$ROOTFS" "$@"
+}
+
 # --- SD card -----------------------------------------------------------------
 # The firmware's mq_ui (util/src/mount_storage_dev.c) UMOUNTS /tmp/sdcard once at
 # startup: on hardware a hotplug handler then remounts the card, but under emulation
@@ -44,7 +53,16 @@ sd_mount(){
   local node; node="$(sd_node)" || return 0
   [ -n "$node" ] || return 0
   mkdir -p "$ROOTFS/tmp/sdcard" /tmp/sdcard
-  mountpoint -q "$ROOTFS/tmp/sdcard" || mount -t vfat -o iocharset=utf8 "$node" "$ROOTFS/tmp/sdcard" 2>/dev/null || true
+  # The scanner checks access(source) for each /proc/mounts entry. A mount made
+  # with the container path /work/rootfs/dev/mmcblk0p1 leaves that inaccessible
+  # source string in the guest's mount table. Mount INSIDE chroot so the source
+  # is /dev/mmcblk0p1, accessible to both the scanner and Browse files.
+  if mountpoint -q "$ROOTFS/tmp/sdcard" &&
+     [ "$(findmnt -n -o SOURCE --target "$ROOTFS/tmp/sdcard")" = "$node" ]; then
+    umount "$ROOTFS/tmp/sdcard" || { err 'SD source migration busy; stop guest first'; return 1; }
+  fi
+  mountpoint -q "$ROOTFS/tmp/sdcard" || \
+    guest_run 10 /bin/mount -t vfat -o iocharset=utf8 /dev/mmcblk0p1 /tmp/sdcard
   mountpoint -q /tmp/sdcard          || mount -t vfat -o iocharset=utf8 "$node" /tmp/sdcard          2>/dev/null || true
 }
 

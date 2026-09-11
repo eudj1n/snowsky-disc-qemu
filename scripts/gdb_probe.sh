@@ -21,11 +21,11 @@ head -c $((SCR_W*SCR_VY*4)) /dev/zero > "$ROOTFS/dev/fb0"
 : > "$ROOTFS/dev/input/event1"; : > "$ROOTFS/dev/input/event0"
 
 log "Starting mq_ui"
-timeout 360 chroot "$ROOTFS" /usr/bin/mq_ui >"$WORK/mq_ui.log" 2>&1 &
+guest_run 360 /usr/bin/mq_ui >"$WORK/mq_ui.log" 2>&1 &
 sleep 4
 log "Starting mq_player under gdbstub :$PORT (waits for gdb)"
 # explicit qemu with -g; children spawned by mq_player go through binfmt (no gdbstub)
-timeout 360 chroot "$ROOTFS" /usr/bin/qemu-mipsel-static -g "$PORT" /usr/bin/mq_player \
+guest_run 360 /usr/bin/qemu-mipsel-static -g "$PORT" /usr/bin/mq_player \
   >"$WORK/mq_player.log" 2>&1 &
 sleep 2
 if sd_node >/dev/null; then sd_mount; fi

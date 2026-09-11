@@ -18,6 +18,7 @@ WAIT="${1:-26}"
 apply_ulimits
 kill_guest
 bash "$REPO/scripts/15_controls.sh"
+bash "$REPO/scripts/16_network.sh" prepare
 rm -f "$ROOTFS/dev/mqueue/"* 2>/dev/null || true
 head -c $((SCR_W*SCR_VY*4)) /dev/zero > "$ROOTFS/dev/fb0"
 : > "$ROOTFS/dev/input/event1"; : > "$ROOTFS/dev/input/event0"
@@ -27,13 +28,14 @@ head -c $((SCR_W*SCR_VY*4)) /dev/zero > "$ROOTFS/dev/fb0"
 # with GUEST_TTL (seconds); the timeout only bounds leaked qemu processes.
 GUEST_TTL="${GUEST_TTL:-1800}"
 log "Starting mq_ui (creates 'ui' queue)"
-timeout "$GUEST_TTL" chroot "$ROOTFS" /usr/bin/mq_ui  >"$WORK/mq_ui.log"     2>&1 &
+guest_run "$GUEST_TTL" /usr/bin/mq_ui  >"$WORK/mq_ui.log"     2>&1 &
 sleep 4
 log "Starting mq_player (backend)"
-timeout "$GUEST_TTL" chroot "$ROOTFS" /usr/bin/mq_player >"$WORK/mq_player.log" 2>&1 &
+guest_run "$GUEST_TTL" /usr/bin/mq_player >"$WORK/mq_player.log" 2>&1 &
 
 log "Waiting ${WAIT}s for the UI to reach the main screen..."
 sleep "$WAIT"
+bash "$REPO/scripts/16_network.sh" announce
 
 # mq_ui umounts /tmp/sdcard during startup (it expects a hotplug remount that never comes
 # under emulation). Re-mount the card now, after that umount, so the File Browser — which

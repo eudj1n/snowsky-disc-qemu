@@ -118,11 +118,15 @@ Under user-mode qemu the two processes bind their TCP/UDP sockets on the contain
 namespace, so a host client can reach them once the ports are published. `docker-compose.yml`
 **publishes 12100 (TCP), 12103 (TCP), 12101 (UDP)** to the host for exactly this.
 
-**Current state:** with the committed `10_setup_env.sh` the emulated `mq_player` does **not** bind
-12100/12103 (the only listening TCP socket is Docker's internal DNS) — the FiiO Link servers are
-gated on the network being up (`NETWORK_MODE`/`WIFI_STATUS`, and a real interface). In an earlier
-throwaway container, adding a **dummy `wlan0` + a faked wifi-up state** got the **Mongoose 12103**
-server listening and answering `GET /api/hi → 200` exactly like hardware — so the path is known,
-it just isn't scripted yet. The next step is a `40_network.sh` that brings up a dummy `wlan0` and
-sets `NETWORK_MODE=1`/`WIFI_STATUS=1`, verifying it actually produces a `0.0.0.0:12100` bind
-before building a FiiO-YMD-style bridge against the emulator. See [STATUS.md](STATUS.md) "Next".
+**Current state (2026-09-11):** both services bind with the committed pipeline. Compose
+names Docker's actual interface `eth1`; `16_network.sh` re-announces its existing IP after
+the stock netlink subscription. The real gate is `DAT_0086c030`, set by `RTM_NEWADDR`,
+not simply NETWORK_MODE/WIFI_STATUS. No dummy Wi-Fi or DB flag override is needed.
+The guest's BusyBox `ip` replaces two read queries unsupported by the standalone utility
+under QEMU. See [NETWORK.md](NETWORK.md) for reproduction, confinement and the host client.
+
+Verified TCP setters: `0502 000C <volume 4hex>` (absolute 0..120),
+`0201 000C 0000` (selected-track play/pause toggle). These are not evdev key codes.
+The host mappings are now localhost-only. HTTP `/api/hi` gives 200/empty; a standard
+`/api/websocket` Upgrade also gives **200, not 101**, so the earlier app-level WebSocket
+conclusions above must not be read as an emulator end-to-end test. Raw TCP works without it.

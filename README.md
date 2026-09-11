@@ -22,7 +22,7 @@ viewer, or run `./run.sh audio` to export `shots/audio.wav`. See [docs/AUDIO.md]
 
 ## Quickstart
 
-Requires Docker (macOS or Linux). The firmware is **not** in this repo — get it first:
+Requires Docker (macOS or Linux) and **Compose 2.36+**. The firmware is **not** in this repo — get it first:
 **[firmware/README.md](firmware/README.md)** (FiiO forum download + `fo123` decrypt info).
 
 ```sh
@@ -57,9 +57,11 @@ docker compose up -d --build
 ./run.sh up               # extracts+sets up (reads OTA_DIR from .env); then boot/tap as above
 ```
 
-Compose also **exposes the device's FiiO Link ports** — TCP **12100** (raw control), TCP **12103**
+Compose also **publishes the device's FiiO Link ports on localhost only** — TCP **12100** (raw control), TCP **12103**
 (HTTP/WS), UDP **12101** (discovery) — so a host client (e.g. a FiiO-YMD-style bridge) can reach the
-emulated player. See [docs/PROTOCOL.md](docs/PROTOCOL.md). (`./run.sh up <dir>` writes `.env` for you.)
+emulated player. Try `python3 tools/fiio_link.py` on the host; see
+[docs/NETWORK.md](docs/NETWORK.md) for setup, live checks and remaining WS/discovery limits.
+(`./run.sh up <dir>` writes `.env` for you.)
 
 > **Why `--privileged`?** qemu-user needs a large contiguous VA reservation, writable
 > `binfmt_misc`, and mountable POSIX mqueues. The container registers **only** a mipsel
@@ -97,6 +99,7 @@ CLAUDE.md              orientation for Claude Code sessions continuing this work
 - **[docs/VIEWER.md](docs/VIEWER.md)** — live browser viewer + touch/swipe bridge (`./run.sh view`)
 - **[docs/AUDIO.md](docs/AUDIO.md)** — PCM capture, browser sound, WAV export, and card discovery
 - **[docs/KEYS.md](docs/KEYS.md)** — physical-button audit, corrected codes, app assignments, remaining work
+- **[docs/NETWORK.md](docs/NETWORK.md)** — reproducible eth1/network setup (Compose 2.36+), localhost client, safety and live checks
 - **[docs/PROTOCOL.md](docs/PROTOCOL.md)** — FiiO Link frames, mqueues, network ports, auth
 - **[docs/DEVICE.md](docs/DEVICE.md)** — the real device on the network (ports, mDNS, no debug unlock)
 - **[docs/DISKOS.md](docs/DISKOS.md)** — diskOS V2.40 compatibility (build works; only the size cap blocks)

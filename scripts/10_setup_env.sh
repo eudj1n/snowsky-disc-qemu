@@ -7,6 +7,8 @@
 set -euo pipefail
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"; source "$HERE/lib.sh"
 [ -d "$ROOTFS" ] || { err "no rootfs at $ROOTFS — run 00_extract_rootfs.sh first"; exit 1; }
+kill_guest  # never overwrite mapped shims or prepare SD while firmware is running
+bash "$REPO/scripts/16_network.sh" prepare
 
 # 1) binfmt_misc: register ONLY the mipsel interpreter, with a mask that ignores
 #    ELF bytes 6-15 so it matches every MIPS32 LE guest binary (busybox etc.) but
@@ -133,9 +135,9 @@ if [ ! -f "$DB" ]; then
   log "sysconfig.db absent (fresh /usr/data) — priming boot to create it (~20s)..."
   apply_ulimits
   rm -f "$ROOTFS/dev/mqueue/"* 2>/dev/null || true
-  timeout 45 chroot "$ROOTFS" /usr/bin/mq_ui     >/dev/null 2>&1 &
+  guest_run 45 /usr/bin/mq_ui     >/dev/null 2>&1 &
   sleep 3
-  timeout 42 chroot "$ROOTFS" /usr/bin/mq_player >/dev/null 2>&1 &
+  guest_run 42 /usr/bin/mq_player >/dev/null 2>&1 &
   for i in $(seq 1 35); do [ -f "$DB" ] && break; sleep 1; done
   kill_guest
   [ -f "$DB" ] && log "  sysconfig.db created" || err "  DB still absent after priming (see $WORK/*.log)"

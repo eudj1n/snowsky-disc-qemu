@@ -37,4 +37,8 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 # so it survives container restarts). /repo is this repository (mount read-write).
 WORKDIR /work
 
+# util-linux supplies setpriv: scripts/lib.sh drops dangerous capabilities for
+# MIPS guests and their children. Network setup uses iproute2; no manual packages.
+RUN command -v setpriv && command -v ip
+
 CMD ["/bin/bash"]

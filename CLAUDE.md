@@ -121,7 +121,19 @@ with actual guest `poweroff -f` after verifying its dynamic symbol binding to th
 `fbshim` observes framebuffer mmap/memcpy and records `emu/fb-live` so the viewer picks
 the actual last-written buffer instead of a stale frame when both buffers changed.
 
-Network services — the emulated `mq_player` doesn't bind
-12100/12103 yet (network-gated), so a `40_network.sh` (dummy `wlan0` + `NETWORK_MODE=1`) is the
-next step before a FiiO-YMD-style bridge (protocol already reversed — see `docs/PROTOCOL.md`);
-carousel swipe gestures, optional MCU/UART stub.
+Network services now bind 12100/12103: Compose names the real Docker interface `eth1`
+(Compose >=2.36), and `scripts/16_network.sh` re-announces its existing address after
+the stock netlink detector subscribes. No Wi-Fi DB overrides or network binary patches.
+Guest `ip` read queries use stock BusyBox (the standalone ip address dump fails in qemu).
+`guest_run()` drops dangerous capabilities; wrappers block automatic OTA/NTP/hwclock
+and network reconfiguration. All ports publish only on localhost. Recreate the container
+with `docker compose up -d --build`, then boot/view. See `docs/NETWORK.md` for repeatable
+probes, `tools/fiio_link.py` for host control. WebSocket upgrade and LAN discovery remain
+unvalidated; HTTP 200 alone is not proof of a working WebSocket service.
+
+Manual Update media lib now works too: `sd_mount()` mounts INSIDE chroot so
+`/proc/mounts` records source `/dev/mmcblk0p1`, accessible to the scanner. The old
+`/work/rootfs/dev/mmcblk0p1` source passed Browse files but failed the scanner's
+`access(source)` gate. Four test tracks were scanned and returned over TCP. Auto update
+did not ingest a generated fifth file after reboot; its effective state/trigger remain
+unresolved. Use the app's Update now; do not assume the circular indicator proves it works.
