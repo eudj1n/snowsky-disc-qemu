@@ -214,9 +214,8 @@ PAGE = ("""<!doctype html><meta charset=utf-8>
  html,body{margin:0;background:#fff;color:#333;font:13px system-ui;text-align:center}
  #wrap{display:inline-block;margin:20px auto}
  /* device-skin mode: photo of the player with the live round screen over the glass */
- #stage{position:relative;width:__STAGE__px;margin:0 auto;
-        filter:drop-shadow(0 10px 30px rgba(0,0,0,.18))}
- #stage.skin #skin{display:block;width:100%;border-radius:14px}
+ #stage{position:relative;width:__STAGE__px;margin:0 auto}
+ #stage.skin #skin{display:block;width:100%}
  #stage.skin #scr{position:absolute;left:__L__%;top:__T__%;width:__D__%;aspect-ratio:1/1;
         height:auto;border-radius:50%;object-fit:cover}
  /* plain mode (no skin): a framed round screen */
