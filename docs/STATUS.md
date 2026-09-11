@@ -9,10 +9,14 @@ _As of this commit._
 - **Full boot to main screen** — splash → first-boot language wizard → main menu carousel.
 - **Battery reported healthy** (100%) via stubbed cw2215 sysfs.
 - **Touch injection** — inject `input_event`s into the touch stub; tap coordinates mapped
-  (180°-rotated). Verified end-to-end: tap Confirm on the wizard → main menu → tap an app →
-  file browser (with the test SD content).
+  (180°-rotated). A short press (~0.3 s) is a click; a long press (~1 s) opens the item's
+  context menu (select / delete / add-to-playlist) — see [TOUCH.md](TOUCH.md).
+- **SD card / File Browser** — drop media into `./sdcard`; it is built into a FAT image exposed
+  as `/dev/mmcblk0[p1]` and mounted at `/tmp/sdcard`. The File Browser lists it and is fully
+  navigable to the leaf tracks. Verified end-to-end: main menu → **Browse files** →
+  `Test Artist` → `Greatest Hits` → the two `.wav` tracks.
 - **Reverse engineering** — Ghidra 12 headless on `mq_ui`/`mq_player`; decompiled the touch
-  read-callback and boot IPC.
+  read-callback, boot IPC, and the `mount_storage_dev.c` SD-mount logic.
 
 The language choice persists to `sysconfig.db` after the first successful tap, so subsequent
 boots go **straight to the main menu** (~24 s), skipping the wizard.
@@ -24,8 +28,9 @@ boots go **straight to the main menu** (~24 s), skipping the wizard.
 | ![splash](images/01-splash.png) | Boot splash (SNOWSKY / FIIO OWNED BRAND) |
 | ![low battery](images/02-low-battery.png) | Low-battery shutdown (before the battery sysfs fix) |
 | ![language](images/03-language.png) | First-boot language wizard (简/繁/EN/日 + 确定) |
-| ![main](images/04-main-menu.png) | **Main menu** carousel (设置 / 文件浏览 / 正在播放), battery 100%, volume 120 |
-| ![files](images/05-file-browser.png) | File browser opened by tapping the center app (`/tmp/sdcard`) |
+| ![main](images/04-main-menu.png) | **Main menu** carousel (Settings / Browse files / Now playing), battery 100%, volume 120 |
+| ![files](images/05-file-browser.png) | **File browser** at `/tmp/sdcard` showing the `Test Artist` folder from `./sdcard` |
+| ![tracks](images/06-sd-tracks.png) | Two levels in — `/tmp/sdcard/Test Artist/Greatest Hits` listing the `.wav` tracks |
 
 ## Not done yet / next
 

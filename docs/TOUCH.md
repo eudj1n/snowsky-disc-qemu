@@ -66,6 +66,22 @@ instead lands on the scrollable list and just scrolls it.
 `scripts/30_tap.sh <x> <y>` takes the **displayed** coordinate and flips it for you
 (via `rot()` in `lib.sh`), so you pass what you see in the PNG.
 
+## Gotcha 3 — press DURATION: click vs. long-press
+
+The firmware distinguishes a short click from a long-press by how long the press is held.
+`30_tap.sh` holds the press ~1 s (Gotcha 1), which for **buttons** (e.g. the wizard's Confirm)
+is just a click on release — fine. But on a **list row** (a file/folder in the File Browser)
+~1 s crosses the long-press threshold and opens the item's **context menu** (select ◉ /
+delete 🗑 / add-to-playlist) instead of opening it. To *open* a folder/track, hold the press
+only ~0.3 s:
+
+```
+inject press x y ; sleep 0.3 ; inject release      # short click: opens the item
+inject press x y ; sleep 1   ; inject release      # long press: opens the context menu
+```
+
+So use `30_tap.sh` for buttons; for navigating into folders, inject a short (~0.3 s) tap.
+
 ## Recipe
 
 ```sh

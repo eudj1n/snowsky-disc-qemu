@@ -30,6 +30,11 @@ timeout $((WAIT+36)) chroot "$ROOTFS" /usr/bin/mq_player >"$WORK/mq_player.log" 
 log "Waiting ${WAIT}s for the UI to reach the main screen..."
 sleep "$WAIT"
 
+# mq_ui umounts /tmp/sdcard during startup (it expects a hotplug remount that never comes
+# under emulation). Re-mount the card now, after that umount, so the File Browser — which
+# scans /tmp/sdcard live on entry — shows the ./sdcard content. No-op when there is no card.
+if sd_node >/dev/null; then sd_mount; log "SD re-mounted at /tmp/sdcard (File Browser ready)"; fi
+
 mkdir -p "$SHOTS"; rm -f "$SHOTS"/*.png "$SHOTS"/*.snap 2>/dev/null || true  # fresh set each boot
 cp "$ROOTFS/dev/fb0" "$WORK/fb0.snap"
 log "Framebuffer captured. Rendering PNGs:"

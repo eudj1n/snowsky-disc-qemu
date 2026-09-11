@@ -14,6 +14,8 @@ DX="${1:?usage: 30_tap.sh <x> <y>}"; DY="${2:?usage: 30_tap.sh <x> <y>}"
 EV="$ROOTFS/dev/input/event1"
 [ -e "$EV" ] || { err "no touch device stub $EV — run 10_setup_env.sh"; exit 1; }
 
+sd_mount   # keep the SD mounted so navigating into the File Browser shows content (lib.sh)
+
 read RX RY < <(rot "$DX" "$DY")
 log "tap screen($DX,$DY) -> raw($RX,$RY)"
 python3 "$REPO/tools/inject.py" press "$RX" "$RY" "$EV"

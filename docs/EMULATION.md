@@ -123,6 +123,37 @@ any valid value picks the language and skips the wizard; `10_setup_env.sh` prese
 (default 2 = English). (Out-of-range codes like 100/102 fall back to Chinese — which is why the
 "language index = code − 100" guess was wrong.)
 
+## Blocker 4 — the SD card / File Browser shows nothing
+
+With the main menu reached, opening **Browse files** showed an empty `/tmp/sdcard`. The card
+is emulated as a **real FAT block device**, not a bind: `10_setup_env.sh` builds a FAT image
+from `./sdcard`, exposes it as real nodes `/dev/mmcblk0` + `/dev/mmcblk0p1` (`mknod b 7 <loop
+minor>` — a symlink to `/dev/loopN` can't be resolved from inside the guest's chroot), and
+mounts it at `/tmp/sdcard`. Yet the browser stayed empty.
+
+The cause is in `mq_ui`'s `util/src/mount_storage_dev.c`. Three facts decompiled/observed:
+
+- The card is gated on `system("[ -e /dev/mmcblk0 ]")` (`FUN_004891b8`) — hence the real node.
+- `FUN_004147ac` parses `/proc/mounts` for the **exact** mountpoint string `/tmp/sdcard`.
+- On startup `mq_ui` **`umount`s `/tmp/sdcard` once** and expects a hotplug handler to remount
+  the card (`mount -o iocharset=utf8 /dev/mmcblk0p1 /tmp/sdcard`). On hardware `mdev`/init does
+  that on the insert uevent; **under emulation nothing does**, so the mount we set up is torn
+  down and never comes back — the browser scans an empty dir.
+
+Two red herrings ruled out along the way: it is **not** a Docker-volume mount-propagation
+problem (the guest's own `mount -o iocharset=utf8` runs fine under qemu-chroot even though
+`/work` is `private,slave` — a fresh mount under it is `private` and survives), and it does
+**not** need a synthetic netlink uevent — the File Browser **re-scans `/tmp/sdcard` live on
+entry**, so the card just has to be mounted when you open the app.
+
+**Fix (`sd_mount()` in `lib.sh`, called from `10_setup_env.sh`, the end of `20_boot.sh`, and
+`30_tap.sh`):** after the boot-time umount, re-mount `/dev/mmcblk0p1 -o iocharset=utf8` at
+**both** the guest rootfs path `…/rootfs/tmp/sdcard` (the content the browser reads) and the
+container's own `/tmp/sdcard`. The guest is chrooted, so its `umount /tmp/sdcard` only hits the
+rootfs path — the container-path mount survives and keeps the exact `/tmp/sdcard` line
+`FUN_004147ac` looks for present across the whole boot. The browser then lists the card and is
+navigable all the way to the leaf tracks (`Test Artist / Greatest Hits / *.wav`).
+
 ## What mq_player sends at boot
 
 Sniffing the `ui` queue (see `tools/uisniff.c`) shows the backend push these FiiO-Link

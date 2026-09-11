@@ -28,6 +28,25 @@ apply_ulimits(){
 # Kill any running guest processes.
 kill_guest(){ pkill -f qemu-mipsel 2>/dev/null || true; sleep 1; }
 
+# --- SD card -----------------------------------------------------------------
+# The firmware's mq_ui (util/src/mount_storage_dev.c) UMOUNTS /tmp/sdcard once at
+# startup: on hardware a hotplug handler then remounts the card, but under emulation
+# nothing does, so /tmp/sdcard ends up empty and the File Browser shows nothing.
+# The File Browser scans /tmp/sdcard *live on entry*, so all we have to do is keep
+# the card mounted. sd_mount() (re-)mounts /dev/mmcblk0p1 exactly like the guest would
+# (`mount -o iocharset=utf8`) at BOTH the guest rootfs path (content the browser reads)
+# and the container's own /tmp/sdcard (so /proc/mounts carries the exact "/tmp/sdcard"
+# line FUN_004147ac scans for). Idempotent; a no-op when there is no card. Call it
+# after the boot-time umount (end of 20_boot.sh) and before injecting taps (30_tap.sh).
+sd_node(){ [ -b "$ROOTFS/dev/mmcblk0p1" ] && printf '%s' "$ROOTFS/dev/mmcblk0p1"; }
+sd_mount(){
+  local node; node="$(sd_node)" || return 0
+  [ -n "$node" ] || return 0
+  mkdir -p "$ROOTFS/tmp/sdcard" /tmp/sdcard
+  mountpoint -q "$ROOTFS/tmp/sdcard" || mount -t vfat -o iocharset=utf8 "$node" "$ROOTFS/tmp/sdcard" 2>/dev/null || true
+  mountpoint -q /tmp/sdcard          || mount -t vfat -o iocharset=utf8 "$node" /tmp/sdcard          2>/dev/null || true
+}
+
 # Convert a screen (as-you-see-it) coordinate to the raw touch coordinate.
 # The panel + LVGL display are rotated 180deg; the touch path applies no rotation,
 # so tap points must be flipped: raw = 359 - displayed.  (see docs/TOUCH.md)

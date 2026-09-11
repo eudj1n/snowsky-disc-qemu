@@ -52,13 +52,17 @@ echo cst816t   > "$ROOTFS/sys/class/input/event1/device/name"   # capacitive tou
 : > "$ROOTFS/dev/jz_watchdog"
 : > "$ROOTFS/dev/key_ioctl"   # physical-key handler (echo_key_handler); non-fatal but noisy
 
-# SD card: a REAL FAT block device (not a bind). Once mq_ui sees the card flag it runs
-# mount_sdcard, which `umount /tmp/sdcard`s and remounts /dev/mmcblk0p1 — so a plain bind gets
-# torn down and, with only a stub device, can't be remounted (browser ends up empty). Instead
-# build a FAT image from ./sdcard, expose it as /dev/mmcblk0[p1], and mount that loop at
-# /tmp/sdcard — both the guest's rootfs path (content the browser reads) AND the container's own
-# /tmp/sdcard (so the guest's /proc/mounts check for the exact mountpoint "/tmp/sdcard" matches,
-# see FUN_004147ac / FUN_004891b8).  Rebuilt each setup so ./sdcard edits show up on next boot.
+# SD card: a REAL FAT block device (not a bind). mq_ui (mount_storage_dev.c) UMOUNTS
+# /tmp/sdcard once at startup — on hardware a hotplug handler remounts the card, but under
+# emulation nothing does, so a plain bind (or the initial mount here) is torn down and the
+# browser ends up empty. The robust fix is to re-mount AFTER that boot-time umount: build a
+# FAT image from ./sdcard, expose it as REAL nodes /dev/mmcblk0[p1] (so `[ -e /dev/mmcblk0 ]`
+# passes and the guest can mount the partition), and let sd_mount() (lib.sh, called again at
+# the end of 20_boot.sh + in 30_tap.sh) mount /dev/mmcblk0p1 -o iocharset=utf8 at both the
+# guest rootfs path (content the browser scans on entry) and the container /tmp/sdcard (so
+# /proc/mounts carries the exact "/tmp/sdcard" line FUN_004147ac scans for). The container
+# /tmp/sdcard mount survives the guest's chrooted umount, so that line persists across boot.
+# Rebuilt each setup so ./sdcard edits show up on the next boot.
 IMG="$WORK/sdcard.img"
 for m in "$ROOTFS/tmp/sdcard" /tmp/sdcard; do mountpoint -q "$m" && umount -l "$m" 2>/dev/null || true; done
 for l in $(losetup -j "$IMG" 2>/dev/null | cut -d: -f1); do losetup -d "$l" 2>/dev/null || true; done
@@ -79,9 +83,7 @@ if [ -n "$SD_CONTENT" ]; then
   rm -f "$ROOTFS/dev/mmcblk0" "$ROOTFS/dev/mmcblk0p1"
   mknod "$ROOTFS/dev/mmcblk0"   b 7 "$MIN" 2>/dev/null || ln -sf "$LOOP" "$ROOTFS/dev/mmcblk0"
   mknod "$ROOTFS/dev/mmcblk0p1" b 7 "$MIN" 2>/dev/null || ln -sf "$LOOP" "$ROOTFS/dev/mmcblk0p1"
-  mkdir -p "$ROOTFS/tmp/sdcard" /tmp/sdcard
-  mount "$LOOP" "$ROOTFS/tmp/sdcard" 2>/dev/null || err "  SD mount (guest path) failed"
-  mount "$LOOP" /tmp/sdcard        2>/dev/null || true   # /proc/mounts "/tmp/sdcard" match
+  sd_mount   # mount /dev/mmcblk0p1 -o iocharset=utf8 at rootfs + container /tmp/sdcard (lib.sh)
   log "SD: FAT from ./sdcard on $LOOP (mknod b 7 $MIN) as /dev/mmcblk0p1, mounted at /tmp/sdcard"
 else
   rm -f "$ROOTFS/dev/mmcblk0" "$ROOTFS/dev/mmcblk0p1"    # no card
