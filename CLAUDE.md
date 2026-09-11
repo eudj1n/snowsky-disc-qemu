@@ -94,6 +94,12 @@ looks right / has the higher non-black pixel count printed by `fb2png.py`.
 
 ## Conventions
 
+- Default development branch: `2.x`; firmware-based release tags `v2.40`, then
+  `v2.40-r1` for emulator fixes against the same firmware. See `docs/CI.md` for pinned
+  CI, secret-backed downloads and release gates. Never log a direct firmware URL.
+- Full firmware-free suite: `docker run --rm --network none -v "$PWD:/repo:ro"
+  diskos-qemu-ci bash /repo/ci/test.sh` after `docker build -t diskos-qemu-ci docker`.
+  `ci/integration.sh` uses a fresh disposable Compose stack, never the interactive volume.
 - Firmware and anything derived from it (rootfs, `.enc`, `.squashfs`, FiiO binaries, Ghidra
   project, captured `shots/`) are **git-ignored** — never commit firmware. Commit code,
   scripts, docs, and the curated screenshots in `docs/images/`.

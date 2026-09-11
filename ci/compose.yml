@@ -1,0 +1,6 @@
+# Overlay the regular Compose stack; no test ports exposed on the host.
+services:
+  emu:
+    ports: !reset []
+  wsbridge:
+    ports: !reset []

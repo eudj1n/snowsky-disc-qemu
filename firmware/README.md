@@ -2,6 +2,9 @@
 
 The firmware is **not** stored in this repository. Download it yourself from FiiO.
 
+GitHub integration downloads use secret `FIRMWARE_V240_URL`, never a committed direct
+URL. Public metadata/hash: [v2.40.json](v2.40.json). See [CI policy](../docs/CI.md).
+
 ## Where to get it
 
 FiiO Snowsky Disc firmware **V2.40** (local-upgrade package):

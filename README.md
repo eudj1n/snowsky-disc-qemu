@@ -7,6 +7,10 @@ and driving it with synthetic touch, entirely without the hardware.
 Groundwork for building/testing custom firmware (cf. [b0hemia/diskos](https://github.com/b0hemia/diskos))
 and a "FiiO YMD"-style sync bridge against an emulated device instead of a physical one.
 
+Development branch: **`2.x`**. Releases follow the exact firmware version (`v2.40`;
+emulator revisions `v2.40-r1`, etc.). Firmware-free CI and manual secret-backed firmware
+integration: **[docs/CI.md](docs/CI.md)**. Firmware/rootfs are never release assets.
+
 ![main menu](docs/images/04-main-menu.png)
 
 _The stock main menu running under qemu — battery 100%, volume 120, app carousel

@@ -11,8 +11,8 @@
 services:
   emu:
     build: ./docker
-    image: diskos-qemu
-    container_name: diskos-qemu          # fixed name so ./run.sh exec targets it
+    image: ${EMU_IMAGE:-diskos-qemu}
+    container_name: ${EMU_CONTAINER_NAME:-diskos-qemu} # default expected by ./run.sh
     privileged: true                     # qemu-user needs binfmt_misc, POSIX mqueue, a large VA reservation
     command: sleep infinity
     stop_grace_period: 2s
@@ -22,7 +22,7 @@ services:
     volumes:
       - ${OTA_DIR:?set OTA_DIR in .env (path to the firmware main_os/ota_v240 dir)}:/ota:ro
       - ./:/repo                         # this repository (scripts, shim, tools)
-      - ./sdcard:/sdcard                 # drop media here -> appears as the device's /tmp/sdcard (File Browser)
+      - ${SD_DIR:-./sdcard}:/sdcard       # CI supplies an isolated generated library
       - work:/work                       # extracted rootfs + runtime state (persists across restarts)
     ports:
       # FiiO Link services the emulated device binds. Lets a host client
@@ -34,7 +34,7 @@ services:
       - "127.0.0.1:8080:8080"            # live viewer + touch bridge
 
   wsbridge:
-    image: diskos-qemu
+    image: ${EMU_IMAGE:-diskos-qemu}
     pull_policy: never                   # reuse the image built by emu, not a registry image
     depends_on:
       - emu
@@ -57,4 +57,4 @@ services:
 
 volumes:
   work:
-    name: diskos-work        # explicit (unprefixed) name = reuse the volume the old run.sh made
+    name: ${WORK_VOLUME:-diskos-work} # CI must never reuse the interactive work volume

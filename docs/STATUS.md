@@ -1,6 +1,6 @@
 # Status
 
-_Updated 2026-09-11 after end-to-end WebSocket bridge and browser protocol tests._
+_Updated 2026-09-11 during reproducible CI and firmware-versioning setup._
 
 ## Working ✅
 
@@ -151,8 +151,39 @@ handover. One early playback check ran after stock idle shutdown had set NO_WORK
 restarting the guest with its viewer supervisor restored playback, then WS control passed.
 The emulator's idle-poweroff policy itself was not changed.
 
+## Reproducible CI baseline — 2026-09-11
+
+![Fresh generated media library](images/17-ci-fresh-library.png)
+
+Actual screenshot from a **fresh disposable work volume**, not the interactive
+four-track library. The stock scanner indexed one generated `CI Tone.wav`; TCP and
+WebSocket returned that same track. Volume **120 → 119 → 120**, play/pause,
+exclusive WS connection (409), reconnect (0306), and TCP/WS parity passed locally.
+Fast carousel flings were nondeterministic, so CI uses a slow drag and scrolls the
+Settings list to its end before selecting Update media lib → Update now.
+The complete local clean-volume run also passed a byte-exact audio check: signed
+16-bit stereo WAV becomes 32-bit / 44.1 kHz PCM, with two source periods found exactly.
+All temporary stacks, work volumes, generated media and SD loop devices were cleaned up.
+
+**62 Python + 10 JavaScript tests**, shell syntax and all four MIPS shim builds pass
+in the pinned Debian image. Missing/skipped Python checks fail CI. The Docker base
+digest and Debian/security snapshot are pinned, including native aiohttp and Node.
+The full workflow uses a secret download URL, verifies the consumed rootfs SHA-256,
+generates its own media and isolates containers/volumes/ports. See [CI.md](CI.md).
+
+`2.x` is now GitHub's default branch; historical `main` is retained. The firmware-free
+workflow is registered and its first hosted run is in progress. GitHub immutable
+releases are enabled. Branch protection/rulesets returned HTTP 403
+because the private repository's current plan does not support them; visibility was
+not changed. The initial OAuth `workflow`-scope blocker was resolved by the owner.
+No release tag has been created yet. V2.57 remains the next migration target.
+
 ## Not done yet / next
 
+- **V2.57 migration** — queued after the V2.40 CI baseline. Secret `FIRMWARE_V257_URL`
+  is present; it is not used by the V2.40 workflow. Validate existing behavior first,
+  then fonts, Wi-Fi details, list gestures and FiiO Link Favorites from the new changelog.
+  See [CI.md](CI.md) for the version/release policy and acceptance scope.
 - **Additional audio routes** — USB/BT, DSD, and hardware-accurate timing still need separate
   validation. Local PCM works; see [AUDIO.md](AUDIO.md).
 - **Auto update (media library)** — the menu option was inspected/clicked, but adding a
