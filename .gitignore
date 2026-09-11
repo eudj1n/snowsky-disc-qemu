@@ -40,3 +40,7 @@ __pycache__/
 /sdcard/*
 !/sdcard/.gitkeep
 !/sdcard/README.md
+
+# JetBrains IDE
+.idea/
+*.iml
