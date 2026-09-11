@@ -25,7 +25,8 @@ fi
 log "Building shims"
 "$REPO/shim/build_shims.sh"
 cp "$WORK/fbshim.so" "$ROOTFS/lib/fbshim.so"
-echo "/lib/fbshim.so" > "$ROOTFS/etc/ld.so.preload"   # guest ld.so reads this (LD_PRELOAD won't survive popen)
+cp "$WORK/asndshim.so" "$ROOTFS/lib/asndshim.so"      # ALSA interposer: capture PCM to /audio.pcm
+printf '/lib/fbshim.so\n/lib/asndshim.so\n' > "$ROOTFS/etc/ld.so.preload"   # guest ld.so reads this (LD_PRELOAD won't survive popen)
 
 # 2b) Enable physical-key handling: mq_player gates keys on a flag that isn't set headless.
 #     Patch the guard so injected event0 keys reach the dispatcher (docs/RE.md). KEYS_ENABLE=0 to skip.
@@ -55,6 +56,9 @@ echo cst816t   > "$ROOTFS/sys/class/input/event1/device/name"   # capacitive tou
 : > "$ROOTFS/dev/jz_adc_aux_0"
 : > "$ROOTFS/dev/jz_watchdog"
 : > "$ROOTFS/dev/key_ioctl"   # physical-key handler (echo_key_handler); non-fatal but noisy
+# CS43131 DAC control nodes: dac_control.c opens these; open must succeed (like /dev/gpio) so
+# playback proceeds to the ALSA path (which asndshim captures). Later ioctls fail harmlessly.
+for d in cs43131 cs43131b cs43131c cs43131d; do : > "$ROOTFS/dev/$d"; done
 
 # SD card: a REAL FAT block device (not a bind). mq_ui (mount_storage_dev.c) UMOUNTS
 # /tmp/sdcard once at startup — on hardware a hotplug handler remounts the card, but under

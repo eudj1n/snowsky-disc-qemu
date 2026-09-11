@@ -38,8 +38,10 @@ boots go **straight to the main menu** (~24 s), skipping the wizard.
 
 ## Not done yet / next
 
-- **Audio path** — drive playback of a test track and check the CS43131 path (audio out is
-  not wired to the host; would need an ALSA/PCM stub or capture).
+- **Audio path** — WIP. The libasound interposer (`shim/asndshim.c`) + CS43131 stubs are
+  built and ready; playback triggers but is gated by a chain of hardware-format layers before
+  ALSA is reached (format lookup patched; `pcm_control` params is the next gate). See
+  [AUDIO.md](AUDIO.md).
 - **Network services** — the emulated `mq_player` does **not** yet bind 12100/12103 (gated on the
   network being up). Next: a `40_network.sh` that adds a dummy `wlan0` + sets
   `NETWORK_MODE=1`/`WIFI_STATUS=1` (this got 12103 answering `GET /api/hi → 200` in an earlier

@@ -18,4 +18,5 @@ build(){ # <src> <out>
 }
 
 build fbshim.c fbshim.so
+build asndshim.c asndshim.so
 [ -f "$HERE/mqshim.c" ] && build mqshim.c mqshim.so || true

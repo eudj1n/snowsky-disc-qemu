@@ -96,19 +96,20 @@ and sends **nothing at DEBUG** anywhere (the `=DEBUG>stdout` line is commented; 
 uncomment `*.* >stdout` (or `=DEBUG>stdout`) in `zlog_player.conf` and reboot; that is how the key
 dispatch above was confirmed.
 
-## Direction: audio (ALSA userspace sink)
+## Direction: audio (WIP — see [AUDIO.md](AUDIO.md))
 
-Firmware uses **ALSA** (`libasound.so.2`, full `snd_pcm_*`); `/dev/cs43131[a-d]` is DAC *control*
-(`dac_control.c` `CS43131 INIT`), not the data path. libasound ships the built-in **`file` and
-`null`** PCM plugins (`snd_pcm_file`/`snd_pcm_null` symbols). Gate: `audio_router_manager.c:411`
-loops on `open("/proc/asound/cards")` which fails (real procfs, no ALSA in the VM). Plan:
-1. an `open()` preload shim redirecting `/proc/asound/cards` + `/proc/asound/card1/*` to fake
-   files (card1 = CS43131);
-2. an `asound.conf` mapping the device `mq_player` opens (find the exact name by `strace`-ing
-   `snd_pcm_open` on a play attempt) to `type file` → raw PCM to `/work/audio.pcm`;
-3. stub `/dev/cs43131*` nodes + shim their ioctls to succeed.
-Then trigger playback and capture PCM to a file (host plays it back — **real-time live audio is
-not feasible under qemu-user**, so capture-then-play). Decoder backend is `libavcodec.so.58`.
+Firmware uses **ALSA** (`libasound.so.2`, full `snd_pcm_*`) and opens **`hw:%d,%d`** (kernel-direct,
+so an `asound.conf` `file` plugin can't redirect it); the LinuxKit VM has no snd modules. Capture
+route: a freestanding **libasound interposer** (`shim/asndshim.c`) that fakes the PCM handle and
+appends `snd_pcm_writei` to `/audio.pcm` — **built and ready**, plus `/dev/cs43131*` stubs.
+
+Local playback is gated by a **chain** of hardware-format layers (traced with the scripts here):
+`audio_track_create` (`player_output.c` `FUN_0044f2d4`) → `FUN_00475348` (format lookup vs an empty
+per-route caps table → "update pcm_out stream format" error; **patched** to return supported) →
+`pcm_control.c FUN_004715fc` ("config pcm params" — rate/format table validation; **next gate**) →
+… → `snd_pcm_writei` (interposer, not yet reached). Each patch advances to the next layer. Full
+status, addresses and the remaining work are in [AUDIO.md](AUDIO.md). Decoder is `libavcodec.so.58`.
+Real-time live audio is out (qemu-user can't decode in real time) — the goal is capture-then-play.
 
 ## Direction: network / FiiO Link + 12103 auth ✅ (mapped)
 
