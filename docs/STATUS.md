@@ -48,9 +48,12 @@ boots go **straight to the main menu** (~24 s), skipping the wizard.
   on 12100, and there is **no file-upload command** in the device protocol (see
   [PROTOCOL.md](PROTOCOL.md) and [DEVICE.md](DEVICE.md)).
 - **Carousel swipes** — ✅ done via the viewer's drag/`/swipe` (intermediate position events
-  over time). Remaining: **physical keys** — the `x2000_key` (`event0`) + MCU-mediated
-  power/charge buttons aren't injected yet; the evdev codes need a Ghidra pass on the
-  `mq_player` key handler (`KEY_VALUE_*` constants) before wiring them into the bridge.
+  over time).
+- **Physical keys** — the handler is fully reversed (see [RE.md](RE.md)): `event0` →
+  `echo_loop_key` → `echo_sys_key_handler`, custom codes **`0xFA–0x10D`** (MENU_UP=`0x107`,
+  MENU_DOWN=`0x106`, PLAY=`0x10c/0x10d`). Events are read, but the dispatcher is gated by
+  `DAT_0082e9c1` (key-enable = 0 headless). Remaining: force that flag (preload-shim poke or a
+  one-instruction patch), then inject the codes into `event0` and add the viewer's key buttons.
 - **MCU/UART** — the FiiO MCU (`/dev/ttyS*`) is absent; not required to reach/use the main
   screen, but some features (power, keys, charging state) would need a UART stub.
 - **Deterministic live-buffer capture** — currently emit all sub-buffers and pick by eye;

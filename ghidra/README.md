@@ -2,6 +2,42 @@
 
 Scripts used to decompile the MIPS UI binaries (`mq_ui`, `mq_player`) from the rootfs.
 
+See [../docs/RE.md](../docs/RE.md) for the deep-analysis playbook (method + findings per
+direction: keys, audio, network, touch) and how to re-analyse a new firmware version.
+
+## Reusing the built decompiler + project
+
+Ghidra 12 ships **no prebuilt macOS-arm64 decompiler**, so it was built once (below) and the
+project (`mqproj`, with `mq_player` imported+analysed) was created. To reuse them headlessly:
+
+```sh
+GH=<ghidra_12.1.3_with_built_decompiler>/support/analyzeHeadless
+"$GH" <proj_dir> mqproj -process mq_player -noanalysis \
+  -scriptPath <dir-with-only-the-script> -postScript DecFuncs.java 0x004de6fc
+```
+
+- Java 21+ works (ran fine on OpenJDK 26 with the usual `sun.misc.Unsafe` warnings).
+- Script output is on stdout, prefixed `INFO  <script>>`; slice from the `////////` banner.
+- `-noanalysis` reuses the stored analysis; drop it (or omit `-process`) the first time.
+
+## The two facts that make xrefs easy
+
+- **`mq_player`/`mq_ui` are fixed-address `EXEC` (not PIE)** — data refs are absolute
+  `lui/addiu` or pointer words, no `$gp`. A `.rodata` string at file offset `F` has vaddr
+  `F + (rodata_vma − rodata_off)` (V2.40: `+0x400000`).
+- **Stripped, but self-symboling via zlog:** most functions call
+  `FUN_004f550c(cat,"<src/path.c>",ver,"<func_name>",lvl,line,…,fmt,…)`, so the decompilation
+  reveals each function's real source file, name and line. Map `FUN_` → purpose by these strings.
+
+## Scripts here
+
+- `DecFuncs.java <addr…>` — decompile the function containing each address.
+- `DecAt.java <addr…>` — like DecFuncs, but disassembles + `createFunction`s first when the
+  address is only a label (a callback reached via a function pointer). Use on pointer targets.
+- `RefsTo.java <addr…>` — list READ/WRITE/CALL refs to an address with the containing function
+  (follow runtime-registered callbacks; find who sets a flag).
+- `TouchDump.java` — the original touch-string finder (below).
+
 ## Setup notes (Ghidra 12.x)
 
 - Ghidra 12 ships no prebuilt macOS-arm64 decompiler; build it once from
@@ -71,9 +107,22 @@ static xrefs don't link them — these were read from the decompiled bodies:
   **and** the touch device (event1) both resolve. The FiiO Link / library dispatch and full
   conclusion are in [../docs/PROTOCOL.md](../docs/PROTOCOL.md).
 
+### Physical-key handler (event0) — `echo_sys_control.c`
+
+Traced with `RefsTo`/`DecAt` (full write-up + code table in [../docs/RE.md](../docs/RE.md)):
+
+- `FUN_004d9974` `echo_start_key_server` — opens `/dev/input/event%d`, spawns the reader.
+- `FUN_004d9840` `echo_loop_key` — reads 16-byte `input_event`; on `type==EV_KEY` calls
+  `(*DAT_0088cc50)(code,value)`.
+- `FUN_004de6fc` `echo_sys_key_handler` — the dispatcher; registered by `FUN_004e3410`.
+  **Key codes are the custom range `0xFA…0x10D`** (not evdev standard): `0x106`=MENU_DOWN,
+  `0x107`=MENU_UP, `0x10c/0x10d`=PLAY, `0x103/0x109`=play/pause. Gated by `DAT_0082e9c1`
+  (key-enable, 0 under emulation) — written by `FUN_004e847c` and `FUN_004e3658`.
+
 ## Tooling on this machine
 
 Ghidra **12.1.3** is installed at `~/Library/ghidra/ghidra_12.1.3_PUBLIC` (11.4.2 also present).
-The `mq_player`/`mq_ui` decompilation was done headless from a scratch project; nothing about the
-project is committed (firmware-derived — see the repo `.gitignore`). To reproduce, import the two
-binaries from `/work/rootfs/usr/bin/` and re-run the scripts above.
+The arm64 decompiler build + the imported `mqproj` project live in a session scratchpad (not
+committed — firmware-derived, see the repo `.gitignore`). To reproduce on a fresh machine, build
+the decompiler once (below), import the two binaries from `/work/rootfs/usr/bin/`, analyse, and
+run the scripts above.

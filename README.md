@@ -97,6 +97,7 @@ CLAUDE.md              orientation for Claude Code sessions continuing this work
 - **[docs/DEVICE.md](docs/DEVICE.md)** — the real device on the network (ports, mDNS, no debug unlock)
 - **[docs/DISKOS.md](docs/DISKOS.md)** — diskOS V2.40 compatibility (build works; only the size cap blocks)
 - **[firmware/README.md](firmware/README.md)** — download + decrypt + device facts
+- **[docs/RE.md](docs/RE.md)** — deep-analysis playbook (method + findings per direction; new firmware versions)
 - **[ghidra/README.md](ghidra/README.md)** — reverse-engineering setup + findings
 
 ## Legal / scope
