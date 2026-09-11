@@ -139,8 +139,16 @@ reboot/image rebuild is unnecessary. There are no new dependencies or image chan
 - **Physical controls**: Volume −/+ support single/double/hold, with assignments in the
   app's Custom volume settings. Play / pause is a short click; stock long/double play
   gestures have no playback action. Power short-click sleeps/wakes the screen; hold 1.8 s
-  to stop the guest, then click to boot it again (~30 s). Screen-off blocks touch but not
+  to stop the guest, then click to boot it again. Screen-off blocks touch but not
   physical media/volume controls. Space/Enter works on focused buttons. See [KEYS.md](KEYS.md).
+- Startup has no fixed 26-second pause: the boot script waits for the stock network
+  listeners, both guest input devices (`mq_ui` touch and `mq_player` keys), and a new
+  framebuffer flush, then remounts the SD card. The viewer enables controls when that
+  script completes; this is an emulator readiness check, not a firmware "ready" message.
+  Input/frame readiness has a 60-second timeout with an error instead of false success.
+  An explicit `./run.sh boot <seconds>` adds a diagnostic delay before capture.
+- The screen uses a pointing-hand cursor for taps and a grabbing hand while pressed;
+  cancelling a drag releases the touch and restores the cursor.
 - Viewer power-off is host-managed, not the stock standby/shutdown sequence. It leaves the
   container and viewer alive. The dangerous raw firmware power event `0x108` is rejected.
   Stock automatic poweroff is also confined by a libc reboot interposer and guest-only

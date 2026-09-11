@@ -116,7 +116,7 @@ if (typeof document !== 'undefined') {
         connectionLost = false;
         window.dispatchEvent(new Event('viewer-reconnected'));
       }
-      message.textContent = state.error || (state.transition === 'starting' ? 'Starting player… (~30 seconds)'
+      message.textContent = state.error || (state.transition === 'starting' ? 'Starting player…'
         : state.transition === 'stopping' ? 'Stopping player…'
         : !state.running ? 'Player off — press Power to start'
         : !state.screen_on ? 'Screen locked — press Power to wake' : 'Player on');

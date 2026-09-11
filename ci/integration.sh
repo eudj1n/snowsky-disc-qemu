@@ -34,7 +34,7 @@ docker run --rm --network none -v "$PWD:/repo:ro" -v "$SD_DIR:/fixtures" \
 compose up -d --no-build --wait --wait-timeout 60
 compose exec -T emu bash /repo/scripts/00_extract_rootfs.sh /ota
 compose exec -T emu bash /repo/scripts/10_setup_env.sh
-compose exec -T emu bash /repo/scripts/20_boot.sh 30
+compose exec -T emu bash /repo/scripts/20_boot.sh
 compose exec -T emu python3 -B /repo/ci/guest_check.py
 compose exec -T wsbridge python3 -B /repo/tools/verify_websocket.py --tcp-host emu --control
 compose exec -T emu python3 -B /repo/ci/guest_check.py --audio

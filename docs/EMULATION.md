@@ -50,6 +50,9 @@ There is no real framebuffer/driver, so an `LD_PRELOAD`-style shim intercepts `i
   operations are delegated to the guest libc's `mmap64`/`memmove`.
 - libc `reboot` is intercepted for guest BusyBox poweroff/reboot: no shared-kernel reboot,
   only an `emu/power-request` consumed by the viewer's guest-scoped supervisor.
+- Empty `read` calls on `/dev/input/event0` wait 5 ms, preventing the physical-key
+  reader from spinning on the regular-file stub's EOF. Actual reads delegate to the
+  guest libc's `__read`; queued events and other files are not delayed.
 
 The shim is **freestanding** (`-nostdlib`, raw MIPS syscalls). A normal glibc-linked
 `.so` fails to load because the host toolchain glibc (2.36) ≠ device glibc (2.29):

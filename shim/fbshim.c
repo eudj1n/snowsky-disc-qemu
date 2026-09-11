@@ -5,6 +5,7 @@
 #define __NR_close 4006
 #define __NR_read 4003
 #define __NR_readlink 4085
+#define __NR_nanosleep 4166
 static long sys3(long n,long a,long b,long c){
   register long v0 asm("$2")=n,a0 asm("$4")=a,a1 asm("$5")=b,a2 asm("$6")=c; register long a3 asm("$7");
   asm volatile("syscall":"+r"(v0),"=r"(a3):"r"(a0),"r"(a1),"r"(a2)
@@ -26,6 +27,19 @@ static int device_is(int fd,const char*name){
   while(n)path[i++]=digits[--n];path[i]=0;
   long len=sys3(__NR_readlink,(long)path,(long)target,127);
   if(len<0)return 0;target[len]=0;return eq(target,name);
+}
+/* Real evdev blocks while idle; our append-only event0 file returns EOF instead.
+   echo_loop_key retries immediately, burning one CPU core. Pace only empty key
+   reads, never queued events, touch reads, audio or unrelated files. __read is
+   the guest libc's exported alias: keep errno/cancellation semantics intact. */
+extern long __read(int,void*,unsigned long);
+long read(int fd,void*data,unsigned long count){
+  long result=__read(fd,data,count);
+  if(result==0&&count&&device_is(fd,"/dev/input/event0")){
+    long delay[2]={0,5000000}; /* at most one 5 ms polling interval for a new key */
+    sys3(__NR_nanosleep,(long)delay,0,0);
+  }
+  return result;
 }
 /* Observe stock framebuffer copies instead of guessing which of two changed buffers
    is newer. Delegate to the guest libc (no build-host glibc dependency). */

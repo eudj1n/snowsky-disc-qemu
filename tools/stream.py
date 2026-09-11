@@ -315,7 +315,8 @@ PAGE = ("""<!doctype html><meta charset=utf-8>
  #stage.plain #skin{display:none}
  #stage.plain #scr{width:100%;aspect-ratio:1;border-radius:50%;background:#000;
         box-shadow:0 0 0 6px #ddd,0 0 30px rgba(0,0,0,.15)}
- #scr{image-rendering:pixelated;touch-action:none;cursor:crosshair;display:block}
+ #scr{image-rendering:pixelated;touch-action:none;cursor:pointer;display:block}
+ #scr.touching{cursor:grabbing}
  .hint{color:#888;margin-top:14px}
  .bar{margin-top:12px}
  .bar button{background:#f4f4f5;color:#333;border:1px solid #d5d5d8;border-radius:9px;
@@ -415,20 +416,25 @@ addEventListener('keydown',e=>{if(!align.on)return;const s=e.shiftKey?0.005:0.00
   else if(e.key==='+'||e.key==='=')align.d+=s; else if(e.key==='-'||e.key==='_')align.d-=s; else h=false;
   if(h){e.preventDefault();draw();}});
 if('__MODE__'==='skin')draw();
-let down=false, moved=false, sx=0, sy=0, lastMove=0;
+let down=false, moved=false, pointerId=null, sx=0, sy=0, lastMove=0;
 function pt(e){const r=img.getBoundingClientRect();
   return [Math.round((e.clientX-r.left)*R/r.width),
           Math.round((e.clientY-r.top )*R/r.height)];}
 function go(u){fetch(u).catch(()=>{});}
-img.addEventListener('pointerdown',e=>{e.preventDefault();
-  [sx,sy]=pt(e);down=true;moved=false;img.setPointerCapture(e.pointerId);});
-img.addEventListener('pointermove',e=>{if(!down)return;
+img.addEventListener('pointerdown',e=>{if(down||e.button!==0)return;e.preventDefault();
+  [sx,sy]=pt(e);down=true;moved=false;pointerId=e.pointerId;img.classList.add('touching');img.setPointerCapture(e.pointerId);});
+img.addEventListener('pointermove',e=>{if(!down||e.pointerId!==pointerId)return;
   const [x,y]=pt(e);
   if(!moved && Math.abs(x-sx)+Math.abs(y-sy)>TH){moved=true;go(`/down?x=${sx}&y=${sy}`);}
   if(moved){const t=performance.now();if(t-lastMove>30){lastMove=t;go(`/move?x=${x}&y=${y}`);}}});
-img.addEventListener('pointerup',e=>{if(!down)return;down=false;
+img.addEventListener('pointerup',e=>{if(!down||e.pointerId!==pointerId)return;down=false;pointerId=null;img.classList.remove('touching');
   if(moved){const [x,y]=pt(e);go(`/move?x=${x}&y=${y}`);setTimeout(()=>go('/up'),20);}
   else{go(`/tap?x=${sx}&y=${sy}`);}});
+function cancelTouch(e){if(!down||(e.pointerId!==undefined&&e.pointerId!==pointerId))return;
+  down=false;pointerId=null;img.classList.remove('touching');if(moved)go('/up');}
+img.addEventListener('pointercancel',cancelTouch);
+img.addEventListener('lostpointercapture',cancelTouch);
+addEventListener('blur',cancelTouch);
 </script>
 """)
 

@@ -9,6 +9,12 @@ emulator-only revisions use `v2.40-r1`, etc. See [the porting guide](docs/PORTIN
 
 ### Fixed
 
+- Idle physical-key polling no longer burns a CPU core under QEMU. The framebuffer
+  shim waits 5 ms only after an empty read of the `event0` file stub; queued keys,
+  touchscreen reads, rendering and PCM delivery keep their existing paths.
+- Viewer startup no longer blocks controls for a fixed 26-second pause. Boot waits for
+  guest input/framebuffer readiness and network listeners, then remounts the SD card.
+  The screen cursor now indicates tap/drag interaction and resets on pointer cancellation.
 - SD image creation now explicitly uses UTF-8, matching guest mounts and preserving
   Cyrillic directory/file names on hosts whose FAT default is ISO-8859-1.
   Clean integration now scans and decodes a generated WAV under a Cyrillic path,

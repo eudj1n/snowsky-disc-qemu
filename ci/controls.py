@@ -24,11 +24,37 @@ def wait(read, predicate, label, timeout=8):
     raise AssertionError(f'Physical control readback failed: {label}')
 
 
+def check_idle_key_cpu(device):
+    threads = []
+    for pid in device.processes():
+        try:
+            if b'/usr/bin/mq_player' not in Path(f'/proc/{pid}/cmdline').read_bytes().split(b'\0'):
+                continue
+            for task in Path(f'/proc/{pid}/task').iterdir():
+                if (task / 'comm').read_text().strip() == 'echo_loop_key':
+                    threads.append(task)
+        except FileNotFoundError:
+            continue
+    assert len(threads) == 1, f'Expected one key reader, got {threads}'
+
+    def ticks():
+        fields = (threads[0] / 'stat').read_text().split(') ', 1)[1].split()
+        return int(fields[11]) + int(fields[12])  # utime + stime, excluding pid/comm
+
+    start, before = time.monotonic(), ticks()
+    time.sleep(2)
+    cpu = (ticks() - before) / os.sysconf('SC_CLK_TCK') / (time.monotonic() - start)
+    print(f'Idle key-reader CPU: {cpu:.1%} of one core')
+    # Generous margin for CI/QEMU overhead; an EOF busy loop consumes ~100%.
+    assert cpu < .25, f'Key reader is busy-spinning at EOF: {cpu:.1%}'
+
+
 def main():
     root = Path('/work/rootfs')
     device = Device(root)
     buttons = Buttons(root, device)
     buttons.reset()
+    check_idle_key_cpu(device)
     version = os.environ.get('FW_VERSION', '2.40')
     network = network_snapshot(root, version)
     assert network['firmware'] == version and network['ready'] == 1, network

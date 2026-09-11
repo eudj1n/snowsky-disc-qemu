@@ -16,7 +16,8 @@ The audit findings are retained as the explanation for the fix.
 - Play / pause: short click toggles playback. Stock long/double play gestures have no
   playback action; the viewer deliberately does not invent one.
 - Power: short click sleeps/wakes the screen. Hold **1.8 s** to stop the guest; click
-  while off to boot it again (about 30 s). The viewer and container remain running.
+  while off to boot it again (readiness-based, see [VIEWER.md](VIEWER.md)). The viewer
+  and container remain running.
 - Buttons also accept Space/Enter when focused. Volume holds start after 650 ms and
   repeat every 200 ms; the double-click window is 280 ms. These are emulator timings,
   not measured physical-driver timings.
@@ -55,6 +56,40 @@ cannot replace a shim already loaded into a guest process.
 - `fbshim` observes framebuffer `mmap`/`memcpy` and records the last-written buffer in
   `emu/fb-live`. This fixes the stale-frame problem when both buffers change between polls.
   It delegates actual memory operations to the guest libc, with no build-host libc dependency.
+
+### Idle CPU (2026-09-12)
+
+The stock `echo_loop_key` thread expects blocking evdev reads. Our `event0` is an
+append-only regular file: at EOF, `read(fd, buffer, 16)` returns zero immediately,
+and the stock loop retries without sleeping. On V2.57 this thread alone consumed
+99.6% of one core; a two-second `strace -c` sample recorded 33,163 reads (tracing
+itself slows the loop). The viewer and `mq_ui` each used only a few percent.
+
+`fbshim` delegates `read` to the stock libc's exported `__read` alias, preserving
+its error/cancellation handling. Only a positive-length read returning EOF on the
+exact `/dev/input/event0` path sleeps for 5 ms before returning. Data already queued,
+touch `event1`, regular files and audio reads have no added wait. A key arriving
+during this sleep waits at most one polling interval, plus host scheduling delay;
+the existing 120 ms pulses and 200 ms hold repeats are unchanged. No firmware
+addresses or binary instructions are changed by this fix.
+
+An eight-second V2.57 sample after the fix measured the key thread at 0.9% and
+`mq_player` overall at 1.9% of one core. An idle `docker stats` snapshot dropped
+from about 108% to 10% with the viewer connected. These are local measurements,
+not CPU limits; decoding and animated screens can still use more CPU.
+
+For diagnosis, run `ps -L -p <player-pid> -o pid,tid,pcpu,stat,wchan:24,comm` inside
+the container, then `timeout -s INT 2 strace -c -p <key-tid>` for a short sample.
+The Docker image includes `strace`. Integration measures the idle key thread and
+rejects sustained CPU above 25% of a core, then verifies physical controls normally.
+
+Clean V2.40 and V2.57 integration passed with this shim: idle-key CPU check, physical
+single/hold volume, media play/pause, screen sleep/wake, stock library scan, TCP/WS,
+and a bit-exact PCM/source comparison. One concurrent V2.40 run timed out waiting
+for WS pause before reaching the CPU check; a separate rerun passed without code
+or timeout changes. The cause of that intermittent WS timeout is not established.
+
+### Functional checks
 
 Verified live: volume single and repeated hold events; play state **3 → 1 → 2**;
 screen flag **1 → 0 → 1** with black viewer frame and HTTP 409 for touch while asleep;
