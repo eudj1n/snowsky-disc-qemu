@@ -17,6 +17,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
       gcc-mipsel-linux-gnu \
       binutils-mipsel-linux-gnu \
       libc6-dev-mipsel-cross \
+      gdb-multiarch \
       sqlite3 \
       dosfstools \
       sox \
