@@ -114,7 +114,11 @@ def _skin_fields(cx=None, cy=None, d=None):
     d = SKIN_D if d is None else d
     ar = w / h                              # so JS can recompute top% from a height-diameter
     dh = d * ar
-    return dict(MODE='skin', STAGE='460',
+    # Size the stage so the live circle renders at native 360px (1:1) — no downscale, so the UI
+    # text stays crisp (identical to the PNG). The photo is scaled to suit; a higher-res skin
+    # keeps the casing sharp too.
+    stage = max(360, min(1000, round(360.0 / d)))
+    return dict(MODE='skin', STAGE='%d' % stage,
                 L='%.2f' % ((cx - d / 2) * 100),
                 T='%.2f' % ((cy - dh / 2) * 100),
                 D='%.2f' % (d * 100),
