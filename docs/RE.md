@@ -117,7 +117,7 @@ GDB confirmed `ctx = *(uint32_t*)0x832214`: `ctx+0x58` was NO_OUT_DEV=0 before d
 Its caps entry was empty, but the I2S3 entry at `0x82e010` was already populated. The
 `0x10000000` flags and `ctx+0x5c` branches investigated earlier are **input**, not output.
 See [AUDIO.md](AUDIO.md) for the corrected chain, signal validation, WAV export and Web Audio.
-USB/BT (`asndshim.c`), DSD and performance across other formats require separate validation.
+Multi-format PCM validated (16-bit/44.1k and 24-bit/96k, faithful). USB-DAC (no USB host under qemu-user), DSD (route identified, needs a .dsf test file) and input remain out of scope — see [AUDIO.md](AUDIO.md).
 
 ## Direction: network / FiiO Link + 12103 auth ✅ (mapped)
 

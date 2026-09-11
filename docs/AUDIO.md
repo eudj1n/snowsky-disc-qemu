@@ -82,3 +82,30 @@ them in Web Audio. Timing depends on decoder cost and host load; the earlier bla
 that qemu cannot play FLAC in real time was not established.
 
 Future firmware analysis: [RE.md](RE.md), [Ghidra tooling](../ghidra/README.md).
+
+## Format coverage (validated) and remaining caveats
+
+**PCM, multiple formats — ✅ validated end-to-end** (play → firmware decode/resample → tinyalsa →
+capture → WAV, tone faithful):
+
+| source | captured `/audio.fmt` | tone |
+|---|---|---|
+| 16-bit / 44.1 kHz (`Tone A.wav`, 440 Hz) | 2ch · 32-bit · 44100 | 441 Hz ✓ (byte-exact after 16→32 shift) |
+| 24-bit / 96 kHz (1 kHz) | 2ch · 32-bit · **96000** | ~1000 Hz ✓ |
+
+The DAC (I2S3) runs 32-bit at the source rate; the firmware up-converts sample depth and keeps the
+rate. Regenerate hi-res test tones with sox (in the container, into `/sdcard/...`):
+
+```sh
+sox -n -b 24 -r 96000 -c 2 "03 - HiRes 1kHz 24b96k.wav" synth 2 sine 1000 gain -6
+```
+
+**Remaining caveats (not done; scoped honestly):**
+- **DSD** — a separate route (`set_pcm_config` cases branch on DSD rates `0x2b110/0x56220/0xac440`
+  and `is_dsd`). Needs a real `.dsf/.dff` test file and validation of whether it emits native DSD
+  or DoP; the route is identified but unexercised. Medium effort.
+- **USB-DAC (device as USB audio sink)** — out of scope under qemu-user: there is no USB host to
+  send audio to the emulated gadget. `asndshim.c` covers the libasound (USB/BT) *playback* path if
+  those routes are ever driven, but the USB-input direction can't be emulated here.
+- **Recording / input (`PCM_IN`, `pcm_read`)** — not implemented (tinyshim's `pcm_read` returns
+  silence); niche for this project.
