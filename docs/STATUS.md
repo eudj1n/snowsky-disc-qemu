@@ -1,13 +1,14 @@
 # Status
 
-_Updated 2026-09-11 after network, media-library and physical-control tests._
+_Updated 2026-09-11 after WebSocket route tracing and skin-hotspot UI tests._
 
 ## Working ✅
 
 - **Local FiiO Link TCP 12100** — host handshake, settings, indexed library, now-playing
   path, absolute volume and play/pause. Compose provides real `eth1`; startup re-announces
   its IP via netlink. No Wi-Fi DB overrides or network binary patches. HTTP 12103 also
-  listens; WebSocket is not yet verified. Ports are localhost-only. See [NETWORK.md](NETWORK.md).
+  listens; its active router does not register WebSocket (see investigation below).
+  Ports are localhost-only. See [NETWORK.md](NETWORK.md).
 - **Manual media-library synchronization** — Settings → Update media lib → Update now
   found all **4 test WAVs**; TCP returned the same four records. Fixed the scanner's extra
   SD gate: the mount source must be guest-accessible `/dev/mmcblk0p1`, not
@@ -95,6 +96,31 @@ player state 2 (paused), network-ready=1, Docker IP and dropped dangerous capabi
 Automatic scanning did not ingest the fifth test file; WebSocket returned 200 instead
 of 101. Those are recorded limitations, not passing checks.
 
+## Skin controls and WebSocket findings — 2026-09-11
+
+| Actual browser capture | Result |
+|---|---|
+| ![Quiet skin hotspots](images/14-skin-hotspots.jpg) | Physical controls on the skin: translucent pink circles, no icons at rest. Power is centered over the top button; Play/pause and the volume rocker are on the right. Gesture shortcuts and alignment are hidden in collapsed **Debug**. |
+| ![Hotspot hover](images/15-skin-hotspot-hover.jpg) | Hover reveals the icon and label; focus/pressed feedback remains available. Volume changed **115 → 114 → 115**, with DAC gains **0.37584 → 0.35481 → 0.37584**. |
+
+Passed **37 Python + 10 JavaScript tests**. Live browser clicks verified volume,
+Power startup/wake and play/pause (internal state **2 → 1 → 2**, left paused).
+Confirmed hover CSS: fill alpha 0.13/icon opacity 0 at rest, 0.32/1 on hover.
+Debug expands/collapses; closing it clears alignment mode and its readout.
+Automated checks cover keyboard feedback, pointer/blur cancellation, duplicate-click
+suppression, a second finger's release and plain/skin HTML generation. Mobile layout
+and the no-skin fallback were not visually tested in this session.
+
+**WebSocket diagnosis is complete, but stock WS control does not work:** the active
+12103 callback `004b9d38` dispatches a 16-entry HTTP table with no WebSocket route.
+Unknown URLs go directly to empty HTTP 200 (`0048f8f8`). `/api/websocket` and a made-up
+URL returned the same result. The older explanation involving a dashboard password
+was incorrect; the bundled dashboard handler is not connected to this listener.
+Read-only route inspection and strict upgrade probes are committed; see
+[NETWORK.md](NETWORK.md#websocket-investigation). No binary patch, new dependency,
+port or ad-hoc image change was made. Dockerfile/Compose remain unchanged for this step.
+The existing viewer startup script applies the UI changes: `./run.sh view`, then reload.
+
 ## Not done yet / next
 
 - **Additional audio routes** — USB/BT, DSD, and hardware-accurate timing still need separate
@@ -103,11 +129,11 @@ of 101. Those are recorded limitations, not passing checks.
   generated fifth WAV and rebooting did not update the index or start a scan. Its effective
   on/off state and startup/hotplug trigger are not yet established. Manual Update now works.
   The fixture was removed and SD rebuilt; the original four indexed tracks remain.
-- **Remaining network work** — standard WebSocket Upgrade on `/api/websocket` returns
-  HTTP **200**, not 101; LAN multicast discovery, Wi-Fi association and cloud streaming
-  are not implemented/tested. Raw TCP control works independently. Automatic OTA/NTP helpers
-  are blocked in the emulator; OTA downloads/installations were not tested. Next: a small
-  bridge using the now-working localhost client, or investigation of Auto update / WS.
+- **Remaining network work** — optional local WebSocket → TCP bridge (not implemented;
+  stock V2.40 has no registered WS route), LAN multicast discovery, Wi-Fi association
+  and cloud streaming. Raw TCP works independently. `POST /audio/` is an active HTTP
+  route worth investigating separately for file transfer. Automatic OTA/NTP helpers
+  are blocked; OTA downloads/installations were not tested.
 - **Carousel swipes** — ✅ done via the viewer's drag/`/swipe` (intermediate position events
   over time).
 - **Power fidelity** — viewer power-off is a deliberate guest-only process stop, not stock

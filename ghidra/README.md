@@ -98,7 +98,10 @@ resolve **after** auto-analysis, and the router/callback are reached through poi
 static xrefs don't link them — these were read from the decompiled bodies:
 
 - `FUN_004b9720` = `http_server_thread` — `listen` on 12103 (`0x2f47`).
-- `FUN_004b2820` = the `/api/*` + `/fs` router.
+- `FUN_004b9d38` = **active** HTTP callback; table `006c7a50` has 16 routes and no
+  WebSocket. Unknown URLs call `0048f8f8` (empty 200).
+- `FUN_004b2820` = bundled dashboard `/api/*` + `/fs` code, **not delegated to by
+  the active 12103 listener**. Its presence misled earlier auth/WebSocket conclusions.
 - `FUN_004af7e0` = `mg_dash_authenticate` — the dashboard auth (`config+8==0` → guest level 9;
   else `(*config->fn)(user,100,pass)` → level; level>0 → token).
 - `FUN_004ae108` = the 20-char random `access_token` generator (`/dev/urandom` → alnum).

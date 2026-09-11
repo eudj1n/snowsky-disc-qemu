@@ -11,7 +11,8 @@ live round screen into a photo of the player so it looks like the real device.
 ```
 
 Then, in the browser: **click = tap**, **drag = swipe**, **long-press = hold**, and the
-buttons do the common gestures (shade down, back = left→right, …).
+gesture shortcuts are available in the collapsed **Debug** section.
+They duplicate touch swipes and are not needed for normal use.
 
 **Enable sound** plays captured audio; **Replay capture** starts the current recording again.
 **Mute sound** affects the browser only. Select tracks and pause in the device UI.
@@ -56,11 +57,30 @@ left→right back gesture are just server-side interpolated swipes, one click ea
 
 If a skin PNG is present (repo `assets/skin.png`, else `/work/skin.png`), the page shows the
 photo with the live round screen overlaid on the glass. Align the circle to your image live:
-click **⊹ align**, then **Alt+arrows** to move / **+/-** to resize (Shift = bigger step) — the
+open **Debug → ⊹ align**, then **Alt+arrows** to move / **+/-** to resize (Shift = bigger step) — the
 readout shows the exact `SKIN_CX / SKIN_CY / SKIN_D`. Those can also be passed as query params
 (`/?cx=0.5&cy=0.5&d=0.7`) or env vars to `scripts/40_stream.sh`; defaults live in `tools/stream.py`.
 A PNG with a **transparent hole** over the screen gives the cleanest result. Without a skin the
 viewer falls back to a plain framed round screen. See `assets/README.md`.
+
+Physical buttons are **44px translucent pink circles over the skin**: Power on the
+top edge, Play/pause at the upper right, volume at the two ends of the right rocker.
+Placement follows the [official DISC quick guide](https://fiio-instruction.fiio.net/%E5%BF%AB%E9%80%9F%E5%85%A5%E9%97%A8/2025/DISC.pdf).
+At rest, icons are hidden and the fill alpha is 0.13. Hover/keyboard focus reveals the
+icon and label; a held pointer or Space/Enter gives pressed feedback. Touch can press
+directly without hovering. Button names remain available to assistive technology.
+The transparent positioning layer does not intercept touches on the round screen.
+Without a skin, the same buttons become a labelled row, with no duplicate handlers.
+
+Hotspot centers use per-button CSS `--x`/`--y` percentages in `tools/stream.py` for the
+committed photo (Power 84.4/3, Play 98/14.8, Volume up 98/28.5, down 98/51.5).
+They resize with the photo; replacing it requires adjusting these coordinates as
+well as screen alignment. Closing Debug cancels alignment mode. Reduced-motion
+preferences disable the visual transitions. Pointer loss, blur or guest shutdown
+clears pressed feedback and cancels held gestures.
+
+For these HTML/JS changes, just run `./run.sh view` and reload the browser; a guest
+reboot/image rebuild is unnecessary. There are no new dependencies or image changes.
 
 ## Notes / limits
 

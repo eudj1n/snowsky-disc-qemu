@@ -243,19 +243,20 @@ GESTURES = {
 # ---- HTTP --------------------------------------------------------------------
 
 PAGE = ("""<!doctype html><meta charset=utf-8>
+<meta name=viewport content="width=device-width, initial-scale=1">
 <title>Snowsky Disc</title>
 <style>
  html,body{margin:0;background:#fff;color:#333;font:13px system-ui;text-align:center}
- #wrap{display:inline-block;margin:20px auto}
+ #wrap{display:inline-block;margin:28px auto;max-width:100%}
  /* device-skin mode: photo of the player with the live round screen over the glass */
- #stage{position:relative;width:__STAGE__px;margin:0 auto}
+ #stage{position:relative;width:__STAGE__px;max-width:calc(100vw - 64px);margin:0 auto}
  #stage.skin #skin{display:block;width:100%}
  #stage.skin #scr{position:absolute;left:__L__%;top:__T__%;width:__D__%;aspect-ratio:1/1;
         height:auto;border-radius:50%;object-fit:cover}
  /* plain mode (no skin): a framed round screen */
  #stage.plain{width:360px}
  #stage.plain #skin{display:none}
- #stage.plain #scr{width:360px;height:360px;border-radius:50%;background:#000;
+ #stage.plain #scr{width:100%;aspect-ratio:1;border-radius:50%;background:#000;
         box-shadow:0 0 0 6px #ddd,0 0 30px rgba(0,0,0,.15)}
  #scr{image-rendering:pixelated;touch-action:none;cursor:crosshair;display:block}
  .hint{color:#888;margin-top:14px}
@@ -263,36 +264,73 @@ PAGE = ("""<!doctype html><meta charset=utf-8>
  .bar button{background:#f4f4f5;color:#333;border:1px solid #d5d5d8;border-radius:9px;
       padding:7px 13px;margin:3px;font:13px system-ui;cursor:pointer}
  .bar button:hover{background:#eaeaec}
+ #debug-tools{margin:20px auto 0;color:#888}
+ #debug-tools summary{cursor:pointer;width:fit-content;margin:auto;font-size:12px}
+ #debug-tools[open] summary{color:#555}
+ #physical-controls{display:flex;flex-wrap:wrap;justify-content:center;gap:8px;margin-top:16px}
+ .physical{touch-action:none;user-select:none;cursor:pointer;font:14px system-ui;
+   border:1px solid #d5d5d8;border-radius:9px;padding:8px;background:#f4f4f5;color:#333}
+ .key-symbol{font-size:20px;line-height:1}
+ .physical:focus-visible{outline:3px solid #a92368;outline-offset:4px}
+ .physical.is-pressed{background:#f6bad6}
+ .physical:disabled{opacity:.35;cursor:not-allowed}
+ #stage.skin #physical-controls{position:absolute;inset:0;margin:0;pointer-events:none}
+ #stage.skin .physical{position:absolute;left:var(--x);top:var(--y);transform:translate(-50%,-50%);
+   display:grid;place-items:center;width:44px;height:44px;padding:0;border-radius:50%;
+   pointer-events:auto;color:#64173e;background:rgba(244,114,182,.13);border:1px solid rgba(255,215,235,.40);
+   box-shadow:0 0 0 4px rgba(244,114,182,.035);transition:background .18s,box-shadow .18s,transform .18s}
+ #stage.skin .key-symbol{opacity:0;transition:opacity .18s}
+ #stage.skin .physical:not(:disabled):hover,#stage.skin .physical:focus-visible{background:rgba(244,114,182,.32);
+   box-shadow:0 0 0 6px rgba(244,114,182,.07)}
+ #stage.skin .physical.is-pressed:not(:disabled){background:rgba(236,72,153,.55);color:white;
+   transform:translate(-50%,-50%) scale(.92);box-shadow:0 0 0 8px rgba(244,114,182,.10)}
+ #stage.skin .physical:hover .key-symbol,#stage.skin .physical:focus-visible .key-symbol,
+ #stage.skin .physical.is-pressed .key-symbol{opacity:1}
+ #stage.skin .key-label{position:absolute;right:calc(100% + 14px);white-space:nowrap;
+   padding:7px 10px;border-radius:7px;background:#35232e;color:white;font-size:12px;
+   opacity:0;visibility:hidden;pointer-events:none;transition:opacity .14s}
+ #stage.skin [data-key=power] .key-label{right:0;top:calc(100% + 12px)}
+ #stage.skin .physical:hover .key-label,#stage.skin .physical:focus-visible .key-label{
+   opacity:1;visibility:visible}
+ @media(prefers-reduced-motion:reduce){#stage.skin .physical,#stage.skin .key-label,
+   #stage.skin .key-symbol{transition:none}}
 </style>
 <div id=wrap>
  <div id="stage" class="__MODE__">
   <img id=skin src="/skin" draggable=false alt="">
   <img id=scr src="/stream" draggable=false>
+  <div id=physical-controls role=group aria-label="Physical controls">
+   <button class=physical data-key="power" style="--x:84.4%;--y:3%" aria-label="Power / lock" aria-describedby=key-help>
+    <span class=key-symbol aria-hidden=true>⏻</span><span class=key-label>Power / lock</span></button>
+   <button class=physical data-key="play_pause" style="--x:98%;--y:14.8%" aria-label="Play / pause" aria-describedby=key-help>
+    <span class=key-symbol aria-hidden=true>⏯</span><span class=key-label>Play / pause</span></button>
+   <button class=physical data-key="volume_up" style="--x:98%;--y:28.5%" aria-label="Volume up" aria-describedby=key-help>
+    <span class=key-symbol aria-hidden=true>+</span><span class=key-label>Volume up</span></button>
+   <button class=physical data-key="volume_down" style="--x:98%;--y:51.5%" aria-label="Volume down" aria-describedby=key-help>
+    <span class=key-symbol aria-hidden=true>−</span><span class=key-label>Volume down</span></button>
+  </div>
  </div>
  <div class=hint>click = tap · drag = swipe · long-press to hold</div>
- <div class=bar>
-  <button onclick="go('/swipe?dir=down')">▼ shade</button>
-  <button onclick="go('/swipe?dir=up')">▲ up</button>
-  <button onclick="go('/swipe?dir=back')">↩ back (→)</button>
-  <button onclick="go('/swipe?dir=left')">◀ left</button>
-  <button id=alignbtn onclick="align.on=!align.on;draw()">⊹ align</button>
- </div>
- <div class=bar id=physical-controls>
-  <button data-key="volume_down" style="touch-action:none">− Volume</button>
-  <button data-key="volume_up" style="touch-action:none">+ Volume</button>
-  <button data-key="play_pause" style="touch-action:none">⏯ Play / pause</button>
-  <button data-key="power" style="touch-action:none">⏻ Power / lock</button>
- </div>
- <div class=hint>Volume: click / double-click / hold — assignments in Settings<br>
+ <div class=hint id=key-help>Volume: click / double-click / hold — assignments in Settings<br>
  Power: click to lock/wake · hold 1.8 s to turn off · click to turn on</div>
  <div id=key-status class=hint role=status></div>
  <div id=key-action class=hint aria-live=polite></div>
- <div id=readout class=hint></div>
  <div class=bar>
   <button id=audio-toggle>Enable sound</button>
   <button id=audio-replay>Replay capture</button>
  </div>
  <div id=audio-status class=hint>Sound off</div>
+ <details id=debug-tools>
+  <summary>Debug</summary>
+  <div class=bar>
+   <button onclick="go('/swipe?dir=down')">▼ shade</button>
+   <button onclick="go('/swipe?dir=up')">▲ up</button>
+   <button onclick="go('/swipe?dir=back')">↩ back (→)</button>
+   <button onclick="go('/swipe?dir=left')">◀ left</button>
+   <button id=alignbtn onclick="align.on=!align.on;draw()">⊹ align</button>
+  </div>
+  <div id=readout class=hint></div>
+ </details>
 </div>
 <script src="/audio.js"></script>
 <script src="/keys.js"></script>
@@ -301,6 +339,10 @@ const img=document.getElementById('scr');
 const R=360, TH=6;                       // display px, drag threshold
 // --- skin align: nudge the round screen over the photo, read off cx/cy/d ---
 const align={on:false, cx:__CX__, cy:__CY__, d:__DD__, ar:__AR__};
+document.getElementById('alignbtn').disabled='__MODE__'!=='skin';
+document.getElementById('debug-tools').addEventListener('toggle', event=>{
+  if(!event.target.open){align.on=false;if('__MODE__'==='skin')draw();}
+});
 function draw(){
   const l=(align.cx-align.d/2)*100, t=(align.cy-align.d*align.ar/2)*100;
   img.style.left=l.toFixed(2)+'%'; img.style.top=t.toFixed(2)+'%'; img.style.width=(align.d*100).toFixed(2)+'%';

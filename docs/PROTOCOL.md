@@ -71,14 +71,12 @@ by creating `/ui` yourself and reading it before `mq_player` connects: `tools/ui
 
 - **TCP 12100** — raw FiiO Link (ASCII-hex frames above). **Auth-free.** The FiiO Music app
   uses it directly.
-- **TCP 12103** — Mongoose HTTP/WS (`http_server_mongoose.c`, port `0x2f47`). Routes:
-  `/api/hi|login|logout|get|set|add|del|ota|websocket`, `POST /fs/*/*` (upload),
-  `/dashboard.html`. Auth via `mg_dash`/`mg_dash_authenticate` (`FUN_004af7e0`): if
-  `config+8==0` → guest level 9 (open); else callback `(*config->fn)(user,100,pass)` returns a
-  level; level>0 → 20-char random `access_token` cookie from `/dev/urandom` (`FUN_004ae108`),
-  with `Max-Age`. FiiO Control **does** reach the device over WebSocket `/api/websocket`, but it
-  carries the **same auth-free FiiO Link frames** (`flutter_module/remote/web_socket.dart`
-  `WebSocketClient`) — see below.
+- **TCP 12103** — Mongoose **HTTP** (`http_server_mongoose.c`, port `0x2f47`).
+  V2.40's active callback `004b9d38` uses table `006c7a50`, **not** the bundled
+  dashboard router. Active routes include `/dir/`, `/localdir/`, `/audio/`,
+  `/image/lock_screen/`, `/image/cover/`, `/song_category_tree/`, `/mark_list/` and
+  `/log/`. No `/api/websocket` route is registered. Unknown URLs return HTTP 200/empty
+  via `0048f8f8`. See [NETWORK.md](NETWORK.md#websocket-investigation).
 - **UDP 12101** — discovery, multicast `224.0.0.255`, ~2 s heartbeat.
 
 ## Authorization: device control is auth-free; `mg_dash` is unused by the apps
@@ -86,14 +84,14 @@ by creating `/ui` yourself and reading it before `mq_player` connects: `tools/ui
 Reversing `mq_player` (Ghidra) and both phone apps (Blutter on the Flutter `libapp.so`) settles
 what looked like a hard auth gate:
 
-- **Device control has no auth.** Both **FiiO Music** (raw 12100) and **FiiO Control** (WS on
-  12103) drive the player with the plain FiiO Link handshake (`requestLinkOpen`/`bindHandshake`),
-  **no token, no password, no `cipherSign`**. This is why FiiO Music connects instantly and why
-  our own 12100 client works.
+- **TCP device control has no auth.** Our 12100 client uses the plain FiiO Link handshake
+  without a token, password or `cipherSign`. Earlier app analysis found an auth-free
+  `WebSocketClient` carrying FiiO Link; its presence in a multi-device app does **not**
+  establish that DISC V2.40's server supports that transport.
 - **`mg_dash` (`/api/login` + `/fs`) is a separate built-in Mongoose dashboard** that the stock
-  clients never use for control. A plain HTTP client gets `200`/empty on everything and the WS
-  won't upgrade, because the dash callback rejects unknown `(user,pass)` — it is a real password
-  gate, but the credentials are a vendor secret provisioned by the app, **not** `admin:admin`.
+  clients never use for control. **The earlier explanation of empty HTTP 200 as a password
+  gate was wrong.** The active server returns it directly for unknown URLs, without invoking
+  dashboard authentication. Dashboard code in the binary is not an active dashboard API.
 - The `cipherSign`/RSA+AES/Bearer tokens in the APK belong to **four unrelated stacks**, none of
   which is device control: **FiiO cloud** (`SCConnect`, RSA+AES), **Airable** (`fiio_media`,
   OAuth/QR), **Kugou/Deezer/Qobuz/Tidal** (`userId/userToken`), and **device control**
@@ -108,9 +106,10 @@ The device-WS command set (from Blutter) is control/query only — `requestAppli
 `requestBluetoothDevices`, `requestStartApplication`, streaming opens (`requestKugou/Deezer/…`) —
 **there is no "push a file to the SD" command.** Even the official app does not upload tracks over
 the device protocol; it scans files already placed on the SD (via USB or a network share). So a
-sync bridge's "copy music to the player" step is **not** solvable on 12100/WS — it needs file
-access (`mg_dash` `/fs` with the provisioned creds, or root over UART/diskOS), while **library
-read + transport control are fully solved on auth-free 12100.**
+sync bridge's "copy music to the player" step needs a separate file transport, while
+**library read + transport control are solved on auth-free 12100.** V2.40's active HTTP
+table includes `POST /audio/`; its upload semantics and safety still need investigation.
+Do not chase supposed `/fs` credentials based on the earlier incorrect route mapping.
 
 ## Emulating the network side
 
@@ -127,6 +126,6 @@ under QEMU. See [NETWORK.md](NETWORK.md) for reproduction, confinement and the h
 
 Verified TCP setters: `0502 000C <volume 4hex>` (absolute 0..120),
 `0201 000C 0000` (selected-track play/pause toggle). These are not evdev key codes.
-The host mappings are now localhost-only. HTTP `/api/hi` gives 200/empty; a standard
-`/api/websocket` Upgrade also gives **200, not 101**, so the earlier app-level WebSocket
-conclusions above must not be read as an emulator end-to-end test. Raw TCP works without it.
+The host mappings are localhost-only. `/api/hi`, `/api/websocket` Upgrade and an invented
+URL give the same empty 200. The traced active router has no WebSocket route or message
+dispatch. Raw TCP works without it; no WebSocket binary patch was made.

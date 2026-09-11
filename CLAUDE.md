@@ -88,7 +88,7 @@ looks right / has the higher non-black pixel count printed by `fb2png.py`.
 - Firmware acquisition + decrypt: `firmware/README.md` (password `fo123`; rootfs sha256 pinned
   in `scripts/lib.sh`).
 - Protocol + real-device RE: `docs/PROTOCOL.md` (FiiO Link frames, verified-live 12100 handshake
-  `0599…`, the 12103 `mg_dash` auth conclusion — **device control is auth-free**, no file-upload
+  `0599…`, the corrected 12103 route mapping — **TCP device control is auth-free**, no file-upload
   command), `docs/DEVICE.md` (ports/mDNS, no stock debug unlock), `docs/DISKOS.md` (V2.40 builds;
   only the size cap blocks). Network/auth `mq_player` function addresses are in `ghidra/README.md`.
 
@@ -113,6 +113,9 @@ Physical controls now work in the viewer: volume single/double/hold respects the
 assignments; media play/pause is `0xfa`; `0x103` sleeps/wakes the screen. GPIO, brightness,
 touch/LCD stubs and browser DAC gain are implemented. Long Power safely stops only guest
 processes; Power while off boots them again (not stock standby/shutdown emulation).
+The viewer places translucent pink hotspots over the physical buttons on the photo;
+icons appear on hover/focus/press. Gesture shortcuts and alignment live in collapsed
+**Debug**. Without a skin, physical controls remain a labelled row. See `docs/VIEWER.md`.
 Raw power code `0x108` can invoke `poweroff -f` and is blocked in the viewer — do not sweep
 event codes blindly. See `docs/KEYS.md` and the current screenshots in `docs/STATUS.md`.
 The stock idle-poweroff path also calls BusyBox `reboot`; `fbshim` blocks the kernel call
@@ -128,8 +131,11 @@ Guest `ip` read queries use stock BusyBox (the standalone ip address dump fails 
 `guest_run()` drops dangerous capabilities; wrappers block automatic OTA/NTP/hwclock
 and network reconfiguration. All ports publish only on localhost. Recreate the container
 with `docker compose up -d --build`, then boot/view. See `docs/NETWORK.md` for repeatable
-probes, `tools/fiio_link.py` for host control. WebSocket upgrade and LAN discovery remain
-unvalidated; HTTP 200 alone is not proof of a working WebSocket service.
+probes, `tools/fiio_link.py` for host control. V2.40's active HTTP callback `004b9d38`
+has no WebSocket route in table `006c7a50`; unknown URLs return empty 200 via `0048f8f8`.
+The bundled mg_dash code is not the active router; the earlier password-gate explanation
+was wrong. Reproduce with `tools/inspect_http_routes.py` and `tools/probe_websocket.py`.
+LAN discovery remains unvalidated.
 
 Manual Update media lib now works too: `sd_mount()` mounts INSIDE chroot so
 `/proc/mounts` records source `/dev/mmcblk0p1`, accessible to the scanner. The old

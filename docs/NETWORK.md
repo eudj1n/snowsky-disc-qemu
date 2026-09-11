@@ -137,12 +137,50 @@ The client drains old asynchronous notifications before new queries: a queued `a
 must not be mistaken for a response to a later play/pause action. The protocol has no
 request IDs; the client is sequential and intentionally does not support concurrent requests.
 
-Mongoose `GET /api/hi` returns HTTP 200 with an empty body. A standard WebSocket
-upgrade on `/api/websocket` also returns **200, not 101**: WebSocket control is **not
-validated** by this milestone. Raw TCP does not depend on dashboard credentials.
+Mongoose `/api/hi` and `/api/websocket` return the generic empty HTTP 200 fallback,
+not an API reply or WebSocket upgrade. See the investigation below.
 Multicast discovery across the Mac/Docker/LAN boundary is also not implemented;
 publishing UDP 12101 is not a multicast relay. Use explicit localhost connections.
 OTA installation, NTP, internet services and actual Wi-Fi association are out of scope.
+
+## WebSocket investigation
+
+V2.40's active HTTP server does **not register WebSocket**. This is not an emulation
+network-readiness or password problem:
+
+1. `004b9720` starts port 12103 with callback `004b9d38`.
+2. The callback dispatches HTTP events 10/11 through the 16-entry table at `006c7a50`.
+   It handles connection cleanup/poll events, but has no WebSocket-message dispatch.
+3. The table has no `/api/*` or WebSocket route. Unmatched requests call `0048f8f8`,
+   which directly returns HTTP 200 with no body.
+4. `/api/hi`, `/api/websocket` with valid Upgrade headers and `/__unmapped_probe__`
+   all produced the same HTTP 200 with Content-Length 0 in the running emulator.
+
+Bundled dashboard code near `004b2820` references `/api/websocket` and
+`mg_dash_authenticate`, but this listener does not delegate to it. Earlier notes about
+vendor credentials causing the empty 200 were incorrect. A WebSocket implementation
+in the phone app is not proof of DISC server support. No firmware patches or ad-hoc
+image changes were made in this investigation.
+
+Reproduce the **read-only** inspection and wire probe:
+
+```sh
+docker exec diskos-qemu python3 /repo/tools/inspect_http_routes.py
+python3 tools/probe_websocket.py
+python3 tools/probe_websocket.py --path /__unmapped_probe__
+# Intentionally exits 1 for stock V2.40, which returns 200 instead of upgrading:
+python3 tools/probe_websocket.py --require-upgrade
+```
+
+The route inspector uses ELF PT_LOAD mappings, not a guessed address offset; its
+addresses are specific to V2.40. The probe requires HTTP 101, Upgrade/Connection
+headers and the matching Sec-WebSocket-Accept digest. Neither HTTP 200 nor an
+arbitrary 101 counts as a successful upgrade. All tools use the existing Python
+standard library; Dockerfile/Compose need no new dependency, port or image mutation.
+
+Potential next step: a separately identified local WebSocket → TCP 12100 bridge,
+without claiming to enable stock WebSocket or redirecting the firmware's HTTP port.
+Active `POST /audio/` is also a file-transfer lead; not tested in this investigation.
 
 ## Re-run the reverse engineering
 
@@ -156,6 +194,7 @@ analyzeHeadless /path/to/project mqproj -process mq_player -noanalysis -readOnly
 ```
 
 Scanner gate: `-postScript DecFuncs.java 0x4269e0 0x4bc890 0x462488`.
+Active HTTP dispatch/fallback: `-postScript DecFuncs.java 0x4b9720 0x4b9d38 0x48f8f8`.
 The `mq_ui` function `0043ed1c` (`ui_set_media.c`) is **AirPlay settings**, not
 Update media lib; do not follow that misleading "media" string when investigating Auto update.
 

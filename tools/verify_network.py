@@ -5,6 +5,7 @@ import json
 import time
 import urllib.request
 from fiio_link import Client
+from probe_websocket import probe
 
 
 def verify(control=False, start_library=False):
@@ -56,11 +57,8 @@ def verify(control=False, start_library=False):
     with urllib.request.urlopen('http://127.0.0.1:12103/api/hi', timeout=5) as response:
         result['http_hi'] = {'status': response.status, 'body': response.read().decode()}
         assert response.status == 200
-    request = urllib.request.Request('http://127.0.0.1:12103/api/websocket', headers={
-        'Connection': 'Upgrade', 'Upgrade': 'websocket', 'Sec-WebSocket-Version': '13',
-        'Sec-WebSocket-Key': 'dGhlIHNhbXBsZSBub25jZQ=='})
-    with urllib.request.urlopen(request, timeout=5) as response:
-        result['websocket_upgrade_status'] = response.status
+    result['websocket'] = probe()
+    result['unknown_route'] = probe(path='/__unmapped_probe__')
     return result
 
 

@@ -60,33 +60,40 @@ if (typeof document !== 'undefined') {
   const controls = [];
   document.querySelectorAll('[data-key]').forEach(button => {
     const control = new PhysicalButton(button.dataset.key, send);
+    let pointer = null;
+    const press = () => { control.press(); button.classList.add('is-pressed'); };
+    const release = () => { control.release(); button.classList.remove('is-pressed'); };
+    const cancel = () => { pointer = null; control.cancel(); button.classList.remove('is-pressed'); };
     let lastPhysicalEvent = -Infinity;
-    controls.push(control);
+    controls.push({button, cancel});
     button.addEventListener('pointerdown', event => {
-      if (event.button !== 0) return;
+      if (event.button !== 0 || button.disabled || control.down) return;
       lastPhysicalEvent = performance.now();
       event.preventDefault(); button.focus();
-      button.setPointerCapture(event.pointerId); control.press();
+      pointer = event.pointerId;
+      button.setPointerCapture(event.pointerId); press();
     });
-    button.addEventListener('pointerup', () => {
-      lastPhysicalEvent = performance.now(); control.release();
+    button.addEventListener('pointerup', event => {
+      if (event.pointerId !== pointer) return;
+      pointer = null;
+      lastPhysicalEvent = performance.now(); release();
     });
-    button.addEventListener('pointercancel', () => control.cancel());
-    button.addEventListener('lostpointercapture', () => { if (control.down) control.cancel(); });
+    button.addEventListener('pointercancel', cancel);
+    button.addEventListener('lostpointercapture', () => { if (control.down) cancel(); });
     button.addEventListener('keydown', event => {
       if (event.key === ' ' || event.key === 'Enter') {
-        event.preventDefault(); if (!event.repeat) control.press();
+        event.preventDefault(); if (!event.repeat && !button.disabled) press();
       }
     });
     button.addEventListener('keyup', event => {
       if (event.key === ' ' || event.key === 'Enter') {
-        lastPhysicalEvent = performance.now(); event.preventDefault(); control.release();
+        lastPhysicalEvent = performance.now(); event.preventDefault(); release();
       }
     });
-    button.addEventListener('blur', () => control.cancel());
+    button.addEventListener('blur', cancel);
     button.addEventListener('click', event => {
       // Assistive technology / click-only clients; don't duplicate a physical release.
-      if (performance.now() - lastPhysicalEvent > 500) { control.press(); control.release(); }
+      if (!button.disabled && performance.now() - lastPhysicalEvent > 500) { press(); release(); }
     });
   });
   const cancel = () => controls.forEach(control => control.cancel());
@@ -101,8 +108,9 @@ if (typeof document !== 'undefined') {
         : state.transition === 'stopping' ? 'Stopping player…'
         : !state.running ? 'Player off — press Power to start'
         : !state.screen_on ? 'Screen locked — press Power to wake' : 'Player on');
-      document.querySelectorAll('[data-key]').forEach(button => {
+      controls.forEach(({button, cancel}) => {
         button.disabled = Boolean(state.transition) || (!state.running && button.dataset.key !== 'power');
+        if (button.disabled) cancel();
       });
     } catch (error) { message.textContent = error.message; }
     setTimeout(status, 1000);
