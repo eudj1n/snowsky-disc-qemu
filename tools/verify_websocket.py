@@ -9,6 +9,23 @@ from fiio_link import Client
 from fiio_ws import WSClient
 
 
+async def playback_snapshot(client, state=None, song_id=None, timeout=8):
+    """Wait for a complete, settled query snapshot, not a state-only a202 event.
+
+    The protocol has no correlation IDs. Only repeat read-only queries; never
+    retry play_all/play_pause while waiting for metadata or a state transition.
+    """
+    async with asyncio.timeout(timeout):
+        while True:
+            result = await client.now_playing()
+            song = result.get('song')
+            if (isinstance(song, dict) and 'id' in song and 'state' in result
+                    and (state is None or result['state'] == state)
+                    and (song_id is None or song['id'] == song_id)):
+                return result
+            await asyncio.sleep(.1)
+
+
 async def verify(url, tcp_host, control=False):
     # Independent TCP connection, closed before WS: stock permits one active client.
     def baseline():
@@ -57,21 +74,17 @@ async def verify(url, tcp_host, control=False):
             assert result['tracks']['total'], 'Run Update media lib first'
             await client.play_all()
             try:
-                await asyncio.sleep(.4)
-                before = await client.now_playing()
-                assert before['state'] == 0
+                await asyncio.sleep(.4)  # Let the decoder produce PCM before pausing.
+                before = await playback_snapshot(client, state=0)
                 await client.play_pause()
-                await asyncio.sleep(.2)
-                after = await client.now_playing()
-                assert after['state'] == 1
+                after = await playback_snapshot(client, state=1, song_id=before['song']['id'])
                 assert before['song']['id'] == after['song']['id']
                 result['playing'], result['paused'] = before, after
             finally:
-                state = await client.now_playing()
+                state = await playback_snapshot(client)
                 if state['state'] == 0:
                     await client.play_pause()
-                    await asyncio.sleep(.2)
-                    state = await client.now_playing()
+                    state = await playback_snapshot(client, state=1)
                 assert state['state'] == 1, 'Could not leave playback paused'
                 result['final_state'] = state['state']
     await asyncio.sleep(.2)  # release the stock single-client channel before reconnecting
