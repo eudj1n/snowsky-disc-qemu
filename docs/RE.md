@@ -45,7 +45,10 @@ it prints `ctx = *(0x832214)` and `ctx+0x58` at `set_out_device`, showing the va
 "route never selected" from "format rejected". This is how the audio blocker was actually
 understood (belatedly); reach for it first on the remaining directions.
 
-## Direction: physical keys ✅ (codes found; enable-gate identified)
+## Direction: physical keys ✅ (viewer controls implemented)
+
+See [KEYS.md](KEYS.md) for the corrected mapping, implementation, tests and fidelity limits.
+Earlier log-based interpretations of play/pause, menu navigation and power were wrong.
 
 Full chain (V2.40), all via [../ghidra/README.md](../ghidra/README.md) scripts:
 
@@ -62,21 +65,18 @@ The dispatcher is registered by `FUN_004e3410` (`DAT_0088cc50 = &echo_sys_key_ha
 **non-standard range `0xFA…0x10D` (250–269)** — which is why standard evdev codes
 (KEY_VOLUMEUP=115 …) do nothing. `value`: 1=press, 0=release, 2=repeat.
 
-| code | action (from log strings / calls) |
+| code | action (from dispatcher calls, not just log labels) |
 |---|---|
-| `0x106` (262) | `KEY_VALUE_MENU_DOWN` — menu nav down (Vol-Down key) |
-| `0x107` (263) | `KEY_VALUE_MENU_UP_L` — menu nav up (Vol-Up key) |
-| `0x103` / `0x109` | play/pause toggle (`FUN_004dde48` / `FUN_004e0350`) |
-| `0x10c` (268) | `KEY_VALUE_PLAY_KEY_L` (play, long) |
-| `0x10d` (269) | play double-click |
-| `0x108` (264) | a mode/screen toggle |
-| `0xfa` (250) | silent back/exit action (`FUN_00424b2c`) — **not** power |
-| `0xfb`,`0xfc`,`0x10a`,`0x10b` | configurable (branch on `DAT_0082e9d2/d3` — the sysconfig gesture map `KEY_*_CLICK_SLE`) |
+| `0x106` / `0x107` | Volume − / + hold/repeat; configurable via `DAT_0082e9d4`, GPIO-gated |
+| `0x103` / `0x109` | Screen sleep/wake (`FUN_004dde48` / `FUN_004e0350`) |
+| `0x10c` / `0x10d` | Play long/double log labels only; no playback action in these branches |
+| `0x108` | Standby/shutdown; includes a path to `poweroff -f`, not runtime-tested |
+| `0xfa` | Media play/pause (`FUN_00424b2c(0, 0)`), verified live |
+| `0xfb` / `0xfc` | Volume-button + / − single press, configurable via `DAT_0082e9d2` |
+| `0x10a` / `0x10b` | Volume-button + / − double press, configurable via `DAT_0082e9d3` |
 
-**No power key here.** A full sweep of `0xFA…0x10D` logged no POWER/SHUTDOWN/LOCK action — power
-is MCU-mediated (`mq_ui` gets `POWER_KEY_EVENT_REPORT`, and the diskOS RE notes power on a GPE
-GPIO read via `/dev/mem`), not on `event0`'s `echo_sys_key_handler`. So a power button needs the
-MCU/UART stub (`/dev/ttyS0`), which isn't emulated.
+Power events do exist here. Do not sweep this range blindly: qemu-user shares the
+container kernel, and the shutdown path must be confined before testing it.
 
 The dispatcher gates every key on `DAT_0082e9c1` (key-enable): `if (DAT_0082e9c1==0) return 0;`.
 Headless it stays 0 (set only by `FUN_004e847c` = `*(char*)(cmd+0x10)` from an IPC/settings
@@ -90,12 +90,13 @@ the guard loads the flag with `lbu v0,65(s2)` at `0x004de70c` (file off `0xDE70C
 script matches the exact guard bytes (anchor `addiu s2,v0,-5760` = `80e95224`, then `lbu` =
 `41004292` → `01000224`), is idempotent, and no-ops on a firmware whose addresses moved.
 
-Then inject the codes into `event0` (16-byte `input_event`, `type=EV_KEY`, value 1 then 0); the
-firmware does its own single/double/long-click detection by timing (~0.12 s = single). The viewer
-(`tools/stream.py`, [VIEWER.md](VIEWER.md)) exposes `/key?k=menu_up|menu_down|play|play_pause|power`
-and page buttons. **Confirmed live:** an injected `0x107` reaches the dispatcher and logs
-`KEY_VALUE_MENU_UP_L`; `0x106` → `KEY_VALUE_MENU_DOWN`. Visible UI effect is context-dependent
-(the menu carousel is touch/swipe; the physical keys act in the playback/volume context).
+Inject the codes into `event0` (16-byte `input_event`, `type=EV_KEY`, value 1 then 0).
+These are **already-classified gesture codes**: the reader does not classify a 120 ms
+press as single/double/long. The viewer now classifies gestures in `tools/keys.js` and
+delivers them through `POST /button` / `tools/keys.py`, preserving stock assignments.
+`fbshim` handles the volume GPIO levels and touch/LCD sleep ioctls; setup supplies the
+brightness path. Holds and screen sleep/wake now work. Viewer Power uses a guest-only
+host lifecycle, not dangerous event `0x108`. See [KEYS.md](KEYS.md) before extending it.
 
 **Logging gotcha (important for all directions):** `mq_player`'s zlog config
 (`usr/data/fiio/log/zlog_player.conf`) routes only `=INFO/=NOTICE/=WARN/=ERROR/=FATAL` to stdout

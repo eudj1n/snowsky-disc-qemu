@@ -29,17 +29,21 @@ detached by `./run.sh view`) and serves:
 | `GET /stream` | `multipart/x-mixed-replace` PNG stream of the live screen |
 | `GET /frame` | a single current PNG (handy for scripting) |
 | `GET /skin` | the device photo, if a skin is present |
-| `GET /audio.json` | capture generation, format, byte count and duration |
+| `GET /audio.json` | capture generation/format/size, guest running state and DAC output gains |
 | `GET /audio.pcm?generation=…&offset=…` | bounded PCM chunk at a frame-aligned offset |
 | `GET /tap?x&y` | short tap at display coords (press, hold ~0.3 s, release) |
 | `GET /down?x&y` · `/move?x&y` · `/up` | manual press / drag / release |
 | `GET /swipe?dir=down\|up\|back\|left` (or `?x0&y0&x1&y1`) | server-side smooth swipe |
-| `GET /key?k=menu_up\|menu_down\|play\|play_pause` (or `?code=<int>`) | physical key on `event0` |
+| `POST /button` JSON `{name, gesture}` | physical-button gesture; see [KEYS.md](KEYS.md) |
+| `GET /device.json` | guest power, screen and transition state |
+| `GET /key?k=volume_up\|volume_down\|play_pause\|power` (or safe `?code=<int>`) | diagnostic single stock key event; use POST for power lifecycle |
 
 **Framebuffer** (see [EMULATION.md](EMULATION.md)): `fb0` is a plain file, three 360×360
-BGRX sub-buffers. `mq_ui` alternates buf0/buf1 and never pans, so a background thread reads
-`fb0`, picks the sub-buffer that **changed since the last read** (the live one), converts
-BGRX→RGB + 180° rotation, and PNG-encodes it. Port published in `docker-compose.yml` (8080).
+BGRX sub-buffers. `mq_ui` alternates buf0/buf1 without panning. `fbshim` observes framebuffer
+copies and records the last-written buffer in `emu/fb-live`; the background reader uses
+that marker, converts BGRX→RGB + 180° rotation, and PNG-encodes it. Older shims fall back
+to diffing frames, which can select a stale buffer if both changed between reads.
+Brightness 0 or a stopped guest produces a black frame. Port published in `docker-compose.yml` (8080).
 
 **Touch** (see [TOUCH.md](TOUCH.md)): pointer coords are mapped to the 360² screen, flipped
 to raw touch (`359−x, 359−y`), and appended to `/dev/input/event1` as `input_event`s. A plain
@@ -64,9 +68,14 @@ viewer falls back to a plain framed round screen. See `assets/README.md`.
   it come up). `./run.sh stop` also stops the viewer.
 - FPS is qemu-bound (~5–15). This is a userspace emulator — good for UI/navigation/logic, not
   hardware-accurate timing.
-- **Physical keys** (`x2000_key` on `event0`) work via the buttons (▲ menu-up, ▼ menu-down,
-  ▶ play, ⏯ play/pause). They need the key-enable patch (`scripts/patch_keys.sh`, applied by
-  `10_setup_env.sh`); the custom codes and the full reverse-engineering are in [RE.md](RE.md).
-  Their visible effect is context-dependent (keys act in the playback/volume context; the menu
-  carousel is touch/swipe). There is **no power key on `event0`** — power is MCU-mediated and the
-  MCU (`/dev/ttyS0`) isn't emulated, so a "power" button would do nothing.
+- **Physical controls**: Volume −/+ support single/double/hold, with assignments in the
+  app's Custom volume settings. Play / pause is a short click; stock long/double play
+  gestures have no playback action. Power short-click sleeps/wakes the screen; hold 1.8 s
+  to stop the guest, then click to boot it again (~30 s). Screen-off blocks touch but not
+  physical media/volume controls. Space/Enter works on focused buttons. See [KEYS.md](KEYS.md).
+- Viewer power-off is host-managed, not the stock standby/shutdown sequence. It leaves the
+  container and viewer alive. The dangerous raw firmware power event `0x108` is rejected.
+  Stock automatic poweroff is also confined by a libc reboot interposer and guest-only
+  shutdown requests. This is not a general sandbox for arbitrary firmware syscalls.
+- Update both guest shim and server after installing changes: `./run.sh boot`,
+  `./run.sh view`, then reload the page. Reloading alone cannot update a loaded shim.

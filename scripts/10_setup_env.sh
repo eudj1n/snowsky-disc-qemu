@@ -33,6 +33,7 @@ printf '/lib/fbshim.so\n/lib/asndshim.so\n/lib/tinyshim.so\n' > "$ROOTFS/etc/ld.
 # 2b) Enable physical-key handling: mq_player gates keys on a flag that isn't set headless.
 #     Patch the guard so injected event0 keys reach the dispatcher (docs/RE.md). KEYS_ENABLE=0 to skip.
 "$REPO/scripts/patch_keys.sh"
+bash "$REPO/scripts/15_controls.sh"
 
 # 3) Kernel filesystems the guest expects.
 log "Mounts: /proc, /dev/mqueue in rootfs"
@@ -51,15 +52,15 @@ mkdir -p "$ROOTFS/dev/input" \
 echo x2000_key > "$ROOTFS/sys/class/input/event0/device/name"   # GPIO keys
 echo cst816t   > "$ROOTFS/sys/class/input/event1/device/name"   # capacitive touch
 
-# char-device stubs mq_player opens (0-byte files: open() succeeds, later ioctls fail
-# harmlessly). Without /dev/gpio, mq_player aborts at "failed to open device" BEFORE it
+# char-device stubs mq_player opens. fbshim handles volume GPIO reads; other missing
+# hardware ioctls still fail. Without /dev/gpio, mq_player aborts BEFORE it
 # inits the DAC and pushes UI state, so the UI never leaves the splash.
 : > "$ROOTFS/dev/gpio"
 : > "$ROOTFS/dev/jz_adc_aux_0"
 : > "$ROOTFS/dev/jz_watchdog"
 : > "$ROOTFS/dev/key_ioctl"   # physical-key handler (echo_key_handler); non-fatal but noisy
 # CS43131 DAC control nodes: dac_control.c opens these; open must succeed (like /dev/gpio) so
-# playback proceeds to the ALSA path (which asndshim captures). Later ioctls fail harmlessly.
+# playback proceeds to tinyalsa (tinyshim captures). fbshim mirrors DAC volume writes.
 for d in cs43131 cs43131b cs43131c cs43131d; do : > "$ROOTFS/dev/$d"; done
 
 # SD card: a REAL FAT block device (not a bind). mq_ui (mount_storage_dev.c) UMOUNTS

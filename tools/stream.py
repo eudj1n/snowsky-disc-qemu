@@ -13,16 +13,19 @@ the real stock UI from a browser on the host, no hardware.
   GET /down?x&y    press (start of a drag/swipe)
   GET /move?x&y    move (during a drag; only between down and up)
   GET /up          release
-  GET /key?k=…     physical key (menu_up|menu_down|play|play_pause), or ?code=<int>
+  POST /button    physical button {name, gesture}; GET /device.json = power/screen state
+  GET /key?k=…    single press (volume_up|volume_down|play_pause|power), or safe ?code=<int>
 
 Framebuffer facts (see docs/EMULATION.md): fb0 is 360x1080x4 (three 360x360 BGRX
 sub-buffers); mq_ui alternates drawing to buf0/buf1 and does NOT pan, so the live
-screen is whichever sub-buffer changed most recently — we pick it by diffing reads.
+screen is the last-written sub-buffer, reported by fbshim in emu/fb-live (diff fallback
+for older shims).
 The panel is 180deg-rotated, so display = reverse of the raw pixels, and a tapped
 display coord maps to raw touch (359-x, 359-y) — same flip as scripts/30_tap.sh.
 """
 import os, sys, time, zlib, struct, threading, json
 from audio import capture_info, read_chunk
+from keys import Buttons, Device, CODES
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from urllib.parse import urlparse, parse_qs
 
@@ -35,6 +38,8 @@ FPS = float(os.environ.get("STREAM_FPS", "12"))
 FB = os.path.join(ROOTFS, "dev/fb0")
 EV = os.path.join(ROOTFS, "dev/input/event1")   # cst816t touch
 EV0 = os.path.join(ROOTFS, "dev/input/event0")  # x2000_key physical keys
+device = Device(ROOTFS)
+buttons = Buttons(ROOTFS, device)
 
 # Optional device "skin": a photo of the player; the live round screen is composited
 # over its screen area so the viewer looks like the real device. Drop a PNG at $SKIN
@@ -86,6 +91,7 @@ class State:
         self.png = _png(bytes(W * H * 3))     # start black
         self.prev0 = self.prev1 = None
         self.live = 0
+        self.device = {'running': False, 'screen_on': False, 'transition': None, 'error': None}
 
 state = State()
 
@@ -142,9 +148,19 @@ def grab_loop():
                 state.live = 0
             elif b1 != state.prev1:
                 state.live = 1
+            # fbshim observes memcpy into the mmap'ed framebuffer. Unlike polling
+            # diffs, this remains ordered even if both buffers change between reads.
+            try:
+                with open(os.path.join(ROOTFS, 'emu/fb-live'), 'rb') as marker:
+                    active = marker.read(1)
+                if active in (b'\x00', b'\x01'):
+                    state.live = active[0]
+            except OSError:
+                pass  # Older shim: retain the heuristic fallback.
             # else: neither changed -> keep last live buffer
             state.prev0, state.prev1 = b0, b1
-            png = _png(_to_rgb(b0 if state.live == 0 else b1))
+            png = _png(_to_rgb(b0 if state.live == 0 else b1)
+                       if state.device['screen_on'] else bytes(W * H * 3))
             with state.lock:
                 state.png = png
         dt = time.time() - t0
@@ -205,17 +221,11 @@ def swipe(x0, y0, x1, y1, steps=12, hold=0.028):
         time.sleep(hold)
     release()
 
-# Physical keys — x2000_key on event0, custom codes (see docs/RE.md). Needs the key-enable
-# patch (scripts/patch_keys.sh) or the firmware drops them. The stock handler does its own
-# single/double/long-click detection by timing, so a ~0.12s press = single click.
-# Only codes with a confirmed action in echo_sys_key_handler (docs/RE.md). NOTE: there is no
-# power key on event0 — power is MCU-mediated (not emulated). 0xfa is a silent back/exit, omitted.
-KEYS = {'menu_up': 0x107, 'menu_down': 0x106, 'play': 0x10c, 'play_pause': 0x103}
+# Compatibility diagnostic API. Unknown/unsafe raw codes are rejected by Buttons.
+KEYS = {name: gestures['single'] for name, gestures in CODES.items()}
 
 def key(code):
-    _append_ev0(_ev(EV_KEY, code, 1) + _ev(EV_SYN, SYN_REPORT, 0))
-    time.sleep(0.12)
-    _append_ev0(_ev(EV_KEY, code, 0) + _ev(EV_SYN, SYN_REPORT, 0))
+    buttons.pulse(code)
 
 def _append_ev0(data):
     with _ev_lock:
@@ -267,12 +277,16 @@ PAGE = ("""<!doctype html><meta charset=utf-8>
   <button onclick="go('/swipe?dir=left')">◀ left</button>
   <button id=alignbtn onclick="align.on=!align.on;draw()">⊹ align</button>
  </div>
- <div class=bar>
-  <button onclick="go('/key?k=menu_up')">▲ menu-up</button>
-  <button onclick="go('/key?k=menu_down')">▼ menu-down</button>
-  <button onclick="go('/key?k=play')">▶ play</button>
-  <button onclick="go('/key?k=play_pause')">⏯ play/pause</button>
+ <div class=bar id=physical-controls>
+  <button data-key="volume_down" style="touch-action:none">− Volume</button>
+  <button data-key="volume_up" style="touch-action:none">+ Volume</button>
+  <button data-key="play_pause" style="touch-action:none">⏯ Play / pause</button>
+  <button data-key="power" style="touch-action:none">⏻ Power / lock</button>
  </div>
+ <div class=hint>Volume: click / double-click / hold — assignments in Settings<br>
+ Power: click to lock/wake · hold 1.8 s to turn off · click to turn on</div>
+ <div id=key-status class=hint role=status></div>
+ <div id=key-action class=hint aria-live=polite></div>
  <div id=readout class=hint></div>
  <div class=bar>
   <button id=audio-toggle>Enable sound</button>
@@ -281,6 +295,7 @@ PAGE = ("""<!doctype html><meta charset=utf-8>
  <div id=audio-status class=hint>Sound off</div>
 </div>
 <script src="/audio.js"></script>
+<script src="/keys.js"></script>
 <script>
 const img=document.getElementById('scr');
 const R=360, TH=6;                       // display px, drag threshold
@@ -326,17 +341,41 @@ class Handler(BaseHTTPRequestHandler):
     def _q(self, qs, k):
         return int(float(qs.get(k, ['0'])[0]))
 
+    def do_POST(self):
+        if self.path != '/button':
+            self._audio_response(404, 'text/plain', b'Not found'); return
+        # JSON-only and same-origin: another website must not power-cycle this guest.
+        origin = self.headers.get('Origin')
+        if (origin and urlparse(origin).netloc != self.headers.get('Host')) or \
+                self.headers.get('Content-Type', '').split(';')[0] != 'application/json':
+            self._audio_response(403, 'text/plain', b'Same-origin JSON required'); return
+        try:
+            size = int(self.headers.get('Content-Length', '0'))
+            if not 0 < size <= 1024:
+                raise ValueError('Invalid request size')
+            data = json.loads(self.rfile.read(size))
+            buttons.gesture(data['name'], data['gesture'])
+            self._audio_response(200, 'application/json', b'{"ok":true}')
+        except (ValueError, KeyError, TypeError) as exc:
+            self._audio_response(400, 'text/plain', str(exc).encode())
+        except OSError as exc:
+            self._audio_response(503, 'text/plain', str(exc).encode())
+
     def do_GET(self):
         u = urlparse(self.path)
         p, qs = u.path, parse_qs(u.query)
-        if p == '/audio.js':
-            data = open(os.path.join(os.path.dirname(__file__), 'audio.js'), 'rb').read()
+        if p in ('/audio.js', '/keys.js'):
+            data = open(os.path.join(os.path.dirname(__file__), p[1:]), 'rb').read()
             self._audio_response(200, 'text/javascript', data)
+        elif p == '/device.json':
+            self._audio_response(200, 'application/json', json.dumps(state.device).encode())
         elif p == '/audio.json':
             try:
                 info = capture_info(ROOTFS)
             except (OSError, ValueError, struct.error):
                 info = {'generation': None, 'bytes': 0}
+            info['output_gain'] = device.gains()
+            info['running'] = state.device['running']
             self._audio_response(200, 'application/json', json.dumps(info).encode())
         elif p == '/audio.pcm':
             try:
@@ -406,10 +445,16 @@ class Handler(BaseHTTPRequestHandler):
                     code = int(qs['code'][0], 0)
                 except ValueError:
                     code = None
-            if code is not None:
+            try:
+                if not device.running() or device.transition:
+                    raise ValueError('Player is not ready')
                 key(code)
+            except (ValueError, OSError) as exc:
+                self._audio_response(400, 'text/plain', str(exc).encode()); return
             self.send_response(204); self.send_header('Content-Length', '0'); self.end_headers()
         elif p in ('/tap', '/down', '/move', '/up', '/swipe'):
+            if p != '/up' and (not state.device['screen_on'] or device.transition):
+                self._audio_response(409, 'text/plain', b'Screen is off; press Power'); return
             if p == '/tap':
                 tap(self._q(qs, 'x'), self._q(qs, 'y'))
             elif p == '/down':
@@ -447,6 +492,20 @@ class Handler(BaseHTTPRequestHandler):
 def main():
     if not os.path.exists(FB):
         print("no framebuffer %s — boot first (scripts/20_boot.sh)" % FB, file=sys.stderr)
+    try:
+        buttons.reset()
+    except OSError:
+        pass  # First setup has not yet created the hardware state files.
+    def control_loop():
+        while True:
+            try:
+                buttons.expire()
+                device.service_requests()
+                state.device = device.status()
+            except OSError as exc:
+                state.device['error'] = str(exc)
+            time.sleep(.2)
+    threading.Thread(target=control_loop, daemon=True).start()
     threading.Thread(target=grab_loop, daemon=True).start()
     srv = ThreadingHTTPServer(('0.0.0.0', PORT), Handler)
     print("stream: http://0.0.0.0:%d  (fb=%s ev=%s %gfps)" % (PORT, FB, EV, FPS))

@@ -25,8 +25,9 @@ apply_ulimits(){
   ulimit -n 65536      2>/dev/null || true                                    # RLIMIT_NOFILE
 }
 
-# Kill any running guest processes.
-kill_guest(){ pkill -f qemu-mipsel 2>/dev/null || true; sleep 1; }
+# Stop only processes chrooted into this guest, including its popen children.
+# Do not pkill every qemu process: another rootfs may be running in this container.
+kill_guest(){ ROOTFS="$ROOTFS" python3 "$REPO/tools/keys.py" stop; }
 
 # --- SD card -----------------------------------------------------------------
 # The firmware's mq_ui (util/src/mount_storage_dev.c) UMOUNTS /tmp/sdcard once at

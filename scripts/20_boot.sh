@@ -17,6 +17,7 @@ WAIT="${1:-26}"
 
 apply_ulimits
 kill_guest
+bash "$REPO/scripts/15_controls.sh"
 rm -f "$ROOTFS/dev/mqueue/"* 2>/dev/null || true
 head -c $((SCR_W*SCR_VY*4)) /dev/zero > "$ROOTFS/dev/fb0"
 : > "$ROOTFS/dev/input/event1"; : > "$ROOTFS/dev/input/event0"

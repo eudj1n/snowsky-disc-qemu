@@ -115,8 +115,12 @@ Traced with `RefsTo`/`DecAt` (full write-up + code table in [../docs/RE.md](../d
 - `FUN_004d9840` `echo_loop_key` — reads 16-byte `input_event`; on `type==EV_KEY` calls
   `(*DAT_0088cc50)(code,value)`.
 - `FUN_004de6fc` `echo_sys_key_handler` — the dispatcher; registered by `FUN_004e3410`.
-  **Key codes are the custom range `0xFA…0x10D`** (not evdev standard): `0x106`=MENU_DOWN,
-  `0x107`=MENU_UP, `0x10c/0x10d`=PLAY, `0x103/0x109`=play/pause. Gated by `DAT_0082e9c1`
+  **Key codes are the custom range `0xFA…0x10D`** (not evdev standard): `0xfa`=media
+  play/pause, `0xfb/0xfc`=single volume +/−, `0x10a/0x10b`=double volume +/−,
+  `0x107/0x106`=held volume +/− (GPIO-gated), `0x103/0x109`=screen sleep/wake,
+  `0x108`=standby/shutdown. `0x10c/0x10d` only log. Volume gestures honor app assignments;
+  see [../docs/KEYS.md](../docs/KEYS.md) for corrected semantics and runtime evidence.
+  Gated by `DAT_0082e9c1`
   (key-enable, 0 under emulation) — the guard `lbu v0,65(s2)` at `0x004de70c` is patched to
   `li v0,1` by `scripts/patch_keys.sh` so keys dispatch (see [../docs/RE.md](../docs/RE.md)).
 

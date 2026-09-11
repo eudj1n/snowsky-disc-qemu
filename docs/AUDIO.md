@@ -17,6 +17,21 @@ emulation cannot supply data fast enough. WAV export also works without a browse
 Each `pcm_open` starts a new recording, replacing `/audio.pcm`; export before switching
 tracks if you want to keep it.
 
+## Physical volume and browser sound
+
+The physical controls now honor the app's volume-gesture assignments ([KEYS.md](KEYS.md)).
+`fbshim` mirrors the stock DAC attenuation writes (`0x80014d2d` / `0x80014d2f`) into
+`emu/dac-left` / `emu/dac-right`; `/audio.json` reports the corresponding `output_gain`.
+Web Audio applies these gains independently to the two output channels, with a short ramp.
+CS43131 attenuation uses 0.5 dB steps and value 255 for digital mute, per the
+[Cirrus Logic datasheet](https://statics.cirrus.com/pubs/proDatasheet/CS43131_DS1155F2.pdf).
+
+Verified live while paused: volume 115 → 114 → 115 gives gains
+0.37584 → 0.35481 → 0.37584. Browser graph wiring, gain updates and stopping queued audio
+when the guest powers off are covered by `tools/test_audio_browser.js`.
+Raw capture and WAV export remain pre-DAC samples: changing output gain does not rewrite
+the recording. This models digital volume, not the analog amplifier/output circuitry.
+
 ## The actual blocker
 
 `get_i2s3_pcm_device` (`FUN_0047670c`) scans `/proc/asound/cards` for **x2000 - x2000**.
@@ -107,5 +122,5 @@ sox -n -b 24 -r 96000 -c 2 "03 - HiRes 1kHz 24b96k.wav" synth 2 sine 1000 gain -
 - **USB-DAC (device as USB audio sink)** — out of scope under qemu-user: there is no USB host to
   send audio to the emulated gadget. `asndshim.c` covers the libasound (USB/BT) *playback* path if
   those routes are ever driven, but the USB-input direction can't be emulated here.
-- **Recording / input (`PCM_IN`, `pcm_read`)** — not implemented (tinyshim's `pcm_read` returns
-  silence); niche for this project.
+- **Recording / input (`PCM_IN`, `pcm_read`)** — not implemented (`pcm_read` returns `-1`,
+  not synthetic silence); niche for this project.

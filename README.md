@@ -96,6 +96,7 @@ CLAUDE.md              orientation for Claude Code sessions continuing this work
 - **[docs/TOUCH.md](docs/TOUCH.md)** — touch event format + coordinate mapping
 - **[docs/VIEWER.md](docs/VIEWER.md)** — live browser viewer + touch/swipe bridge (`./run.sh view`)
 - **[docs/AUDIO.md](docs/AUDIO.md)** — PCM capture, browser sound, WAV export, and card discovery
+- **[docs/KEYS.md](docs/KEYS.md)** — physical-button audit, corrected codes, app assignments, remaining work
 - **[docs/PROTOCOL.md](docs/PROTOCOL.md)** — FiiO Link frames, mqueues, network ports, auth
 - **[docs/DEVICE.md](docs/DEVICE.md)** — the real device on the network (ports, mDNS, no debug unlock)
 - **[docs/DISKOS.md](docs/DISKOS.md)** — diskOS V2.40 compatibility (build works; only the size cap blocks)

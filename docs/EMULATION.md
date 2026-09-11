@@ -44,6 +44,12 @@ There is no real framebuffer/driver, so an `LD_PRELOAD`-style shim intercepts `i
 - `FBIOGET_FSCREENINFO` → smem_len = 360·1080·4, line_length = 1440, visual TRUECOLOR
 - `EVIOCGNAME` → return the input device name
 - all other `0x46xx` fb ioctls (PAN/BLANK/PUT) → return 0 (no-op)
+- Volume GPIO `pb13`/`pb14`, touch/LCD sleep/wake and DAC attenuation writes are emulated
+  narrowly for physical controls; see [KEYS.md](KEYS.md).
+- Framebuffer `mmap`/`memcpy` calls are observed to publish `emu/fb-live`; actual memory
+  operations are delegated to the guest libc's `mmap64`/`memmove`.
+- libc `reboot` is intercepted for guest BusyBox poweroff/reboot: no shared-kernel reboot,
+  only an `emu/power-request` consumed by the viewer's guest-scoped supervisor.
 
 The shim is **freestanding** (`-nostdlib`, raw MIPS syscalls). A normal glibc-linked
 `.so` fails to load because the host toolchain glibc (2.36) ≠ device glibc (2.29):
@@ -178,23 +184,27 @@ See [PROTOCOL.md](PROTOCOL.md) for the frame format.
 `fb0` = 360×1080×4 (three 360×360 sub-buffers). `mq_ui` does **not** use `FBIOPAN_DISPLAY`;
 it alternates drawing to buf0/buf1, so the current screen is the **last-flushed** buffer
 (a static screen is not re-flushed, so the other buffer holds a stale frame). `tools/fb2png.py`
-emits every sub-buffer and prints each one's non-black pixel count so you can pick the live
-one. Pixels are BGRX and the panel is 180°-rotated, so the converter reverses pixel order.
+emits every sub-buffer and prints each one's non-black pixel count. For the actual latest
+buffer, use the shim's `emu/fb-live` byte (0/1; 255 = no observation yet), also consumed by
+the viewer. Higher pixel count is only a heuristic, not evidence of recency. Pixels are
+BGRX and the panel is 180°-rotated, so the converter reverses pixel order.
 
 ## Ordering / timing
 
 Start `mq_ui` first (creates `ui`), then `mq_player` (retries `mq_open("ui")`). Reaching the
 language screen / main menu takes ~20–24 s under qemu — allow ≥24 s before capturing.
 
-## Known noise (harmless)
+## Known hardware errors
 
 `WATCHDOG: feed failed`, `adc get voltage failed: Bad file descriptor`,
-`gpio_get_value fail`, `Failed to open …/brightness` — all from absent hardware; the
-backend keeps running. Note the *ioctl* failures on these devices are harmless, but the
+`gpio_get_value fail` for unemulated pins — from absent hardware; the backend keeps running.
+The volume pins and brightness/touch/LCD paths are now handled. A missing brightness path
+or failures reading `pb13`/`pb14` indicate an outdated setup/shim and break screen sleep
+or held buttons; see [KEYS.md](KEYS.md). The
 initial **`open("/dev/gpio")` must succeed** or `mq_player` aborts with `failed to open
 device` before it inits the DAC / pushes UI state (→ stuck splash). So `10_setup_env.sh`
 creates 0-byte stubs for `/dev/gpio`, `/dev/jz_adc_aux_0`, `/dev/jz_watchdog` (open works,
-later ioctls fail harmlessly). `/dev/jz_adc_aux_0`'s ADC reads still fail — not needed.
+later ioctls still fail). `/dev/jz_adc_aux_0`'s ADC reads still fail — not needed for boot.
 
 ## Troubleshooting
 

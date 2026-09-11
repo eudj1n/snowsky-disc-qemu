@@ -5,6 +5,7 @@
   const status = document.getElementById('audio-status');
   let context, enabled = false, generation = null, offset = 0, next = 0, epoch = 0;
   const sources = new Set();
+  let splitter, outputGains;
   function clear() {
     epoch++;
     for (const source of sources) source.stop();
@@ -13,6 +14,16 @@
   }
   async function enable() {
     context ||= new AudioContext();
+    if (!splitter) {
+      splitter = context.createChannelSplitter(2);
+      const merger = context.createChannelMerger(2);
+      outputGains = [context.createGain(), context.createGain()];
+      outputGains.forEach((gain, channel) => {
+        gain.gain.value = 0;
+        splitter.connect(gain, channel); gain.connect(merger, 0, channel);
+      });
+      merger.connect(context.destination);
+    }
     await context.resume();
     enabled = true;
     toggle.textContent = 'Mute sound';
@@ -38,6 +49,10 @@
     const ticket = epoch;
     const info = await (await fetch('/audio.json')).json();
     if (!enabled || ticket !== epoch) return;
+    if (info.running === false) { clear(); status.textContent = 'Player off'; return; }
+    outputGains.forEach((gain, channel) => {
+      gain.gain.setTargetAtTime(info.output_gain?.[channel] ?? 1, context.currentTime, .02);
+    });
     if (!info.generation) { status.textContent = 'Waiting for a track…'; return; }
     if (info.generation !== generation || info.bytes < offset) {
       clear();
@@ -68,7 +83,7 @@
     }
     const source = context.createBufferSource();
     source.buffer = buffer;
-    source.connect(context.destination);
+    source.connect(splitter);
     source.onended = () => sources.delete(source);
     sources.add(source);
     next = Math.max(next, context.currentTime + 0.08);

@@ -109,6 +109,18 @@ Capture: `/audio.pcm` + `/audio.fmt`; `./run.sh audio` exports a WAV, and the vi
 Enable sound / Replay capture. See `docs/AUDIO.md` for runtime evidence and corrected route
 interpretation (`0x10000000` is INPUT). USB/BT and DSD remain unvalidated.
 
+Physical controls now work in the viewer: volume single/double/hold respects the app's
+assignments; media play/pause is `0xfa`; `0x103` sleeps/wakes the screen. GPIO, brightness,
+touch/LCD stubs and browser DAC gain are implemented. Long Power safely stops only guest
+processes; Power while off boots them again (not stock standby/shutdown emulation).
+Raw power code `0x108` can invoke `poweroff -f` and is blocked in the viewer — do not sweep
+event codes blindly. See `docs/KEYS.md` and the current screenshots in `docs/STATUS.md`.
+The stock idle-poweroff path also calls BusyBox `reboot`; `fbshim` blocks the kernel call
+and publishes `emu/power-request` for the viewer to stop only this guest. This was tested
+with actual guest `poweroff -f` after verifying its dynamic symbol binding to the shim.
+`fbshim` observes framebuffer mmap/memcpy and records `emu/fb-live` so the viewer picks
+the actual last-written buffer instead of a stale frame when both buffers changed.
+
 Network services — the emulated `mq_player` doesn't bind
 12100/12103 yet (network-gated), so a `40_network.sh` (dummy `wlan0` + `NETWORK_MODE=1`) is the
 next step before a FiiO-YMD-style bridge (protocol already reversed — see `docs/PROTOCOL.md`);
