@@ -1,4 +1,4 @@
-# diskos-qemu
+# snowsky-disc-qemu
 
 Emulating the **FiiO Snowsky Disc** (Ingenic X2000, MIPS32) music player from its
 stock **V2.40** firmware, under `qemu-user` — booting the real UI to its main screen
@@ -10,6 +10,10 @@ and a "FiiO YMD"-style sync bridge against an emulated device instead of a physi
 Development branch: **`2.x`**. Releases follow the exact firmware version (`v2.40`;
 emulator revisions `v2.40-r1`, etc.). Firmware-free CI and manual secret-backed firmware
 integration: **[docs/CI.md](docs/CI.md)**. Firmware/rootfs are never release assets.
+
+The GitHub project was renamed from `diskos-qemu`. Existing runtime names
+(`diskos-qemu` container/image, `diskos-work` volume, `diskos-qemu-ci` test image)
+remain unchanged for compatibility; commands below deliberately use those names.
 
 ![main menu](docs/images/04-main-menu.png)
 

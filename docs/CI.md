@@ -48,6 +48,11 @@ OTA_DIR=/tmp/unused docker compose config --quiet
 ```
 
 Checkout is pinned to a full action commit SHA and does not persist credentials.
+Actions use Node.js 24 (`checkout` v6, `setup-docker-action` v5 and
+`setup-compose-action` v2). `.github/dependabot.yml` checks GitHub Actions weekly and
+groups proposed updates into PRs; SHA pins are retained and tested by `test_ci_pins.py`.
+No automatic merging is enabled. This updater does not change Docker Engine/Compose
+input versions, the Debian snapshot, or firmware checksums; those require explicit updates.
 Both workflows install **Docker Engine 28.5.2 and Compose 2.39.4** using official
 Docker actions pinned to full SHAs. Compose's binary cache is disabled. The first
 hosted integration attempt exposed an older preinstalled Engine: `interface_name`
@@ -66,7 +71,7 @@ trusted maintainers may change/run this workflow: a ref condition does not prote
 secrets from someone who can edit trusted workflow code.
 
 ```sh
-gh secret set FIRMWARE_V240_URL --repo eudj1n/diskos-qemu
+gh secret set FIRMWARE_V240_URL --repo eudj1n/snowsky-disc-qemu
 gh workflow run firmware.yml --ref 2.x
 ```
 

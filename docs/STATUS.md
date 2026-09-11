@@ -165,21 +165,27 @@ The complete local clean-volume run also passed a byte-exact audio check: signed
 16-bit stereo WAV becomes 32-bit / 44.1 kHz PCM, with two source periods found exactly.
 All temporary stacks, work volumes, generated media and SD loop devices were cleaned up.
 
-**66 Python + 10 JavaScript tests**, shell syntax and all four MIPS shim builds pass
+**67 Python + 10 JavaScript tests**, shell syntax and all four MIPS shim builds pass
 in the pinned Debian image. Missing/skipped Python checks fail CI. The Docker base
 digest and Debian/security snapshot are pinned, including native aiohttp and Node.
 The full workflow uses a secret download URL, verifies the consumed rootfs SHA-256,
 generates its own media and isolates containers/volumes/ports. See [CI.md](CI.md).
 
 `2.x` is now GitHub's default branch; historical `main` is retained. The firmware-free
-workflow passed on GitHub ([run](https://github.com/eudj1n/diskos-qemu/actions/runs/34602295491)).
+workflow passed on GitHub ([run](https://github.com/eudj1n/snowsky-disc-qemu/actions/runs/34602295491)).
 The first hosted firmware run passed build/tests and the secret-backed download, but
 the runner's old Docker Engine rejected Compose `interface_name` before guest startup.
-Both workflows now explicitly install Engine 28.5.2 / Compose 2.39.4; rerun pending.
+Both workflows now explicitly install Engine 28.5.2 / Compose 2.39.4.
 That rerun reached the real scanner/control checks and exposed a state-only `a202`
 notification racing a now-playing reply. The verifier now polls read-only queries
 for complete metadata and the expected state/track, with a bounded timeout; it never
 retries play/pause commands. Four regression tests cover this behavior.
+**Both hosted workflows passed on commit `bf54fa0`**:
+[firmware-free CI](https://github.com/eudj1n/snowsky-disc-qemu/actions/runs/34603213882)
+and [fresh V2.40 integration](https://github.com/eudj1n/snowsky-disc-qemu/actions/runs/34603214877).
+This includes the private download, verified rootfs, stock scan, TCP/WS controls,
+byte-exact PCM and cleanup on an amd64 hosted runner; the same flow passed locally
+on arm64. The Node.js 24 action upgrade and Dependabot setup are undergoing a new run.
 GitHub immutable
 releases are enabled. Branch protection/rulesets returned HTTP 403
 because the private repository's current plan does not support them; visibility was
