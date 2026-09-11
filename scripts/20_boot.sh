@@ -21,11 +21,15 @@ rm -f "$ROOTFS/dev/mqueue/"* 2>/dev/null || true
 head -c $((SCR_W*SCR_VY*4)) /dev/zero > "$ROOTFS/dev/fb0"
 : > "$ROOTFS/dev/input/event1"; : > "$ROOTFS/dev/input/event0"
 
+# Guest lifetime is decoupled from the capture wait so the guests stay alive for the
+# interactive viewer (./run.sh view), not just long enough for one screenshot. Override
+# with GUEST_TTL (seconds); the timeout only bounds leaked qemu processes.
+GUEST_TTL="${GUEST_TTL:-1800}"
 log "Starting mq_ui (creates 'ui' queue)"
-timeout $((WAIT+40)) chroot "$ROOTFS" /usr/bin/mq_ui  >"$WORK/mq_ui.log"     2>&1 &
+timeout "$GUEST_TTL" chroot "$ROOTFS" /usr/bin/mq_ui  >"$WORK/mq_ui.log"     2>&1 &
 sleep 4
 log "Starting mq_player (backend)"
-timeout $((WAIT+36)) chroot "$ROOTFS" /usr/bin/mq_player >"$WORK/mq_player.log" 2>&1 &
+timeout "$GUEST_TTL" chroot "$ROOTFS" /usr/bin/mq_player >"$WORK/mq_player.log" 2>&1 &
 
 log "Waiting ${WAIT}s for the UI to reach the main screen..."
 sleep "$WAIT"

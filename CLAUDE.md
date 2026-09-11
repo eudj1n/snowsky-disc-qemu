@@ -18,7 +18,10 @@ SD needs a re-mount after the guest's boot-time umount (`sd_mount()` in `lib.sh`
 ## How to run
 
 Host: `./run.sh up <…/main_os/ota_v240>` (once) → `./run.sh boot` → `./run.sh tap <x> <y>`.
-Screenshots are copied to `./shots/`. `./run.sh shell` gives a container shell where the
+Screenshots are copied to `./shots/`. For an **interactive** session use `./run.sh view` →
+open `http://localhost:8080` (live screen, click=tap, drag=swipe; optional device-photo skin
+from `assets/skin.png`) — see `docs/VIEWER.md`; the daemon is `tools/stream.py` /
+`scripts/40_stream.sh`. `boot` now keeps the guests alive ~30 min (`GUEST_TTL`) for this. `./run.sh shell` gives a container shell where the
 `/repo/scripts/*.sh` pipeline lives. Everything qemu-side runs **inside** the container
 (named `diskos-qemu`, `--privileged`); `/work` is a Docker volume holding the extracted
 rootfs and runtime state.
@@ -78,7 +81,8 @@ looks right / has the higher non-black pixel count printed by `fb2png.py`.
 - Shim source: `shim/fbshim.c` (fb + input-name ioctls). Diagnostic mq_open interposer:
   `shim/mqshim.c` (only needed if you suspect an attr/errno issue — normally unused).
 - Tools: `tools/inject.py` (touch), `tools/uisniff.c` (sniff the `ui` mqueue non-destructively),
-  `tools/fb2png.py` (framebuffer → PNG, BGRX + 180° rotation).
+  `tools/fb2png.py` (framebuffer → PNG, BGRX + 180° rotation), `tools/stream.py` (live viewer +
+  touch/swipe HTTP bridge; served by `scripts/40_stream.sh`, `docs/VIEWER.md`).
 - RE: `ghidra/` scripts + notes. Key functions: `mq_ui` main `FUN_004036ec`, touch device
   open `FUN_0055da20`, touch read-cb `FUN_0055db8c`.
 - Firmware acquisition + decrypt: `firmware/README.md` (password `fo123`; rootfs sha256 pinned

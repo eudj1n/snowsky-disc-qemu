@@ -7,6 +7,7 @@
 #   ./run.sh shell                       open a shell inside the running container
 #   ./run.sh boot [seconds]              boot to the main screen and capture PNGs into ./shots/
 #   ./run.sh tap <x> <y>                 inject a tap at a screen coordinate, re-capture into ./shots/
+#   ./run.sh view [port]                 live viewer + touch/swipe bridge in the browser (default :8080)
 #   ./run.sh capture [prefix]            re-capture the current framebuffer into ./shots/
 #   ./run.sh diag                        touch diagnostic (leaves guests running)
 #   ./run.sh stop                        stop the guest processes
@@ -69,6 +70,14 @@ case "$cmd" in
     docker exec "$CTR" bash -lc "/repo/scripts/capture.sh ${1:-cap}"
     mkdir -p "$REPO_DIR/shots"; docker cp "$CTR":/work/shots/. "$REPO_DIR/shots/" 2>/dev/null || true
     echo "==> PNGs copied to $REPO_DIR/shots/"
+    ;;
+  view)
+    need_ctr
+    PORT="${1:-8080}"
+    docker exec -d "$CTR" bash -lc "/repo/scripts/40_stream.sh $PORT >/work/stream.log 2>&1"
+    sleep 1
+    echo "==> live viewer: http://localhost:$PORT   (click = tap · drag = swipe · buttons for gestures/keys)"
+    echo "    (needs ./run.sh boot for a live screen; log: docker exec $CTR cat /work/stream.log)"
     ;;
   stop) need_ctr; docker exec "$CTR" bash -lc '/repo/scripts/99_stop.sh' ;;
   down) ( cd "$REPO_DIR" && OTA_DIR="${OTA_DIR:-unused}" docker compose down );          echo "container stopped & removed (work volume kept)";;

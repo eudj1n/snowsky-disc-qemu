@@ -32,6 +32,9 @@ Requires Docker (macOS or Linux). The firmware is **not** in this repo — get i
 
 # 3. tap something (coordinates are what you SEE in the PNG; flipped internally)
 ./run.sh tap 180 315      # e.g. the Confirm button on the language screen
+
+# 3b. …or drive it interactively in the browser: live screen + click/drag/swipe
+./run.sh view             # -> http://localhost:8080  (click=tap, drag=swipe)
 ./run.sh shell            # or drop into the container to poke around
 
 # stop / teardown
@@ -73,9 +76,11 @@ scripts/               in-container pipeline
   20_boot.sh             run mq_ui + mq_player, capture the framebuffer
   30_tap.sh              inject a tap at a screen coordinate, re-capture
   capture.sh 99_stop.sh lib.sh
+  40_stream.sh           live viewer + touch/swipe bridge daemon (./run.sh view)
 sdcard/                drop media here -> appears as the device's SD card (/tmp/sdcard) in the File Browser
+assets/                optional viewer skin (skin.png — a photo of the player; git-ignored)
 shim/                  freestanding MIPS ioctl shim (fbshim.c) + build script; mqshim.c (diag)
-tools/                 inject.py (touch), uisniff.c (mqueue sniffer), fb2png.py (fb → PNG)
+tools/                 inject.py (touch), uisniff.c (mqueue sniffer), fb2png.py (fb → PNG), stream.py (viewer)
 ghidra/                headless decompile scripts + RE notes
 firmware/README.md     how to obtain + decrypt the firmware (NO firmware here)
 docs/                  STATUS, EMULATION (deep dive), PROTOCOL, TOUCH, images/
@@ -87,6 +92,7 @@ CLAUDE.md              orientation for Claude Code sessions continuing this work
 - **[docs/STATUS.md](docs/STATUS.md)** — what works, screenshots, what's next
 - **[docs/EMULATION.md](docs/EMULATION.md)** — the stack + every non-obvious fix (read this first)
 - **[docs/TOUCH.md](docs/TOUCH.md)** — touch event format + coordinate mapping
+- **[docs/VIEWER.md](docs/VIEWER.md)** — live browser viewer + touch/swipe bridge (`./run.sh view`)
 - **[docs/PROTOCOL.md](docs/PROTOCOL.md)** — FiiO Link frames, mqueues, network ports, auth
 - **[docs/DEVICE.md](docs/DEVICE.md)** — the real device on the network (ports, mDNS, no debug unlock)
 - **[docs/DISKOS.md](docs/DISKOS.md)** — diskOS V2.40 compatibility (build works; only the size cap blocks)

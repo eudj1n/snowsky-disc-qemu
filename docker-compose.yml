@@ -28,6 +28,7 @@ services:
       - "12100:12100"                    # raw FiiO Link  (TCP, auth-free device control)
       - "12103:12103"                    # HTTP/WS control (TCP, Mongoose mg_dash)
       - "12101:12101/udp"                # discovery       (UDP)
+      - "8080:8080"                      # live viewer + touch bridge (./run.sh view)
 
 volumes:
   work:

@@ -11,6 +11,10 @@ _As of this commit._
 - **Touch injection** — inject `input_event`s into the touch stub; tap coordinates mapped
   (180°-rotated). A short press (~0.3 s) is a click; a long press (~1 s) opens the item's
   context menu (select / delete / add-to-playlist) — see [TOUCH.md](TOUCH.md).
+- **Live interactive viewer** — `./run.sh view` streams the framebuffer to a browser and
+  turns clicks/drags into taps/**swipes** (shade pull-down, left→right back), optionally
+  composited into a photo of the player. Verified live: menu → tap **Browse files** → swipe
+  **back** → menu. See [VIEWER.md](VIEWER.md).
 - **SD card / File Browser** — drop media into `./sdcard`; it is built into a FAT image exposed
   as `/dev/mmcblk0[p1]` and mounted at `/tmp/sdcard`. The File Browser lists it and is fully
   navigable to the leaf tracks. Verified end-to-end: main menu → **Browse files** →
@@ -43,8 +47,10 @@ boots go **straight to the main menu** (~24 s), skipping the wizard.
   itself is already reversed and verified against the real device — device control is **auth-free**
   on 12100, and there is **no file-upload command** in the device protocol (see
   [PROTOCOL.md](PROTOCOL.md) and [DEVICE.md](DEVICE.md)).
-- **Carousel swipes** — inject motion (intermediate position events over time) so LVGL
-  registers drags, to navigate the app carousel and settings.
+- **Carousel swipes** — ✅ done via the viewer's drag/`/swipe` (intermediate position events
+  over time). Remaining: **physical keys** — the `x2000_key` (`event0`) + MCU-mediated
+  power/charge buttons aren't injected yet; the evdev codes need a Ghidra pass on the
+  `mq_player` key handler (`KEY_VALUE_*` constants) before wiring them into the bridge.
 - **MCU/UART** — the FiiO MCU (`/dev/ttyS*`) is absent; not required to reach/use the main
   screen, but some features (power, keys, charging state) would need a UART stub.
 - **Deterministic live-buffer capture** — currently emit all sub-buffers and pick by eye;
