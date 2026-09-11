@@ -40,9 +40,9 @@ EV0 = os.path.join(ROOTFS, "dev/input/event0")  # x2000_key physical keys
 # (or /work/skin.png) — ideally with a transparent hole over the screen for pixel-perfect
 # alignment. Circle geometry is a fraction of the image (tune via env or ?cx&cy&d).
 SKIN = os.environ.get("SKIN", os.path.join(os.path.dirname(ROOTFS.rstrip('/')) or '/', "skin.png"))
-SKIN_CX = float(os.environ.get("SKIN_CX", "0.5"))     # screen centre X / image width
-SKIN_CY = float(os.environ.get("SKIN_CY", "0.5"))     # screen centre Y / image height
-SKIN_D = float(os.environ.get("SKIN_D", "0.7"))       # screen diameter / image width
+SKIN_CX = float(os.environ.get("SKIN_CX", "0.500"))     # screen centre X / image width
+SKIN_CY = float(os.environ.get("SKIN_CY", "0.500"))     # screen centre Y / image height
+SKIN_D = float(os.environ.get("SKIN_D", "0.679"))       # screen diameter / image width
 
 # ---- framebuffer -> PNG ------------------------------------------------------
 
