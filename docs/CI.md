@@ -6,7 +6,8 @@
 context, not a second development target. A future incompatible major gets `3.x`.
 Firmware V2.40 is the current validation baseline; V2.57 is next, not yet supported.
 
-Release the first validated V2.40 milestone as `v2.40`. Emulator-only follow-up fixes
+The first validated V2.40 milestone is
+[v2.40](https://github.com/eudj1n/snowsky-disc-qemu/releases/tag/v2.40). Emulator-only follow-up fixes
 for that firmware use `v2.40-r1`, `v2.40-r2`, etc. Never move/reuse an existing tag.
 This is a firmware-based naming convention, not npm/SemVer package versioning.
 V2.57 will use `v2.57` after its own validation. Do not merely replace the rootfs hash:

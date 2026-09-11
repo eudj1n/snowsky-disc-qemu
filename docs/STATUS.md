@@ -1,6 +1,6 @@
 # Status
 
-_Updated 2026-09-11 during reproducible CI and firmware-versioning setup._
+_Updated 2026-09-11 after hosted CI validation and the immutable v2.40 source release._
 
 ## Working ✅
 
@@ -185,12 +185,23 @@ retries play/pause commands. Four regression tests cover this behavior.
 and [fresh V2.40 integration](https://github.com/eudj1n/snowsky-disc-qemu/actions/runs/34603214877).
 This includes the private download, verified rootfs, stock scan, TCP/WS controls,
 byte-exact PCM and cleanup on an amd64 hosted runner; the same flow passed locally
-on arm64. The Node.js 24 action upgrade and Dependabot setup are undergoing a new run.
+on arm64. After the Node.js 24 action upgrade and Dependabot setup, both workflows
+also passed on release commit **`e3aab81`**:
+[CI](https://github.com/eudj1n/snowsky-disc-qemu/actions/runs/34603924267) and
+[firmware integration](https://github.com/eudj1n/snowsky-disc-qemu/actions/runs/34603924295).
+The CI job has no Node.js 20 deprecation annotations; the firmware run uploaded zero
+artifacts. Dependabot's initial jobs passed and opened
+[PR #1](https://github.com/eudj1n/snowsky-disc-qemu/pull/1), retaining full SHA pins;
+the major checkout update is left for separate review, not automatically merged.
 GitHub immutable
 releases are enabled. Branch protection/rulesets returned HTTP 403
 because the private repository's current plan does not support them; visibility was
 not changed. The initial OAuth `workflow`-scope blocker was resolved by the owner.
-No release tag has been created yet. V2.57 remains the next migration target.
+**[v2.40](https://github.com/eudj1n/snowsky-disc-qemu/releases/tag/v2.40) is published**,
+with an annotated tag at `e3aab81dc50acbd11c1939b920fbd2cd8abf9a12`, immutable release
+enabled and no uploaded assets. It is an emulator source baseline, not a flashable
+firmware package. This status-only follow-up does not move the tested release tag.
+V2.57 remains the next migration target.
 
 The repository has been renamed to **`eudj1n/snowsky-disc-qemu`** and `origin` updated;
 it remains private, with `2.x` as default. Local directory and Docker image/container/
