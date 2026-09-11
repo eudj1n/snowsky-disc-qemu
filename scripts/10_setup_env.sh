@@ -72,12 +72,17 @@ if [ -n "$SD_CONTENT" ]; then
   rm -f "$T/README.md" "$T/.gitkeep" 2>/dev/null || true
   sync; umount "$T"; rmdir "$T"
   LOOP="$(losetup -f --show "$IMG")"
-  ln -sf "$LOOP" "$ROOTFS/dev/mmcblk0"
-  ln -sf "$LOOP" "$ROOTFS/dev/mmcblk0p1"
+  # Expose as REAL device nodes (not symlinks): a symlink -> /dev/loop0 can't be resolved from
+  # inside the guest's chroot (it has no /dev/loop0), so the guest's own `mount /dev/mmcblk0p1`
+  # would fail. mknod with the loop's major(7)/minor lets the guest mount the FAT directly.
+  MIN="${LOOP##*loop}"
+  rm -f "$ROOTFS/dev/mmcblk0" "$ROOTFS/dev/mmcblk0p1"
+  mknod "$ROOTFS/dev/mmcblk0"   b 7 "$MIN" 2>/dev/null || ln -sf "$LOOP" "$ROOTFS/dev/mmcblk0"
+  mknod "$ROOTFS/dev/mmcblk0p1" b 7 "$MIN" 2>/dev/null || ln -sf "$LOOP" "$ROOTFS/dev/mmcblk0p1"
   mkdir -p "$ROOTFS/tmp/sdcard" /tmp/sdcard
   mount "$LOOP" "$ROOTFS/tmp/sdcard" 2>/dev/null || err "  SD mount (guest path) failed"
   mount "$LOOP" /tmp/sdcard        2>/dev/null || true   # /proc/mounts "/tmp/sdcard" match
-  log "SD: FAT from ./sdcard on $LOOP as /dev/mmcblk0p1, mounted at /tmp/sdcard"
+  log "SD: FAT from ./sdcard on $LOOP (mknod b 7 $MIN) as /dev/mmcblk0p1, mounted at /tmp/sdcard"
 else
   rm -f "$ROOTFS/dev/mmcblk0" "$ROOTFS/dev/mmcblk0p1"    # no card
 fi
