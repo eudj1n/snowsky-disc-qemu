@@ -210,10 +210,18 @@ and investigation of other ECHO-based products are deferred to separate work.
 
 ## Not done yet / next
 
-- **V2.57 migration** — queued after the V2.40 CI baseline. Secret `FIRMWARE_V257_URL`
-  is present; it is not used by the V2.40 workflow. Validate existing behavior first,
-  then fonts, Wi-Fi details, list gestures and FiiO Link Favorites from the new changelog.
-  See [CI.md](CI.md) for the version/release policy and acceptance scope.
+- **V2.57 migration — intake completed, boot not tested.** A reusable read-only inventory
+  tool verified both local ZIPs/rootfs manifests and stream-decrypted rootfs hashes.
+  V2.57 has 77 chunks / 80,596,992 plaintext bytes, main OS 257 / recovery 18; V2.40
+  has 85 chunks / 88,420,352 bytes and recovery 17. No new firmware was executed or
+  installed into the working volume. The current runtime/workflow still target V2.40.
+  See [2.57 report](firmware/2.57.md), [PORTING](PORTING.md), public JSON inventories
+  under `firmware/inventory/`, and [CHANGELOG](../CHANGELOG.md). Upstream notes are mapped
+  to stable FW257 acceptance IDs and explicitly marked not tested. Next is isolated
+  extraction, ELF comparison and guarded version-specific patch/probe profiles.
+  Intake tooling checks passed in the pinned image: **74 Python + 10 JavaScript tests**,
+  shell syntax checks and all four shim builds. No V2.57 UI screenshots are claimed
+  before bring-up; the existing curated screenshots still document V2.40.
 - **Additional audio routes** — USB/BT, DSD, and hardware-accurate timing still need separate
   validation. Local PCM works; see [AUDIO.md](AUDIO.md).
 - **Auto update (media library)** — the menu option was inspected/clicked, but adding a

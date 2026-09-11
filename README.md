@@ -11,6 +11,8 @@ Development branch: **`2.x`**. Releases follow the exact firmware version (`v2.4
 emulator revisions `v2.40-r1`, etc.). Firmware-free CI and manual secret-backed firmware
 integration: **[docs/CI.md](docs/CI.md)**. Firmware/rootfs are never release assets.
 First validated source release: **[v2.40](https://github.com/eudj1n/snowsky-disc-qemu/releases/tag/v2.40)**.
+Project history: [CHANGELOG.md](CHANGELOG.md). New-version workflow and evidence:
+[docs/PORTING.md](docs/PORTING.md); [V2.57 intake](docs/firmware/2.57.md).
 
 The GitHub project was renamed from `diskos-qemu`. Existing runtime names
 (`diskos-qemu` container/image, `diskos-work` volume, `diskos-qemu-ci` test image)

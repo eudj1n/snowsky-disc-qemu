@@ -94,6 +94,10 @@ looks right / has the higher non-black pixel count printed by `fb2png.py`.
 
 ## Conventions
 
+- For another firmware/product, read `docs/PORTING.md` and its `docs/firmware/<version>.md`
+  report first. `firmware/inventory/` contains observed inputs, not runtime enablement
+  profiles. Keep vendor-reported changes separate from verified emulator features;
+  update `CHANGELOG.md` for emulator changes. Never replace V2.40 hashes/addresses blindly.
 - Default development branch: `2.x`; firmware-based release tags `v2.40`, then
   `v2.40-r1` for emulator fixes against the same firmware. See `docs/CI.md` for pinned
   CI, secret-backed downloads and release gates. Never log a direct firmware URL.

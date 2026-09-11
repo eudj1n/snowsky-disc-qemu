@@ -5,6 +5,10 @@ the emulator — written so a **new firmware version** can be re-analysed the sa
 setup lives in [../ghidra/README.md](../ghidra/README.md); this page is the method + the findings
 per direction.
 
+Addresses/layouts below are **V2.40 observations**, not portable constants. For a
+second firmware version, start with [PORTING.md](PORTING.md) and keep its input and
+evidence report separate; do not replace V2.40's pins while investigating another build.
+
 ## The two facts that make this tractable
 
 1. **The binaries are fixed-address `EXEC` (not PIE).** Every string/global is at an absolute
@@ -122,11 +126,13 @@ Multi-format PCM validated (16-bit/44.1k and 24-bit/96k, faithful). USB-DAC (no 
 
 ## Direction: network / FiiO Link + 12103 auth ✅ (mapped)
 
-Function addresses and the auth conclusion are in [../ghidra/README.md](../ghidra/README.md) and
-[PROTOCOL.md](PROTOCOL.md): `http_server_thread` `FUN_004b9720` (listen 12103), router
-`FUN_004b2820`, `mg_dash_authenticate` `FUN_004af7e0`, token gen `FUN_004ae108`. Device control
-is auth-free FiiO Link; there is no file-upload command. To exercise the servers under emulation
-they must bind first — see the `40_network.sh` lead in [STATUS.md](STATUS.md).
+Corrected active V2.40 path: `http_server_thread` `FUN_004b9720` listens on 12103,
+callback `FUN_004b9d38` uses the 16-entry table `006c7a50`, with no WebSocket route.
+Bundled dashboard `FUN_004b2820` / `mg_dash_authenticate` is **not** this listener's router.
+Device control is auth-free FiiO Link TCP. Native WS support is an emulator adapter,
+not a stock authentication unlock. Reproduce with `tools/inspect_http_routes.py` and
+`tools/probe_websocket.py`; startup networking is `scripts/16_network.sh`.
+See [WEBSOCKET.md](WEBSOCKET.md) and [NETWORK.md](NETWORK.md).
 
 ## Direction: touch / UI ✅
 
@@ -136,8 +142,10 @@ bridge is [VIEWER.md](VIEWER.md).
 
 ## Re-analysing a new firmware version
 
-1. Re-extract the rootfs (`scripts/00_extract_rootfs.sh`) and re-pin the sha256 in `scripts/lib.sh`.
-2. Re-import `mq_player`/`mq_ui` into Ghidra and analyse (addresses **will shift** between builds).
+1. Inventory the input using `tools/firmware_inventory.py`; keep a separate record and
+   work volume. Do **not** overwrite V2.40's rootfs pin. See [PORTING.md](PORTING.md).
+2. Import `mq_player`/`mq_ui` into a separate version-named Ghidra project and analyse
+   (addresses/layouts may shift); record exact stock ELF hashes before any patch.
 3. Re-locate functions by their **zlog source paths / function-name strings** (fact #2 above),
    not by the old `FUN_` addresses — grep the decompilation for e.g. `echo_sys_key_handler`,
    `echo_start_key_server`, `mg_dash_authenticate`. Recompute the string-vaddr offset (fact #1).

@@ -1,0 +1,19 @@
+{
+  "schema_version": 1,
+  "version": "2.57",
+  "main_os_version": 257,
+  "recovery_os_version": 18,
+  "rootfs_chunks": 77,
+  "encrypted_rootfs_manifest_checked": true,
+  "manifest_signature_verified": false,
+  "firmware_executed": false,
+  "archive": {
+    "sha256": "2bfad000609440bcbf492468e9e5f8f3d5e0bade797323431a15b5755688bfcf",
+    "size": 105680009,
+    "matches_unpacked_rootfs": true
+  },
+  "rootfs": {
+    "sha256": "111e4dd7ee3d7ff91ba7e61181690be7ffd22bd1bbd13ad513f5f015ffb302ae",
+    "size": 80596992
+  }
+}
