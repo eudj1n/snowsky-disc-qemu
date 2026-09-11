@@ -1,0 +1,8 @@
+{
+  "version": "2.40",
+  "source_page": "https://forum.fiio.com/note/showNoteContent.do?id=202601311712087234434",
+  "url_secret": "FIRMWARE_V240_URL",
+  "rootfs_chunks": 85,
+  "rootfs_size": 88420352,
+  "rootfs_sha256": "b479e159db5134325819b5f6e5a54388f3adefae373a4ee60680f02d5dcf0bb8"
+}

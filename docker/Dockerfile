@@ -6,9 +6,13 @@
 #
 # Works on both amd64 and arm64 Docker hosts (Debian is multi-arch; qemu-user-static
 # runs the MIPS guest regardless of host arch).
-FROM debian:12
+FROM debian:12@sha256:6ebd97fa83deb272194a2cf015b3d26a4d538e9ad3a7a79d544c8af5b0a01443
 
 ENV DEBIAN_FRONTEND=noninteractive
+
+# Signed, dated package indexes pin transitive dependencies on both host architectures.
+# HTTP bootstraps ca-certificates; apt still verifies Debian signatures and package hashes.
+COPY debian.sources /etc/apt/sources.list.d/debian.sources
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
       qemu-user-static \
@@ -23,6 +27,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
       sox \
       python3 \
       python3-aiohttp \
+      nodejs \
       openssl \
       xxd \
       file \

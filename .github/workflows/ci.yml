@@ -1,0 +1,25 @@
+name: CI
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  checks:
+    name: Firmware-free checks
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+      - name: Validate Compose
+        run: OTA_DIR=/tmp/unused docker compose config --quiet
+      - name: Build pinned toolchain
+        run: docker build --tag diskos-qemu-ci docker
+      - name: Python, JavaScript, shell syntax and MIPS shims
+        run: docker run --rm --network none --volume "$PWD:/repo:ro" diskos-qemu-ci bash /repo/ci/test.sh
