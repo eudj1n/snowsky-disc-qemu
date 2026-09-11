@@ -15,6 +15,8 @@ services:
     container_name: ${EMU_CONTAINER_NAME:-diskos-qemu} # default expected by ./run.sh
     privileged: true                     # qemu-user needs binfmt_misc, POSIX mqueue, a large VA reservation
     command: sleep infinity
+    environment:
+      FW_VERSION: ${FW_VERSION:-2.40}     # exact-build profile; use a separate volume per version
     stop_grace_period: 2s
     networks:
       default:
@@ -26,7 +28,7 @@ services:
       - work:/work                       # extracted rootfs + runtime state (persists across restarts)
     ports:
       # FiiO Link services the emulated device binds. Lets a host client
-      # (e.g. a FiiO-YMD-style bridge) reach the emulated player. See docs/PROTOCOL.md.
+      # reach the emulated player. See docs/PROTOCOL.md.
       # Comment out any that clash with something already on your host.
       - "127.0.0.1:12100:12100"          # auth-free control: never expose to LAN by default
       - "127.0.0.1:12113:12103"          # direct stock HTTP, without the WebSocket bridge

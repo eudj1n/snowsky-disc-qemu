@@ -5,14 +5,15 @@ stock **V2.40** firmware, under `qemu-user` — booting the real UI to its main 
 and driving it with synthetic touch, entirely without the hardware.
 
 Groundwork for building/testing custom firmware (cf. [b0hemia/diskos](https://github.com/b0hemia/diskos))
-and a "FiiO YMD"-style sync bridge against an emulated device instead of a physical one.
+and a media-library sync bridge against an emulated device instead of a physical one.
 
 Development branch: **`2.x`**. Releases follow the exact firmware version (`v2.40`;
 emulator revisions `v2.40-r1`, etc.). Firmware-free CI and manual secret-backed firmware
 integration: **[docs/CI.md](docs/CI.md)**. Firmware/rootfs are never release assets.
 First validated source release: **[v2.40](https://github.com/eudj1n/snowsky-disc-qemu/releases/tag/v2.40)**.
 Project history: [CHANGELOG.md](CHANGELOG.md). New-version workflow and evidence:
-[docs/PORTING.md](docs/PORTING.md); [V2.57 intake](docs/firmware/2.57.md).
+[docs/PORTING.md](docs/PORTING.md); [V2.57 experimental baseline](docs/firmware/2.57.md).
+V2.40 remains the default; V2.57 is opt-in for isolated tests, with new-feature acceptance pending.
 
 The GitHub project was renamed from `diskos-qemu`. Existing runtime names
 (`diskos-qemu` container/image, `diskos-work` volume, `diskos-qemu-ci` test image)
@@ -35,7 +36,7 @@ viewer, or run `./run.sh audio` to export `shots/audio.wav`. See [docs/AUDIO.md]
 
 Requires **Docker Engine 28.1+** (macOS or Linux) and **Compose 2.36+** (`eth1` naming).
 The firmware is **not** in this repo — get it first:
-**[firmware/README.md](firmware/README.md)** (FiiO forum download + `fo123` decrypt info).
+**[firmware/README.md](firmware/README.md)** (official download page and preparation instructions).
 
 ```sh
 # 1. point the tool at the OTA chunk directory (…/main_os/ota_v240 of the unzipped firmware)
@@ -97,13 +98,13 @@ scripts/               in-container pipeline
   capture.sh 99_stop.sh lib.sh
   40_stream.sh           live viewer + touch/swipe bridge daemon (./run.sh view)
 sdcard/                drop media here -> appears as the device's SD card (/tmp/sdcard) in the File Browser
-assets/                optional viewer skin (skin.png — a photo of the player; git-ignored)
+assets/                optional viewer skin (owner's original photo; included)
 shim/                  freestanding MIPS ioctl shim (fbshim.c) + build script; mqshim.c (diag)
 tools/                 inject.py (touch), uisniff.c (mqueue sniffer), fb2png.py (fb → PNG), stream.py (viewer)
 ghidra/                headless decompile scripts + RE notes
 firmware/README.md     how to obtain + decrypt the firmware (NO firmware here)
 docs/                  STATUS, EMULATION (deep dive), PROTOCOL, TOUCH, images/
-CLAUDE.md              orientation for Claude Code sessions continuing this work
+AGENTS.md              shared instructions for coding agents continuing this work
 ```
 
 ## Documentation
@@ -123,6 +124,11 @@ CLAUDE.md              orientation for Claude Code sessions continuing this work
 - **[ghidra/README.md](ghidra/README.md)** — reverse-engineering setup + findings
 
 ## Legal / scope
+
+Independent research project; not affiliated with or endorsed by FiiO/SNOWSKY.
+This is a source-code emulator release, not firmware to flash onto a device.
+Project code and the owner's skin photo are [MIT licensed](LICENSE). Vendor firmware,
+branding and firmware UI depicted in screenshots are not relicensed by this project.
 
 For interoperability research and personal customization of a device you own. Firmware is
 downloaded by the user from FiiO and is not redistributed here. Flashing modified images to

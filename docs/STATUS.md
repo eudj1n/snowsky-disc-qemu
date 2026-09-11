@@ -210,18 +210,22 @@ and investigation of other ECHO-based products are deferred to separate work.
 
 ## Not done yet / next
 
-- **V2.57 migration — intake completed, boot not tested.** A reusable read-only inventory
-  tool verified both local ZIPs/rootfs manifests and stream-decrypted rootfs hashes.
-  V2.57 has 77 chunks / 80,596,992 plaintext bytes, main OS 257 / recovery 18; V2.40
-  has 85 chunks / 88,420,352 bytes and recovery 17. No new firmware was executed or
-  installed into the working volume. The current runtime/workflow still target V2.40.
-  See [2.57 report](firmware/2.57.md), [PORTING](PORTING.md), public JSON inventories
-  under `firmware/inventory/`, and [CHANGELOG](../CHANGELOG.md). Upstream notes are mapped
-  to stable FW257 acceptance IDs and explicitly marked not tested. Next is isolated
-  extraction, ELF comparison and guarded version-specific patch/probe profiles.
-  Intake tooling checks passed in the pinned image: **74 Python + 10 JavaScript tests**,
-  shell syntax checks and all four shim builds. No V2.57 UI screenshots are claimed
-  before bring-up; the existing curated screenshots still document V2.40.
+- **V2.57 — clean baseline works; feature acceptance pending.** Two isolated local runs
+  passed boot, stock library scan, TCP/WS (`soc_version:257`) and byte-exact PCM.
+  Physical volume single/hold, media play/pause, screen sleep/wake and BusyBox reboot
+  shim binding also passed. V2.40 remains the default and its interactive volume is untouched.
+  Profiles check product/version, six binary hashes and the one allowed key patch;
+  old V2.40 address-based diagnostics reject V2.57. Downloader/workflow select each version
+  explicitly. Firmware-free suite: **88 Python + 10 JavaScript tests**, shell syntax and
+  four shim builds. See [2.57 report and new screenshots](firmware/2.57.md),
+  [PORTING](PORTING.md) and [CHANGELOG](../CHANGELOG.md). FW257 feature cases and full
+  key-reassignment combinations are still untested; no V2.57 release tag yet.
+  The expanded clean integration also passed again on **V2.40**, including its physical
+  controls and reboot binding, after introduction of the version-aware profiles.
+- **Public release preparation** — MIT selected; the owner confirmed skin-photo authorship.
+  Root README no longer prints the OTA password or refers to private projects;
+  instructions moved to `AGENTS.md`. Visibility is still private. History/tag/log and
+  screenshot review remains necessary before publishing; see [PUBLIC_RELEASE](PUBLIC_RELEASE.md).
 - **Additional audio routes** — USB/BT, DSD, and hardware-accurate timing still need separate
   validation. Local PCM works; see [AUDIO.md](AUDIO.md).
 - **Auto update (media library)** — the menu option was inspected/clicked, but adding a

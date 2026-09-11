@@ -4,6 +4,7 @@ import argparse
 import json
 import struct
 from pathlib import Path
+from firmware_profile import require_v240_player
 
 
 def routes(data):
@@ -39,4 +40,5 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('binary', nargs='?', default='/work/rootfs/usr/bin/mq_player')
     args = parser.parse_args()
+    require_v240_player(args.binary)
     print(json.dumps(routes(Path(args.binary).read_bytes()), indent=2))

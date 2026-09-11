@@ -2,8 +2,9 @@
 
 The firmware is **not** stored in this repository. Download it yourself from FiiO.
 
-GitHub integration downloads use secret `FIRMWARE_V240_URL`, never a committed direct
-URL. Public metadata/hash: [v2.40.json](v2.40.json). See [CI policy](../docs/CI.md).
+GitHub integration downloads use per-version secrets (`FIRMWARE_V240_URL`,
+`FIRMWARE_V257_URL`), never a committed direct URL. Runtime profiles:
+[v2.40.json](v2.40.json), [v2.57.json](v2.57.json). See [CI policy](../docs/CI.md).
 
 ## Where to get it
 

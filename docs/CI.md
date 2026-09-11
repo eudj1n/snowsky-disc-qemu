@@ -4,7 +4,8 @@
 
 `2.x` is the default development branch for firmware 2.x. Keep `main` as historical
 context, not a second development target. A future incompatible major gets `3.x`.
-Firmware V2.40 is the current validation baseline; V2.57 is next, not yet supported.
+Firmware V2.40 is the released default; V2.57 has an opt-in profile and clean baseline
+checks. Its upstream-feature acceptance remains in [firmware/2.57.md](firmware/2.57.md).
 
 The first validated V2.40 milestone is
 [v2.40](https://github.com/eudj1n/snowsky-disc-qemu/releases/tag/v2.40). Emulator-only follow-up fixes
@@ -73,18 +74,20 @@ secrets from someone who can edit trusted workflow code.
 
 ```sh
 gh secret set FIRMWARE_V240_URL --repo eudj1n/snowsky-disc-qemu
-gh workflow run firmware.yml --ref 2.x
+gh workflow run firmware.yml --ref 2.x -f version=2.40
+# Set FIRMWARE_V257_URL at the hidden prompt before selecting the second profile:
+gh workflow run firmware.yml --ref 2.x -f version=2.57
 ```
 
 Paste the direct HTTPS ZIP download URL at the hidden prompt; do not pass it as a
-command argument or put it in `.env`, YAML, docs or a chat. `FIRMWARE_V257_URL` is
-reserved for the subsequent migration and is not consumed by the V2.40 workflow.
-The public source page, version, rootfs size/hash and chunk count are in
-`firmware/v2.40.json`; no direct download URL is committed.
+command argument or put it in `.env`, YAML, docs or a chat. The downloader selects
+`FIRMWARE_V240_URL` or `FIRMWARE_V257_URL` for the requested profile.
+Version, rootfs size/hash, chunk count and exact binary/patch fingerprints are in
+`firmware/v<version>.json`; no direct download URL is committed.
 
 `tools/fetch_firmware.py` receives the secret only in its download step. It requires
 HTTPS (including redirects), suppresses download exception details, bounds ZIP/chunk
-sizes and extracts only 85 validated chunk basenames. It never extracts archive paths,
+sizes and extracts validated chunk basenames (85 for V2.40, 77 for V2.57). It never extracts archive paths,
 kernel or recovery images. The ZIP wrapper itself has no pinned checksum; the actual
 consumed rootfs **is SHA-256 verified before unsquashfs or firmware execution** by
 `00_extract_rootfs.sh`. A changed wrapper is acceptable only if that payload is identical.
@@ -94,13 +97,16 @@ The workflow first runs the firmware-free suite on the same commit, then:
 1. Downloads/extracts chunks to runner temporary storage.
 2. Starts the regular Compose services with `ci/compose.yml` overlay: no published ports,
    randomly named container/work volume and a separate generated SD directory.
-3. Decrypts/verifies/extracts V2.40, primes a new config DB, and boots normally.
+3. Decrypts/verifies/extracts the selected firmware, checks six binary fingerprints,
+   applies its guarded key patch, primes a new config DB, and boots normally.
 4. Confirms an initially empty TCP catalog, slowly drags to Settings, scrolls to
    Update media lib, taps Update now, and checks the generated WAV is indexed.
 5. Compares TCP/WS protocol/catalog/settings, checks volume restore, play/pause,
    exclusive connection and reconnect, then checks byte-exact periods of the
    generated waveform in the decoded 32-bit PCM (promoted from signed 16-bit WAV).
-6. Stops its guest, unmounts/detaches its SD loop, removes only its own stack/work
+6. Checks physical-button events with TCP/sysfs readback and dynamic BusyBox `reboot`
+   binding to `fbshim` without invoking a kernel reboot.
+7. Stops its guest, unmounts/detaches its SD loop, removes only its own stack/work
    volume and generated media. The interactive `diskos-work`/`sdcard` remain untouched.
 
 Local equivalent using already extracted chunks:
@@ -109,6 +115,7 @@ Local equivalent using already extracted chunks:
 bash ci/integration.sh /absolute/path/to/main_os/ota_v240
 # Optional local diagnostic PNGs; never uploaded by Actions:
 CI_SHOTS="$PWD/shots/ci" bash ci/integration.sh /absolute/path/to/main_os/ota_v240
+FW_VERSION=2.57 CI_SHOTS="$PWD/shots/v257" bash ci/integration.sh /absolute/path/to/main_os/ota_v257
 ```
 
 The workflow does not upload/cache firmware, rootfs, guest logs, captures or derived
@@ -118,8 +125,8 @@ exceptions. A secret also does not preserve an expired/disappeared upstream file
 
 ## Next: V2.57 acceptance
 
-Preserve the V2.40 tag/baseline, then add a separate manifest, download secret and test
-target. Check bootstrap and all existing controls/audio/WS tests first. The user-provided
+Preserve the V2.40 tag/baseline and default profile. The second profile, download
+secret and test target are now separate. The user-provided
 changelog additionally calls for font sizes, Wi-Fi details, multilingual tags/lyrics,
 configurable list gestures, FiiO Link Favorites, AUTO EQ, MP3 seeking, external covers,
 USB AUDIO tag refresh and M3U/CD-number UI changes. Hardware-dependent BT/USB behavior

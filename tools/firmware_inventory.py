@@ -92,7 +92,7 @@ def verify_archive(archive, package, main, expected):
         raise ValueError('Archive and unpacked package differ')
 
 
-def plaintext_digest(chunks):
+def plaintext_digest(chunks, output=None):
     digest, size, magic = hashlib.sha256(), 0, b''
     for path in chunks:
         command = ['openssl', 'enc', '-d', '-aes-256-cbc', '-pbkdf2', '-iter', '10000',
@@ -103,6 +103,8 @@ def plaintext_digest(chunks):
                     magic = block[:4]
                 digest.update(block)
                 size += len(block)
+                if output is not None:
+                    output.write(block)
             if process.wait():
                 raise ValueError('OpenSSL could not decrypt a rootfs chunk')
     if magic != b'hsqs':

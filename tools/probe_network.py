@@ -2,9 +2,11 @@
 import json
 from pathlib import Path
 from keys import Device
+from firmware_profile import require_v240_player
 
 
 def snapshot(rootfs='/work/rootfs'):
+    require_v240_player(Path(rootfs) / 'usr/bin/mq_player')
     device = Device(rootfs)
     pid = next(p for p in device.processes()
                if b'/usr/bin/mq_player' in Path(f'/proc/{p}/cmdline').read_bytes().split(b'\0'))

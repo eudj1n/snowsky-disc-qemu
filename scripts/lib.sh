@@ -10,8 +10,9 @@ REPO="${REPO:-/repo}"                 # this repository (mounted)
 SHOTS="${SHOTS:-$WORK/shots}"         # captured PNG framebuffers
 QEMU="${QEMU:-/usr/bin/qemu-mipsel-static}"
 
-# rootfs squashfs known-good sha256 (V2.40); assembly is verified against it.
-ROOTFS_SHA256="b479e159db5134325819b5f6e5a54388f3adefae373a4ee60680f02d5dcf0bb8"
+# Explicit runtime selection, defaulting to the released baseline. Pins live in firmware/v*.json.
+FW_VERSION="${FW_VERSION:-2.40}"
+verify_firmware(){ python3 -B "$REPO/tools/firmware_profile.py" validate "$ROOTFS" --version "$FW_VERSION"; }
 
 # Screen geometry (360x360 round panel, 32bpp; virtual y = 3 sub-buffers).
 SCR_W=360; SCR_H=360; SCR_VY=1080

@@ -89,7 +89,7 @@ Decompile arbitrary functions by address (pass addresses as script args):
 - `FUN_0055db8c` is the touch read-cb — event grammar + coordinate scaling documented in
   [../docs/TOUCH.md](../docs/TOUCH.md).
 - Language switch (first-boot wizard) is in `mq_ui` `FUN_004776e4` — the `LANGUAGE` column is a
-  0-based index (`0 zh · 1 tw · 2 en · …`); see `CLAUDE.md`.
+  0-based index (`0 zh · 1 tw · 2 en · …`); see `AGENTS.md`.
 
 ### `mq_player` network / auth (12100 + 12103)
 

@@ -1,6 +1,6 @@
-# CLAUDE.md
+# AGENTS.md
 
-Orientation for a Claude Code session continuing this project. Read this, then
+Shared instructions for coding agents continuing this project. Read this, then
 `docs/EMULATION.md`. The goal: run the FiiO Snowsky Disc stock firmware under qemu-user
 and drive its UI, as groundwork for custom firmware / a sync bridge.
 
@@ -85,8 +85,8 @@ looks right / has the higher non-black pixel count printed by `fb2png.py`.
   touch/swipe HTTP bridge; served by `scripts/40_stream.sh`, `docs/VIEWER.md`).
 - RE: `ghidra/` scripts + notes. Key functions: `mq_ui` main `FUN_004036ec`, touch device
   open `FUN_0055da20`, touch read-cb `FUN_0055db8c`.
-- Firmware acquisition + decrypt: `firmware/README.md` (password `fo123`; rootfs sha256 pinned
-  in `scripts/lib.sh`).
+- Firmware acquisition + decrypt: `firmware/README.md` (password `fo123`; rootfs and
+  six stock binary hashes pinned in `firmware/v<version>.json`).
 - Protocol + real-device RE: `docs/PROTOCOL.md` (FiiO Link frames, verified-live 12100 handshake
   `0599…`, the corrected 12103 route mapping — **TCP device control is auth-free**, no file-upload
   command), `docs/DEVICE.md` (ports/mDNS, no stock debug unlock), `docs/DISKOS.md` (V2.40 builds;
@@ -98,6 +98,14 @@ looks right / has the higher non-black pixel count printed by `fb2png.py`.
   report first. `firmware/inventory/` contains observed inputs, not runtime enablement
   profiles. Keep vendor-reported changes separate from verified emulator features;
   update `CHANGELOG.md` for emulator changes. Never replace V2.40 hashes/addresses blindly.
+- `FW_VERSION` selects a reviewed runtime profile (default `2.40`, opt-in `2.57`).
+  Setup/boot validate product/version and six binary fingerprints before execution.
+  Key patch validation normalizes only the permitted instruction, then checks the full
+  stock hash and executable PT_LOAD mapping. Old memory/route probes reject non-V2.40
+  binaries until their addresses are separately re-established.
+- Public-release preparation: `docs/PUBLIC_RELEASE.md`. Keep passwords out of the root
+  README and private-project names out of tracked files. Do not change visibility or
+  rewrite immutable history without explicit approval. Code/photo license: MIT.
 - Default development branch: `2.x`; firmware-based release tags `v2.40`, then
   `v2.40-r1` for emulator fixes against the same firmware. See `docs/CI.md` for pinned
   CI, secret-backed downloads and release gates. Never log a direct firmware URL.

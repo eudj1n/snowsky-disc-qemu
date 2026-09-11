@@ -1,17 +1,26 @@
-name: Firmware V2.40
+name: Firmware integration
 on:
   workflow_dispatch:
+    inputs:
+      version:
+        description: Exact firmware profile
+        type: choice
+        options: ['2.40', '2.57']
+        default: '2.40'
+        required: true
 permissions:
   contents: read
 concurrency:
-  group: firmware-v240
+  group: firmware-${{ inputs.version }}
   cancel-in-progress: false
 jobs:
   integration:
-    name: Fresh V2.40 integration
+    name: Fresh V${{ inputs.version }} integration
     if: github.ref == 'refs/heads/2.x'
     runs-on: ubuntu-24.04
     timeout-minutes: 25
+    env:
+      FW_VERSION: ${{ inputs.version }}
     steps:
       - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
         with:
@@ -32,9 +41,10 @@ jobs:
       - name: Download private firmware input
         env:
           FIRMWARE_V240_URL: ${{ secrets.FIRMWARE_V240_URL }}
+          FIRMWARE_V257_URL: ${{ secrets.FIRMWARE_V257_URL }}
         run: |
           mkdir "$RUNNER_TEMP/diskos-ota"
-          python3 -B tools/fetch_firmware.py "$RUNNER_TEMP/diskos-ota"
+          python3 -B tools/fetch_firmware.py "$RUNNER_TEMP/diskos-ota" --version "$FW_VERSION"
       - name: Fresh boot, stock library scan, TCP, WebSocket and PCM
         run: bash ci/integration.sh "$RUNNER_TEMP/diskos-ota"
       # No firmware/rootfs/guest logs/caches/images are uploaded. The hosted runner

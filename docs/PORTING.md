@@ -69,11 +69,26 @@ unique anchors where used, and an explicit already-patched state. Unknown builds
 fail closed for operations requiring that patch/probe, not silently reuse another version.
 Separate these opt-in runtime profiles from the read-only inventory records.
 
-**Current boundary:** `scripts/lib.sh`, `scripts/patch_keys.sh`, several memory/route
-probes, `tools/fetch_firmware.py` and the firmware workflow still target V2.40. An
-inventory JSON does not activate V2.57. The current key patch searches a short V2.40
-anchor and skips on mismatch; that is not sufficient proof that a new build is supported.
-Do not run setup/probes on a new image until the relevant profile work is reviewed.
+**Implemented boundary:** `firmware/v<version>.json` holds runtime profiles for V2.40
+and V2.57, separate from inventory JSON. `tools/firmware_profile.py` checks product,
+main/recovery metadata and six binary hashes before setup/boot. Key patch validation
+normalizes only the permitted instruction, then checks the full stock hash, original
+bytes and executable PT_LOAD address mapping. Unknown builds fail closed. V2.40-only
+memory/HTTP-route diagnostics reject other builds until their addresses are re-established.
+
+Static extraction without execution, into a **new** research volume (not `diskos-work`):
+
+```sh
+docker run --rm --network none -v "$PWD:/repo:ro" \
+  -v "$FW_PACKAGE_DIR:/package:ro" -v snowsky-static-v257:/study \
+  diskos-qemu-ci python3 -B /repo/tools/firmware_static.py /package \
+  /repo/firmware/inventory/v2.57.json /study/rootfs
+```
+
+This checks encrypted manifests and the committed plaintext digest before native
+`unsquashfs`; it refuses an existing destination and never runs guest code. The volume
+contains proprietary firmware, stays local, and must not be uploaded. Runtime extraction
+also refuses an existing rootfs and checks contiguous chunks and pinned plaintext size/hash.
 
 ## 3. Bring-up and regression matrix
 
@@ -114,6 +129,7 @@ Dependabot PRs retain SHA pins but still need review/tests. Do not move an old r
 
 ## V2.57 starting point
 
-Intake is complete; see [2.57 report](firmware/2.57.md). Next: isolated extraction and
-stock ELF inventory, then version-aware guarded patch/probe selection. Do not change
-the V2.40 rootfs pin or point the existing V2.40 workflow at `FIRMWARE_V257_URL`.
+Static comparison, guarded profiles and the first clean baseline are complete; see
+[2.57 report](firmware/2.57.md). Select `FW_VERSION=2.57` for a disposable integration
+run; V2.40 remains the default. Firmware workflow dispatch selects the matching
+secret/profile. Next: upstream-feature cases; a baseline does not validate all vendor changes.

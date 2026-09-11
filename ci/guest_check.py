@@ -1,8 +1,9 @@
-"""V2.40 fresh English UI -> stock library scan; assert real TCP index and PCM.
+"""Fresh English UI -> stock library scan; assert real TCP index and PCM.
 
 Only for ci/integration.sh's disposable guest, not an existing interactive session.
 """
 import argparse
+import os
 from pathlib import Path
 import sys
 import struct
@@ -62,7 +63,7 @@ def scan():
     capture('scan')
     tracks = wait_library(1)
     assert 'CI Tone' in str(tracks), tracks
-    print('Fresh V2.40: stock UI scanned the generated track; TCP index verified.')
+    print(f'Fresh V{os.environ.get("FW_VERSION", "2.40")}: stock UI scanned the generated track; TCP index verified.')
 
 
 def audio():

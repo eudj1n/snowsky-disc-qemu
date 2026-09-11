@@ -5,6 +5,7 @@
 set -euo pipefail
 cd "$(dirname "${BASH_SOURCE[0]}")/.."
 export OTA_DIR="$(cd "${1:?path to OTA chunks}" && pwd)"
+export FW_VERSION="${FW_VERSION:-2.40}"
 CI_TMP="$(mktemp -d "${TMPDIR:-/tmp}/diskos-ci.XXXXXXXX")"
 CI_ID="diskos-ci-$(basename "$CI_TMP" | tr '[:upper:].' '[:lower:]-')"
 export EMU_IMAGE="${EMU_IMAGE:-diskos-qemu-ci}"
@@ -37,3 +38,5 @@ compose exec -T emu bash /repo/scripts/20_boot.sh 30
 compose exec -T emu python3 -B /repo/ci/guest_check.py
 compose exec -T wsbridge python3 -B /repo/tools/verify_websocket.py --tcp-host emu --control
 compose exec -T emu python3 -B /repo/ci/guest_check.py --audio
+compose exec -T emu python3 -B /repo/ci/controls.py
+compose exec -T emu bash /repo/ci/confinement.sh

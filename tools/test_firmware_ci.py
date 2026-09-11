@@ -1,7 +1,6 @@
 import io
 import json
 from pathlib import Path
-import re
 import tempfile
 import unittest
 from unittest.mock import patch
@@ -68,6 +67,22 @@ class FirmwareCITests(unittest.TestCase):
     def test_manifest_matches_extractor(self):
         root = Path(__file__).resolve().parents[1]
         manifest = json.loads((root / 'firmware/v2.40.json').read_text())
-        sha = re.search(r'ROOTFS_SHA256="([a-f0-9]+)"', (root / 'scripts/lib.sh').read_text())[1]
-        self.assertEqual(manifest['rootfs_sha256'], sha)
+        inventory = json.loads((root / 'firmware/inventory/v2.40.json').read_text())
+        self.assertEqual(manifest['rootfs_sha256'], inventory['rootfs']['sha256'])
         self.assertEqual(manifest['rootfs_chunks'], CHUNKS)
+
+    def test_v257_uses_its_own_directory_and_count(self):
+        data = io.BytesIO()
+        with zipfile.ZipFile(data, 'w') as package:
+            for index in range(77):
+                package.writestr(f'update/main_os/ota_v257/rootfs.squashfs.{index:04d}.{"a" * 64}.enc', b'test')
+        data.seek(0)
+        with tempfile.TemporaryDirectory() as directory:
+            extract_chunks(data, directory, '2.57')
+            self.assertEqual(len(list(Path(directory).iterdir())), 77)
+
+    def test_v240_archive_cannot_be_selected_as_v257(self):
+        with tempfile.TemporaryDirectory() as directory:
+            with self.assertRaises(ValueError):
+                extract_chunks(archive(), directory, '2.57')
+            self.assertFalse(list(Path(directory).iterdir()))

@@ -14,6 +14,7 @@ HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"; source "$HERE/lib.sh"
 WAIT="${1:-26}"
 [ -d "$ROOTFS" ] || { err "no rootfs — run 00/10 first"; exit 1; }
 [ -f "$ROOTFS/lib/fbshim.so" ] || { err "shim not installed — run 10_setup_env.sh"; exit 1; }
+verify_firmware
 
 apply_ulimits
 kill_guest

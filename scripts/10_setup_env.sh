@@ -7,6 +7,7 @@
 set -euo pipefail
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"; source "$HERE/lib.sh"
 [ -d "$ROOTFS" ] || { err "no rootfs at $ROOTFS — run 00_extract_rootfs.sh first"; exit 1; }
+verify_firmware  # reject wrong volume/build before mutations, patching or priming boot
 kill_guest  # never overwrite mapped shims or prepare SD while firmware is running
 bash "$REPO/scripts/16_network.sh" prepare
 

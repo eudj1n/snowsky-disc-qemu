@@ -1,5 +1,20 @@
 {
   "version": "2.40",
+  "product": "SNOWSKY_DISC",
+  "main_os_version": 240,
+  "recovery_os_version": 17,
+  "binaries": {
+    "usr/bin/mq_player": "ab96a58e475a49d0cb798c2887061949be97fc12e44cf1bae5fea717e675f09a",
+    "usr/bin/mq_ui": "bbf03a725cee116d50bea029885023d299c3c470809e0c85c85851d1bd9f260b",
+    "bin/busybox": "696a200d8b94d733ce501b23679c5fbd351e62fdb2988ddfa053b18fc5f09b98",
+    "lib/ld-2.29.so": "0c37c07942b176a223b5fd4e1bcd0b7e5ebdf6205bce727ee0f895dd22caf0e2",
+    "lib/libc-2.29.so": "fb2c85aa7e6933d9ce92530427b8272a9dbfad300696e995b542b93f5fb228b6",
+    "usr/lib/libtinyalsa.so.1.1.1": "5d94f6b00d3c4cbd7e4a0141a3e566054eee4ce857c93cb6742a323be3da5b96"
+  },
+  "key_patch": {
+    "offset": "0xde70c", "address": "0x4de70c",
+    "before": "41004292", "after": "01000224"
+  },
   "source_page": "https://forum.fiio.com/note/showNoteContent.do?id=202601311712087234434",
   "url_secret": "FIRMWARE_V240_URL",
   "rootfs_chunks": 85,

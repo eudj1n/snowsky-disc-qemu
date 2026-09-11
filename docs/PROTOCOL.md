@@ -1,8 +1,7 @@
 # FiiO Link protocol & IPC
 
 Reference for the wire/IPC protocol used by the Snowsky Disc, gathered from the
-firmware (`control_core`/`fiio_link.c`, `http_server_mongoose.c`) and prior work on
-`eudj1n/fiio-ymd` + `eudj1n/ymd`.
+firmware (`control_core`/`fiio_link.c`, `http_server_mongoose.c`) and direct device probes.
 
 ## Frame format (FiiO Link)
 
@@ -35,8 +34,8 @@ family is the library, `0[15]xx`/`a[15]xx` control+state. Only read/query tags
 
 ## Verified live against the physical V2.40 device
 
-Confirmed on the real player over **auth-free TCP 12100** (this is the same protocol the
-`eudj1n/fiio-ymd` M21 client used, only the list frames are 12-byte, not 8-byte):
+Confirmed on the real player over **auth-free TCP 12100**. Library-list requests use
+12-byte frames including their offset, not 8-byte empty requests:
 
 | frame | reply | gives |
 |---|---|---|

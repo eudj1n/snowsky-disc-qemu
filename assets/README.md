@@ -12,8 +12,10 @@ the browser viewer looks like the real device. Drop the photo here as **`skin.pn
   (`http://localhost:8080/?cx=0.5&cy=0.5&d=0.7`) or as env vars to `scripts/40_stream.sh`.
   Defaults live in `tools/stream.py`.
 
-`skin.png` here is a photo of the player (this repo is private). Without a skin the viewer
-falls back to a plain framed round screen.
+`skin.png` is an original photo by the repository owner, eudj1n, who confirmed
+authorship and approved public distribution on 2026-09-11. It is included under the
+repository's [MIT license](../LICENSE). Without a skin the viewer falls back to a
+plain framed round screen. Device branding is not a claim of affiliation.
 
 The skin's physical buttons have translucent HTML hotspots; the PNG is unchanged.
 For another photo, adjust their `--x`/`--y` percentages in `tools/stream.py` too.

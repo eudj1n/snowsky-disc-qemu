@@ -14,12 +14,24 @@ emulator-only revisions use `v2.40-r1`, etc. See [the porting guide](docs/PORTIN
 - Public inventory records for V2.40 and V2.57; per-version evidence reports and a
   reusable porting/acceptance procedure.
 - V2.57 upstream-change checklist, separated from verified emulator capabilities.
+- Opt-in V2.57 runtime profile, exact-build guarded key patches, non-overwriting
+  extraction and version-selected secret-backed integration. Existing address-based
+  diagnostics reject unknown builds instead of reading unrelated memory.
+- Clean-volume physical-button checks and dynamic reboot-shim binding verification.
+- MIT license and owner-attributed skin photo; public-release preparation checklist.
+
+### Changed
+
+- Shared coding-agent instructions moved to `AGENTS.md` without a duplicate file.
+- Root README omits the OTA password; references to private projects removed from
+  current documentation. Existing immutable history has not been rewritten.
 
 ### Firmware compatibility
 
 - V2.40 remains the runnable/CI-validated target.
-- V2.57 intake and decryption format verified; boot, ABI/patch compatibility and new
-  features **not yet validated**. No V2.40 runtime hash/address was replaced to accept it.
+- V2.57 clean boot, stock scan, TCP/WS, local PCM, basic physical controls and reboot
+  shim binding validated locally. Upstream feature acceptance remains **not tested**;
+  no `v2.57` release yet. V2.40 pins remain separate and unchanged.
 
 ## [v2.40] — 2026-09-11
 

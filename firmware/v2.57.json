@@ -1,0 +1,23 @@
+{
+  "version": "2.57",
+  "product": "SNOWSKY_DISC",
+  "main_os_version": 257,
+  "recovery_os_version": 18,
+  "source_page": null,
+  "url_secret": "FIRMWARE_V257_URL",
+  "rootfs_chunks": 77,
+  "rootfs_size": 80596992,
+  "rootfs_sha256": "111e4dd7ee3d7ff91ba7e61181690be7ffd22bd1bbd13ad513f5f015ffb302ae",
+  "binaries": {
+    "usr/bin/mq_player": "a5a6740435758bb3f3d008a4306c93a463c6634318957bbf32086bd7b00fabbc",
+    "usr/bin/mq_ui": "f9b40d825f96906146c31b56a420ab90e6f685f6e2c4761bf867989e12b04226",
+    "bin/busybox": "7517d039b15a2828125da29644e4a9b6ff45ceb6854e52d300c87d6a202d7c9b",
+    "lib/ld-2.29.so": "0c37c07942b176a223b5fd4e1bcd0b7e5ebdf6205bce727ee0f895dd22caf0e2",
+    "lib/libc-2.29.so": "fb2c85aa7e6933d9ce92530427b8272a9dbfad300696e995b542b93f5fb228b6",
+    "usr/lib/libtinyalsa.so.1.1.1": "5d94f6b00d3c4cbd7e4a0141a3e566054eee4ce857c93cb6742a323be3da5b96"
+  },
+  "key_patch": {
+    "offset": "0xe7300", "address": "0x4e7300",
+    "before": "41004292", "after": "01000224"
+  }
+}
