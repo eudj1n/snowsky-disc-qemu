@@ -27,7 +27,7 @@ detached by `./run.sh view`) and serves:
 | `GET /tap?x&y` | short tap at display coords (press, hold ~0.3 s, release) |
 | `GET /down?x&y` · `/move?x&y` · `/up` | manual press / drag / release |
 | `GET /swipe?dir=down\|up\|back\|left` (or `?x0&y0&x1&y1`) | server-side smooth swipe |
-| `GET /key?k=menu_up\|menu_down\|play\|play_pause\|power` (or `?code=<int>`) | physical key on `event0` |
+| `GET /key?k=menu_up\|menu_down\|play\|play_pause` (or `?code=<int>`) | physical key on `event0` |
 
 **Framebuffer** (see [EMULATION.md](EMULATION.md)): `fb0` is a plain file, three 360×360
 BGRX sub-buffers. `mq_ui` alternates buf0/buf1 and never pans, so a background thread reads
@@ -58,7 +58,8 @@ viewer falls back to a plain framed round screen. See `assets/README.md`.
 - FPS is qemu-bound (~5–15). This is a userspace emulator — good for UI/navigation/logic, not
   hardware-accurate timing.
 - **Physical keys** (`x2000_key` on `event0`) work via the buttons (▲ menu-up, ▼ menu-down,
-  ▶ play, ⏯ play/pause, ⏻ power). They need the key-enable patch (`scripts/patch_keys.sh`, applied
-  by `10_setup_env.sh`); the custom codes and the full reverse-engineering are in [RE.md](RE.md).
+  ▶ play, ⏯ play/pause). They need the key-enable patch (`scripts/patch_keys.sh`, applied by
+  `10_setup_env.sh`); the custom codes and the full reverse-engineering are in [RE.md](RE.md).
   Their visible effect is context-dependent (keys act in the playback/volume context; the menu
-  carousel is touch/swipe).
+  carousel is touch/swipe). There is **no power key on `event0`** — power is MCU-mediated and the
+  MCU (`/dev/ttyS0`) isn't emulated, so a "power" button would do nothing.

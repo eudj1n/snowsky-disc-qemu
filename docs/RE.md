@@ -61,8 +61,13 @@ The dispatcher is registered by `FUN_004e3410` (`DAT_0088cc50 = &echo_sys_key_ha
 | `0x10c` (268) | `KEY_VALUE_PLAY_KEY_L` (play, long) |
 | `0x10d` (269) | play double-click |
 | `0x108` (264) | a mode/screen toggle |
-| `0xfa` (250) | menu/back-style action (`FUN_00424b2c`) |
+| `0xfa` (250) | silent back/exit action (`FUN_00424b2c`) — **not** power |
 | `0xfb`,`0xfc`,`0x10a`,`0x10b` | configurable (branch on `DAT_0082e9d2/d3` — the sysconfig gesture map `KEY_*_CLICK_SLE`) |
+
+**No power key here.** A full sweep of `0xFA…0x10D` logged no POWER/SHUTDOWN/LOCK action — power
+is MCU-mediated (`mq_ui` gets `POWER_KEY_EVENT_REPORT`, and the diskOS RE notes power on a GPE
+GPIO read via `/dev/mem`), not on `event0`'s `echo_sys_key_handler`. So a power button needs the
+MCU/UART stub (`/dev/ttyS0`), which isn't emulated.
 
 The dispatcher gates every key on `DAT_0082e9c1` (key-enable): `if (DAT_0082e9c1==0) return 0;`.
 Headless it stays 0 (set only by `FUN_004e847c` = `*(char*)(cmd+0x10)` from an IPC/settings

@@ -51,7 +51,8 @@ boots go **straight to the main menu** (~24 s), skipping the wizard.
   over time).
 - **Physical keys** — ✅ working. Fully reversed (see [RE.md](RE.md)): `event0` → `echo_loop_key`
   → `echo_sys_key_handler`, custom codes **`0xFA–0x10D`** (MENU_UP=`0x107`, MENU_DOWN=`0x106`,
-  PLAY=`0x10c`, play/pause=`0x103`, power/back=`0xfa`). The dispatcher's key-enable gate
+  PLAY=`0x10c`, play/pause=`0x103`; `0xfa` is a silent back/exit — **no power key on `event0`**,
+  power is MCU-mediated and unemulated). The dispatcher's key-enable gate
   (`DAT_0082e9c1`, 0 headless) is removed by a one-instruction patch (`scripts/patch_keys.sh`,
   run from `10_setup_env.sh`); the viewer has key buttons that inject into `event0`. Confirmed
   live: injected keys reach the dispatcher (`KEY_VALUE_MENU_UP_L`/`MENU_DOWN` logged). Visible

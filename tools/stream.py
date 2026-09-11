@@ -13,7 +13,7 @@ the real stock UI from a browser on the host, no hardware.
   GET /down?x&y    press (start of a drag/swipe)
   GET /move?x&y    move (during a drag; only between down and up)
   GET /up          release
-  GET /key?k=…     physical key (menu_up|menu_down|play|play_pause|power), or ?code=<int>
+  GET /key?k=…     physical key (menu_up|menu_down|play|play_pause), or ?code=<int>
 
 Framebuffer facts (see docs/EMULATION.md): fb0 is 360x1080x4 (three 360x360 BGRX
 sub-buffers); mq_ui alternates drawing to buf0/buf1 and does NOT pan, so the live
@@ -207,7 +207,9 @@ def swipe(x0, y0, x1, y1, steps=12, hold=0.028):
 # Physical keys — x2000_key on event0, custom codes (see docs/RE.md). Needs the key-enable
 # patch (scripts/patch_keys.sh) or the firmware drops them. The stock handler does its own
 # single/double/long-click detection by timing, so a ~0.12s press = single click.
-KEYS = {'menu_up': 0x107, 'menu_down': 0x106, 'play': 0x10c, 'play_pause': 0x103, 'power': 0xfa}
+# Only codes with a confirmed action in echo_sys_key_handler (docs/RE.md). NOTE: there is no
+# power key on event0 — power is MCU-mediated (not emulated). 0xfa is a silent back/exit, omitted.
+KEYS = {'menu_up': 0x107, 'menu_down': 0x106, 'play': 0x10c, 'play_pause': 0x103}
 
 def key(code):
     _append_ev0(_ev(EV_KEY, code, 1) + _ev(EV_SYN, SYN_REPORT, 0))
@@ -269,7 +271,6 @@ PAGE = ("""<!doctype html><meta charset=utf-8>
   <button onclick="go('/key?k=menu_down')">▼ menu-down</button>
   <button onclick="go('/key?k=play')">▶ play</button>
   <button onclick="go('/key?k=play_pause')">⏯ play/pause</button>
-  <button onclick="go('/key?k=power')">⏻ power</button>
  </div>
  <div id=readout class=hint></div>
 </div>
