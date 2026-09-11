@@ -222,6 +222,11 @@ and investigation of other ECHO-based products are deferred to separate work.
   key-reassignment combinations are still untested; no V2.57 release tag yet.
   The expanded clean integration also passed again on **V2.40**, including its physical
   controls and reboot binding, after introduction of the version-aware profiles.
+  Hosted checks also passed on `0202310`: [firmware-free CI](https://github.com/eudj1n/snowsky-disc-qemu/actions/runs/34608267517),
+  [V2.57](https://github.com/eudj1n/snowsky-disc-qemu/actions/runs/34608271179),
+  [V2.40](https://github.com/eudj1n/snowsky-disc-qemu/actions/runs/34608267536).
+  V2.57 firmware integration uploaded zero artifacts. These evidence links are a
+  documentation-only follow-up to the tested code commit.
 - **Public release preparation** — MIT selected; the owner confirmed skin-photo authorship.
   Root README no longer prints the OTA password or refers to private projects;
   instructions moved to `AGENTS.md`. Visibility is still private. History/tag/log and

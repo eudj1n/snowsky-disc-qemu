@@ -30,7 +30,8 @@ emulator-only revisions use `v2.40-r1`, etc. See [the porting guide](docs/PORTIN
 
 - V2.40 remains the runnable/CI-validated target.
 - V2.57 clean boot, stock scan, TCP/WS, local PCM, basic physical controls and reboot
-  shim binding validated locally. Upstream feature acceptance remains **not tested**;
+  shim binding validated locally and in hosted CI on `0202310`; V2.40 regression also
+  passed. Upstream feature acceptance remains **not tested**;
   no `v2.57` release yet. V2.40 pins remain separate and unchanged.
 
 ## [v2.40] — 2026-09-11
