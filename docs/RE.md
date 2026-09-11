@@ -64,18 +64,32 @@ The dispatcher is registered by `FUN_004e3410` (`DAT_0088cc50 = &echo_sys_key_ha
 | `0xfa` (250) | menu/back-style action (`FUN_00424b2c`) |
 | `0xfb`,`0xfc`,`0x10a`,`0x10b` | configurable (branch on `DAT_0082e9d2/d3` — the sysconfig gesture map `KEY_*_CLICK_SLE`) |
 
-**Confirmed live:** the reader thread *does* consume events appended to `event0`
-(read offset advances), and passes them to the dispatcher — but with `DAT_0082e9c1==0` the
-dispatcher returns before acting (verified: no log, no UI change, even for the `puts()` cases).
+The dispatcher gates every key on `DAT_0082e9c1` (key-enable): `if (DAT_0082e9c1==0) return 0;`.
+Headless it stays 0 (set only by `FUN_004e847c` = `*(char*)(cmd+0x10)` from an IPC/settings
+command, and inside settings-apply `FUN_004e3658` — neither fires under emulation), so keys are
+read but dropped.
 
-**To make keys drive the emulated UI**, force `DAT_0082e9c1 = 1`. It is written by `FUN_004e847c`
-(`DAT_0082e9c1 = *(char*)(cmd+0x10)` — set from an IPC/settings command) and inside the
-settings-apply `FUN_004e3658`; neither fires headless. Options: (a) a freestanding preload shim
-whose constructor pokes `*(char*)0x0082e9c1 = 1` (fixed EXEC address) and re-asserts it on a
-timer; (b) a one-instruction binary patch NOP-ing the guard branch at `0x004de70c` in the
-`/work` copy of `mq_player`; (c) send the enabling IPC command. Then inject `0x106/0x107/0x10c…`
-into `event0` (16-byte `input_event`, type=EV_KEY, value 1 then 0). This is the next concrete
-step to wire the viewer's physical-key buttons.
+**✅ Enabled by a one-instruction patch** (`scripts/patch_keys.sh`, run from `10_setup_env.sh`):
+the guard loads the flag with `lbu v0,65(s2)` at `0x004de70c` (file off `0xDE70C`); patch it to
+`li v0,1` (`0x24020001`) so the flag always reads 1 and the `beqz` at `0x004de720` is never taken.
+`s2` (the struct base, set at `0x004de708`) stays valid for the handler's other fields. The
+script matches the exact guard bytes (anchor `addiu s2,v0,-5760` = `80e95224`, then `lbu` =
+`41004292` → `01000224`), is idempotent, and no-ops on a firmware whose addresses moved.
+
+Then inject the codes into `event0` (16-byte `input_event`, `type=EV_KEY`, value 1 then 0); the
+firmware does its own single/double/long-click detection by timing (~0.12 s = single). The viewer
+(`tools/stream.py`, [VIEWER.md](VIEWER.md)) exposes `/key?k=menu_up|menu_down|play|play_pause|power`
+and page buttons. **Confirmed live:** an injected `0x107` reaches the dispatcher and logs
+`KEY_VALUE_MENU_UP_L`; `0x106` → `KEY_VALUE_MENU_DOWN`. Visible UI effect is context-dependent
+(the menu carousel is touch/swipe; the physical keys act in the playback/volume context).
+
+**Logging gotcha (important for all directions):** `mq_player`'s zlog config
+(`usr/data/fiio/log/zlog_player.conf`) routes only `=INFO/=NOTICE/=WARN/=ERROR/=FATAL` to stdout
+and sends **nothing at DEBUG** anywhere (the `=DEBUG>stdout` line is commented; `!DEBUG` goes to
+`fiio_player.log` but in practice that file shows only ERROR). Most handler traces (incl.
+`key_code: %d`) are **DEBUG and silently dropped** — "no log" ≠ "not executed". To see them,
+uncomment `*.* >stdout` (or `=DEBUG>stdout`) in `zlog_player.conf` and reboot; that is how the key
+dispatch above was confirmed.
 
 ## Direction: audio (ALSA userspace sink)
 

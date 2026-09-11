@@ -13,6 +13,7 @@ the real stock UI from a browser on the host, no hardware.
   GET /down?x&y    press (start of a drag/swipe)
   GET /move?x&y    move (during a drag; only between down and up)
   GET /up          release
+  GET /key?k=…     physical key (menu_up|menu_down|play|play_pause|power), or ?code=<int>
 
 Framebuffer facts (see docs/EMULATION.md): fb0 is 360x1080x4 (three 360x360 BGRX
 sub-buffers); mq_ui alternates drawing to buf0/buf1 and does NOT pan, so the live
@@ -31,7 +32,8 @@ ROOTFS = os.environ.get("ROOTFS", "/work/rootfs")
 PORT = int(os.environ.get("STREAM_PORT", "8080"))
 FPS = float(os.environ.get("STREAM_FPS", "12"))
 FB = os.path.join(ROOTFS, "dev/fb0")
-EV = os.path.join(ROOTFS, "dev/input/event1")
+EV = os.path.join(ROOTFS, "dev/input/event1")   # cst816t touch
+EV0 = os.path.join(ROOTFS, "dev/input/event0")  # x2000_key physical keys
 
 # Optional device "skin": a photo of the player; the live round screen is composited
 # over its screen area so the viewer looks like the real device. Drop a PNG at $SKIN
@@ -198,6 +200,21 @@ def swipe(x0, y0, x1, y1, steps=12, hold=0.028):
         time.sleep(hold)
     release()
 
+# Physical keys — x2000_key on event0, custom codes (see docs/RE.md). Needs the key-enable
+# patch (scripts/patch_keys.sh) or the firmware drops them. The stock handler does its own
+# single/double/long-click detection by timing, so a ~0.12s press = single click.
+KEYS = {'menu_up': 0x107, 'menu_down': 0x106, 'play': 0x10c, 'play_pause': 0x103, 'power': 0xfa}
+
+def key(code):
+    _append_ev0(_ev(EV_KEY, code, 1) + _ev(EV_SYN, SYN_REPORT, 0))
+    time.sleep(0.12)
+    _append_ev0(_ev(EV_KEY, code, 0) + _ev(EV_SYN, SYN_REPORT, 0))
+
+def _append_ev0(data):
+    with _ev_lock:
+        with open(EV0, 'ab') as f:
+            f.write(data)
+
 # Named gestures, in DISPLAY coords (what you see). 360x360 round panel.
 GESTURES = {
     'down':  (180, 18, 180, 300),    # pull the shade / status panel down from the top
@@ -242,6 +259,13 @@ PAGE = ("""<!doctype html><meta charset=utf-8>
   <button onclick="go('/swipe?dir=back')">↩ back (→)</button>
   <button onclick="go('/swipe?dir=left')">◀ left</button>
   <button id=alignbtn onclick="align.on=!align.on;draw()">⊹ align</button>
+ </div>
+ <div class=bar>
+  <button onclick="go('/key?k=menu_up')">▲ menu-up</button>
+  <button onclick="go('/key?k=menu_down')">▼ menu-down</button>
+  <button onclick="go('/key?k=play')">▶ play</button>
+  <button onclick="go('/key?k=play_pause')">⏯ play/pause</button>
+  <button onclick="go('/key?k=power')">⏻ power</button>
  </div>
  <div id=readout class=hint></div>
 </div>
@@ -346,6 +370,17 @@ class Handler(BaseHTTPRequestHandler):
                     time.sleep(period)
             except (BrokenPipeError, ConnectionResetError):
                 return
+        elif p == '/key':
+            k = qs.get('k', [''])[0]
+            code = KEYS.get(k)
+            if code is None and qs.get('code'):
+                try:
+                    code = int(qs['code'][0], 0)
+                except ValueError:
+                    code = None
+            if code is not None:
+                key(code)
+            self.send_response(204); self.send_header('Content-Length', '0'); self.end_headers()
         elif p in ('/tap', '/down', '/move', '/up', '/swipe'):
             if p == '/tap':
                 tap(self._q(qs, 'x'), self._q(qs, 'y'))

@@ -27,6 +27,10 @@ log "Building shims"
 cp "$WORK/fbshim.so" "$ROOTFS/lib/fbshim.so"
 echo "/lib/fbshim.so" > "$ROOTFS/etc/ld.so.preload"   # guest ld.so reads this (LD_PRELOAD won't survive popen)
 
+# 2b) Enable physical-key handling: mq_player gates keys on a flag that isn't set headless.
+#     Patch the guard so injected event0 keys reach the dispatcher (docs/RE.md). KEYS_ENABLE=0 to skip.
+"$REPO/scripts/patch_keys.sh"
+
 # 3) Kernel filesystems the guest expects.
 log "Mounts: /proc, /dev/mqueue in rootfs"
 mkdir -p "$ROOTFS/proc" "$ROOTFS/dev/mqueue"

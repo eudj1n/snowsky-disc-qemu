@@ -117,7 +117,8 @@ Traced with `RefsTo`/`DecAt` (full write-up + code table in [../docs/RE.md](../d
 - `FUN_004de6fc` `echo_sys_key_handler` — the dispatcher; registered by `FUN_004e3410`.
   **Key codes are the custom range `0xFA…0x10D`** (not evdev standard): `0x106`=MENU_DOWN,
   `0x107`=MENU_UP, `0x10c/0x10d`=PLAY, `0x103/0x109`=play/pause. Gated by `DAT_0082e9c1`
-  (key-enable, 0 under emulation) — written by `FUN_004e847c` and `FUN_004e3658`.
+  (key-enable, 0 under emulation) — the guard `lbu v0,65(s2)` at `0x004de70c` is patched to
+  `li v0,1` by `scripts/patch_keys.sh` so keys dispatch (see [../docs/RE.md](../docs/RE.md)).
 
 ## Tooling on this machine
 

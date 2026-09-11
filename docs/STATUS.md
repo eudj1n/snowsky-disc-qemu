@@ -49,11 +49,13 @@ boots go **straight to the main menu** (~24 s), skipping the wizard.
   [PROTOCOL.md](PROTOCOL.md) and [DEVICE.md](DEVICE.md)).
 - **Carousel swipes** — ✅ done via the viewer's drag/`/swipe` (intermediate position events
   over time).
-- **Physical keys** — the handler is fully reversed (see [RE.md](RE.md)): `event0` →
-  `echo_loop_key` → `echo_sys_key_handler`, custom codes **`0xFA–0x10D`** (MENU_UP=`0x107`,
-  MENU_DOWN=`0x106`, PLAY=`0x10c/0x10d`). Events are read, but the dispatcher is gated by
-  `DAT_0082e9c1` (key-enable = 0 headless). Remaining: force that flag (preload-shim poke or a
-  one-instruction patch), then inject the codes into `event0` and add the viewer's key buttons.
+- **Physical keys** — ✅ working. Fully reversed (see [RE.md](RE.md)): `event0` → `echo_loop_key`
+  → `echo_sys_key_handler`, custom codes **`0xFA–0x10D`** (MENU_UP=`0x107`, MENU_DOWN=`0x106`,
+  PLAY=`0x10c`, play/pause=`0x103`, power/back=`0xfa`). The dispatcher's key-enable gate
+  (`DAT_0082e9c1`, 0 headless) is removed by a one-instruction patch (`scripts/patch_keys.sh`,
+  run from `10_setup_env.sh`); the viewer has key buttons that inject into `event0`. Confirmed
+  live: injected keys reach the dispatcher (`KEY_VALUE_MENU_UP_L`/`MENU_DOWN` logged). Visible
+  effect is context-dependent (menu carousel is touch/swipe; keys act in playback/volume).
 - **MCU/UART** — the FiiO MCU (`/dev/ttyS*`) is absent; not required to reach/use the main
   screen, but some features (power, keys, charging state) would need a UART stub.
 - **Deterministic live-buffer capture** — currently emit all sub-buffers and pick by eye;
