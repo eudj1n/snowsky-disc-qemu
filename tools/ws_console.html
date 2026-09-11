@@ -1,0 +1,64 @@
+<!doctype html>
+<html lang="en">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FiiO Link · WebSocket inspector</title>
+<style>
+body{margin:40px auto;padding:0 24px;max-width:960px;background:#faf9fb;color:#302833;font:15px system-ui}
+h1{font-size:28px;font-weight:600;margin-bottom:8px}p{color:#736876;line-height:1.6}
+.badge{font:12px ui-monospace,monospace;color:#9c376d;background:#f9e8f1;padding:7px 10px;border-radius:20px}
+.bar{display:flex;flex-wrap:wrap;gap:10px;margin:24px 0}
+button{font:inherit;border:1px solid #ded5df;border-radius:9px;padding:9px 14px;background:white;color:inherit;cursor:pointer}
+button:hover{background:#f9e8f1}button:disabled{opacity:.4;cursor:default}
+button:focus-visible{outline:2px solid #b13a7b;outline-offset:3px}
+#state{font-weight:600;color:#825077}pre{white-space:pre-wrap;overflow-wrap:anywhere;background:#25212b;color:#e9e1eb;
+padding:24px;border-radius:14px;line-height:1.6;min-height:240px;font:13px/1.6 ui-monospace,monospace}
+small{color:#827986}a{color:#9c376d}
+</style>
+<span class="badge">EMULATOR BRIDGE · NOT STOCK WEBSOCKET</span>
+<h1>FiiO Link / WebSocket inspector</h1>
+<p>WebSocket :12103 → stock TCP :12100. Each message carries an ASCII-hex FiiO Link frame.<br>
+This page only queries the player. Disconnect before opening another TCP or WebSocket client.</p>
+<div id="state" role="status">Disconnected</div>
+<div class="bar">
+ <button id="connect">Connect + handshake</button>
+ <button id="disconnect" disabled>Disconnect</button>
+ <button data-frame="05010008" disabled>Settings</button>
+ <button data-frame="0401000C0000" disabled>Library</button>
+ <button data-frame="02020008" disabled>Now playing</button>
+</div>
+<pre id="log" role="log" aria-label="Protocol frames">No frames yet.</pre>
+<small>Wire format: TAG (4 hex) + TOTAL BYTE LENGTH (4 hex, includes 8-byte header) + PAYLOAD.<br>
+Replies and unsolicited notifications use a-tags. JSON payloads count UTF-8 bytes, not characters.<br>
+Direct stock HTTP remains at <a href="http://127.0.0.1:12113/api/websocket">localhost:12113</a> (no WS upgrade).</small>
+<script>
+let socket = null;
+const lines = [], log = document.getElementById('log'), state = document.getElementById('state');
+const connect = document.getElementById('connect'), disconnect = document.getElementById('disconnect');
+function record(direction, text) {
+  lines.push(`${direction} ${text.slice(0,16000)}`);
+  if(lines.length>30)lines.shift();
+  log.textContent=lines.join('\n\n');
+}
+function controls(on){
+  connect.disabled=on;disconnect.disabled=!on;
+  document.querySelectorAll('[data-frame]').forEach(button=>button.disabled=!on);
+}
+function send(packet){
+  if(socket?.readyState!==WebSocket.OPEN)return;
+  record('→',packet);socket.send(packet);
+}
+connect.addEventListener('click',()=>{
+  if(socket)return;
+  state.textContent='Connecting…';connect.disabled=true;
+  socket=new WebSocket(`ws://${location.host}/api/websocket`);
+  socket.addEventListener('open',()=>{controls(true);state.textContent='Connected · HTTP 101 · FiiO Link';send('0599000C0000');});
+  socket.addEventListener('message',event=>record('←',typeof event.data==='string'?event.data:'[binary message]'));
+  socket.addEventListener('error',()=>record('!', 'Connection failed: check guest power, Origin, or another active client.'));
+  socket.addEventListener('close',event=>{record('!',`Closed (${event.code})`);socket=null;controls(false);state.textContent='Disconnected';});
+});
+disconnect.addEventListener('click',()=>socket?.close(1000,'inspector done'));
+document.querySelectorAll('[data-frame]').forEach(button=>button.addEventListener('click',()=>send(button.dataset.frame)));
+window.addEventListener('pagehide',()=>socket?.close());
+</script>
+</html>

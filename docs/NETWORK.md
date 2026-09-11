@@ -3,6 +3,9 @@
 The stock firmware serves FiiO Link on TCP **12100** and Mongoose HTTP on **12103**.
 No network binary patches, hard-coded IP, dummy Wi-Fi or DB flag overrides are needed.
 This milestone is local control, not Wi-Fi radio emulation or cloud streaming.
+The host's **12103** now adds an explicit WebSocket → TCP bridge; direct stock HTTP
+is available on host **12113**. See [WEBSOCKET.md](WEBSOCKET.md) for framing, client,
+browser inspector and live control results. Guest port numbers remain unchanged.
 
 ## Reproduce
 
@@ -14,6 +17,7 @@ docker compose up -d --build
 ./run.sh view
 python3 tools/fiio_link.py
 python3 tools/verify_network.py
+./run.sh wscheck --control
 ```
 
 For a new work volume, first use `./run.sh up /path/to/ota_v240` as in the README.
@@ -24,8 +28,8 @@ and announcement too. The viewer itself must be started again after container re
 The actual Compose file is `docker-compose.yml`, not `compose.yaml`.
 Its [`interface_name`](https://docs.docker.com/reference/compose-file/services/#interface_name)
 setting gives Docker's normal bridged interface the firmware-supported name **eth1**.
-Docker assigns the address and default route. All four published ports bind **127.0.0.1**:
-12100, 12103, UDP 12101 and the viewer 8080. Auth-free player controls must not be
+Docker assigns the address and default route. All five published ports bind **127.0.0.1**:
+12100, bridged 12103, direct HTTP 12113, UDP 12101 and viewer 8080. Auth-free controls must not be
 accidentally exposed to the LAN.
 
 ## Why it was blocked
@@ -137,7 +141,7 @@ The client drains old asynchronous notifications before new queries: a queued `a
 must not be mistaken for a response to a later play/pause action. The protocol has no
 request IDs; the client is sequential and intentionally does not support concurrent requests.
 
-Mongoose `/api/hi` and `/api/websocket` return the generic empty HTTP 200 fallback,
+Direct stock Mongoose (host 12113) `/api/hi` and `/api/websocket` return the generic empty HTTP 200 fallback,
 not an API reply or WebSocket upgrade. See the investigation below.
 Multicast discovery across the Mac/Docker/LAN boundary is also not implemented;
 publishing UDP 12101 is not a multicast relay. Use explicit localhost connections.
@@ -166,20 +170,22 @@ Reproduce the **read-only** inspection and wire probe:
 
 ```sh
 docker exec diskos-qemu python3 /repo/tools/inspect_http_routes.py
-python3 tools/probe_websocket.py
-python3 tools/probe_websocket.py --path /__unmapped_probe__
+python3 tools/probe_websocket.py --port 12113
+python3 tools/probe_websocket.py --port 12113 --path /__unmapped_probe__
 # Intentionally exits 1 for stock V2.40, which returns 200 instead of upgrading:
-python3 tools/probe_websocket.py --require-upgrade
+python3 tools/probe_websocket.py --port 12113 --require-upgrade
 ```
 
 The route inspector uses ELF PT_LOAD mappings, not a guessed address offset; its
 addresses are specific to V2.40. The probe requires HTTP 101, Upgrade/Connection
 headers and the matching Sec-WebSocket-Accept digest. Neither HTTP 200 nor an
-arbitrary 101 counts as a successful upgrade. All tools use the existing Python
-standard library; Dockerfile/Compose need no new dependency, port or image mutation.
+arbitrary 101 counts as a successful upgrade. These read-only inspection/probe tools
+use only the Python standard library. The subsequently implemented bridge has its
+own declared aiohttp dependency and Compose port mapping, documented separately.
 
-Potential next step: a separately identified local WebSocket → TCP 12100 bridge,
-without claiming to enable stock WebSocket or redirecting the firmware's HTTP port.
+**Now implemented:** a separately identified local WebSocket → TCP 12100 bridge.
+Host 12103 reaches it; guest 12103 is unchanged, with direct access on host 12113.
+This is not stock WS support; see [WEBSOCKET.md](WEBSOCKET.md).
 Active `POST /audio/` is also a file-transfer lead; not tested in this investigation.
 
 ## Re-run the reverse engineering

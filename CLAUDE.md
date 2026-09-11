@@ -135,7 +135,14 @@ probes, `tools/fiio_link.py` for host control. V2.40's active HTTP callback `004
 has no WebSocket route in table `006c7a50`; unknown URLs return empty 200 via `0048f8f8`.
 The bundled mg_dash code is not the active router; the earlier password-gate explanation
 was wrong. Reproduce with `tools/inspect_http_routes.py` and `tools/probe_websocket.py`.
-LAN discovery remains unvalidated.
+An explicit native WS→TCP bridge now serves host `12103/api/websocket`, forwarding
+FiiO Link to `emu:12100`; other HTTP paths proxy to unchanged guest `12103`. Host
+`12113` bypasses it for stock HTTP diagnosis. Compose starts `wsbridge` unprivileged,
+read-only, without guest volumes; Dockerfile supplies python3-aiohttp. No firmware patch.
+`./run.sh wscheck --control` compares TCP/WS and checks volume/playback (leaves paused).
+`http://localhost:12103/bridge/` is a read-only protocol inspector; disconnect it before
+another client (stock TCP is single-client). See `docs/WEBSOCKET.md`. LAN discovery
+and FiiO Control app compatibility remain unvalidated.
 
 Manual Update media lib now works too: `sd_mount()` mounts INSIDE chroot so
 `/proc/mounts` records source `/dev/mmcblk0p1`, accessible to the scanner. The old

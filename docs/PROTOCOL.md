@@ -116,6 +116,8 @@ Do not chase supposed `/fs` credentials based on the earlier incorrect route map
 Under user-mode qemu the two processes bind their TCP/UDP sockets on the container's network
 namespace, so a host client can reach them once the ports are published. `docker-compose.yml`
 **publishes 12100 (TCP), 12103 (TCP), 12101 (UDP)** to the host for exactly this.
+Host 12103 now goes through the explicit [WebSocket bridge](WEBSOCKET.md);
+host 12113 exposes the original guest HTTP listener directly.
 
 **Current state (2026-09-11):** both services bind with the committed pipeline. Compose
 names Docker's actual interface `eth1`; `16_network.sh` re-announces its existing IP after
@@ -127,5 +129,6 @@ under QEMU. See [NETWORK.md](NETWORK.md) for reproduction, confinement and the h
 Verified TCP setters: `0502 000C <volume 4hex>` (absolute 0..120),
 `0201 000C 0000` (selected-track play/pause toggle). These are not evdev key codes.
 The host mappings are localhost-only. `/api/hi`, `/api/websocket` Upgrade and an invented
-URL give the same empty 200. The traced active router has no WebSocket route or message
-dispatch. Raw TCP works without it; no WebSocket binary patch was made.
+URL give the same empty 200 **when querying direct stock HTTP on host 12113**.
+The traced active router has no WebSocket route/message dispatch. Our separate bridge
+on host 12103 now upgrades and transports FiiO Link successfully, without a binary patch.

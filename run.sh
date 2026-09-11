@@ -11,6 +11,7 @@
 #   ./run.sh capture [prefix]            re-capture the current framebuffer into ./shots/
 #   ./run.sh audio                      export current audio capture into ./shots/audio.wav
 #   ./run.sh diag                        touch diagnostic (leaves guests running)
+#   ./run.sh wscheck [--control]          compare WebSocket with TCP (control leaves playback paused)
 #   ./run.sh stop                        stop the guest processes
 #   ./run.sh down                        stop & remove the container (the /work volume is kept)
 #   ./run.sh nuke                        also delete the /work volume (rootfs)
@@ -46,10 +47,11 @@ case "$cmd" in
     docker exec "$CTR" bash -lc '/repo/scripts/10_setup_env.sh'
     echo "==> ready. Try: ./run.sh boot"
     ;;
-  start) need_ctr; echo "container '$CTR' running";;
+  start) need_ctr; ( cd "$REPO_DIR" && docker compose up -d --no-deps wsbridge ); echo "container '$CTR' running";;
   shell) need_ctr; docker exec -it "$CTR" bash ;;
   boot)
     need_ctr
+    ( cd "$REPO_DIR" && docker compose up -d --no-deps wsbridge )
     docker exec "$CTR" bash -lc "/repo/scripts/10_setup_env.sh >/dev/null && /repo/scripts/20_boot.sh ${1:-26}"
     mkdir -p "$REPO_DIR/shots"; docker cp "$CTR":/work/shots/. "$REPO_DIR/shots/" 2>/dev/null || true
     echo "==> PNGs copied to $REPO_DIR/shots/"
@@ -88,6 +90,10 @@ case "$cmd" in
     echo "    (needs ./run.sh boot for a live screen; log: docker exec $CTR cat /work/stream.log)"
     ;;
   stop) need_ctr; docker exec "$CTR" bash -lc '/repo/scripts/99_stop.sh' ;;
+  wscheck)
+    need_ctr
+    ( cd "$REPO_DIR" && docker compose exec -T wsbridge python3 -B /repo/tools/verify_websocket.py --tcp-host emu "$@" )
+    ;;
   down) ( cd "$REPO_DIR" && OTA_DIR="${OTA_DIR:-unused}" docker compose down );          echo "container stopped & removed (work volume kept)";;
   nuke) ( cd "$REPO_DIR" && OTA_DIR="${OTA_DIR:-unused}" docker compose down -v );       echo "container + work volume removed";;
   *) sed -n '2,20p' "$0" ;;

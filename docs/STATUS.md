@@ -1,8 +1,14 @@
 # Status
 
-_Updated 2026-09-11 after WebSocket route tracing and skin-hotspot UI tests._
+_Updated 2026-09-11 after end-to-end WebSocket bridge and browser protocol tests._
 
 ## Working ✅
+
+- **WebSocket FiiO Link bridge on host 12103** — real HTTP 101, handshake 0306,
+  identical TCP/WS settings and four-track library, volume and play/pause. Independent
+  guest readback agrees. This is a native adapter to stock TCP, not patched firmware
+  WS support. HTTP still proxies through; direct stock HTTP is on host 12113. Compose,
+  Dockerfile, client, protocol inspector and tests are reproducible. See [WEBSOCKET.md](WEBSOCKET.md).
 
 - **Local FiiO Link TCP 12100** — host handshake, settings, indexed library, now-playing
   path, absolute volume and play/pause. Compose provides real `eth1`; startup re-announces
@@ -121,6 +127,30 @@ Read-only route inspection and strict upgrade probes are committed; see
 port or ad-hoc image change was made. Dockerfile/Compose remain unchanged for this step.
 The existing viewer startup script applies the UI changes: `./run.sh view`, then reload.
 
+## Working WebSocket bridge — 2026-09-11
+
+![Browser WebSocket protocol inspector](images/16-websocket-protocol.jpg)
+
+Actual browser WS frames: `0599000C0000` → `a599000C0306`, settings, four indexed
+tracks, Tone A metadata with paused state 1, plus unsolicited a-tag notifications.
+The read-only inspector at **http://localhost:12103/bridge/** clearly identifies the
+emulator bridge. It was disconnected after capture to free the single-client channel.
+
+**55 Python + 10 JavaScript tests passed**, plus repeated `./run.sh wscheck --control`:
+TCP/WS settings/catalog equal; volume **115 → 114 → 115**; same track playing → paused;
+second WS rejected with 409; reconnect handshake 0306. Independent guest probe showed
+volume 115 and internal paused state 2. Host 12103 gives a valid 101, while direct
+stock HTTP on host 12113 still gives 200. Browser Origin and real WS transport verified.
+Docker image rebuilt and Compose recreated without deleting the work volume.
+After recreating only the bridge, a powered-off guest correctly produced HTTP 503;
+normal guest boot restored WS control and the full volume/playback/reconnect check passed.
+
+Stock closes/reopens its TCP listener between clients. The bridge retries connection
+refusal up to three seconds, never commands; the read-only TCP comparison also tolerates
+handover. One early playback check ran after stock idle shutdown had set NO_WORK_MODE;
+restarting the guest with its viewer supervisor restored playback, then WS control passed.
+The emulator's idle-poweroff policy itself was not changed.
+
 ## Not done yet / next
 
 - **Additional audio routes** — USB/BT, DSD, and hardware-accurate timing still need separate
@@ -129,9 +159,9 @@ The existing viewer startup script applies the UI changes: `./run.sh view`, then
   generated fifth WAV and rebooting did not update the index or start a scan. Its effective
   on/off state and startup/hotplug trigger are not yet established. Manual Update now works.
   The fixture was removed and SD rebuilt; the original four indexed tracks remain.
-- **Remaining network work** — optional local WebSocket → TCP bridge (not implemented;
-  stock V2.40 has no registered WS route), LAN multicast discovery, Wi-Fi association
-  and cloud streaming. Raw TCP works independently. `POST /audio/` is an active HTTP
+- **Remaining network work** — LAN multicast discovery, FiiO Control phone-app
+  compatibility, Wi-Fi association and cloud streaming. The local WS→TCP bridge works;
+  stock V2.40 still has no registered WS route. `POST /audio/` is an active HTTP
   route worth investigating separately for file transfer. Automatic OTA/NTP helpers
   are blocked; OTA downloads/installations were not tested.
 - **Carousel swipes** — ✅ done via the viewer's drag/`/swipe` (intermediate position events

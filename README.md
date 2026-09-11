@@ -57,10 +57,13 @@ docker compose up -d --build
 ./run.sh up               # extracts+sets up (reads OTA_DIR from .env); then boot/tap as above
 ```
 
-Compose also **publishes the device's FiiO Link ports on localhost only** — TCP **12100** (raw control), TCP **12103**
-(HTTP/WS), UDP **12101** (discovery) — so a host client (e.g. a FiiO-YMD-style bridge) can reach the
-emulated player. Try `python3 tools/fiio_link.py` on the host; see
-[docs/NETWORK.md](docs/NETWORK.md) for setup, live checks and remaining WS/discovery limits.
+Compose **publishes on localhost only**: **12100** (raw FiiO Link), **12103** (explicit
+WebSocket→TCP bridge + stock HTTP proxy), **12113** (direct stock HTTP), UDP **12101**
+(not a LAN multicast relay), and viewer **8080**. Try `python3 tools/fiio_link.py` or
+`./run.sh wscheck --control`. The read-only browser protocol inspector is at
+**http://localhost:12103/bridge/**; disconnect it before using another control client.
+See [docs/WEBSOCKET.md](docs/WEBSOCKET.md) for verified framing and bridge limits,
+[docs/NETWORK.md](docs/NETWORK.md) for network setup. Stock V2.40 itself has no WS route.
 (`./run.sh up <dir>` writes `.env` for you.)
 
 > **Why `--privileged`?** qemu-user needs a large contiguous VA reservation, writable

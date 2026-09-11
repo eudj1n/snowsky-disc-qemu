@@ -6,8 +6,8 @@
 #      docker compose up -d --build        (or ./run.sh up "$OTA_DIR", which also extracts+sets up)
 # 3. Drive the pipeline (extract / setup / boot / tap …) with ./run.sh — see README.md.
 #
-# The container just idles (`sleep infinity`); all the work runs inside it via ./run.sh,
-# which execs the /repo/scripts/* pipeline.
+# emu idles (`sleep infinity`); ./run.sh execs its /repo/scripts/* pipeline.
+# wsbridge is a separate unprivileged native service; no MIPS rootfs changes.
 services:
   emu:
     build: ./docker
@@ -29,9 +29,31 @@ services:
       # (e.g. a FiiO-YMD-style bridge) reach the emulated player. See docs/PROTOCOL.md.
       # Comment out any that clash with something already on your host.
       - "127.0.0.1:12100:12100"          # auth-free control: never expose to LAN by default
-      - "127.0.0.1:12103:12103"          # HTTP/WS (Mongoose mg_dash)
+      - "127.0.0.1:12113:12103"          # direct stock HTTP, without the WebSocket bridge
       - "127.0.0.1:12101:12101/udp"      # does not relay LAN multicast discovery
       - "127.0.0.1:8080:8080"            # live viewer + touch bridge
+
+  wsbridge:
+    image: diskos-qemu
+    pull_policy: never                   # reuse the image built by emu, not a registry image
+    depends_on:
+      - emu
+    command: ["python3", "-B", "/repo/tools/ws_bridge.py", "--listen", "0.0.0.0", "--upstream", "emu", "--http-port", "12103"]
+    user: "65534:65534"
+    read_only: true
+    cap_drop: [ALL]
+    security_opt: ["no-new-privileges:true"]
+    restart: unless-stopped
+    stop_grace_period: 5s
+    volumes:
+      - ./:/repo:ro
+    ports:
+      - "127.0.0.1:12103:12103"          # /api/websocket -> TCP; other HTTP -> stock 12103
+    healthcheck:
+      test: ["CMD", "python3", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:12103/bridge/health', timeout=2).read()"]
+      interval: 15s
+      timeout: 3s
+      retries: 3
 
 volumes:
   work:

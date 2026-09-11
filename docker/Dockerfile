@@ -22,6 +22,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
       dosfstools \
       sox \
       python3 \
+      python3-aiohttp \
       openssl \
       xxd \
       file \
@@ -40,5 +41,7 @@ WORKDIR /work
 # util-linux supplies setpriv: scripts/lib.sh drops dangerous capabilities for
 # MIPS guests and their children. Network setup uses iproute2; no manual packages.
 RUN command -v setpriv && command -v ip
+# Native WebSocket bridge/client, outside the MIPS rootfs; installed only at build time.
+RUN python3 -c "import aiohttp; print('WebSocket transport: aiohttp', aiohttp.__version__)"
 
 CMD ["/bin/bash"]
