@@ -38,9 +38,9 @@ EV = os.path.join(ROOTFS, "dev/input/event1")
 # (or /work/skin.png) — ideally with a transparent hole over the screen for pixel-perfect
 # alignment. Circle geometry is a fraction of the image (tune via env or ?cx&cy&d).
 SKIN = os.environ.get("SKIN", os.path.join(os.path.dirname(ROOTFS.rstrip('/')) or '/', "skin.png"))
-SKIN_CX = float(os.environ.get("SKIN_CX", "0.558"))   # screen centre X / image width
-SKIN_CY = float(os.environ.get("SKIN_CY", "0.515"))   # screen centre Y / image height
-SKIN_D = float(os.environ.get("SKIN_D", "0.810"))     # screen diameter / image width
+SKIN_CX = float(os.environ.get("SKIN_CX", "0.5"))     # screen centre X / image width
+SKIN_CY = float(os.environ.get("SKIN_CY", "0.5"))     # screen centre Y / image height
+SKIN_D = float(os.environ.get("SKIN_D", "0.7"))       # screen diameter / image width
 
 # ---- framebuffer -> PNG ------------------------------------------------------
 
@@ -100,16 +100,23 @@ def _load_skin():
 
 SKIN_DATA = _load_skin()
 
-def _skin_fields():
-    """Placeholder values for the page: mode + overlay geometry."""
+def _skin_fields(cx=None, cy=None, d=None):
+    """Placeholder values for the page: mode + overlay geometry. cx/cy/d override the
+    defaults (fractions of the image) so the screen can be aligned live (?cx&cy&d)."""
     if not SKIN_DATA:
-        return dict(MODE='plain', STAGE='360', L='0', T='0', D='100')
+        return dict(MODE='plain', STAGE='360', L='0', T='0', D='100',
+                    CX='0', CY='0', DD='0', AR='1')
     _, w, h = SKIN_DATA
-    dh = SKIN_D * w / h                     # screen diameter as a fraction of image HEIGHT
+    cx = SKIN_CX if cx is None else cx
+    cy = SKIN_CY if cy is None else cy
+    d = SKIN_D if d is None else d
+    ar = w / h                              # so JS can recompute top% from a height-diameter
+    dh = d * ar
     return dict(MODE='skin', STAGE='460',
-                L='%.2f' % ((SKIN_CX - SKIN_D / 2) * 100),
-                T='%.2f' % ((SKIN_CY - dh / 2) * 100),
-                D='%.2f' % (SKIN_D * 100))
+                L='%.2f' % ((cx - d / 2) * 100),
+                T='%.2f' % ((cy - dh / 2) * 100),
+                D='%.2f' % (d * 100),
+                CX='%.4f' % cx, CY='%.4f' % cy, DD='%.4f' % d, AR='%.4f' % ar)
 
 def grab_loop():
     period = 1.0 / FPS
@@ -204,11 +211,11 @@ GESTURES = {
 PAGE = ("""<!doctype html><meta charset=utf-8>
 <title>Snowsky Disc</title>
 <style>
- html,body{margin:0;background:#0d0f12;color:#bbb;font:13px system-ui;text-align:center}
+ html,body{margin:0;background:#fff;color:#333;font:13px system-ui;text-align:center}
  #wrap{display:inline-block;margin:20px auto}
  /* device-skin mode: photo of the player with the live round screen over the glass */
  #stage{position:relative;width:__STAGE__px;margin:0 auto;
-        filter:drop-shadow(0 12px 40px rgba(0,0,0,.6))}
+        filter:drop-shadow(0 10px 30px rgba(0,0,0,.18))}
  #stage.skin #skin{display:block;width:100%;border-radius:14px}
  #stage.skin #scr{position:absolute;left:__L__%;top:__T__%;width:__D__%;aspect-ratio:1/1;
         height:auto;border-radius:50%;object-fit:cover}
@@ -216,13 +223,13 @@ PAGE = ("""<!doctype html><meta charset=utf-8>
  #stage.plain{width:360px}
  #stage.plain #skin{display:none}
  #stage.plain #scr{width:360px;height:360px;border-radius:50%;background:#000;
-        box-shadow:0 0 0 6px #1c1c1c,0 0 30px #000}
+        box-shadow:0 0 0 6px #ddd,0 0 30px rgba(0,0,0,.15)}
  #scr{image-rendering:pixelated;touch-action:none;cursor:crosshair;display:block}
- .hint{opacity:.55;margin-top:14px}
+ .hint{color:#888;margin-top:14px}
  .bar{margin-top:12px}
- .bar button{background:#1b1e22;color:#ccc;border:1px solid #2a2e33;border-radius:9px;
+ .bar button{background:#f4f4f5;color:#333;border:1px solid #d5d5d8;border-radius:9px;
       padding:7px 13px;margin:3px;font:13px system-ui;cursor:pointer}
- .bar button:hover{background:#262a2f}
+ .bar button:hover{background:#eaeaec}
 </style>
 <div id=wrap>
  <div id="stage" class="__MODE__">
@@ -235,11 +242,29 @@ PAGE = ("""<!doctype html><meta charset=utf-8>
   <button onclick="go('/swipe?dir=up')">▲ up</button>
   <button onclick="go('/swipe?dir=back')">↩ back (→)</button>
   <button onclick="go('/swipe?dir=left')">◀ left</button>
+  <button id=alignbtn onclick="align.on=!align.on;draw()">⊹ align</button>
  </div>
+ <div id=readout class=hint></div>
 </div>
 <script>
 const img=document.getElementById('scr');
 const R=360, TH=6;                       // display px, drag threshold
+// --- skin align: nudge the round screen over the photo, read off cx/cy/d ---
+const align={on:false, cx:__CX__, cy:__CY__, d:__DD__, ar:__AR__};
+function draw(){
+  const l=(align.cx-align.d/2)*100, t=(align.cy-align.d*align.ar/2)*100;
+  img.style.left=l.toFixed(2)+'%'; img.style.top=t.toFixed(2)+'%'; img.style.width=(align.d*100).toFixed(2)+'%';
+  document.getElementById('alignbtn').style.background=align.on?'#d9e8b0':'';
+  document.getElementById('readout').textContent=align.on
+    ? `align: Alt+arrows move · +/- size · cx=${align.cx.toFixed(3)} cy=${align.cy.toFixed(3)} d=${align.d.toFixed(3)}  →  SKIN_CX=${align.cx.toFixed(3)} SKIN_CY=${align.cy.toFixed(3)} SKIN_D=${align.d.toFixed(3)}`
+    : '';
+}
+addEventListener('keydown',e=>{if(!align.on)return;const s=e.shiftKey?0.005:0.001;let h=true;
+  if(e.altKey&&e.key==='ArrowLeft')align.cx-=s; else if(e.altKey&&e.key==='ArrowRight')align.cx+=s;
+  else if(e.altKey&&e.key==='ArrowUp')align.cy-=s; else if(e.altKey&&e.key==='ArrowDown')align.cy+=s;
+  else if(e.key==='+'||e.key==='=')align.d+=s; else if(e.key==='-'||e.key==='_')align.d-=s; else h=false;
+  if(h){e.preventDefault();draw();}});
+if('__MODE__'==='skin')draw();
 let down=false, moved=false, sx=0, sy=0, lastMove=0;
 function pt(e){const r=img.getBoundingClientRect();
   return [Math.round((e.clientX-r.left)*R/r.width),
@@ -270,13 +295,20 @@ class Handler(BaseHTTPRequestHandler):
         u = urlparse(self.path)
         p, qs = u.path, parse_qs(u.query)
         if p == '/':
+            def qf(k):
+                v = qs.get(k)
+                try:
+                    return float(v[0]) if v else None
+                except ValueError:
+                    return None
             page = PAGE
-            for k, v in _skin_fields().items():
+            for k, v in _skin_fields(qf('cx'), qf('cy'), qf('d')).items():
                 page = page.replace('__%s__' % k, v)
             body = page.encode()
             self.send_response(200)
             self.send_header('Content-Type', 'text/html; charset=utf-8')
             self.send_header('Content-Length', str(len(body)))
+            self.send_header('Cache-Control', 'no-store')
             self.end_headers()
             self.wfile.write(body)
         elif p == '/skin':

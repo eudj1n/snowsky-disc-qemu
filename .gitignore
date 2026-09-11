@@ -41,9 +41,7 @@ __pycache__/
 !/sdcard/.gitkeep
 !/sdcard/README.md
 
-# Viewer skin: keep the README, ignore the (possibly copyrighted) device photo
-/assets/*
-!/assets/README.md
+# Viewer skin: assets/ is committed (skin.png is a small device photo; repo is private)
 
 # JetBrains IDE
 .idea/

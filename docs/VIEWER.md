@@ -43,11 +43,12 @@ left→right back gesture are just server-side interpolated swipes, one click ea
 ## Device skin (the "cool" look)
 
 If a skin PNG is present (repo `assets/skin.png`, else `/work/skin.png`), the page shows the
-photo with the live round screen overlaid on the glass. Tune the circle to your image with
-env vars (fractions of the image): `SKIN_CX` (centre X), `SKIN_CY` (centre Y), `SKIN_D`
-(diameter) — defaults suit the stock product photo. A PNG with a **transparent hole** over
-the screen gives the cleanest result. The skin is git-ignored (it may be a manufacturer photo);
-without one the viewer falls back to a plain framed round screen. See `assets/README.md`.
+photo with the live round screen overlaid on the glass. Align the circle to your image live:
+click **⊹ align**, then **Alt+arrows** to move / **+/-** to resize (Shift = bigger step) — the
+readout shows the exact `SKIN_CX / SKIN_CY / SKIN_D`. Those can also be passed as query params
+(`/?cx=0.5&cy=0.5&d=0.7`) or env vars to `scripts/40_stream.sh`; defaults live in `tools/stream.py`.
+A PNG with a **transparent hole** over the screen gives the cleanest result. Without a skin the
+viewer falls back to a plain framed round screen. See `assets/README.md`.
 
 ## Notes / limits
 
