@@ -36,8 +36,13 @@ boots go **straight to the main menu** (~24 s), skipping the wizard.
 
 - **Audio path** — drive playback of a test track and check the CS43131 path (audio out is
   not wired to the host; would need an ALSA/PCM stub or capture).
-- **Network services** — expose/exercise TCP 12100 (raw FiiO Link) and 12103 (HTTP/WS) from
-  the host; build the "FiiO YMD"-style bridge against the emulator instead of hardware.
+- **Network services** — the emulated `mq_player` does **not** yet bind 12100/12103 (gated on the
+  network being up). Next: a `40_network.sh` that adds a dummy `wlan0` + sets
+  `NETWORK_MODE=1`/`WIFI_STATUS=1` (this got 12103 answering `GET /api/hi → 200` in an earlier
+  throwaway container), then build a "FiiO YMD"-style bridge against the emulator. The protocol
+  itself is already reversed and verified against the real device — device control is **auth-free**
+  on 12100, and there is **no file-upload command** in the device protocol (see
+  [PROTOCOL.md](PROTOCOL.md) and [DEVICE.md](DEVICE.md)).
 - **Carousel swipes** — inject motion (intermediate position events over time) so LVGL
   registers drags, to navigate the app carousel and settings.
 - **MCU/UART** — the FiiO MCU (`/dev/ttyS*`) is absent; not required to reach/use the main

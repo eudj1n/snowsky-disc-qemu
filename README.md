@@ -87,7 +87,9 @@ CLAUDE.md              orientation for Claude Code sessions continuing this work
 - **[docs/STATUS.md](docs/STATUS.md)** — what works, screenshots, what's next
 - **[docs/EMULATION.md](docs/EMULATION.md)** — the stack + every non-obvious fix (read this first)
 - **[docs/TOUCH.md](docs/TOUCH.md)** — touch event format + coordinate mapping
-- **[docs/PROTOCOL.md](docs/PROTOCOL.md)** — FiiO Link frames, mqueues, network ports
+- **[docs/PROTOCOL.md](docs/PROTOCOL.md)** — FiiO Link frames, mqueues, network ports, auth
+- **[docs/DEVICE.md](docs/DEVICE.md)** — the real device on the network (ports, mDNS, no debug unlock)
+- **[docs/DISKOS.md](docs/DISKOS.md)** — diskOS V2.40 compatibility (build works; only the size cap blocks)
 - **[firmware/README.md](firmware/README.md)** — download + decrypt + device facts
 - **[ghidra/README.md](ghidra/README.md)** — reverse-engineering setup + findings
 

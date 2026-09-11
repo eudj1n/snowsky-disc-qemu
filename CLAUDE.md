@@ -83,6 +83,10 @@ looks right / has the higher non-black pixel count printed by `fb2png.py`.
   open `FUN_0055da20`, touch read-cb `FUN_0055db8c`.
 - Firmware acquisition + decrypt: `firmware/README.md` (password `fo123`; rootfs sha256 pinned
   in `scripts/lib.sh`).
+- Protocol + real-device RE: `docs/PROTOCOL.md` (FiiO Link frames, verified-live 12100 handshake
+  `0599…`, the 12103 `mg_dash` auth conclusion — **device control is auth-free**, no file-upload
+  command), `docs/DEVICE.md` (ports/mDNS, no stock debug unlock), `docs/DISKOS.md` (V2.40 builds;
+  only the size cap blocks). Network/auth `mq_player` function addresses are in `ghidra/README.md`.
 
 ## Conventions
 
@@ -95,5 +99,7 @@ looks right / has the higher non-black pixel count printed by `fb2png.py`.
 
 ## Likely next tasks (see docs/STATUS.md "Next")
 
-Audio path (CS43131 / ALSA stub), network services (TCP 12100 raw FiiO Link, 12103 HTTP/WS
-— publish container ports), carousel swipe gestures, optional MCU/UART stub.
+Audio path (CS43131 / ALSA stub); network services — the emulated `mq_player` doesn't bind
+12100/12103 yet (network-gated), so a `40_network.sh` (dummy `wlan0` + `NETWORK_MODE=1`) is the
+next step before a FiiO-YMD-style bridge (protocol already reversed — see `docs/PROTOCOL.md`);
+carousel swipe gestures, optional MCU/UART stub.
