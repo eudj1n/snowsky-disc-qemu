@@ -36,6 +36,15 @@ Once a project has `mq_player`/`mq_ui` imported+analysed, iterate with the scrip
 Typical trace: find a string → `RefsTo` the string addr → decompile the referencing function →
 follow function pointers with `RefsTo`+`DecAt` → find the gate/flag with `RefsTo` on the global.
 
+**Runtime instrumentation (do this before patching a state machine).** Static decompilation alone
+whack-a-moles hardware state machines — read the live values with GDB. `scripts/gdb_probe.sh
+<gdb-cmd-file>` boots `mq_ui` + `mq_player` under qemu's gdbstub and attaches `gdb-multiarch`
+(arch `mips:isa32r2`, LE). Example `ghidra/probe_out_device.gdb` watches the audio output route:
+it prints `ctx = *(0x832214)` and `ctx+0x58` at `set_out_device`, showing the value go **0
+(NO_OUT_DEV) → 6 (I2S3_OUT)** once card discovery succeeds — the observation that distinguishes
+"route never selected" from "format rejected". This is how the audio blocker was actually
+understood (belatedly); reach for it first on the remaining directions.
+
 ## Direction: physical keys ✅ (codes found; enable-gate identified)
 
 Full chain (V2.40), all via [../ghidra/README.md](../ghidra/README.md) scripts:
