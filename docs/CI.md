@@ -48,8 +48,12 @@ OTA_DIR=/tmp/unused docker compose config --quiet
 ```
 
 Checkout is pinned to a full action commit SHA and does not persist credentials.
+Both workflows install **Docker Engine 28.5.2 and Compose 2.39.4** using official
+Docker actions pinned to full SHAs. Compose's binary cache is disabled. The first
+hosted integration attempt exposed an older preinstalled Engine: `interface_name`
+requires Engine >=28.1 as well as Compose >=2.36. Do not rely on runner defaults.
 Node/Python/aiohttp/toolchain versions come from the same dated package indexes.
-The hosted runner/kernel/Docker version can still change; this is a pinned userland
+The hosted runner/kernel/build backend can still change; this is a pinned userland
 and repeatable functional test, **not a claim of bit-identical Docker image builds**.
 Updating the image digest or snapshot is an explicit dependency change requiring tests.
 Old snapshots also freeze security fixes; update them deliberately, not never.

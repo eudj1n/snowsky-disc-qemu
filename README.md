@@ -26,7 +26,8 @@ viewer, or run `./run.sh audio` to export `shots/audio.wav`. See [docs/AUDIO.md]
 
 ## Quickstart
 
-Requires Docker (macOS or Linux) and **Compose 2.36+**. The firmware is **not** in this repo — get it first:
+Requires **Docker Engine 28.1+** (macOS or Linux) and **Compose 2.36+** (`eth1` naming).
+The firmware is **not** in this repo — get it first:
 **[firmware/README.md](firmware/README.md)** (FiiO forum download + `fo123` decrypt info).
 
 ```sh

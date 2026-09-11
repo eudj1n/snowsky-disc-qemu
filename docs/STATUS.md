@@ -172,7 +172,11 @@ The full workflow uses a secret download URL, verifies the consumed rootfs SHA-2
 generates its own media and isolates containers/volumes/ports. See [CI.md](CI.md).
 
 `2.x` is now GitHub's default branch; historical `main` is retained. The firmware-free
-workflow is registered and its first hosted run is in progress. GitHub immutable
+workflow passed on GitHub ([run](https://github.com/eudj1n/diskos-qemu/actions/runs/34602295491)).
+The first hosted firmware run passed build/tests and the secret-backed download, but
+the runner's old Docker Engine rejected Compose `interface_name` before guest startup.
+Both workflows now explicitly install Engine 28.5.2 / Compose 2.39.4; rerun pending.
+GitHub immutable
 releases are enabled. Branch protection/rulesets returned HTTP 403
 because the private repository's current plan does not support them; visibility was
 not changed. The initial OAuth `workflow`-scope blocker was resolved by the owner.

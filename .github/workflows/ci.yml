@@ -17,6 +17,15 @@ jobs:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
         with:
           persist-credentials: false
+      - name: Pinned Docker Engine
+        uses: docker/setup-docker-action@e43656e248c0bd0647d3f5c195d116aacf6fcaf4 # v4
+        with:
+          version: v28.5.2
+      - name: Pinned Compose
+        uses: docker/setup-compose-action@2fe291b7677a45ee1269ec56a42604c143505e7e # v1
+        with:
+          version: v2.39.4
+          cache-binary: false
       - name: Validate Compose
         run: OTA_DIR=/tmp/unused docker compose config --quiet
       - name: Build pinned toolchain
