@@ -21,7 +21,8 @@ screen is whichever sub-buffer changed most recently — we pick it by diffing r
 The panel is 180deg-rotated, so display = reverse of the raw pixels, and a tapped
 display coord maps to raw touch (359-x, 359-y) — same flip as scripts/30_tap.sh.
 """
-import os, sys, time, zlib, struct, threading
+import os, sys, time, zlib, struct, threading, json
+from audio import capture_info, read_chunk
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from urllib.parse import urlparse, parse_qs
 
@@ -273,7 +274,13 @@ PAGE = ("""<!doctype html><meta charset=utf-8>
   <button onclick="go('/key?k=play_pause')">⏯ play/pause</button>
  </div>
  <div id=readout class=hint></div>
+ <div class=bar>
+  <button id=audio-toggle>Enable sound</button>
+  <button id=audio-replay>Replay capture</button>
+ </div>
+ <div id=audio-status class=hint>Sound off</div>
 </div>
+<script src="/audio.js"></script>
 <script>
 const img=document.getElementById('scr');
 const R=360, TH=6;                       // display px, drag threshold
@@ -322,7 +329,23 @@ class Handler(BaseHTTPRequestHandler):
     def do_GET(self):
         u = urlparse(self.path)
         p, qs = u.path, parse_qs(u.query)
-        if p == '/':
+        if p == '/audio.js':
+            data = open(os.path.join(os.path.dirname(__file__), 'audio.js'), 'rb').read()
+            self._audio_response(200, 'text/javascript', data)
+        elif p == '/audio.json':
+            try:
+                info = capture_info(ROOTFS)
+            except (OSError, ValueError, struct.error):
+                info = {'generation': None, 'bytes': 0}
+            self._audio_response(200, 'application/json', json.dumps(info).encode())
+        elif p == '/audio.pcm':
+            try:
+                data = read_chunk(ROOTFS, qs.get('generation', [''])[0],
+                                  int(qs.get('offset', ['0'])[0]))
+                self._audio_response(200, 'application/octet-stream', data)
+            except (OSError, ValueError, struct.error):
+                self._audio_response(409, 'text/plain', b'Capture changed or invalid offset')
+        elif p == '/':
             def qf(k):
                 v = qs.get(k)
                 try:
@@ -409,6 +432,17 @@ class Handler(BaseHTTPRequestHandler):
             self.send_response(404)
             self.send_header('Content-Length', '0')
             self.end_headers()
+
+    def _audio_response(self, status, content_type, data):
+        self.send_response(status)
+        self.send_header('Content-Type', content_type)
+        self.send_header('Content-Length', str(len(data)))
+        self.send_header('Cache-Control', 'no-store')
+        self.end_headers()
+        try:
+            self.wfile.write(data)
+        except (BrokenPipeError, ConnectionResetError):
+            pass
 
 def main():
     if not os.path.exists(FB):

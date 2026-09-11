@@ -96,23 +96,19 @@ and sends **nothing at DEBUG** anywhere (the `=DEBUG>stdout` line is commented; 
 uncomment `*.* >stdout` (or `=DEBUG>stdout`) in `zlog_player.conf` and reboot; that is how the key
 dispatch above was confirmed.
 
-## Direction: audio (WIP — see [AUDIO.md](AUDIO.md))
+## Direction: local audio ✅ (see [AUDIO.md](AUDIO.md))
 
-Firmware uses **ALSA** (`libasound.so.2`, full `snd_pcm_*`) and opens **`hw:%d,%d`** (kernel-direct,
-so an `asound.conf` `file` plugin can't redirect it); the LinuxKit VM has no snd modules. Capture
-route: a freestanding **libasound interposer** (`shim/asndshim.c`) that fakes the PCM handle and
-appends `snd_pcm_writei` to `/audio.pcm` — **built and ready**, plus `/dev/cs43131*` stubs.
+Local CS43131 playback uses **tinyalsa** (`pcm_open`/`pcm_write`), captured by `tinyshim.c`.
+The missing prerequisite was card discovery: `get_i2s3_pcm_device` (`FUN_0047670c`) expects
+`x2000 - x2000` in `/proc/asound/cards`. Redirecting that read to `shim/asound.cards` lets
+`set_out_device` (`FUN_00474f84`) choose **I2S3_OUT=6**, hw:0,3, through normal firmware logic.
+No audio binary patches are required.
 
-**The LOCAL DAC path is tinyalsa** (`libtinyalsa.so.1`: `pcm_open`/`pcm_write`), not libasound — so
-`shim/tinyshim.c` is the local-capture interposer (`asndshim.c` handles the USB/BT libasound path).
-Local playback is gated by a **DAC-route state machine** (`set_pcm_config`, `pcm_control.c
-FUN_004715fc`) that branches on the output-route mode `*(DAT_00832214+0x5c/0x58)` — a value only a
-real initialised DAC holds. Traced gate-by-gate: `audio_track_create` (`FUN_0044f2d4`) →
-`FUN_00475348` format lookup (empty caps table; patchable) → `set_pcm_config` route-state machine
-(`pcm_control.c:538`, the **blocker**) → `pcm_open`/`pcm_write` (tinyshim, not yet reached). Blind
-static patching of the route masks did **not** converge; the fix is to init/instrument the route
-mode, not whack branches. Full status + addresses in [AUDIO.md](AUDIO.md). Decoder is
-`libavcodec.so.58`. Real-time audio is out (qemu-user can't decode in real time) — capture-then-play.
+GDB confirmed `ctx = *(uint32_t*)0x832214`: `ctx+0x58` was NO_OUT_DEV=0 before discovery.
+Its caps entry was empty, but the I2S3 entry at `0x82e010` was already populated. The
+`0x10000000` flags and `ctx+0x5c` branches investigated earlier are **input**, not output.
+See [AUDIO.md](AUDIO.md) for the corrected chain, signal validation, WAV export and Web Audio.
+USB/BT (`asndshim.c`), DSD and performance across other formats require separate validation.
 
 ## Direction: network / FiiO Link + 12103 auth ✅ (mapped)
 

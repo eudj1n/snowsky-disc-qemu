@@ -103,7 +103,13 @@ looks right / has the higher non-black pixel count printed by `fb2png.py`.
 
 ## Likely next tasks (see docs/STATUS.md "Next")
 
-Audio path (CS43131 / ALSA stub); network services — the emulated `mq_player` doesn't bind
+Local audio works: `tinyshim` redirects `/proc/asound/cards` discovery to `/etc/asound.cards`
+(x2000), so stock firmware selects I2S3_OUT (6), hw:0,3. No audio binary patches.
+Capture: `/audio.pcm` + `/audio.fmt`; `./run.sh audio` exports a WAV, and the viewer offers
+Enable sound / Replay capture. See `docs/AUDIO.md` for runtime evidence and corrected route
+interpretation (`0x10000000` is INPUT). USB/BT and DSD remain unvalidated.
+
+Network services — the emulated `mq_player` doesn't bind
 12100/12103 yet (network-gated), so a `40_network.sh` (dummy `wlan0` + `NETWORK_MODE=1`) is the
 next step before a FiiO-YMD-style bridge (protocol already reversed — see `docs/PROTOCOL.md`);
 carousel swipe gestures, optional MCU/UART stub.

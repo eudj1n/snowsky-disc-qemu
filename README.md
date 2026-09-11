@@ -17,6 +17,8 @@ language wizard via injected touch events._
 
 Splash → first-boot language wizard → **main menu** → into apps (file browser shows the
 SD content), plus working **touch injection**. Full detail + screenshots: **[docs/STATUS.md](docs/STATUS.md)**.
+**Local audio capture and browser playback** also work: select a track, enable sound in the
+viewer, or run `./run.sh audio` to export `shots/audio.wav`. See [docs/AUDIO.md](docs/AUDIO.md).
 
 ## Quickstart
 
@@ -93,7 +95,7 @@ CLAUDE.md              orientation for Claude Code sessions continuing this work
 - **[docs/EMULATION.md](docs/EMULATION.md)** — the stack + every non-obvious fix (read this first)
 - **[docs/TOUCH.md](docs/TOUCH.md)** — touch event format + coordinate mapping
 - **[docs/VIEWER.md](docs/VIEWER.md)** — live browser viewer + touch/swipe bridge (`./run.sh view`)
-- **[docs/AUDIO.md](docs/AUDIO.md)** — audio capture groundwork (WIP: interposer ready, playback gate chain)
+- **[docs/AUDIO.md](docs/AUDIO.md)** — PCM capture, browser sound, WAV export, and card discovery
 - **[docs/PROTOCOL.md](docs/PROTOCOL.md)** — FiiO Link frames, mqueues, network ports, auth
 - **[docs/DEVICE.md](docs/DEVICE.md)** — the real device on the network (ports, mDNS, no debug unlock)
 - **[docs/DISKOS.md](docs/DISKOS.md)** — diskOS V2.40 compatibility (build works; only the size cap blocks)

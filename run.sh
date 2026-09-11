@@ -9,6 +9,7 @@
 #   ./run.sh tap <x> <y>                 inject a tap at a screen coordinate, re-capture into ./shots/
 #   ./run.sh view [port]                 live viewer + touch/swipe bridge in the browser (default :8080)
 #   ./run.sh capture [prefix]            re-capture the current framebuffer into ./shots/
+#   ./run.sh audio                      export current audio capture into ./shots/audio.wav
 #   ./run.sh diag                        touch diagnostic (leaves guests running)
 #   ./run.sh stop                        stop the guest processes
 #   ./run.sh down                        stop & remove the container (the /work volume is kept)
@@ -70,6 +71,13 @@ case "$cmd" in
     docker exec "$CTR" bash -lc "/repo/scripts/capture.sh ${1:-cap}"
     mkdir -p "$REPO_DIR/shots"; docker cp "$CTR":/work/shots/. "$REPO_DIR/shots/" 2>/dev/null || true
     echo "==> PNGs copied to $REPO_DIR/shots/"
+    ;;
+  audio)
+    need_ctr
+    docker exec "$CTR" python3 /repo/tools/audio.py /work/audio.wav
+    mkdir -p "$REPO_DIR/shots"
+    docker cp "$CTR":/work/audio.wav "$REPO_DIR/shots/audio.wav"
+    echo "==> WAV copied to $REPO_DIR/shots/audio.wav"
     ;;
   view)
     need_ctr

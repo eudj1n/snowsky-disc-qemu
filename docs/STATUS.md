@@ -21,6 +21,9 @@ _As of this commit._
   `Test Artist` → `Greatest Hits` → the two `.wav` tracks.
 - **Reverse engineering** — Ghidra 12 headless on `mq_ui`/`mq_player`; decompiled the touch
   read-callback, boot IPC, and the `mount_storage_dev.c` SD-mount logic.
+- **Local audio** — stock decoder → tinyalsa → PCM capture, with Web Audio in the viewer
+  and `./run.sh audio` WAV export. I2S3 card discovery works without audio binary patches.
+  Captured samples were checked against the source. See [AUDIO.md](AUDIO.md).
 
 The language choice persists to `sysconfig.db` after the first successful tap, so subsequent
 boots go **straight to the main menu** (~24 s), skipping the wizard.
@@ -38,10 +41,8 @@ boots go **straight to the main menu** (~24 s), skipping the wizard.
 
 ## Not done yet / next
 
-- **Audio path** — WIP. The libasound interposer (`shim/asndshim.c`) + CS43131 stubs are
-  built and ready; playback triggers but is gated by a chain of hardware-format layers before
-  ALSA is reached (format lookup patched; `pcm_control` params is the next gate). See
-  [AUDIO.md](AUDIO.md).
+- **Additional audio routes** — USB/BT, DSD, and hardware-accurate timing still need separate
+  validation. Local PCM works; see [AUDIO.md](AUDIO.md).
 - **Network services** — the emulated `mq_player` does **not** yet bind 12100/12103 (gated on the
   network being up). Next: a `40_network.sh` that adds a dummy `wlan0` + sets
   `NETWORK_MODE=1`/`WIFI_STATUS=1` (this got 12103 answering `GET /api/hi → 200` in an earlier

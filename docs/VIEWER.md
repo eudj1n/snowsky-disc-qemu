@@ -13,6 +13,11 @@ live round screen into a photo of the player so it looks like the real device.
 Then, in the browser: **click = tap**, **drag = swipe**, **long-press = hold**, and the
 buttons do the common gestures (shade down, back = left→right, …).
 
+**Enable sound** plays captured audio; **Replay capture** starts the current recording again.
+**Mute sound** affects the browser only. Select tracks and pause in the device UI.
+Each PCM session replaces the recording; `./run.sh audio` saves a WAV to `shots/audio.wav`.
+See [AUDIO.md](AUDIO.md) for limits and verification.
+
 ## How it works
 
 `tools/stream.py` runs inside the container (wrapped by `scripts/40_stream.sh`, launched
@@ -24,6 +29,8 @@ detached by `./run.sh view`) and serves:
 | `GET /stream` | `multipart/x-mixed-replace` PNG stream of the live screen |
 | `GET /frame` | a single current PNG (handy for scripting) |
 | `GET /skin` | the device photo, if a skin is present |
+| `GET /audio.json` | capture generation, format, byte count and duration |
+| `GET /audio.pcm?generation=…&offset=…` | bounded PCM chunk at a frame-aligned offset |
 | `GET /tap?x&y` | short tap at display coords (press, hold ~0.3 s, release) |
 | `GET /down?x&y` · `/move?x&y` · `/up` | manual press / drag / release |
 | `GET /swipe?dir=down\|up\|back\|left` (or `?x0&y0&x1&y1`) | server-side smooth swipe |

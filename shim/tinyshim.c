@@ -15,7 +15,7 @@
 #define __NR_open  4005
 #define __NR_write 4004
 #define __NR_close 4006
-#define O_WCA 0x109   /* MIPS O_WRONLY|O_CREAT|O_APPEND */
+#define __NR_nanosleep 4166
 #define O_WCT 0x301   /* MIPS O_WRONLY|O_CREAT|O_TRUNC  */
 
 static long sys3(long n, long a, long b, long c){
@@ -29,48 +29,87 @@ static long sys3(long n, long a, long b, long c){
 static char g_pcm[16], g_params[16];
 static int g_fd = -1, g_ch = 2, g_sb = 4;
 static unsigned g_rate = 48000;
+static unsigned g_buffer_frames = 8192;
 
-static void fmt_write(void){
+static void trace(const char *s){
+  unsigned n = 0; while (s[n]) ++n;
+  sys3(__NR_write, 2, (long)s, n);
+}
+
+/* procfs belongs to the host kernel; redirect only the guest's card discovery. */
+extern void *fopen64(const char *, const char *);
+void *fopen(const char *path, const char *mode){
+  const char *card_path = "/proc/asound/cards";
+  unsigned i = 0;
+  while (path[i] && path[i] == card_path[i]) ++i;
+  if (!path[i] && !card_path[i]) path = "/etc/asound.cards";
+  return fopen64(path, mode);
+}
+
+static int fmt_write(void){
   long fd = sys3(__NR_open, (long)"/audio.fmt", O_WCT, 0644);
-  if (fd >= 0){ unsigned r[3] = {(unsigned)g_ch,(unsigned)g_sb,g_rate}; sys3(__NR_write,fd,(long)r,sizeof r); sys3(__NR_close,fd,0,0); }
+  if (fd < 0) return -1;
+  unsigned r[3] = {(unsigned)g_ch,(unsigned)g_sb,g_rate};
+  long written = sys3(__NR_write,fd,(long)r,sizeof r);
+  sys3(__NR_close,fd,0,0);
+  return written == sizeof r ? 0 : -1;
 }
 
 /* struct pcm_config: channels@0, rate@4, period_size@8, period_count@12, format@16 (u32 each) */
 struct pcm *pcm_open(unsigned card, unsigned device, unsigned flags, const void *config){
-  (void)card;(void)device;(void)flags;
+  trace("[tinyshim] pcm_open\n");
+  (void)card;(void)device;
+  if ((flags & 0x10000000) || !config) return (struct pcm *)0; /* output only */
+  if (g_fd >= 0) sys3(__NR_close, g_fd, 0, 0);
+  g_fd = -1;
   if (config){
     const unsigned *c = (const unsigned *)config;
+    if (!c[0] || c[0] > 8 || !c[1] || c[1] > 768000) return (struct pcm *)0;
     if (c[0]) g_ch = (int)c[0];
     if (c[1]) g_rate = c[1];
-    unsigned fmt = c[4];                      /* tinyalsa pcm_format enum */
-    /* 0 S16_LE,1 S32_LE,2 S8,3 S24_LE,4 S24_3LE (packed 3B); bytes/sample: */
-    g_sb = (fmt==0)?2 : (fmt==2)?1 : (fmt==4)?3 : 4;
-    fmt_write();
+    unsigned fmt = c[4]; /* Vendor enum: the stock PCM path uses these signed LE formats. */
+    if (fmt != 0 && fmt != 5 && fmt != 7) return (struct pcm *)0;
+    g_sb = fmt == 0 ? 2 : fmt == 5 ? 3 : 4;
+    g_buffer_frames = c[2]*c[3];
+    g_fd = sys3(__NR_open, (long)"/audio.pcm", O_WCT, 0644);
+    if (g_fd < 0) return (struct pcm *)0;
+    if (fmt_write() < 0){ sys3(__NR_close,g_fd,0,0); g_fd=-1; return (struct pcm *)0; }
   }
   return (struct pcm *)g_pcm;
 }
-int pcm_close(struct pcm *p){ (void)p; return 0; }
-int pcm_is_ready(const struct pcm *p){ (void)p; return 1; }
-unsigned pcm_get_buffer_size(const struct pcm *p){ (void)p; return 8192; }
+int pcm_close(struct pcm *p){ (void)p; if(g_fd >= 0) sys3(__NR_close,g_fd,0,0); g_fd=-1; return 0; }
+int pcm_is_ready(const struct pcm *p){ (void)p; return g_fd >= 0; }
+unsigned pcm_get_buffer_size(const struct pcm *p){ (void)p; return g_buffer_frames; }
+unsigned pcm_frames_to_bytes(const struct pcm *p, unsigned frames){ (void)p; return frames*g_ch*g_sb; }
+unsigned pcm_bytes_to_frames(const struct pcm *p, unsigned bytes){ (void)p; return bytes/(g_ch*g_sb); }
 const char *pcm_get_error(const struct pcm *p){ (void)p; return ""; }
 
 int pcm_write(struct pcm *p, const void *data, unsigned count){
   (void)p;
-  if (g_fd < 0) g_fd = sys3(__NR_open, (long)"/audio.pcm", O_WCA, 0644);
+  if (g_fd < 0 || !data) return -1;
   if (g_fd >= 0 && data && count){
     unsigned off = 0;
     while (off < count){
       long w = sys3(__NR_write, g_fd, (long)((const char*)data + off), count - off);
-      if (w <= 0) break;
+      if (w == -4) continue; /* EINTR */
+      if (w <= 0) return -1;
       off += (unsigned)w;
     }
   }
+  /* A real DAC blocks until buffer space is available. Bound the emulated sink
+   * too, including firmware-generated silence, so idle writes cannot flood disk. */
+  unsigned frames = count / (g_ch*g_sb);
+  long delay[2] = {frames/g_rate, (long)((frames%g_rate)*1000/g_rate)*1000000};
+  long remaining[2];
+  while (sys3(__NR_nanosleep,(long)delay,(long)remaining,0) == -4){
+    delay[0]=remaining[0]; delay[1]=remaining[1];
+  }
   return 0;
 }
-int pcm_read(struct pcm *p, void *data, unsigned count){ (void)p;(void)data; return (int)count; }
+int pcm_read(struct pcm *p, void *data, unsigned count){ (void)p;(void)data;(void)count; return -1; }
 
 /* card capability query — report a permissive card so the config validation passes */
-struct pcm_params *pcm_params_get(unsigned card, unsigned device, unsigned flags){ (void)card;(void)device;(void)flags; return (struct pcm_params *)g_params; }
+struct pcm_params *pcm_params_get(unsigned card, unsigned device, unsigned flags){ trace("[tinyshim] pcm_params_get\n"); (void)card;(void)device;(void)flags; return (struct pcm_params *)g_params; }
 void pcm_params_free(struct pcm_params *p){ (void)p; }
 unsigned pcm_params_get_min(const struct pcm_params *p, int param){ (void)p;(void)param; return 1; }
 unsigned pcm_params_get_max(const struct pcm_params *p, int param){ (void)p;(void)param; return 384000; }

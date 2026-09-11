@@ -27,6 +27,7 @@ log "Building shims"
 cp "$WORK/fbshim.so" "$ROOTFS/lib/fbshim.so"
 cp "$WORK/asndshim.so" "$ROOTFS/lib/asndshim.so"      # ALSA interposer  (USB/BT path capture)
 cp "$WORK/tinyshim.so" "$ROOTFS/lib/tinyshim.so"      # tinyalsa interposer (LOCAL DAC path -> /audio.pcm)
+cp "$REPO/shim/asound.cards" "$ROOTFS/etc/asound.cards" # x2000 card discovery via tinyshim fopen
 printf '/lib/fbshim.so\n/lib/asndshim.so\n/lib/tinyshim.so\n' > "$ROOTFS/etc/ld.so.preload"   # guest ld.so reads this (LD_PRELOAD won't survive popen)
 
 # 2b) Enable physical-key handling: mq_player gates keys on a flag that isn't set headless.
