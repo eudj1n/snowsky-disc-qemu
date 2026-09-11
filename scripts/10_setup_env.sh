@@ -25,8 +25,9 @@ fi
 log "Building shims"
 "$REPO/shim/build_shims.sh"
 cp "$WORK/fbshim.so" "$ROOTFS/lib/fbshim.so"
-cp "$WORK/asndshim.so" "$ROOTFS/lib/asndshim.so"      # ALSA interposer: capture PCM to /audio.pcm
-printf '/lib/fbshim.so\n/lib/asndshim.so\n' > "$ROOTFS/etc/ld.so.preload"   # guest ld.so reads this (LD_PRELOAD won't survive popen)
+cp "$WORK/asndshim.so" "$ROOTFS/lib/asndshim.so"      # ALSA interposer  (USB/BT path capture)
+cp "$WORK/tinyshim.so" "$ROOTFS/lib/tinyshim.so"      # tinyalsa interposer (LOCAL DAC path -> /audio.pcm)
+printf '/lib/fbshim.so\n/lib/asndshim.so\n/lib/tinyshim.so\n' > "$ROOTFS/etc/ld.so.preload"   # guest ld.so reads this (LD_PRELOAD won't survive popen)
 
 # 2b) Enable physical-key handling: mq_player gates keys on a flag that isn't set headless.
 #     Patch the guard so injected event0 keys reach the dispatcher (docs/RE.md). KEYS_ENABLE=0 to skip.

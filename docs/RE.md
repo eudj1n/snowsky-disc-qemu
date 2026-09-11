@@ -103,13 +103,16 @@ so an `asound.conf` `file` plugin can't redirect it); the LinuxKit VM has no snd
 route: a freestanding **libasound interposer** (`shim/asndshim.c`) that fakes the PCM handle and
 appends `snd_pcm_writei` to `/audio.pcm` — **built and ready**, plus `/dev/cs43131*` stubs.
 
-Local playback is gated by a **chain** of hardware-format layers (traced with the scripts here):
-`audio_track_create` (`player_output.c` `FUN_0044f2d4`) → `FUN_00475348` (format lookup vs an empty
-per-route caps table → "update pcm_out stream format" error; **patched** to return supported) →
-`pcm_control.c FUN_004715fc` ("config pcm params" — rate/format table validation; **next gate**) →
-… → `snd_pcm_writei` (interposer, not yet reached). Each patch advances to the next layer. Full
-status, addresses and the remaining work are in [AUDIO.md](AUDIO.md). Decoder is `libavcodec.so.58`.
-Real-time live audio is out (qemu-user can't decode in real time) — the goal is capture-then-play.
+**The LOCAL DAC path is tinyalsa** (`libtinyalsa.so.1`: `pcm_open`/`pcm_write`), not libasound — so
+`shim/tinyshim.c` is the local-capture interposer (`asndshim.c` handles the USB/BT libasound path).
+Local playback is gated by a **DAC-route state machine** (`set_pcm_config`, `pcm_control.c
+FUN_004715fc`) that branches on the output-route mode `*(DAT_00832214+0x5c/0x58)` — a value only a
+real initialised DAC holds. Traced gate-by-gate: `audio_track_create` (`FUN_0044f2d4`) →
+`FUN_00475348` format lookup (empty caps table; patchable) → `set_pcm_config` route-state machine
+(`pcm_control.c:538`, the **blocker**) → `pcm_open`/`pcm_write` (tinyshim, not yet reached). Blind
+static patching of the route masks did **not** converge; the fix is to init/instrument the route
+mode, not whack branches. Full status + addresses in [AUDIO.md](AUDIO.md). Decoder is
+`libavcodec.so.58`. Real-time audio is out (qemu-user can't decode in real time) — capture-then-play.
 
 ## Direction: network / FiiO Link + 12103 auth ✅ (mapped)
 
