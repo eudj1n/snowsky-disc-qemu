@@ -8,6 +8,10 @@ No firmware code, route table or in-memory pointers are patched for this bridge.
 
 ## Addresses and reproduction
 
+The bridge is optional (`wsbridge` Compose profile). The device viewer on 8080,
+local playback and direct TCP control work without it. Enable it for WebSocket
+clients, the protocol inspector or bridge verification.
+
 | Host endpoint (localhost only) | Destination |
 |---|---|
 | `12103/api/websocket` | Native `wsbridge` service → stock FiiO Link TCP `emu:12100` |
@@ -21,6 +25,7 @@ No firmware code, route table or in-memory pointers are patched for this bridge.
 docker compose up -d --build    # recreate emu's port mapping; retain diskos-work
 ./run.sh boot
 ./run.sh view                  # restart the viewer after container recreation
+docker compose --profile wsbridge up -d wsbridge  # explicit opt-in
 ./run.sh wscheck               # compare settings/library with independent direct TCP
 ./run.sh wscheck --control     # volume test + start indexed library + leave paused
 python3 tools/probe_websocket.py --require-upgrade  # host 12103: valid 101
@@ -32,15 +37,21 @@ For a fresh workspace, first obtain/extract the OTA with `./run.sh up …` as in
 3.8.4-1+deb12u1). No `pip install` or guest-image modifications are needed. Compose
 runs a separate unprivileged service from that image: UID/GID 65534, read-only root
 and repository mount, all capabilities dropped, no-new-privileges, no rootfs/SD volume.
-It starts with Compose, survives guest restarts and returns an availability error
-while the guest is off. `run.sh start/boot` also starts the bridge; `down` removes
-both containers, not the work volume. `wscheck` expects the bridge already running.
+Default Compose startup and `run.sh up/start/boot/view` do not start it. Once enabled,
+it survives guest restarts and returns an availability error while the guest is off.
+`run.sh down` removes both containers and retains the work volume. `wscheck` expects
+the bridge already running. Integration CI explicitly enables the profile.
+
+Stop it with `docker compose --profile wsbridge stop wsbridge`. Adding a profile does
+not stop an already running bridge from an older checkout; run this stop command once
+when migrating. Port 12103 is unavailable while stopped; direct stock HTTP stays on
+12113. An explicit `COMPOSE_PROFILES=wsbridge` also opts in.
 
 Standalone async client, using the dependency already installed in the container:
 
 ```sh
-docker compose exec -T wsbridge python3 -B /repo/tools/fiio_ws.py
-docker compose logs --tail 30 wsbridge
+docker compose --profile wsbridge exec -T wsbridge python3 -B /repo/tools/fiio_ws.py
+docker compose --profile wsbridge logs --tail 30 wsbridge
 docker exec diskos-qemu python3 /repo/tools/probe_keys.py
 ```
 

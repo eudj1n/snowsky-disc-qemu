@@ -13,7 +13,7 @@ export EMU_CONTAINER_NAME="$CI_ID-emu"
 export WORK_VOLUME="$CI_ID-work"
 export SD_DIR="$CI_TMP/sdcard"
 mkdir "$SD_DIR"
-compose() { docker compose --env-file /dev/null -p "$CI_ID" -f docker-compose.yml -f ci/compose.yml "$@"; }
+compose() { docker compose --env-file /dev/null --profile wsbridge -p "$CI_ID" -f compose.yaml -f ci/compose.yml "$@"; }
 cleanup() {
   if [ -n "${CI_SHOTS:-}" ]; then
     mkdir -p "$CI_SHOTS"

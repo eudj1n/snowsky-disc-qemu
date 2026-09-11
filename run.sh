@@ -19,7 +19,7 @@
 # The firmware is NOT included — see firmware/README.md to obtain it.
 set -euo pipefail
 REPO_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-CTR="diskos-qemu"                # container_name set in docker-compose.yml
+CTR="diskos-qemu"                # container_name set in compose.yaml
 
 running(){ docker ps --format '{{.Names}}' | grep -qx "$CTR"; }
 exists(){  docker ps -a --format '{{.Names}}' | grep -qx "$CTR"; }
@@ -47,11 +47,10 @@ case "$cmd" in
     docker exec "$CTR" bash -lc '/repo/scripts/10_setup_env.sh'
     echo "==> ready. Try: ./run.sh boot"
     ;;
-  start) need_ctr; ( cd "$REPO_DIR" && docker compose up -d --no-deps wsbridge ); echo "container '$CTR' running";;
+  start) need_ctr; echo "container '$CTR' running";;
   shell) need_ctr; docker exec -it "$CTR" bash ;;
   boot)
     need_ctr
-    ( cd "$REPO_DIR" && docker compose up -d --no-deps wsbridge )
     docker exec "$CTR" bash -lc "/repo/scripts/10_setup_env.sh >/dev/null && /repo/scripts/20_boot.sh ${1:-26}"
     mkdir -p "$REPO_DIR/shots"; docker cp "$CTR":/work/shots/. "$REPO_DIR/shots/" 2>/dev/null || true
     echo "==> PNGs copied to $REPO_DIR/shots/"
@@ -92,9 +91,9 @@ case "$cmd" in
   stop) need_ctr; docker exec "$CTR" bash -lc '/repo/scripts/99_stop.sh' ;;
   wscheck)
     need_ctr
-    ( cd "$REPO_DIR" && docker compose exec -T wsbridge python3 -B /repo/tools/verify_websocket.py --tcp-host emu "$@" )
+    ( cd "$REPO_DIR" && docker compose --profile wsbridge exec -T wsbridge python3 -B /repo/tools/verify_websocket.py --tcp-host emu "$@" )
     ;;
-  down) ( cd "$REPO_DIR" && OTA_DIR="${OTA_DIR:-unused}" docker compose down );          echo "container stopped & removed (work volume kept)";;
-  nuke) ( cd "$REPO_DIR" && OTA_DIR="${OTA_DIR:-unused}" docker compose down -v );       echo "container + work volume removed";;
+  down) ( cd "$REPO_DIR" && OTA_DIR="${OTA_DIR:-$REPO_DIR}" docker compose --profile wsbridge down );          echo "containers stopped & removed (work volume kept)";;
+  nuke) ( cd "$REPO_DIR" && OTA_DIR="${OTA_DIR:-$REPO_DIR}" docker compose --profile wsbridge down -v );       echo "containers + work volume removed";;
   *) sed -n '2,20p' "$0" ;;
 esac

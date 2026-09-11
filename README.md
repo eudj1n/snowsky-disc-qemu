@@ -60,7 +60,7 @@ The firmware is **not** in this repo — get it first:
 `run.sh` builds the container, extracts+verifies the rootfs, applies every fix needed to
 reach the main screen, boots the two UI processes, and copies screenshots out.
 
-**Prefer Docker Compose?** The container is also defined in `docker-compose.yml` (which builds
+**Prefer Docker Compose?** The container is also defined in `compose.yaml` (which builds
 `docker/Dockerfile`). Set the firmware path once and use compose for lifecycle, `run.sh` for the
 pipeline:
 
@@ -70,10 +70,20 @@ docker compose up -d --build
 ./run.sh up               # extracts+sets up (reads OTA_DIR from .env); then boot/tap as above
 ```
 
-Compose **publishes on localhost only**: **12100** (raw FiiO Link), **12103** (explicit
-WebSocket→TCP bridge + stock HTTP proxy), **12113** (direct stock HTTP), UDP **12101**
-(not a LAN multicast relay), and viewer **8080**. Try `python3 tools/fiio_link.py` or
-`./run.sh wscheck --control`. The read-only browser protocol inspector is at
+Compose starts only `emu` by default and **publishes on localhost only**: **12100**
+(raw FiiO Link), **12113** (direct stock HTTP), UDP **12101** (not a LAN multicast
+relay), and viewer **8080**. Try `python3 tools/fiio_link.py`.
+
+The optional `wsbridge` profile adds **12103** (WebSocket→TCP bridge + stock HTTP
+proxy) for WebSocket clients and protocol debugging:
+
+```sh
+docker compose --profile wsbridge up -d wsbridge
+./run.sh wscheck --control
+docker compose --profile wsbridge stop wsbridge  # when finished
+```
+
+With the bridge enabled, the read-only browser protocol inspector is at
 **http://localhost:12103/bridge/**; disconnect it before using another control client.
 See [docs/WEBSOCKET.md](docs/WEBSOCKET.md) for verified framing and bridge limits,
 [docs/NETWORK.md](docs/NETWORK.md) for network setup. Stock V2.40 itself has no WS route.
@@ -88,7 +98,7 @@ See [docs/WEBSOCKET.md](docs/WEBSOCKET.md) for verified framing and bridge limit
 ```
 run.sh                 host orchestrator (up / boot / tap / capture / diag / shell / stop / down / nuke)
 docker/Dockerfile      reproducible environment (qemu-user, mipsel toolchain, tools)
-docker-compose.yml     container definition (builds the Dockerfile) + FiiO Link port mappings
+compose.yaml           container definition (builds the Dockerfile) + FiiO Link port mappings
 .env.example           OTA_DIR (firmware path) for compose; copy to .env
 scripts/               in-container pipeline
   00_extract_rootfs.sh   decrypt+assemble+unsquashfs the firmware (sha256-verified)

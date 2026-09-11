@@ -8,11 +8,14 @@ from pathlib import Path
 import sys
 import struct
 import time
+from concurrent.futures import ThreadPoolExecutor
+from threading import Event
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / 'tools'))
 from audio import capture_info
 from fiio_link import Client
 from stream import tap, swipe, _png, _to_rgb, BUF
+from player_memory import PlayerMemory
 
 ROOT = Path('/work/rootfs')
 
@@ -62,10 +65,29 @@ def scan():
     tap(180, 280)
     time.sleep(2)
     capture('library')
-    tap(180, 85)
-    time.sleep(2)
-    capture('scan')
-    tracks = wait_library(1)
+    # Sample the actual worker flag across the stock UI-triggered scan. A very
+    # short scan may fit between samples; record observed values without making
+    # scheduler timing a CI pass/fail condition.
+    with PlayerMemory(ROOT, os.environ.get('FW_VERSION', '2.40')) as player:
+        address = player.profile['diagnostics']['network']['scan_running']
+        stop = Event()
+        def sample_scan():
+            values = {player.word(address)}
+            while not stop.wait(.01):
+                values.add(player.word(address))
+            return values
+        with ThreadPoolExecutor(max_workers=1) as pool:
+            sample = pool.submit(sample_scan)
+            try:
+                tap(180, 85)
+                time.sleep(2)
+                capture('scan')
+                tracks = wait_library(1)
+            finally:
+                stop.set()
+            observed = sample.result()
+        assert observed <= {0, 1}, observed
+        print('Diagnostic scan_running samples:', sorted(observed))
     assert 'CI Tone' in str(tracks), tracks
     print(f'Fresh V{os.environ.get("FW_VERSION", "2.40")}: stock UI scanned the generated track; TCP index verified.')
 

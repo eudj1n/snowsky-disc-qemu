@@ -55,7 +55,7 @@ BGRX sub-buffers. `mq_ui` alternates buf0/buf1 without panning. `fbshim` observe
 copies and records the last-written buffer in `emu/fb-live`; the background reader uses
 that marker, converts BGRX→RGB + 180° rotation, and PNG-encodes it. Older shims fall back
 to diffing frames, which can select a stale buffer if both changed between reads.
-Brightness 0 or a stopped guest produces a black frame. Port published in `docker-compose.yml` (8080).
+Brightness 0 or a stopped guest produces a black frame. Port published in `compose.yaml` (8080).
 
 The grabber still samples at `STREAM_FPS` (default 12), preserving the existing
 animation cadence. It reads only the two used buffers, checks the active marker

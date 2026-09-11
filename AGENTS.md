@@ -101,8 +101,9 @@ looks right / has the higher non-black pixel count printed by `fb2png.py`.
 - `FW_VERSION` selects a reviewed runtime profile (default `2.40`, opt-in `2.57`).
   Setup/boot validate product/version and six binary fingerprints before execution.
   Key patch validation normalizes only the permitted instruction, then checks the full
-  stock hash and executable PT_LOAD mapping. Old memory/route probes reject non-V2.40
-  binaries until their addresses are separately re-established.
+  stock hash and executable PT_LOAD mapping. Read-only key/network/HTTP diagnostics select
+  separately verified V2.40/V2.57 addresses by full binary fingerprint (see
+  `docs/DIAGNOSTICS.md`); legacy GDB breakpoint files remain V2.40-specific.
 - Public-release preparation: `docs/PUBLIC_RELEASE.md`. Keep passwords out of the root
   README and private-project names out of tracked files. Do not change visibility or
   rewrite immutable history without explicit approval. Code/photo license: MIT.
@@ -155,8 +156,10 @@ The bundled mg_dash code is not the active router; the earlier password-gate exp
 was wrong. Reproduce with `tools/inspect_http_routes.py` and `tools/probe_websocket.py`.
 An explicit native WS→TCP bridge now serves host `12103/api/websocket`, forwarding
 FiiO Link to `emu:12100`; other HTTP paths proxy to unchanged guest `12103`. Host
-`12113` bypasses it for stock HTTP diagnosis. Compose starts `wsbridge` unprivileged,
+`12113` bypasses it for stock HTTP diagnosis. The opt-in `wsbridge` Compose profile starts the bridge unprivileged,
 read-only, without guest volumes; Dockerfile supplies python3-aiohttp. No firmware patch.
+Enable with `docker compose --profile wsbridge up -d wsbridge`; ordinary up/start/boot
+do not launch it. CI enables the profile explicitly.
 `./run.sh wscheck --control` compares TCP/WS and checks volume/playback (leaves paused).
 `http://localhost:12103/bridge/` is a read-only protocol inspector; disconnect it before
 another client (stock TCP is single-client). See `docs/WEBSOCKET.md`. LAN discovery

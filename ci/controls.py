@@ -1,12 +1,17 @@
 """Physical events with protocol/sysfs readback, only in a disposable scanned guest."""
 from pathlib import Path
 import os
+import socket
+import sqlite3
 import sys
 import time
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / 'tools'))
 from fiio_link import Client
 from keys import Buttons, Device
+from probe_keys import snapshot as key_snapshot
+from probe_network import snapshot as network_snapshot
+from inspect_http_routes import routes
 
 
 def wait(read, predicate, label, timeout=8):
@@ -24,6 +29,28 @@ def main():
     device = Device(root)
     buttons = Buttons(root, device)
     buttons.reset()
+    version = os.environ.get('FW_VERSION', '2.40')
+    network = network_snapshot(root, version)
+    assert network['firmware'] == version and network['ready'] == 1, network
+    assert network['storage_type'] == 1 and network['scan_running'] == 0, network
+    assert network['dangerous_caps_dropped'] and network['capabilities']['NoNewPrivs'] == '1'
+    expected_callbacks = {
+        '2.40': {'0502': '0x4e4744', '0201': '0x4e477c', 'volume_device': '0x4e0fdc'},
+        '2.57': {'0502': '0x4ed814', '0201': '0x4ed84c', 'volume_device': '0x4e9d24'},
+    }
+    assert network['callbacks'] == expected_callbacks[version], network
+    assert network['ip'] == socket.gethostbyname(socket.gethostname()), network
+    table = routes((root / 'usr/bin/mq_player').read_bytes(), version)
+    assert len(table) == (17 if version == '2.57' else 16)
+    assert any(r['method'] == 'GET' and r['path'] == '/log/' for r in table)
+    assert any(r['method'] == 'POST' and r['path'] == '/image/' for r in table) == (version == '2.57')
+    assert not any('websocket' in r['path'] for r in table)
+    with sqlite3.connect(root / 'usr/data/fiio/db/sysconfig.db') as db:
+        assignment = db.execute('SELECT KEY_SINGLE_CLICK_SLE, KEY_DOUBLE_CLICK_SLE, '
+                                'KEY_LONG_PRESS_SLE FROM SYSCONFIG').fetchone()
+    keys = key_snapshot(root, version)
+    assert tuple(keys[k] for k in ('single', 'double', 'hold')) == assignment, keys
+    print('Diagnostic network/HTTP snapshot:', network)
     deadline = time.monotonic() + 8
     while True:
         try:
@@ -39,8 +66,10 @@ def main():
         assert settings['soc_version'] == int(os.environ.get('FW_VERSION', '2.40').replace('.', ''))
         initial = settings['currentVolume']
         assert initial > 0
+        assert key_snapshot(root, version)['volume'] == initial
         buttons.gesture('volume_down', 'single')
         wait(client.settings, lambda s: s['currentVolume'] == initial - 1, 'volume down')
+        assert key_snapshot(root, version)['volume'] == initial - 1
         buttons.gesture('volume_up', 'single')
         wait(client.settings, lambda s: s['currentVolume'] == initial, 'volume up')
         try:
@@ -50,18 +79,23 @@ def main():
             buttons.gesture('volume_down', 'end')
         client.set_volume(initial)
         wait(client.settings, lambda s: s['currentVolume'] == initial, 'restore volume')
+        assert key_snapshot(root, version)['volume'] == initial
         # Prior WebSocket integration leaves the selected track paused.
         buttons.gesture('play_pause', 'single')
         wait(client.now_playing, lambda s: isinstance(s.get('song'), dict) and s.get('state') == 0,
              'physical play')
+        wait(lambda: key_snapshot(root, version), lambda s: s['player_state'] == 1, 'memory playing')
         buttons.gesture('play_pause', 'single')
         wait(client.now_playing, lambda s: isinstance(s.get('song'), dict) and s.get('state') == 1,
              'physical pause')
+        wait(lambda: key_snapshot(root, version), lambda s: s['player_state'] == 2, 'memory paused')
         assert device.screen_on()
         buttons.gesture('power', 'single')
         wait(device.screen_on, lambda value: not value, 'screen sleep')
+        assert key_snapshot(root, version)['screen_on'] == 0
         buttons.gesture('power', 'single')
         wait(device.screen_on, bool, 'screen wake')
+        assert key_snapshot(root, version)['screen_on'] == 1
     print('Physical volume single/hold, media play/pause and screen sleep/wake verified.')
 
 

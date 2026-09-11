@@ -81,6 +81,20 @@ def require_v240_player(binary):
     patch_state(Path(binary).read_bytes(), load_profile('2.40'))
 
 
+def identify_player(data, version=None):
+    """Select reviewed diagnostic addresses by full stock/patched fingerprint."""
+    for candidate in ([version] if version is not None else ['2.40', '2.57']):
+        profile = load_profile(candidate)
+        try:
+            patch_state(data, profile)
+        except ValueError:
+            continue
+        if 'diagnostics' not in profile:
+            raise ValueError('No reviewed diagnostics for this build')
+        return profile
+    raise ValueError('Unknown or mismatched mq_player build; refusing diagnostic probe')
+
+
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('operation', choices=['validate', 'patch-keys'])

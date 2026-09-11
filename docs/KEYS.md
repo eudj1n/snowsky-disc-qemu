@@ -1,5 +1,9 @@
 # Physical buttons (V2.40)
 
+For version-aware read-only probes and the V2.57 address map, see
+[DIAGNOSTICS.md](DIAGNOSTICS.md). Historical addresses below refer to V2.40.
+
+
 Implemented and tested on 2026-09-11. The viewer now has **Volume −, Volume +,
 Play / pause, Power / lock**. These replace the four misleading legacy buttons below.
 The audit findings are retained as the explanation for the fix.

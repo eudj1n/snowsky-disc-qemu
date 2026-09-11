@@ -1,30 +1,18 @@
-"""Read-only V2.40 netlink/callback/capability probe, run inside the container."""
+"""Read-only network/callback/capability probe for fingerprinted V2.40 and V2.57."""
 import json
-from pathlib import Path
-from keys import Device
-from firmware_profile import require_v240_player
+from player_memory import PlayerMemory, arguments
 
 
-def snapshot(rootfs='/work/rootfs'):
-    require_v240_player(Path(rootfs) / 'usr/bin/mq_player')
-    device = Device(rootfs)
-    pid = next(p for p in device.processes()
-               if b'/usr/bin/mq_player' in Path(f'/proc/{p}/cmdline').read_bytes().split(b'\0'))
-    mapping = next(line for line in Path(f'/proc/{pid}/maps').read_text().splitlines()
-                   if '/usr/bin/mq_player' in line and line.split()[2] == '00000000')
-    base = int(mapping.split('-')[0], 16) - 0x400000
-    with open(f'/proc/{pid}/mem', 'rb', buffering=0) as memory:
-        def read(address, size):
-            memory.seek(base + address)
-            return memory.read(size)
-        result = {'pid': pid, 'ready': int.from_bytes(read(0x86c030, 4), 'little'),
-                  'ip': read(0x86c020, 16).split(b'\0')[0].decode(),
-                  'storage_type': int.from_bytes(read(0x88cb9c, 4), 'little'),
-                  'scan_running': int.from_bytes(read(0x88c844, 4), 'little'),
-                  'callbacks': {tag: hex(int.from_bytes(read(addr, 4), 'little'))
-                                for tag, addr in [('0502', 0x82e634), ('0201', 0x82e638),
-                                                  ('volume_device', 0x88cc44)]}}
-    status = dict(line.split(':', 1) for line in Path(f'/proc/{pid}/status').read_text().splitlines())
+def snapshot(rootfs='/work/rootfs', version=None):
+    with PlayerMemory(rootfs, version) as player:
+        fields = player.profile['diagnostics']['network']
+        result = {key: player.word(fields[key])
+                  for key in ('ready', 'storage_type', 'scan_running')}
+        result.update(pid=player.pid, firmware=player.profile['version'],
+                      ip=player.field(fields['ip'], 16).split(b'\0')[0].decode('ascii'),
+                      callbacks={tag: hex(player.word(address))
+                                 for tag, address in fields['callbacks'].items()})
+        status = dict(line.split(':', 1) for line in (player.proc / 'status').read_text().splitlines())
     result['capabilities'] = {key: status[key].strip()
                               for key in ('CapEff', 'CapBnd', 'NoNewPrivs')}
     forbidden = sum(1 << bit for bit in (12, 16, 17, 22, 25))
@@ -34,4 +22,5 @@ def snapshot(rootfs='/work/rootfs'):
 
 
 if __name__ == '__main__':
-    print(json.dumps(snapshot(), indent=2))
+    args = arguments(__doc__)
+    print(json.dumps(snapshot(args.rootfs, args.version), indent=2))

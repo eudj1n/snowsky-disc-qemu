@@ -1,27 +1,24 @@
-"""Read-only V2.40 button-state probe; run inside the container, never writes guest memory."""
+"""Read-only button/player-state probe for fingerprinted V2.40 and V2.57 builds."""
 import json
-from pathlib import Path
-
-from keys import Device
-from firmware_profile import require_v240_player
+from player_memory import PlayerMemory, arguments
 
 
-def snapshot(rootfs='/work/rootfs'):
-    require_v240_player(Path(rootfs) / 'usr/bin/mq_player')
-    device = Device(rootfs)
-    pid = next(p for p in device.processes()
-               if b'/usr/bin/mq_player' in Path(f'/proc/{p}/cmdline').read_bytes().split(b'\0'))
-    mapping = next(line for line in Path(f'/proc/{pid}/maps').read_text().splitlines()
-                   if '/usr/bin/mq_player' in line and line.split()[2] == '00000000')
-    base = int(mapping.split('-')[0], 16) - 0x400000
-    with open(f'/proc/{pid}/mem', 'rb', buffering=0) as memory:
-        def read(address, size=1):
-            memory.seek(base + address)
-            return int.from_bytes(memory.read(size), 'little')
-        return dict(pid=pid, volume=read(0x82e98c), screen_on=read(0x82e995),
-                    single=read(0x82e9d2), double=read(0x82e9d3), hold=read(0x82e9d4),
-                    player_state=read(read(0x8321f4, 4) + 0x48, 4), gain=device.gains())
+def snapshot(rootfs='/work/rootfs', version=None):
+    with PlayerMemory(rootfs, version) as player:
+        fields = player.profile['diagnostics']['keys']
+        result = {key: player.word(fields[key], 1)
+                  for key in ('volume', 'screen_on', 'single', 'double', 'hold')}
+        context = player.word(fields['player_context'])
+        if not context or context % 4:
+            raise ValueError('Player context is not initialized/aligned')
+        state = player.integer(context + int(fields['state_offset'], 16))
+        # A snapshot spans several reads; never claim an atomic state transition.
+        if context != player.word(fields['player_context']):
+            raise ValueError('Player context changed during snapshot; retry')
+        return dict(pid=player.pid, firmware=player.profile['version'], **result,
+                    player_state=state, gain=player.device.gains())
 
 
 if __name__ == '__main__':
-    print(json.dumps(snapshot(), indent=2))
+    args = arguments(__doc__)
+    print(json.dumps(snapshot(args.rootfs, args.version), indent=2))

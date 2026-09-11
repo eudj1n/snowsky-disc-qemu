@@ -1,9 +1,14 @@
 # Local network emulation (V2.40)
 
+For version-aware read-only probes and the V2.57 address map, see
+[DIAGNOSTICS.md](DIAGNOSTICS.md). Historical addresses below refer to V2.40.
+
+
 The stock firmware serves FiiO Link on TCP **12100** and Mongoose HTTP on **12103**.
 No network binary patches, hard-coded IP, dummy Wi-Fi or DB flag overrides are needed.
 This milestone is local control, not Wi-Fi radio emulation or cloud streaming.
-The host's **12103** now adds an explicit WebSocket → TCP bridge; direct stock HTTP
+The optional `wsbridge` Compose profile adds a WebSocket → TCP bridge on host
+**12103**; direct stock HTTP
 is available on host **12113**. See [WEBSOCKET.md](WEBSOCKET.md) for framing, client,
 browser inspector and live control results. Guest port numbers remain unchanged.
 
@@ -17,6 +22,7 @@ docker compose up -d --build
 ./run.sh view
 python3 tools/fiio_link.py
 python3 tools/verify_network.py
+docker compose --profile wsbridge up -d wsbridge  # optional WS diagnostics
 ./run.sh wscheck --control
 ```
 
@@ -25,11 +31,11 @@ Do not delete an existing volume to upgrade. Setup stops the guest before updati
 mapped shims or rebuilding its SD. Power-on from the viewer reruns network preparation
 and announcement too. The viewer itself must be started again after container recreation.
 
-The actual Compose file is `docker-compose.yml`, not `compose.yaml`.
+The Compose configuration is `compose.yaml`.
 Its [`interface_name`](https://docs.docker.com/reference/compose-file/services/#interface_name)
 setting gives Docker's normal bridged interface the firmware-supported name **eth1**.
-Docker assigns the address and default route. All five published ports bind **127.0.0.1**:
-12100, bridged 12103, direct HTTP 12113, UDP 12101 and viewer 8080. Auth-free controls must not be
+Docker assigns the address and default route. Published ports bind **127.0.0.1**:
+12100, direct HTTP 12113, UDP 12101 and viewer 8080; the optional bridge adds 12103. Auth-free controls must not be
 accidentally exposed to the LAN.
 
 ## Why it was blocked

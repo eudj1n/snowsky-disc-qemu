@@ -73,8 +73,10 @@ Separate these opt-in runtime profiles from the read-only inventory records.
 and V2.57, separate from inventory JSON. `tools/firmware_profile.py` checks product,
 main/recovery metadata and six binary hashes before setup/boot. Key patch validation
 normalizes only the permitted instruction, then checks the full stock hash, original
-bytes and executable PT_LOAD address mapping. Unknown builds fail closed. V2.40-only
-memory/HTTP-route diagnostics reject other builds until their addresses are re-established.
+bytes and executable PT_LOAD address mapping. Unknown builds fail closed.
+Key/network/HTTP-route diagnostics use separately verified addresses for both builds,
+selected by full binary fingerprint; unknown builds fail closed. See
+[DIAGNOSTICS.md](DIAGNOSTICS.md). Legacy GDB breakpoint files remain V2.40-specific.
 
 Static extraction without execution, into a **new** research volume (not `diskos-work`):
 

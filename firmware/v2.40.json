@@ -12,12 +12,42 @@
     "usr/lib/libtinyalsa.so.1.1.1": "5d94f6b00d3c4cbd7e4a0141a3e566054eee4ce857c93cb6742a323be3da5b96"
   },
   "key_patch": {
-    "offset": "0xde70c", "address": "0x4de70c",
-    "before": "41004292", "after": "01000224"
+    "offset": "0xde70c",
+    "address": "0x4de70c",
+    "before": "41004292",
+    "after": "01000224"
   },
   "source_page": "https://forum.fiio.com/note/showNoteContent.do?id=202601311712087234434",
   "url_secret": "FIRMWARE_V240_URL",
   "rootfs_chunks": 85,
   "rootfs_size": 88420352,
-  "rootfs_sha256": "b479e159db5134325819b5f6e5a54388f3adefae373a4ee60680f02d5dcf0bb8"
+  "rootfs_sha256": "b479e159db5134325819b5f6e5a54388f3adefae373a4ee60680f02d5dcf0bb8",
+  "diagnostics": {
+    "keys": {
+      "volume": "0x82e98c",
+      "screen_on": "0x82e995",
+      "single": "0x82e9d2",
+      "double": "0x82e9d3",
+      "hold": "0x82e9d4",
+      "player_context": "0x8321f4",
+      "state_offset": "0x48"
+    },
+    "network": {
+      "ready": "0x86c030",
+      "ip": "0x86c020",
+      "storage_type": "0x88cb9c",
+      "scan_running": "0x88c844",
+      "callbacks": {
+        "0502": "0x82e634",
+        "0201": "0x82e638",
+        "volume_device": "0x88cc44"
+      }
+    },
+    "http": {
+      "table": "0x6c7a50",
+      "count": 16,
+      "server": "0x4b9720",
+      "callback": "0x4b9d38"
+    }
+  }
 }

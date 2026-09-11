@@ -215,7 +215,7 @@ and investigation of other ECHO-based products are deferred to separate work.
   Physical volume single/hold, media play/pause, screen sleep/wake and BusyBox reboot
   shim binding also passed. V2.40 remains the default and its interactive volume is untouched.
   Profiles check product/version, six binary hashes and the one allowed key patch;
-  old V2.40 address-based diagnostics reject V2.57. Downloader/workflow select each version
+  key/network/HTTP diagnostics now support both exact builds ([details](DIAGNOSTICS.md)). Downloader/workflow select each version
   explicitly. Firmware-free suite: **88 Python + 10 JavaScript tests**, shell syntax and
   four shim builds. See [2.57 report and new screenshots](firmware/2.57.md),
   [PORTING](PORTING.md) and [CHANGELOG](../CHANGELOG.md). FW257 feature cases and full

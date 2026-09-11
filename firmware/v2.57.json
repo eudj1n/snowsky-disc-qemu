@@ -17,7 +17,37 @@
     "usr/lib/libtinyalsa.so.1.1.1": "5d94f6b00d3c4cbd7e4a0141a3e566054eee4ce857c93cb6742a323be3da5b96"
   },
   "key_patch": {
-    "offset": "0xe7300", "address": "0x4e7300",
-    "before": "41004292", "after": "01000224"
+    "offset": "0xe7300",
+    "address": "0x4e7300",
+    "before": "41004292",
+    "after": "01000224"
+  },
+  "diagnostics": {
+    "keys": {
+      "volume": "0x83a74c",
+      "screen_on": "0x83a755",
+      "single": "0x83a792",
+      "double": "0x83a793",
+      "hold": "0x83a794",
+      "player_context": "0x83dfc4",
+      "state_offset": "0x48"
+    },
+    "network": {
+      "ready": "0x8781b8",
+      "ip": "0x8781a8",
+      "storage_type": "0x898d2c",
+      "scan_running": "0x8989d4",
+      "callbacks": {
+        "0502": "0x83a3f4",
+        "0201": "0x83a3f8",
+        "volume_device": "0x898dd4"
+      }
+    },
+    "http": {
+      "table": "0x6d2580",
+      "count": 17,
+      "server": "0x4c0f90",
+      "callback": "0x4c15a8"
+    }
   }
 }

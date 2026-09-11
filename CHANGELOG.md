@@ -19,6 +19,11 @@ emulator-only revisions use `v2.40-r1`, etc. See [the porting guide](docs/PORTIN
 
 ### Added
 
+- V2.40/V2.57 key, network and active HTTP-route diagnostics selected by exact binary
+  fingerprint, with checked read-only guest-memory translation. Clean integration
+  cross-checks diagnostic state against TCP, sysfs and SQLite; V2.57 adds a `POST /image/`
+  route to the active table (17 entries, still no stock WebSocket route).
+
 - Read-only OTA/ZIP inventory tool with encrypted-chunk integrity checks and streaming
   plaintext rootfs hashing. No guest execution or decrypted firmware files required.
 - Public inventory records for V2.40 and V2.57; per-version evidence reports and a
@@ -31,6 +36,14 @@ emulator-only revisions use `v2.40-r1`, etc. See [the porting guide](docs/PORTIN
 - MIT license and owner-attributed skin photo; public-release preparation checklist.
 
 ### Changed
+
+- Renamed the root Compose configuration to `compose.yaml`; updated CI paths and
+  documentation references.
+
+- WebSocket bridge is opt-in through the `wsbridge` Compose profile. Default startup
+  and `run.sh start/boot` leave it off; integration CI explicitly enables it, and
+  `run.sh down/nuke` still clean up an enabled bridge. Viewer and direct TCP/HTTP
+  remain available without it.
 
 - Viewer image streaming now encodes and sends changed RGB frames at the existing
   capture rate, with cached full PNG refreshes every 15 seconds while idle. It

@@ -7,7 +7,8 @@
 # 3. Drive the pipeline (extract / setup / boot / tap …) with ./run.sh — see README.md.
 #
 # emu idles (`sleep infinity`); ./run.sh execs its /repo/scripts/* pipeline.
-# wsbridge is a separate unprivileged native service; no MIPS rootfs changes.
+# Optional wsbridge profile: docker compose --profile wsbridge up -d
+# Separate unprivileged native service; no MIPS rootfs changes.
 services:
   emu:
     build: ./docker
@@ -36,6 +37,7 @@ services:
       - "127.0.0.1:8080:8080"            # live viewer + touch bridge
 
   wsbridge:
+    profiles: [wsbridge]
     image: ${EMU_IMAGE:-diskos-qemu}
     pull_policy: never                   # reuse the image built by emu, not a registry image
     depends_on:

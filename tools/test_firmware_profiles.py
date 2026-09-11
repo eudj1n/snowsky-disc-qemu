@@ -7,7 +7,7 @@ import tempfile
 import unittest
 from unittest.mock import patch
 
-from firmware_profile import PROFILES, apply_key_patch, load_profile, patch_state, validate
+from firmware_profile import PROFILES, apply_key_patch, identify_player, load_profile, patch_state, validate
 from firmware_extract import extract
 from firmware_inventory import plaintext_digest
 
@@ -42,6 +42,19 @@ class ProfileTests(unittest.TestCase):
         self.assertFalse(apply_key_patch(self.binary, self.profile))
         self.assertEqual(self.binary.read_bytes()[:256], self.data[:256])
         self.assertEqual(self.binary.read_bytes()[260:], self.data[260:])
+
+    def test_diagnostic_detection_accepts_only_full_stock_or_permitted_patch(self):
+        self.profile.update(version='2.57', diagnostics={})
+        other = {**self.profile, 'binaries': {'usr/bin/mq_player': '0' * 64}}
+        with patch('firmware_profile.load_profile', side_effect=lambda v: self.profile if v == '2.57' else other):
+            self.assertEqual(identify_player(self.data)['version'], '2.57')
+            apply_key_patch(self.binary, self.profile)
+            self.assertEqual(identify_player(self.binary.read_bytes())['version'], '2.57')
+            with self.assertRaises(ValueError):
+                identify_player(self.data, '2.40')
+            self.data[400] ^= 1
+            with self.assertRaises(ValueError):
+                identify_player(self.data)
 
     def test_matching_short_anchor_is_not_enough(self):
         self.data[400] ^= 1
