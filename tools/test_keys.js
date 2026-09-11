@@ -55,15 +55,25 @@ function domFixture() {
   const button = {dataset: {key: 'volume_up'}, disabled: false,
     classList: {add: c => classes.add(c), remove: c => classes.delete(c)},
     focus() {}, setPointerCapture() {}, addEventListener: (name, fn) => { events[name] = fn; }};
-  const windowEvents = {}, nodes = {'key-status': {}, 'key-action': {}};
+  const windowEvents = {}, nodes = {'key-status': {}, 'key-action': {}}, streams = [], requests = [], dispatched = [];
+  class EventSource {
+    constructor(url) { this.url = url; this.listeners = {}; streams.push(this); }
+    addEventListener(name, fn) { this.listeners[name] = fn; }
+    close() { this.closed = true; }
+    device(state) { this.listeners.device({data: JSON.stringify(state)}); }
+  }
   vm.runInNewContext(fs.readFileSync(require.resolve('./keys.js'), 'utf8'), {
     document: {getElementById: id => nodes[id], querySelectorAll: () => [button], addEventListener() {}},
-    window: {addEventListener: (name, fn) => { windowEvents[name] = fn; }},
+    window: {addEventListener: (name, fn) => { windowEvents[name] = fn; },
+      dispatchEvent: event => dispatched.push(event.type)},
+    Event: class { constructor(type) { this.type = type; } },
     performance: {now: () => now},
     setTimeout: fn => { tasks.set(++id, fn); return id; }, clearTimeout: id => tasks.delete(id),
-    fetch: () => new Promise(() => {}) // status stays pending; no network in unit tests
+    EventSource,
+    fetch: url => { requests.push(url); return new Promise(() => {}); }
   });
-  return {button, classes, tasks, windowEvents,
+  streams[0].device({running: true, screen_on: true, transition: null, error: null});
+  return {button, classes, tasks, windowEvents, streams, requests, nodes, dispatched,
     event(name, data = {}) { now += 10; events[name]({button: 0, pointerId: 1, preventDefault() {}, ...data}); }};
 }
 test('skin pointer state clears on release, cancellation and window blur', () => {
@@ -85,4 +95,47 @@ test('another finger cannot release a held hotspot, right click cannot press it'
   const f = domFixture(); f.event('pointerdown', {button: 2}); assert(!f.classes.has('is-pressed'));
   f.event('pointerdown'); f.event('pointerup', {pointerId: 2}); assert(f.classes.has('is-pressed'));
   f.event('pointerup'); assert(!f.classes.has('is-pressed'));
+});
+
+test('device SSE updates controls and reconnects without status polling', () => {
+  const f = domFixture(), source = f.streams[0];
+  assert.equal(source.url, '/events');
+  assert.equal(f.nodes['key-status'].textContent, 'Player on');
+  source.device({running: true, screen_on: false});
+  assert.match(f.nodes['key-status'].textContent, /Screen locked/);
+  source.device({running: true, transition: 'stopping'});
+  assert.equal(f.button.disabled, true);
+  source.device({running: false});
+  assert.match(f.nodes['key-status'].textContent, /Player off/);
+  source.device({running: true, screen_on: true});
+  f.event('pointerdown');
+  source.onerror();
+  assert.equal(f.button.disabled, true);
+  assert.equal(f.classes.size, 0);
+  assert.equal(f.tasks.size, 0);
+  assert.match(f.nodes['key-status'].textContent, /Connecting/);
+  source.device({running: true, screen_on: true});
+  assert.equal(f.button.disabled, false);
+  assert.equal(f.nodes['key-status'].textContent, 'Player on');
+  assert.equal(f.streams.length, 1);
+  assert.deepEqual(f.dispatched, ['viewer-reconnected']);
+  assert.deepEqual(f.requests, []);
+  assert.equal(f.tasks.size, 0);
+});
+
+test('page lifecycle closes SSE and restores exactly one fresh subscription', () => {
+  const f = domFixture(), old = f.streams[0];
+  f.windowEvents.pageshow();
+  assert.equal(f.streams.length, 1);
+  f.windowEvents.pagehide();
+  assert.equal(old.closed, true);
+  f.windowEvents.pageshow();
+  f.windowEvents.pageshow();
+  assert.equal(f.streams.length, 2);
+  assert.equal(f.button.disabled, true);
+  f.streams[1].device({running: true, screen_on: true});
+  old.onerror();
+  old.device({running: false});
+  assert.equal(f.button.disabled, false);
+  assert.equal(f.nodes['key-status'].textContent, 'Player on');
 });

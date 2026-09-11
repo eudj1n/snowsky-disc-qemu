@@ -7,6 +7,16 @@ emulator-only revisions use `v2.40-r1`, etc. See [the porting guide](docs/PORTIN
 
 ## [Unreleased]
 
+### Fixed
+
+- SD image creation now explicitly uses UTF-8, matching guest mounts and preserving
+  Cyrillic directory/file names on hosts whose FAT default is ISO-8859-1.
+  Clean integration now scans and decodes a generated WAV under a Cyrillic path,
+  with an exact source/card byte comparison before scanning.
+- Fresh setup with an empty `sdcard` directory now completes runtime initialization;
+  placeholder-only cards previously aborted setup before seeding `/usr/data`, causing
+  `zlog_init` failures and viewer boot errors.
+
 ### Added
 
 - Read-only OTA/ZIP inventory tool with encrypted-chunk integrity checks and streaming
@@ -22,6 +32,13 @@ emulator-only revisions use `v2.40-r1`, etc. See [the porting guide](docs/PORTIN
 
 ### Changed
 
+- Viewer image streaming now encodes and sends changed RGB frames at the existing
+  capture rate, with cached full PNG refreshes every 15 seconds while idle. It
+  preserves lossless pixels, verifies buffer-marker consistency, handles lock/wake,
+  and reconnects images after stream errors or viewer-server recovery.
+- Viewer power/screen status now uses a persistent SSE connection with change-only
+  snapshots, idle heartbeats and automatic reconnection instead of one JSON request
+  per second. Diagnostic `/device.json` remains available.
 - Shared coding-agent instructions moved to `AGENTS.md` without a duplicate file.
 - Root README omits the OTA password; references to private projects removed from
   current documentation. Existing immutable history has not been rewritten.

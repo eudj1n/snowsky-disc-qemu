@@ -27,7 +27,7 @@ detached by `./run.sh view`) and serves:
 | route | purpose |
 |---|---|
 | `GET /` | the viewer page (stream + pointer capture + gesture buttons) |
-| `GET /stream` | `multipart/x-mixed-replace` PNG stream of the live screen |
+| `GET /stream` | lossless PNG stream on pixel changes, plus a full idle refresh every 15 seconds |
 | `GET /frame` | a single current PNG (handy for scripting) |
 | `GET /skin` | the device photo, if a skin is present |
 | `GET /audio.json` | capture generation/format/size, guest running state and DAC output gains |
@@ -37,7 +37,18 @@ detached by `./run.sh view`) and serves:
 | `GET /swipe?dir=down\|up\|back\|left` (or `?x0&y0&x1&y1`) | server-side smooth swipe |
 | `POST /button` JSON `{name, gesture}` | physical-button gesture; see [KEYS.md](KEYS.md) |
 | `GET /device.json` | guest power, screen and transition state |
+| `GET /events` | SSE `device` snapshots on connection and state changes; idle heartbeat every 15 seconds |
 | `GET /key?k=volume_up\|volume_down\|play_pause\|power` (or safe `?code=<int>`) | diagnostic single stock key event; use POST for power lifecycle |
+
+The page subscribes to `/events` through `EventSource` instead of polling
+`/device.json` every second. Each connection immediately receives current power,
+screen, transition and error state; unchanged state produces only SSE heartbeat
+comments. The existing guest supervisor samples state every 200 ms and wakes all
+subscribers on changes. Reconnection receives a fresh snapshot, and controls wait
+for it before becoming available. Leaving the page closes the subscription;
+returning from the browser back/forward cache opens one again. The JSON endpoint
+remains available for diagnostic clients. Video still uses `/stream`; enabled
+audio still fetches `/audio.json` and PCM chunks as before.
 
 **Framebuffer** (see [EMULATION.md](EMULATION.md)): `fb0` is a plain file, three 360×360
 BGRX sub-buffers. `mq_ui` alternates buf0/buf1 without panning. `fbshim` observes framebuffer
@@ -45,6 +56,43 @@ copies and records the last-written buffer in `emu/fb-live`; the background read
 that marker, converts BGRX→RGB + 180° rotation, and PNG-encodes it. Older shims fall back
 to diffing frames, which can select a stale buffer if both changed between reads.
 Brightness 0 or a stopped guest produces a black frame. Port published in `docker-compose.yml` (8080).
+
+The grabber still samples at `STREAM_FPS` (default 12), preserving the existing
+animation cadence. It reads only the two used buffers, checks the active marker
+before and after reading, and retries a sample if that marker switches. This is
+not an atomic framebuffer fence: the marker alone cannot detect every same-buffer
+write, and the previous capture path already sampled asynchronously. It therefore
+remains a selection hint combined with pixel checks, not a sole dirty notification.
+
+Unchanged visible RGB is neither PNG-encoded again nor sent at frame rate. A changed
+frame is encoded once for every connected viewer; switching buffers with identical
+pixels and changes to unused BGRX bytes do not produce redundant images. Lock/wake
+still publishes black/restored frames even without a guest framebuffer write.
+Idle connections receive the cached full PNG every 15 seconds to refresh the image
+and detect disconnected readers (180 times fewer steady-state sends than 12 fps).
+
+Each part is a complete 360×360 lossless PNG. `frames.js` reads each PNG by its
+Content-Length, preloads a PNG Blob URL with `Image.decode()`, and replaces the
+displayed image as soon as it is complete. Native multipart image decoding could leave a
+rarely updated image blank while waiting for subsequent parts; explicit decoding
+avoids that dependency. There are no delta frames or reference-frame chains.
+The browser retains at most one frame being decoded and one latest pending frame;
+obsolete connection decodes are discarded and replaced Blob URLs are revoked.
+The currently displayed URL remains valid until a complete replacement is ready.
+Slow consumers read the latest available snapshot;
+the server keeps no application frame queue and bounds blocked writes to 5 seconds.
+Socket/browser buffering still exists; this does not promise hard realtime or A/V
+clock synchronization. Transport/decode errors and SSE reconnection restart the image stream
+with a complete current frame. Page exit closes it; back/forward-cache restoration
+reconnects. Audio transport and capture timing are unchanged.
+
+Local V2.57 measurement on an unchanged main screen: the previous server sent 60
+identical 37,985-byte PNGs in 5 seconds (2,282,760 bytes including multipart headers).
+The changed-frame server sent one PNG in the same interval (about 38 KB), with the
+same SHA-256. After the initial frame, the 15-second idle refresh corresponds to
+about 9.1 MB/hour instead of 1.64 GB/hour for that particular screen. Animated
+screens still send changed full frames at the configured capture rate; these idle
+savings are not a prediction for continuous animation.
 
 **Touch** (see [TOUCH.md](TOUCH.md)): pointer coords are mapped to the 360² screen, flipped
 to raw touch (`359−x, 359−y`), and appended to `/dev/input/event1` as `input_event`s. A plain

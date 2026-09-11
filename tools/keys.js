@@ -99,11 +99,23 @@ if (typeof document !== 'undefined') {
   const cancel = () => controls.forEach(control => control.cancel());
   window.addEventListener('blur', cancel);
   document.addEventListener('visibilitychange', () => { if (document.hidden) cancel(); });
-  async function status() {
-    try {
-      const response = await fetch('/device.json', {cache: 'no-store'});
-      if (!response.ok) throw new Error('Device status unavailable');
-      const state = await response.json();
+  let events = null;
+  let connectionLost = false;
+  const unavailable = () => {
+    message.textContent = 'Connecting to player…';
+    controls.forEach(({button, cancel}) => { button.disabled = true; cancel(); });
+  };
+  function connect() {
+    if (events) return;
+    unavailable();
+    const source = events = new EventSource('/events');
+    source.addEventListener('device', event => {
+      if (events !== source) return;
+      const state = JSON.parse(event.data);
+      if (connectionLost) {
+        connectionLost = false;
+        window.dispatchEvent(new Event('viewer-reconnected'));
+      }
       message.textContent = state.error || (state.transition === 'starting' ? 'Starting player… (~30 seconds)'
         : state.transition === 'stopping' ? 'Stopping player…'
         : !state.running ? 'Player off — press Power to start'
@@ -112,8 +124,14 @@ if (typeof document !== 'undefined') {
         button.disabled = Boolean(state.transition) || (!state.running && button.dataset.key !== 'power');
         if (button.disabled) cancel();
       });
-    } catch (error) { message.textContent = error.message; }
-    setTimeout(status, 1000);
+    });
+    // EventSource reconnects automatically; wait for a fresh snapshot before
+    // enabling controls. No periodic status requests or extra retry timers.
+    source.onerror = () => {
+      if (events === source) { connectionLost = true; unavailable(); }
+    };
   }
-  status();
+  window.addEventListener('pagehide', () => { events?.close(); events = null; cancel(); });
+  window.addEventListener('pageshow', connect);
+  connect();
 }

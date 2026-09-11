@@ -14,6 +14,7 @@ the real stock UI from a browser on the host, no hardware.
   GET /move?x&y    move (during a drag; only between down and up)
   GET /up          release
   POST /button    physical button {name, gesture}; GET /device.json = power/screen state
+  GET /events     SSE device snapshots on connect/change, with idle heartbeats
   GET /key?k=…    single press (volume_up|volume_down|play_pause|power), or safe ?code=<int>
 
 Framebuffer facts (see docs/EMULATION.md): fb0 is 360x1080x4 (three 360x360 BGRX
@@ -35,6 +36,9 @@ NBUF = 3
 ROOTFS = os.environ.get("ROOTFS", "/work/rootfs")
 PORT = int(os.environ.get("STREAM_PORT", "8080"))
 FPS = float(os.environ.get("STREAM_FPS", "12"))
+EVENT_HEARTBEAT = 15
+FRAME_HEARTBEAT = 15               # infrequent full refresh / dead-client detection
+BLACK_RGB = bytes(W * H * 3)
 FB = os.path.join(ROOTFS, "dev/fb0")
 EV = os.path.join(ROOTFS, "dev/input/event1")   # cst816t touch
 EV0 = os.path.join(ROOTFS, "dev/input/event0")  # x2000_key physical keys
@@ -88,10 +92,62 @@ def _nonblack(buf):
 class State:
     def __init__(self):
         self.lock = threading.Lock()
-        self.png = _png(bytes(W * H * 3))     # start black
+        self.frame_changed = threading.Condition(self.lock)
+        self.frame_revision = 0
+        self.rgb = BLACK_RGB
+        self.png = _png(self.rgb)           # start black
         self.prev0 = self.prev1 = None
         self.live = 0
+        self.prev_visible = None
+        self.was_screen_on = False
         self.device = {'running': False, 'screen_on': False, 'transition': None, 'error': None}
+        self.device_changed = threading.Condition()
+        self.device_revision = 0
+
+    def publish_device(self, snapshot):
+        with self.device_changed:
+            if snapshot != self.device:
+                self.device = dict(snapshot)
+                self.device_revision += 1
+                self.device_changed.notify_all()
+
+    def wait_device(self, revision, timeout):
+        with self.device_changed:
+            self.device_changed.wait_for(lambda: revision != self.device_revision, timeout)
+            return self.device_revision, dict(self.device)
+
+    def update_frame(self, raw, active, screen_on):
+        """Single grabber publishes complete, lossless frames only when RGB changes."""
+        if len(raw) < BUF * 2:
+            return False
+        b0, b1 = raw[:BUF], raw[BUF:BUF * 2]
+        if active in (0, 1):
+            self.live = active
+        elif self.prev0 is None:
+            self.live = 0 if _nonblack(b0) >= _nonblack(b1) else 1
+        elif b0 != self.prev0:
+            self.live = 0
+        elif b1 != self.prev1:
+            self.live = 1
+        self.prev0, self.prev1 = b0, b1
+        visible = b0 if self.live == 0 else b1
+        if screen_on and self.was_screen_on and visible == self.prev_visible:
+            return False
+        self.prev_visible, self.was_screen_on = visible, screen_on
+        rgb = _to_rgb(visible) if screen_on else BLACK_RGB
+        if rgb == self.rgb:
+            return False  # Also ignore changes confined to the unused X byte.
+        png = _png(rgb)  # Encode once for all clients, outside their shared lock.
+        with self.frame_changed:
+            self.rgb, self.png = rgb, png
+            self.frame_revision += 1
+            self.frame_changed.notify_all()
+        return True
+
+    def wait_frame(self, revision, timeout):
+        with self.frame_changed:
+            self.frame_changed.wait_for(lambda: revision != self.frame_revision, timeout)
+            return self.frame_revision, self.png
 
 state = State()
 
@@ -131,39 +187,40 @@ def _skin_fields(cx=None, cy=None, d=None):
                 D='%.2f' % (d * 100),
                 CX='%.4f' % cx, CY='%.4f' % cy, DD='%.4f' % d, AR='%.4f' % ar)
 
+def _active_buffer():
+    try:
+        with open(os.path.join(ROOTFS, 'emu/fb-live'), 'rb') as marker:
+            value = marker.read(1)
+        return value[0] if value in (b'\x00', b'\x01') else None
+    except OSError:
+        return None
+
+
+def _read_frame():
+    # Do not pair an old copy of the pixels with a newly switched buffer marker.
+    # This is a consistency check, not a firmware frame-completion fence. Same-
+    # buffer writes still require pixel sampling, even when the marker is unchanged.
+    for _ in range(2):
+        before = _active_buffer()
+        with open(FB, 'rb') as f:
+            raw = f.read(BUF * 2)  # The third, unused sub-buffer is not needed.
+        after = _active_buffer()
+        if before == after:
+            return raw, after
+    return None  # Retry on the next sample rather than publishing the wrong buffer.
+
+
 def grab_loop():
     period = 1.0 / FPS
     while True:
-        t0 = time.time()
+        t0 = time.monotonic()
         try:
-            with open(FB, 'rb') as f:
-                raw = f.read(BUF * NBUF)
+            sample = _read_frame()
         except OSError:
             time.sleep(period); continue
-        if len(raw) >= BUF * 2:
-            b0, b1 = raw[:BUF], raw[BUF:BUF * 2]
-            if state.prev0 is None:            # first read: pick the fuller buffer
-                state.live = 0 if _nonblack(b0) >= _nonblack(b1) else 1
-            elif b0 != state.prev0:            # buf0 was just redrawn -> it's live
-                state.live = 0
-            elif b1 != state.prev1:
-                state.live = 1
-            # fbshim observes memcpy into the mmap'ed framebuffer. Unlike polling
-            # diffs, this remains ordered even if both buffers change between reads.
-            try:
-                with open(os.path.join(ROOTFS, 'emu/fb-live'), 'rb') as marker:
-                    active = marker.read(1)
-                if active in (b'\x00', b'\x01'):
-                    state.live = active[0]
-            except OSError:
-                pass  # Older shim: retain the heuristic fallback.
-            # else: neither changed -> keep last live buffer
-            state.prev0, state.prev1 = b0, b1
-            png = _png(_to_rgb(b0 if state.live == 0 else b1)
-                       if state.device['screen_on'] else bytes(W * H * 3))
-            with state.lock:
-                state.png = png
-        dt = time.time() - t0
+        if sample:
+            state.update_frame(*sample, state.device['screen_on'])
+        dt = time.monotonic() - t0
         if dt < period:
             time.sleep(period - dt)
 
@@ -298,7 +355,7 @@ PAGE = ("""<!doctype html><meta charset=utf-8>
 <div id=wrap>
  <div id="stage" class="__MODE__">
   <img id=skin src="/skin" draggable=false alt="">
-  <img id=scr src="/stream" draggable=false>
+  <img id=scr width=360 height=360 alt="Player screen" draggable=false>
   <div id=physical-controls role=group aria-label="Physical controls">
    <button class=physical data-key="power" style="--x:84.4%;--y:3%" aria-label="Power / lock" aria-describedby=key-help>
     <span class=key-symbol aria-hidden=true>⏻</span><span class=key-label>Power / lock</span></button>
@@ -333,6 +390,7 @@ PAGE = ("""<!doctype html><meta charset=utf-8>
  </details>
 </div>
 <script src="/audio.js"></script>
+<script src="/frames.js"></script>
 <script src="/keys.js"></script>
 <script>
 const img=document.getElementById('scr');
@@ -406,11 +464,13 @@ class Handler(BaseHTTPRequestHandler):
     def do_GET(self):
         u = urlparse(self.path)
         p, qs = u.path, parse_qs(u.query)
-        if p in ('/audio.js', '/keys.js'):
+        if p in ('/audio.js', '/keys.js', '/frames.js'):
             data = open(os.path.join(os.path.dirname(__file__), p[1:]), 'rb').read()
             self._audio_response(200, 'text/javascript', data)
         elif p == '/device.json':
             self._audio_response(200, 'application/json', json.dumps(state.device).encode())
+        elif p == '/events':
+            self._device_events()
         elif p == '/audio.json':
             try:
                 info = capture_info(ROOTFS)
@@ -463,22 +523,7 @@ class Handler(BaseHTTPRequestHandler):
             self.end_headers()
             self.wfile.write(png)
         elif p == '/stream':
-            self.send_response(200)
-            self.send_header('Content-Type', 'multipart/x-mixed-replace; boundary=FRAME')
-            self.send_header('Cache-Control', 'no-store')
-            self.end_headers()
-            period = 1.0 / FPS
-            try:
-                while True:
-                    with state.lock:
-                        png = state.png
-                    self.wfile.write(b'--FRAME\r\nContent-Type: image/png\r\n'
-                                     b'Content-Length: %d\r\n\r\n' % len(png))
-                    self.wfile.write(png)
-                    self.wfile.write(b'\r\n')
-                    time.sleep(period)
-            except (BrokenPipeError, ConnectionResetError):
-                return
+            self._frame_stream()
         elif p == '/key':
             k = qs.get('k', [''])[0]
             code = KEYS.get(k)
@@ -520,6 +565,57 @@ class Handler(BaseHTTPRequestHandler):
             self.send_header('Content-Length', '0')
             self.end_headers()
 
+    def _frame_stream(self):
+        self.close_connection = True
+        self.connection.settimeout(5)  # Bound blocked writes to slow/disconnected clients.
+        try:
+            self.send_response(200)
+            self.send_header('Content-Type', 'multipart/x-mixed-replace; boundary=FRAME')
+            self.send_header('Cache-Control', 'no-store, no-transform')
+            self.send_header('X-Accel-Buffering', 'no')
+            self.send_header('Connection', 'close')
+            self.end_headers()
+            revision = None
+            while True:
+                revision, png = state.wait_frame(revision, FRAME_HEARTBEAT)
+                self.wfile.write(b'--FRAME\r\nContent-Type: image/png\r\n'
+                                 b'Content-Length: %d\r\n\r\n' % len(png))
+                self.wfile.write(png)
+                # frames.js decodes each Content-Length-delimited PNG immediately;
+                # it does not wait for the next MIME boundary to display the frame.
+                self.wfile.write(b'\r\n')
+                self.wfile.flush()
+                # Slow readers get the latest complete snapshot next, not a queue.
+        except OSError:
+            return
+
+    def _device_events(self):
+        # This response lasts until disconnect. Never hold the condition during I/O:
+        # a slow client must not block the supervisor or other viewers. Retain only
+        # the latest snapshot, rather than an unbounded per-client event backlog.
+        self.close_connection = True
+        self.connection.settimeout(10)
+        try:
+            self.send_response(200)
+            self.send_header('Content-Type', 'text/event-stream; charset=utf-8')
+            self.send_header('Cache-Control', 'no-cache, no-transform')
+            self.send_header('X-Accel-Buffering', 'no')
+            self.send_header('Connection', 'close')
+            self.end_headers()
+            self.wfile.write(b'retry: 1000\n\n')
+            revision = None  # Always send current state, including on reconnection.
+            while True:
+                current, snapshot = state.wait_device(revision, EVENT_HEARTBEAT)
+                if current != revision:
+                    payload = json.dumps(snapshot, ensure_ascii=False).encode('utf-8')
+                    self.wfile.write(b'event: device\ndata: ' + payload + b'\n\n')
+                    revision = current
+                else:
+                    self.wfile.write(b': heartbeat\n\n')
+                self.wfile.flush()
+        except OSError:
+            return  # Includes disconnected readers and bounded slow-client writes.
+
     def _audio_response(self, status, content_type, data):
         self.send_response(status)
         self.send_header('Content-Type', content_type)
@@ -543,9 +639,9 @@ def main():
             try:
                 buttons.expire()
                 device.service_requests()
-                state.device = device.status()
+                state.publish_device(device.status())
             except OSError as exc:
-                state.device['error'] = str(exc)
+                state.publish_device({**state.device, 'error': str(exc)})
             time.sleep(.2)
     threading.Thread(target=control_loop, daemon=True).start()
     threading.Thread(target=grab_loop, daemon=True).start()

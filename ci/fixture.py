@@ -6,7 +6,9 @@ import wave
 
 
 def generate(directory):
-    path = Path(directory) / 'CI Tone.wav'
+    # Exercise UTF-8 FAT directory and file names on every clean integration run.
+    path = Path(directory) / 'Кириллица Ё й' / 'CI Tone — Проверка.wav'
+    path.parent.mkdir(exist_ok=True)
     # Integer square wave: no host floating-point or random dithering differences.
     period = b''.join(struct.pack('<hh', value, value)
                       for value in ([4096] * 50 + [-4096] * 50))

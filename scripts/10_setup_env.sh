@@ -80,12 +80,19 @@ for d in cs43131 cs43131b cs43131c cs43131d; do : > "$ROOTFS/dev/$d"; done
 IMG="$WORK/sdcard.img"
 for m in "$ROOTFS/tmp/sdcard" /tmp/sdcard; do mountpoint -q "$m" && umount -l "$m" 2>/dev/null || true; done
 for l in $(losetup -j "$IMG" 2>/dev/null | cut -d: -f1); do losetup -d "$l" 2>/dev/null || true; done
-SD_CONTENT=""; [ -d /sdcard ] && SD_CONTENT="$(ls -A /sdcard 2>/dev/null | grep -vxE 'README.md|.gitkeep' | head -1)"
+SD_CONTENT=""
+if [ -d /sdcard ]; then
+  # An empty card is valid. grep exits 1 when only the tracked placeholders exist,
+  # which used to abort setup under errexit/pipefail before /usr/data was seeded.
+  SD_CONTENT="$(find /sdcard -mindepth 1 -maxdepth 1 ! -name README.md ! -name .gitkeep -print -quit)"
+fi
 if [ -n "$SD_CONTENT" ]; then
   SZ=$(( $(du -sm /sdcard 2>/dev/null | cut -f1) + 32 ))
   rm -f "$IMG"; truncate -s "${SZ}M" "$IMG"
   mkfs.vfat -n SNOWSKY "$IMG" >/dev/null 2>&1
-  T="$(mktemp -d)"; mount -o loop "$IMG" "$T"
+  # Match the guest mount encoding when writing FAT long filenames. The host
+  # default may be iso8859-1, which corrupts UTF-8 paths before the guest sees them.
+  T="$(mktemp -d)"; mount -t vfat -o loop,iocharset=utf8 "$IMG" "$T"
   cp -r /sdcard/. "$T"/ 2>/dev/null || true
   rm -f "$T/README.md" "$T/.gitkeep" 2>/dev/null || true
   sync; umount "$T"; rmdir "$T"

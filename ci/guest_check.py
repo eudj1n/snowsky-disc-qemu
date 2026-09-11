@@ -40,6 +40,10 @@ def wait_library(total, timeout=45):
 
 
 def scan():
+    # Read the actual card by its original Unicode path before involving the UI.
+    # This fails if image creation used a different charset from the guest mount.
+    relative = Path('Кириллица Ё й') / 'CI Tone — Проверка.wav'
+    assert (ROOT / 'tmp/sdcard' / relative).read_bytes() == (Path('/sdcard') / relative).read_bytes()
     wait_library(0)  # No copied index / pre-existing state is allowed.
     capture('main')
     # Slow carousel drag to Settings, avoiding a fast inertial fling.
