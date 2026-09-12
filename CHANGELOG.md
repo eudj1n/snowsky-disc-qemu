@@ -35,6 +35,10 @@ emulator-only revisions use `v2.40-r1`, etc. See [the porting guide](docs/PORTIN
 
 ### Fixed
 
+- Enable sound now joins current PCM instead of replaying accumulated capture from
+  byte zero, which could mean minutes of service silence. Live playback rejoins after
+  stalls; Replay capture retains historical playback. Debug distinguishes live/replay
+  and zero-signal silence.
 - Diagnostic PID selection excludes forked worker children that briefly inherit
   `mq_player` argv, avoiding intermittent ambiguity during SD integration probes.
 - SD remount preparation now explicitly probes the partition with stock `blkid`.

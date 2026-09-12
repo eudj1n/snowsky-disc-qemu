@@ -10,10 +10,17 @@ No audio patches to `mq_player` are needed; the key-enable patch is unrelated.
 ./run.sh audio                # snapshot → shots/audio.wav
 ```
 
-**Enable sound** plays captured PCM through Web Audio as it arrives. **Mute sound** stops
+**Enable sound** joins the current captured PCM through Web Audio with a 150 ms
+look-back; it does not replay the recording from its beginning. **Mute sound** stops
 browser playback; **Replay capture** starts the current recording again. These buttons do
 not change firmware play/pause state. Browser playback buffers a little and can pause if
-emulation cannot supply data fast enough. WAV export also works without a browser.
+emulation cannot supply data fast enough. If live playback falls more than two seconds
+behind (for example after a background-tab stall), it drops queued history and rejoins
+the current output. Replay mode deliberately preserves its position. PCM decoding and
+DAC gains are unchanged. Debug labels the mode `live` / `replay`, and adds `silence`
+when the decoded chunk contains only zero samples. The captured duration includes
+stock service silence while paused; it is not proof of music playback.
+WAV export also works without a browser.
 Each `pcm_open` starts a new recording, replacing `/audio.pcm`; export before switching
 tracks if you want to keep it.
 
