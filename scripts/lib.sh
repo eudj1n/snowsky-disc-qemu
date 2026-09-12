@@ -69,6 +69,10 @@ sd_mount(){
   # caches only mmcblk0, while hotplug runs `blkid | grep /dev/mmcblk0p1`.
   # Probe the partition explicitly so stock remove/add can remount it itself.
   # Keep real filesystem detection and its cache; do not synthesize blkid output.
+  sd_probe
+}
+
+sd_probe(){
   guest_run 10 /sbin/blkid /dev/mmcblk0p1 >/dev/null || {
     err 'SD filesystem discovery failed'; return 1;
   }

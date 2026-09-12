@@ -5,10 +5,38 @@ firmware vendor. Vendor notes and their verification status live in
 `docs/firmware/<version>.md`. The supported firmware version is explicit in each release;
 emulator-only revisions use `v2.40-r1`, etc. See [the porting guide](docs/PORTING.md).
 
-## [Unreleased]
+## [2.57] - unreleased
+
+### Added
+
+- Viewer headphone, USB charging and SD controls on the lower edge of the skin,
+  including plug/card visuals and actual guest SD eject/insert with media-preservation
+  checks. USB is a charging stub only; headphone toggling controls browser audio.
+- Viewer screen luminance follows the stock shade brightness setting via SSE.
+  Volume continues to use stock buttons/menus and the existing DAC gain path.
+- Off/sleep status is centered on the dark screen. Normal-on status and usage hints
+  are hidden; Replay capture is in Debug. No extra brightness/volume controls.
+
+- V2.40/V2.57 key, network and active HTTP-route diagnostics selected by exact binary
+  fingerprint, with checked read-only guest-memory translation. Clean integration
+  cross-checks diagnostic state against TCP, sysfs and SQLite; V2.57 adds a `POST /image/`
+  route to the active table (17 entries, still no stock WebSocket route).
+
+- Read-only OTA/ZIP inventory tool with encrypted-chunk integrity checks and streaming
+  plaintext rootfs hashing. No guest execution or decrypted firmware files required.
+- Public inventory records for V2.40 and V2.57; per-version evidence reports and a
+  reusable porting/acceptance procedure.
+- V2.57 upstream-change checklist, separated from verified emulator capabilities.
+- Opt-in V2.57 runtime profile, exact-build guarded key patches, non-overwriting
+  extraction and version-selected secret-backed integration. Existing address-based
+  diagnostics reject unknown builds instead of reading unrelated memory.
+- Clean-volume physical-button checks and dynamic reboot-shim binding verification.
+- MIT license and owner-attributed skin photo; public-release preparation checklist.
 
 ### Fixed
 
+- Diagnostic PID selection excludes forked worker children that briefly inherit
+  `mq_player` argv, avoiding intermittent ambiguity during SD integration probes.
 - SD remount preparation now explicitly probes the partition with stock `blkid`.
   The two emulated mmc aliases previously left only the whole-card name in its
   cache, so a stock insertion event could unmount the card without restoring it.
@@ -27,24 +55,6 @@ emulator-only revisions use `v2.40-r1`, etc. See [the porting guide](docs/PORTIN
 - Fresh setup with an empty `sdcard` directory now completes runtime initialization;
   placeholder-only cards previously aborted setup before seeding `/usr/data`, causing
   `zlog_init` failures and viewer boot errors.
-
-### Added
-
-- V2.40/V2.57 key, network and active HTTP-route diagnostics selected by exact binary
-  fingerprint, with checked read-only guest-memory translation. Clean integration
-  cross-checks diagnostic state against TCP, sysfs and SQLite; V2.57 adds a `POST /image/`
-  route to the active table (17 entries, still no stock WebSocket route).
-
-- Read-only OTA/ZIP inventory tool with encrypted-chunk integrity checks and streaming
-  plaintext rootfs hashing. No guest execution or decrypted firmware files required.
-- Public inventory records for V2.40 and V2.57; per-version evidence reports and a
-  reusable porting/acceptance procedure.
-- V2.57 upstream-change checklist, separated from verified emulator capabilities.
-- Opt-in V2.57 runtime profile, exact-build guarded key patches, non-overwriting
-  extraction and version-selected secret-backed integration. Existing address-based
-  diagnostics reject unknown builds instead of reading unrelated memory.
-- Clean-volume physical-button checks and dynamic reboot-shim binding verification.
-- MIT license and owner-attributed skin photo; public-release preparation checklist.
 
 ### Changed
 
@@ -111,5 +121,5 @@ Automatic media scanning, native stock WebSocket, LAN/phone-app interoperability
 USB/BT/DSD and hardware-accurate power behavior are not fully supported/validated.
 See [STATUS.md](docs/STATUS.md) for scope and evidence.
 
-[Unreleased]: https://github.com/eudj1n/snowsky-disc-qemu/compare/v2.40...2.x
+[2.57]: https://github.com/eudj1n/snowsky-disc-qemu/compare/v2.40...2.x
 [v2.40]: https://github.com/eudj1n/snowsky-disc-qemu/releases/tag/v2.40

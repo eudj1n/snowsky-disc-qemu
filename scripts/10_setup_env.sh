@@ -78,6 +78,8 @@ for d in cs43131 cs43131b cs43131c cs43131d; do : > "$ROOTFS/dev/$d"; done
 # /tmp/sdcard mount survives the guest's chrooted umount, so that line persists across boot.
 # Rebuilt each setup so ./sdcard edits show up on the next boot.
 IMG="$WORK/sdcard.img"
+# Setup creates a new card; discard handles saved by viewer ejection.
+rm -f "$ROOTFS/emu/sd-mmcblk0" "$ROOTFS/emu/sd-mmcblk0p1"
 for m in "$ROOTFS/tmp/sdcard" /tmp/sdcard; do mountpoint -q "$m" && umount -l "$m" 2>/dev/null || true; done
 for l in $(losetup -j "$IMG" 2>/dev/null | cut -d: -f1); do losetup -d "$l" 2>/dev/null || true; done
 SD_CONTENT=""

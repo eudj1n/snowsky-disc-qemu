@@ -55,7 +55,7 @@ function domFixture() {
   const button = {dataset: {key: 'volume_up'}, disabled: false,
     classList: {add: c => classes.add(c), remove: c => classes.delete(c)},
     focus() {}, setPointerCapture() {}, addEventListener: (name, fn) => { events[name] = fn; }};
-  const windowEvents = {}, nodes = {'key-status': {}, 'key-action': {}}, streams = [], requests = [], dispatched = [];
+  const windowEvents = {}, nodes = {'key-status': {classList:{toggle() {}}}, 'key-action': {}}, streams = [], requests = [], dispatched = [];
   class EventSource {
     constructor(url) { this.url = url; this.listeners = {}; streams.push(this); }
     addEventListener(name, fn) { this.listeners[name] = fn; }
@@ -100,7 +100,7 @@ test('another finger cannot release a held hotspot, right click cannot press it'
 test('device SSE updates controls and reconnects without status polling', () => {
   const f = domFixture(), source = f.streams[0];
   assert.equal(source.url, '/events');
-  assert.equal(f.nodes['key-status'].textContent, 'Player on');
+  assert.equal(f.nodes['key-status'].textContent, '');
   source.device({running: true, screen_on: false});
   assert.match(f.nodes['key-status'].textContent, /Screen locked/);
   source.device({running: true, transition: 'stopping'});
@@ -116,7 +116,7 @@ test('device SSE updates controls and reconnects without status polling', () => 
   assert.match(f.nodes['key-status'].textContent, /Connecting/);
   source.device({running: true, screen_on: true});
   assert.equal(f.button.disabled, false);
-  assert.equal(f.nodes['key-status'].textContent, 'Player on');
+  assert.equal(f.nodes['key-status'].textContent, '');
   assert.equal(f.streams.length, 1);
   assert.deepEqual(f.dispatched, ['viewer-reconnected']);
   assert.deepEqual(f.requests, []);
@@ -137,5 +137,5 @@ test('page lifecycle closes SSE and restores exactly one fresh subscription', ()
   old.onerror();
   old.device({running: false});
   assert.equal(f.button.disabled, false);
-  assert.equal(f.nodes['key-status'].textContent, 'Player on');
+  assert.equal(f.nodes['key-status'].textContent, '');
 });

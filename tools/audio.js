@@ -12,6 +12,13 @@
     sources.clear();
     next = 0;
   }
+  function paint() {
+    const label = enabled ? 'Mute sound' : 'Enable sound';
+    toggle.setAttribute('aria-label', label);
+    toggle.setAttribute('aria-pressed', String(enabled));
+    toggle.classList.toggle('is-connected', enabled);
+    toggle.querySelector('.key-label').textContent = label;
+  }
   async function enable() {
     context ||= new AudioContext();
     if (!splitter) {
@@ -26,23 +33,30 @@
     }
     await context.resume();
     enabled = true;
-    toggle.textContent = 'Mute sound';
+    paint();
   }
   toggle.onclick = async () => {
-    if (enabled) {
-      enabled = false;
-      clear();
-      toggle.textContent = 'Enable sound';
-      status.textContent = 'Sound off';
-    } else {
-      try { await enable(); } catch (e) { status.textContent = e.message; }
-    }
+    if (toggle.disabled) return;
+    toggle.disabled = true;
+    try {
+      if (enabled) {
+        enabled = false;
+        clear();
+        paint();
+        status.textContent = 'Sound off';
+      } else {
+        await enable();
+      }
+    } catch (e) {
+      status.textContent = e.message;
+      window.viewerControls?.error(e.message);
+    } finally { toggle.disabled = false; }
   };
   replay.onclick = async () => {
     clear();
     generation = null;
     offset = 0;
-    try { await enable(); } catch (e) { status.textContent = e.message; }
+    try { await enable(); } catch (e) { status.textContent = e.message; window.viewerControls?.error(e.message); }
   };
   async function poll() {
     if (!enabled) return;

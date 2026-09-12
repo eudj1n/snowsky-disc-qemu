@@ -55,7 +55,7 @@ if (typeof document !== 'undefined') {
         headers: {'Content-Type': 'application/json'}, body: JSON.stringify({name, gesture})});
       if (!response.ok) throw new Error(await response.text());
       if (!['end', 'cancel'].includes(gesture)) action.textContent = `${name.replaceAll('_', ' ')} · ${gesture}`;
-    }).catch(error => { action.textContent = error.message; });
+    }).catch(error => { action.textContent = error.message; window.viewerControls?.error(error.message); });
   };
   const controls = [];
   document.querySelectorAll('[data-key]').forEach(button => {
@@ -103,6 +103,8 @@ if (typeof document !== 'undefined') {
   let connectionLost = false;
   const unavailable = () => {
     message.textContent = 'Connecting to player…';
+    message.hidden = false;
+    window.viewerControls?.unavailable();
     controls.forEach(({button, cancel}) => { button.disabled = true; cancel(); });
   };
   function connect() {
@@ -112,16 +114,19 @@ if (typeof document !== 'undefined') {
     source.addEventListener('device', event => {
       if (events !== source) return;
       const state = JSON.parse(event.data);
+      window.viewerControls?.update(state);
       if (connectionLost) {
         connectionLost = false;
         window.dispatchEvent(new Event('viewer-reconnected'));
       }
-      message.textContent = state.error || (state.transition === 'starting' ? 'Starting player…'
+      message.textContent = state.error || state.peripheral_error || state.peripheral_transition || (state.transition === 'starting' ? 'Starting player…'
         : state.transition === 'stopping' ? 'Stopping player…'
         : !state.running ? 'Player off — press Power to start'
-        : !state.screen_on ? 'Screen locked — press Power to wake' : 'Player on');
+        : !state.screen_on ? 'Screen locked — press Power to wake' : '');
+      message.hidden = !message.textContent;
+      message.classList.toggle('screen-on', Boolean(state.screen_on));
       controls.forEach(({button, cancel}) => {
-        button.disabled = Boolean(state.transition) || (!state.running && button.dataset.key !== 'power');
+        button.disabled = Boolean(state.transition || state.peripheral_transition) || (!state.running && button.dataset.key !== 'power');
         if (button.disabled) cancel();
       });
     });

@@ -14,8 +14,39 @@ Then, in the browser: **click = tap**, **drag = swipe**, **long-press = hold**, 
 gesture shortcuts are available in the collapsed **Debug** section.
 They duplicate touch swipes and are not needed for normal use.
 
-**Enable sound** plays captured audio; **Replay capture** starts the current recording again.
-**Mute sound** affects the browser only. Select tracks and pause in the device UI.
+The first headphone jack at the lower left is **Enable sound**. Enabling browser audio
+shows an inserted plug; clicking it again mutes sound and removes the plug. This is a
+browser audio switch, not a stock headphone-detection event. **Replay capture** lives
+inside **Debug** and starts the current recording again. Select tracks and pause in
+the device UI. Volume remains controlled by the existing physical buttons and stock
+menus; DAC attenuation already drives the browser audio gains. There are no extra sliders.
+
+Brightness comes from the stock shade slider (1–40). The viewer observes the actual
+backlight stub via device SSE and applies a CSS brightness factor to the screen image.
+This approximates panel luminance; framebuffer pixels, lossless PNG transport and
+animation cadence are unchanged. Backlight zero still displays a black frame.
+
+Normal **Player on** status and usage hints are hidden. Off/sleep status is centered
+inside the dark screen; connection errors and transitions while the screen is lit
+appear below the device so they do not obscure the stock UI.
+
+The USB connector is centered on the bottom edge; the SD slot is to its right.
+USB toggles a cable with a green charging mark and the guest battery `status` stub
+(`Charging` / `Discharging`). Cable state survives viewer/guest restarts. This is
+charging simulation only: no USB storage/DAC mode, native battery-icon notification,
+or actual battery charging curve is implemented.
+
+The SD control performs real guest card removal/insertion and sends a unicast stock
+hotplug event only to this fingerprinted player. Removal first unmounts both emulated
+card mounts without force, then hides their mmc nodes. A busy card is refused; stop
+playback or turn the player off before retrying. This protects media from stock
+mountpoint cleanup after a failed unmount. Insertion reattaches the same image (the
+old loop number may have been released), restores the nodes, and waits for the stock
+mount before preparing the helper mount. Cyrillic filenames and media hashes are
+checked across repeated cycles in disposable integration tests. Insertion follows the
+stock auto-scan gates described in [MEDIA_LIBRARY.md](MEDIA_LIBRARY.md).
+An ejected card stays out across viewer/guest restarts; a full setup rebuilds it from
+`./sdcard`. The host media directory itself is never ejected or modified.
 Each PCM session replaces the recording; `./run.sh audio` saves a WAV to `shots/audio.wav`.
 See [AUDIO.md](AUDIO.md) for limits and verification.
 
@@ -36,13 +67,14 @@ detached by `./run.sh view`) and serves:
 | `GET /down?x&y` · `/move?x&y` · `/up` | manual press / drag / release |
 | `GET /swipe?dir=down\|up\|back\|left` (or `?x0&y0&x1&y1`) | server-side smooth swipe |
 | `POST /button` JSON `{name, gesture}` | physical-button gesture; see [KEYS.md](KEYS.md) |
-| `GET /device.json` | guest power, screen and transition state |
+| `POST /peripheral` JSON `{name:"sd", inserted:bool}` or `{name:"usb", connected:bool}` | same-origin SD hotplug / USB charging simulation |
+| `GET /device.json` | guest power, screen, backlight, peripherals and transition state |
 | `GET /events` | SSE `device` snapshots on connection and state changes; idle heartbeat every 15 seconds |
 | `GET /key?k=volume_up\|volume_down\|play_pause\|power` (or safe `?code=<int>`) | diagnostic single stock key event; use POST for power lifecycle |
 
 The page subscribes to `/events` through `EventSource` instead of polling
 `/device.json` every second. Each connection immediately receives current power,
-screen, transition and error state; unchanged state produces only SSE heartbeat
+screen, brightness, peripherals, transition and error state; unchanged state produces only SSE heartbeat
 comments. The existing guest supervisor samples state every 200 ms and wakes all
 subscribers on changes. Reconnection receives a fresh snapshot, and controls wait
 for it before becoming available. Leaving the page closes the subscription;
@@ -121,7 +153,7 @@ The transparent positioning layer does not intercept touches on the round screen
 Without a skin, the same buttons become a labelled row, with no duplicate handlers.
 
 Hotspot centers use per-button CSS `--x`/`--y` percentages in `tools/stream.py` for the
-committed photo (Power 84.4/3, Play 98/14.8, Volume up 98/28.5, down 98/51.5).
+committed photo (Power 84.4/3, Play 98/14.8, Volume up 98/28.5, down 98/51.5; headphones 15.6/99, USB 50/98.5, SD 80/98.5).
 They resize with the photo; replacing it requires adjusting these coordinates as
 well as screen alignment. Closing Debug cancels alignment mode. Reduced-motion
 preferences disable the visual transitions. Pointer loss, blur or guest shutdown

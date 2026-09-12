@@ -91,7 +91,10 @@ class PlayerMemory:
         pids = []
         for pid in self.device.processes():
             try:
-                if b'/usr/bin/mq_player' in Path(f'/proc/{pid}/cmdline').read_bytes().split(b'\0'):
+                # popen children can briefly retain the parent's argv. Select
+                # the main thread, not a fork from echo_powerMG/other workers.
+                if Path(f'/proc/{pid}/comm').read_text().strip() == 'mq_player' and \
+                        b'/usr/bin/mq_player' in Path(f'/proc/{pid}/cmdline').read_bytes().split(b'\0'):
                     pids.append(pid)
             except FileNotFoundError:
                 continue

@@ -43,3 +43,8 @@ compose exec -T emu bash /repo/ci/confinement.sh
 if [ "$FW_VERSION" = 2.57 ]; then
   compose exec -T emu python3 -B /repo/ci/storage_check.py --disposable
 fi
+
+# Playback probes can retain an open track even when paused. Start this
+# independent SD test at an idle boot; busy-card rejection is tested explicitly.
+compose exec -T emu bash /repo/scripts/20_boot.sh
+compose exec -T emu python3 -B /repo/ci/viewer_peripherals.py

@@ -27,6 +27,7 @@ display coord maps to raw touch (359-x, 359-y) — same flip as scripts/30_tap.s
 import os, sys, time, zlib, struct, threading, json
 from audio import capture_info, read_chunk
 from keys import Buttons, Device, CODES
+from viewer_controls import ViewerControls
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from urllib.parse import urlparse, parse_qs
 
@@ -44,6 +45,7 @@ EV = os.path.join(ROOTFS, "dev/input/event1")   # cst816t touch
 EV0 = os.path.join(ROOTFS, "dev/input/event0")  # x2000_key physical keys
 device = Device(ROOTFS)
 buttons = Buttons(ROOTFS, device)
+viewer_controls = ViewerControls(device)
 
 # Optional device "skin": a photo of the player; the live round screen is composited
 # over its screen area so the viewer looks like the real device. Drop a PNG at $SKIN
@@ -313,7 +315,7 @@ PAGE = ("""<!doctype html><meta charset=utf-8>
  /* plain mode (no skin): a framed round screen */
  #stage.plain{width:360px}
  #stage.plain #skin{display:none}
- #stage.plain #scr{width:100%;aspect-ratio:1;border-radius:50%;background:#000;
+ #stage.plain #scr{width:100%;height:auto;aspect-ratio:1;border-radius:50%;background:#000;
         box-shadow:0 0 0 6px #ddd,0 0 30px rgba(0,0,0,.15)}
  #scr{image-rendering:pixelated;touch-action:none;cursor:pointer;display:block}
  #scr.touching{cursor:grabbing}
@@ -352,34 +354,69 @@ PAGE = ("""<!doctype html><meta charset=utf-8>
    opacity:1;visibility:visible}
  @media(prefers-reduced-motion:reduce){#stage.skin .physical,#stage.skin .key-label,
    #stage.skin .key-symbol{transition:none}}
+
+ #key-status{pointer-events:none;position:absolute;left:var(--screen-left,__L__%);top:var(--screen-top,__T__%);width:var(--screen-width,__D__%);
+   aspect-ratio:1;border-radius:50%;display:flex;align-items:center;justify-content:center;
+   box-sizing:border-box;padding:40px;color:#aaa;background:#080808;line-height:1.7;font-size:14px}
+ #key-status[hidden]{display:none}
+ #stage.plain #key-status:not(.screen-on){left:0;top:0;width:100%}
+ #key-status.screen-on{background:transparent;color:#777;left:0;top:calc(100% + 64px);width:100%;
+   aspect-ratio:auto;padding:8px 0;font-size:12px}
+ #control-error{color:#a52c57;max-width:340px;margin:72px auto 0;line-height:1.5}
+ #control-error:empty{display:none}
+ .connector{display:none;pointer-events:none}
+ #stage.skin .is-connected .key-symbol{opacity:0}
+ #stage.skin .is-connected{background:transparent;border-color:transparent;box-shadow:none}
+ #stage.skin .physical.is-connected:not(:disabled):hover,#stage.skin .physical.is-connected:focus-visible{
+   background:transparent;border-color:transparent;box-shadow:none}
+ #stage.skin .is-connected .connector{display:block;position:absolute;left:50%;top:45%;
+   width:16px;height:35px;transform:translateX(-50%);border:1px solid #555;border-radius:3px 3px 6px 6px;
+   background:repeating-linear-gradient(0deg,#252527 0 3px,#3d3d40 3px 4px);box-shadow:1px 2px 3px #0003}
+ #stage.skin .is-connected .connector:after{content:'';position:absolute;width:4px;height:30px;
+   background:#333;top:100%;left:50%;transform:translateX(-50%);border-radius:0 0 3px 3px}
+ #stage.skin #usb-toggle .connector{width:24px;height:30px;border-radius:5px;background:#323236}
+ #stage.skin #usb-toggle .connector:before{content:'ϟ';font-size:22px;color:#89dda7}
+ #stage.skin #sd-toggle .connector{display:block;position:absolute;left:50%;top:50%;width:34px;height:5px;
+   transform:translate(-50%,-50%);background:#303036;border:1px solid #555;border-radius:2px;box-shadow:1px 2px 3px #0003}
+ #stage.skin #sd-toggle.is-ejected .connector{top:calc(50% + 19px);width:28px;height:34px;
+   background:linear-gradient(180deg,#c8a366 0 20%,#303036 20%);clip-path:polygon(0 0,75% 0,100% 25%,100% 100%,0 100%)}
+ #stage.skin #sd-toggle .key-symbol{display:none}
+ #stage.skin #sd-toggle .key-label{right:0;top:-34px}
+ #stage.skin #audio-toggle .key-label,#stage.skin #usb-toggle .key-label{right:auto;left:0;top:-34px}
+ #debug-tools{margin-top:70px}
+ #stage.plain ~ #debug-tools{margin-top:24px}
+ #stage:has(#key-status.screen-on:not([hidden])) ~ #debug-tools{margin-top:120px}
+ #control-error:not(:empty) + #debug-tools{margin-top:20px}
+ @media(max-width:440px){#wrap{margin-top:22px}}
 </style>
 <div id=wrap>
  <div id="stage" class="__MODE__">
   <img id=skin src="/skin" draggable=false alt="">
   <img id=scr width=360 height=360 alt="Player screen" draggable=false>
+  <div id=key-status role=status>Connecting to player…</div>
   <div id=physical-controls role=group aria-label="Physical controls">
-   <button class=physical data-key="power" style="--x:84.4%;--y:3%" aria-label="Power / lock" aria-describedby=key-help>
+   <button class=physical data-key="power" style="--x:84.4%;--y:3%" aria-label="Power / lock">
     <span class=key-symbol aria-hidden=true>⏻</span><span class=key-label>Power / lock</span></button>
-   <button class=physical data-key="play_pause" style="--x:98%;--y:14.8%" aria-label="Play / pause" aria-describedby=key-help>
+   <button class=physical data-key="play_pause" style="--x:98%;--y:14.8%" aria-label="Play / pause">
     <span class=key-symbol aria-hidden=true>⏯</span><span class=key-label>Play / pause</span></button>
-   <button class=physical data-key="volume_up" style="--x:98%;--y:28.5%" aria-label="Volume up" aria-describedby=key-help>
+   <button class=physical data-key="volume_up" style="--x:98%;--y:28.5%" aria-label="Volume up">
     <span class=key-symbol aria-hidden=true>+</span><span class=key-label>Volume up</span></button>
-   <button class=physical data-key="volume_down" style="--x:98%;--y:51.5%" aria-label="Volume down" aria-describedby=key-help>
+   <button class=physical data-key="volume_down" style="--x:98%;--y:51.5%" aria-label="Volume down">
     <span class=key-symbol aria-hidden=true>−</span><span class=key-label>Volume down</span></button>
+   <button id=audio-toggle class=physical style="--x:15.6%;--y:99%" aria-label="Enable sound" aria-pressed=false>
+    <span class=key-symbol aria-hidden=true>♫</span><span class=connector aria-hidden=true></span><span class=key-label>Enable sound</span></button>
+   <button id=usb-toggle class=physical style="--x:50%;--y:98.5%" aria-label="Connect USB charging cable" aria-pressed=false>
+    <span class=key-symbol aria-hidden=true>ϟ</span><span class=connector aria-hidden=true></span><span class=key-label>Connect USB</span></button>
+   <button id=sd-toggle class=physical style="--x:80%;--y:98.5%" aria-label="Eject SD card" aria-pressed=true>
+    <span class=key-symbol aria-hidden=true>▣</span><span class=connector aria-hidden=true></span><span class=key-label>Eject SD card</span></button>
   </div>
  </div>
- <div class=hint>click = tap · drag = swipe · long-press to hold</div>
- <div class=hint id=key-help>Volume: click / double-click / hold — assignments in Settings<br>
- Power: click to lock/wake · hold 1.8 s to turn off · click to turn on</div>
- <div id=key-status class=hint role=status></div>
- <div id=key-action class=hint aria-live=polite></div>
- <div class=bar>
-  <button id=audio-toggle>Enable sound</button>
-  <button id=audio-replay>Replay capture</button>
- </div>
- <div id=audio-status class=hint>Sound off</div>
+ <div id=control-error role=alert></div>
  <details id=debug-tools>
   <summary>Debug</summary>
+  <div class=bar><button id=audio-replay>Replay capture</button></div>
+  <div id=audio-status class=hint>Sound off</div>
+  <div id=key-action class=hint aria-live=polite></div>
   <div class=bar>
    <button onclick="go('/swipe?dir=down')">▼ shade</button>
    <button onclick="go('/swipe?dir=up')">▲ up</button>
@@ -392,6 +429,7 @@ PAGE = ("""<!doctype html><meta charset=utf-8>
 </div>
 <script src="/audio.js"></script>
 <script src="/frames.js"></script>
+<script src="/controls.js"></script>
 <script src="/keys.js"></script>
 <script>
 const img=document.getElementById('scr');
@@ -405,6 +443,10 @@ document.getElementById('debug-tools').addEventListener('toggle', event=>{
 function draw(){
   const l=(align.cx-align.d/2)*100, t=(align.cy-align.d*align.ar/2)*100;
   img.style.left=l.toFixed(2)+'%'; img.style.top=t.toFixed(2)+'%'; img.style.width=(align.d*100).toFixed(2)+'%';
+  const stage=document.getElementById('stage');
+  stage.style.setProperty('--screen-left',l+'%');
+  stage.style.setProperty('--screen-top',t+'%');
+  stage.style.setProperty('--screen-width',(align.d*100)+'%');
   document.getElementById('alignbtn').style.background=align.on?'#d9e8b0':'';
   document.getElementById('readout').textContent=align.on
     ? `align: Alt+arrows move · +/- size · cx=${align.cx.toFixed(3)} cy=${align.cy.toFixed(3)} d=${align.d.toFixed(3)}  →  SKIN_CX=${align.cx.toFixed(3)} SKIN_CY=${align.cy.toFixed(3)} SKIN_D=${align.d.toFixed(3)}`
@@ -448,7 +490,7 @@ class Handler(BaseHTTPRequestHandler):
         return int(float(qs.get(k, ['0'])[0]))
 
     def do_POST(self):
-        if self.path != '/button':
+        if self.path not in ('/button', '/peripheral'):
             self._audio_response(404, 'text/plain', b'Not found'); return
         # JSON-only and same-origin: another website must not power-cycle this guest.
         origin = self.headers.get('Origin')
@@ -460,8 +502,23 @@ class Handler(BaseHTTPRequestHandler):
             if not 0 < size <= 1024:
                 raise ValueError('Invalid request size')
             data = json.loads(self.rfile.read(size))
-            buttons.gesture(data['name'], data['gesture'])
-            self._audio_response(200, 'application/json', b'{"ok":true}')
+            if self.path == '/peripheral':
+                if data['name'] == 'sd':
+                    viewer_controls.set_sd(data['inserted'])
+                elif data['name'] == 'usb':
+                    viewer_controls.set_usb(data['connected'])
+                else:
+                    raise ValueError('Unknown peripheral')
+            else:
+                if viewer_controls.operation and data['gesture'] not in ('end', 'cancel'):
+                    raise ValueError('Wait for the SD operation')
+                buttons.gesture(data['name'], data['gesture'])
+            if self.path == '/peripheral':
+                snapshot = {**device.status(), **viewer_controls.snapshot()}
+                state.publish_device(snapshot)
+                self._audio_response(200, 'application/json', json.dumps(snapshot).encode())
+            else:
+                self._audio_response(200, 'application/json', b'{"ok":true}')
         except (ValueError, KeyError, TypeError) as exc:
             self._audio_response(400, 'text/plain', str(exc).encode())
         except OSError as exc:
@@ -470,7 +527,7 @@ class Handler(BaseHTTPRequestHandler):
     def do_GET(self):
         u = urlparse(self.path)
         p, qs = u.path, parse_qs(u.query)
-        if p in ('/audio.js', '/keys.js', '/frames.js'):
+        if p in ('/audio.js', '/keys.js', '/frames.js', '/controls.js'):
             data = open(os.path.join(os.path.dirname(__file__), p[1:]), 'rb').read()
             self._audio_response(200, 'text/javascript', data)
         elif p == '/device.json':
@@ -539,14 +596,14 @@ class Handler(BaseHTTPRequestHandler):
                 except ValueError:
                     code = None
             try:
-                if not device.running() or device.transition:
+                if not device.running() or device.transition or viewer_controls.operation:
                     raise ValueError('Player is not ready')
                 key(code)
             except (ValueError, OSError) as exc:
                 self._audio_response(400, 'text/plain', str(exc).encode()); return
             self.send_response(204); self.send_header('Content-Length', '0'); self.end_headers()
         elif p in ('/tap', '/down', '/move', '/up', '/swipe'):
-            if p != '/up' and (not state.device['screen_on'] or device.transition):
+            if p != '/up' and (not state.device['screen_on'] or device.transition or viewer_controls.operation):
                 self._audio_response(409, 'text/plain', b'Screen is off; press Power'); return
             if p == '/tap':
                 tap(self._q(qs, 'x'), self._q(qs, 'y'))
@@ -645,7 +702,7 @@ def main():
             try:
                 buttons.expire()
                 device.service_requests()
-                state.publish_device(device.status())
+                state.publish_device({**device.status(), **viewer_controls.snapshot()})
             except OSError as exc:
                 state.publish_device({**state.device, 'error': str(exc)})
             time.sleep(.2)

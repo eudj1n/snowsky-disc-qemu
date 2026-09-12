@@ -23,7 +23,7 @@ test('browser routes PCM through DAC gains, updates them and stops when guest po
     }
   }
   const context = vm.createContext({AudioContext, DataView, Set,
-    document:{getElementById: id => elements[id] ||= {}},
+    document:{getElementById: id => elements[id] ||= {setAttribute() {},classList:{toggle() {}},querySelector:()=>({})}},
     fetch:async path => ({ok:true, json:async()=>info, arrayBuffer:async()=>new ArrayBuffer(8)}),
     setTimeout:fn=>timers.push(fn)});
   vm.runInContext(fs.readFileSync(require.resolve('./audio.js'),'utf8'), context);
