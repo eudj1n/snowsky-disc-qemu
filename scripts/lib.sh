@@ -65,6 +65,13 @@ sd_mount(){
   mountpoint -q "$ROOTFS/tmp/sdcard" || \
     guest_run 10 /bin/mount -t vfat -o iocharset=utf8 /dev/mmcblk0p1 /tmp/sdcard
   mountpoint -q /tmp/sdcard          || mount -t vfat -o iocharset=utf8 "$node" /tmp/sdcard          2>/dev/null || true
+  # Both mmc nodes alias one loop device. Stock blkid enumeration initially
+  # caches only mmcblk0, while hotplug runs `blkid | grep /dev/mmcblk0p1`.
+  # Probe the partition explicitly so stock remove/add can remount it itself.
+  # Keep real filesystem detection and its cache; do not synthesize blkid output.
+  guest_run 10 /sbin/blkid /dev/mmcblk0p1 >/dev/null || {
+    err 'SD filesystem discovery failed'; return 1;
+  }
 }
 
 # Convert a screen (as-you-see-it) coordinate to the raw touch coordinate.

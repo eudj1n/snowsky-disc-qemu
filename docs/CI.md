@@ -125,6 +125,12 @@ exceptions. A secret also does not preserve an expired/disappeared upstream file
 
 ## Next: V2.57 acceptance
 
+V2.57 integration additionally runs `ci/storage_check.py --disposable`: cold-cache
+SD discovery, stock remove/add, repeated Auto update with result dismissal, screen
+lock/unlock, and exact Cyrillic add/rename/delete comparisons across SD/SQLite/TCP.
+It uses V2.57-only fingerprinted UI reads; V2.40 keeps the existing integration
+coverage. See [MEDIA_LIBRARY.md](MEDIA_LIBRARY.md).
+
 Preserve the V2.40 tag/baseline and default profile. The second profile, download
 secret and test target are now separate. The user-provided
 changelog additionally calls for font sizes, Wi-Fi details, multilingual tags/lyrics,

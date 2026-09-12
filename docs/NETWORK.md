@@ -108,8 +108,13 @@ The fixture generator refuses to overwrite existing media; removal verifies its
 recorded SHA-256. The second boot rebuilds the SD without the generated file.
 In the 2026-09-11 test the fifth file was present on the rebuilt SD, but no startup
 scan ran and the index stayed at four records. Clicking Auto update gave no confirmed
-effective-state change. Its persistence/trigger are **not established**, so do not
-assume it works. The generated file was removed and the original SD restored.
+effective-state change. The generated file was removed and the original SD restored.
+The V2.57 follow-up established a volatile UI flag and an SD-insertion trigger.
+Repeated scans and Cyrillic add/rename/delete work after dismissing the result and
+unlocking the screen. `sd_mount()` now primes stock blkid's partition discovery,
+allowing the firmware's hotplug handler to remount the emulated card.
+See [SETTINGS.md](SETTINGS.md) and the [media-library investigation](MEDIA_LIBRARY.md)
+before relying on Auto update in the emulator.
 
 `tools/fiio_link.py` uses only Python's standard library, defaults to localhost and
 handles fragmented/coalesced frames. Lengths count UTF-8 **bytes**. It decodes the

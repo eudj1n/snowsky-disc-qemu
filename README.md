@@ -125,6 +125,7 @@ AGENTS.md              shared instructions for coding agents continuing this wor
 - **[docs/VIEWER.md](docs/VIEWER.md)** — live browser viewer + touch/swipe bridge (`./run.sh view`)
 - **[docs/AUDIO.md](docs/AUDIO.md)** — PCM capture, browser sound, WAV export, and card discovery
 - **[docs/KEYS.md](docs/KEYS.md)** — physical-button audit, corrected codes, app assignments, remaining work
+- **[docs/SETTINGS.md](docs/SETTINGS.md)** — settings storage, confirmed values and configuration without UI navigation
 - **[docs/NETWORK.md](docs/NETWORK.md)** — reproducible eth1/network setup (Compose 2.36+), localhost client, safety and live checks
 - **[docs/PROTOCOL.md](docs/PROTOCOL.md)** — FiiO Link frames, mqueues, network ports, auth
 - **[docs/DEVICE.md](docs/DEVICE.md)** — the real device on the network (ports, mDNS, no debug unlock)

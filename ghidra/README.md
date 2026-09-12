@@ -20,6 +20,29 @@ GH=<ghidra_12.1.3_with_built_decompiler>/support/analyzeHeadless
 - Script output is on stdout, prefixed `INFO  <script>>`; slice from the `////////` banner.
 - `-noanalysis` reuses the stored analysis; drop it (or omit `-process`) the first time.
 
+## V2.57 SD/auto-scan analysis
+
+The V2.57 SD/auto-scan investigation was reproduced on the Homebrew Ghidra 12.1.3
+installation with Java 21; its supplied decompiler worked without a local build.
+The manual-build instructions below describe the earlier installation. For this
+Homebrew layout, the headless entry point is
+`/opt/homebrew/opt/ghidra/libexec/support/analyzeHeadless`; `ghidraRun` is the GUI
+launcher. Keep project files and binary copies under ignored `work/`.
+
+After importing/analyzing `mq_ui`, the relevant existing helpers are:
+
+```sh
+"$GH" <proj_dir> <proj_name> -process mq_ui -noanalysis \
+  -scriptPath ghidra -postScript DecAt.java 481d10 481a78 47a994 47cea0 \
+  -postScript RefsTo.java 008e1735 008def90 00461c7c
+"$GH" <proj_dir> <proj_name> -process mq_player -noanalysis \
+  -scriptPath ghidra -postScript DecAt.java 4e5af4 4f3c54 4c34ec
+```
+
+The resulting conditions and live acceptance are summarized in
+[MEDIA_LIBRARY.md](../docs/MEDIA_LIBRARY.md). Use actual function entries with
+`DecAt`; creating a function at a mid-function label can give misleading decompilation.
+
 ## The two facts that make xrefs easy
 
 - **`mq_player`/`mq_ui` are fixed-address `EXEC` (not PIE)** — data refs are absolute

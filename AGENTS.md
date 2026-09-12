@@ -168,6 +168,13 @@ and FiiO Control app compatibility remain unvalidated.
 Manual Update media lib now works too: `sd_mount()` mounts INSIDE chroot so
 `/proc/mounts` records source `/dev/mmcblk0p1`, accessible to the scanner. The old
 `/work/rootfs/dev/mmcblk0p1` source passed Browse files but failed the scanner's
-`access(source)` gate. Four test tracks were scanned and returned over TCP. Auto update
-did not ingest a generated fifth file after reboot; its effective state/trigger remain
-unresolved. Use the app's Update now; do not assume the circular indicator proves it works.
+`access(source)` gate. Four test tracks were scanned and returned over TCP.
+V2.57 Auto update is a volatile UI flag (defaults to 1 each restart), triggered by
+SD insertion (`aa22`), not by the emulator's boot remount alone. Repeated scans work
+after dismissing the result via the OK button background (130,303) and unlocking
+the UI; backlight-on may still show a clock lockscreen. Click the Auto text row
+(170,141), not its circle. `sd_mount()` primes stock `blkid /dev/mmcblk0p1`: the two
+mmc nodes alias one loop device, and cold enumeration otherwise misses the partition
+name needed by stock hotplug remounting. Cyrillic add/rename/delete are checked in
+`ci/storage_check.py` (V2.57 only). USB export/eject remains unvalidated. See
+`docs/SETTINGS.md` and `docs/MEDIA_LIBRARY.md`; do not inject broad netlink broadcasts.

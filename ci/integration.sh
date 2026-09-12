@@ -40,3 +40,6 @@ compose exec -T wsbridge python3 -B /repo/tools/verify_websocket.py --tcp-host e
 compose exec -T emu python3 -B /repo/ci/guest_check.py --audio
 compose exec -T emu python3 -B /repo/ci/controls.py
 compose exec -T emu bash /repo/ci/confinement.sh
+if [ "$FW_VERSION" = 2.57 ]; then
+  compose exec -T emu python3 -B /repo/ci/storage_check.py --disposable
+fi

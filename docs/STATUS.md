@@ -233,10 +233,14 @@ and investigation of other ECHO-based products are deferred to separate work.
   screenshot review remains necessary before publishing; see [PUBLIC_RELEASE](PUBLIC_RELEASE.md).
 - **Additional audio routes** — USB/BT, DSD, and hardware-accurate timing still need separate
   validation. Local PCM works; see [AUDIO.md](AUDIO.md).
-- **Auto update (media library)** — the menu option was inspected/clicked, but adding a
-  generated fifth WAV and rebooting did not update the index or start a scan. Its effective
-  on/off state and startup/hotplug trigger are not yet established. Manual Update now works.
-  The fixture was removed and SD rebuilt; the original four indexed tracks remain.
+- **Auto update (media library)** — V2.57's flag is UI-local, defaults to enabled and
+  resets on guest restart. Click the text row to toggle it. A stock SD-insertion
+  notification supports repeated automatic scans, including Cyrillic add/rename/delete,
+  verified against SD files, SQLite and TCP. The previous result must be dismissed
+  with OK and the screen unlocked. `sd_mount()` now primes stock blkid discovery for
+  the partition alias so hotplug can remount it. Normal boot does not send insertion;
+  physical USB-storage exit remains unvalidated. See [SETTINGS](SETTINGS.md) and
+  [research evidence](MEDIA_LIBRARY.md).
 - **Remaining network work** — LAN multicast discovery, FiiO Control phone-app
   compatibility, Wi-Fi association and cloud streaming. The local WS→TCP bridge works;
   stock V2.40 still has no registered WS route. `POST /audio/` is an active HTTP

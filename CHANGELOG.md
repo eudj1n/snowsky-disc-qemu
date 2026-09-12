@@ -9,6 +9,11 @@ emulator-only revisions use `v2.40-r1`, etc. See [the porting guide](docs/PORTIN
 
 ### Fixed
 
+- SD remount preparation now explicitly probes the partition with stock `blkid`.
+  The two emulated mmc aliases previously left only the whole-card name in its
+  cache, so a stock insertion event could unmount the card without restoring it.
+  V2.57 integration checks repeated automatic scans, UI result/lock gates and
+  Cyrillic additions, renames and deletions against SD, SQLite and FiiO Link.
 - Idle physical-key polling no longer burns a CPU core under QEMU. The framebuffer
   shim waits 5 ms only after an empty read of the `event0` file stub; queued keys,
   touchscreen reads, rendering and PCM delivery keep their existing paths.
