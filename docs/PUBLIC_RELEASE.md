@@ -1,7 +1,9 @@
 # Public release preparation
 
-Visibility remains **private**. This checklist is preparation, not permission to
-publish the repository, change immutable releases, or rewrite history.
+The owner approved publishing this repository and the `v2.57` source release on
+2026-09-13, retaining all existing history, branches, tags and author metadata.
+The audit snapshot below records the state before publication. Future history
+rewrites or changes to immutable releases require separate authorization.
 
 ## Prepared
 
@@ -49,7 +51,7 @@ at audit time, and the 20 current photo/documentation images.
   local path in `docs/firmware/2.40.md` is a vendor build path recovered from firmware,
   not the owner's home directory. No firmware executable/archive blobs were found;
   binary assets are the photo and documentation images.
-- **History needs an owner decision:** `origin/main`, `v2.40` and earlier commits
+- **History accepted by the owner on 2026-09-13:** `origin/main`, `v2.40` and earlier commits
   retain private-project names/links in historical README, Compose, protocol and
   agent/status documentation. There is also one non-noreply author email in Git
   metadata. A cleanup commit does not remove any of this from public history.

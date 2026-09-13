@@ -210,22 +210,15 @@ and investigation of other ECHO-based products are deferred to separate work.
 
 ## Not done yet / next
 
-- **V2.57 — emulator release candidate.** Boot, stock scan, TCP/WS, local PCM,
-  physical controls and reboot confinement have validated baselines. Later fixes
-  add SD hotplug/repeated scans with Cyrillic add/rename/delete, viewer peripheral
-  controls/backlight, readiness-based startup, lower idle CPU and current-tail browser
-  audio. The owner confirmed audible playback after the live-audio fix.
-  [Firmware-free CI on `5a73883`](https://github.com/eudj1n/snowsky-disc-qemu/actions/runs/34708229045)
-  passed. Final firmware-free CI and fresh V2.40/V2.57 hosted integrations must pass
-  on the exact release commit; older runs are historical evidence only.
-  Release checks cover emulator interfaces, shims, patches and regressions. FiiO's
-  feature list is reference information, not a mandatory vendor-software acceptance
-  suite. V2.57 is the default, V2.40 remains explicitly selectable, and no V2.57 tag
-  has been published. See [version report](firmware/2.57.md) and [release gates](CI.md).
-- **Public release preparation** — MIT selected; the owner confirmed skin-photo authorship.
-  Root README no longer prints the OTA password or refers to private projects;
-  instructions moved to `AGENTS.md`. Visibility is still private. History/tag/log and
-  screenshot review remains necessary before publishing; see [PUBLIC_RELEASE](PUBLIC_RELEASE.md).
+- **V2.57 source release:** V2.57 is the default; V2.40 remains explicitly selectable.
+  Boot, stock scanning, TCP/WS, PCM, controls, power confinement and SD hotplug have
+  integration coverage. Viewer improvements include backlight/peripherals, current-tail
+  browser audio, readiness-based startup and lower idle CPU. The final commit and all
+  three CI runs are recorded in the [v2.57 release notes](https://github.com/eudj1n/snowsky-disc-qemu/releases/tag/v2.57).
+  Vendor changes remain reference information, not a mandatory software acceptance suite.
+- **Public repository:** publication and preservation of the audited history were
+  approved by the owner on 2026-09-13. See [publication audit](PUBLIC_RELEASE.md) and
+  [branch policy](CI.md). Earlier dated sections describe the private-repository phase.
 - **Additional audio routes** — USB/BT, DSD, and hardware-accurate timing still need separate
   validation. Local PCM works; see [AUDIO.md](AUDIO.md).
 - **Auto update (media library)** — V2.57's flag is UI-local, defaults to enabled and

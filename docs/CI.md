@@ -10,7 +10,7 @@ The first validated V2.40 milestone is
 [v2.40](https://github.com/eudj1n/snowsky-disc-qemu/releases/tag/v2.40). Emulator-only follow-up fixes
 for that firmware use `v2.40-r1`, `v2.40-r2`, etc. Never move/reuse an existing tag.
 This is a firmware-based naming convention, not npm/SemVer package versioning.
-V2.57 will use `v2.57` after its own validation. Do not merely replace the rootfs hash:
+V2.57 uses `v2.57` after its own validation. Do not merely replace the rootfs hash:
 binary patches, diagnostic addresses, UI coordinates and protocol behavior must be checked.
 GitHub immutable releases are enabled: publish only once the release contents are final.
 
@@ -19,14 +19,18 @@ release commit**, review the declared limitations in STATUS.md, and publish only
 source/release notes, never firmware. Tags/releases are not created automatically.
 For example, inspect `gh run list --branch 2.x --commit <full-sha>` before publishing.
 
-### GitHub protection limitation
+### Branch policy after public publication
 
-On 2026-09-11 GitHub returned HTTP 403: this private repository needs GitHub Pro
-(or public visibility) for branch protection. Its visibility is intentionally unchanged.
-CI can report failures but is **not a server-enforced merge/push gate** under the current
-plan. After upgrading, protect `2.x`: require `Firmware-free checks`, require branches
-up to date, disallow force pushes/deletions, include administrators. Keep firmware
-integration a separate exact-commit release gate, not a required check on fork PRs.
+- `2.x`: changes through pull requests, mandatory **Firmware-free checks** from
+  GitHub Actions, branch up to date before merging and resolved review conversations.
+  No mandatory second-person approval for this owner-maintained project.
+- Rules include administrators; force pushes and branch deletion are disabled.
+- `main`: historical, locked against new changes; development continues on `2.x`.
+- Firmware integrations remain exact-commit release gates, not required checks on
+  fork PRs. Secrets are only used in trusted manual integration runs on `2.x`.
+
+On 2026-09-11 the private repository's plan returned HTTP 403 for protection.
+The owner approved public publication and configuring this policy on 2026-09-13.
 
 ## Firmware-free CI
 

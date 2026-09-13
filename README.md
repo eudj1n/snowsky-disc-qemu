@@ -10,6 +10,7 @@ and a media-library sync bridge against an emulated device instead of a physical
 Development branch: **`2.x`**. Releases follow the exact firmware version (`v2.40`;
 emulator revisions `v2.40-r1`, etc.). Firmware-free CI and manual secret-backed firmware
 integration: **[docs/CI.md](docs/CI.md)**. Firmware/rootfs are never release assets.
+Latest source release: **[v2.57](https://github.com/eudj1n/snowsky-disc-qemu/releases/tag/v2.57)**.
 First validated source release: **[v2.40](https://github.com/eudj1n/snowsky-disc-qemu/releases/tag/v2.40)**.
 Project history: [CHANGELOG.md](CHANGELOG.md). New-version workflow and evidence:
 [docs/PORTING.md](docs/PORTING.md); [V2.57 compatibility and release gates](docs/firmware/2.57.md).

@@ -5,7 +5,11 @@ firmware vendor. Vendor notes and their verification status live in
 `docs/firmware/<version>.md`. The supported firmware version is explicit in each release;
 emulator-only revisions use `v2.40-r1`, etc. See [the porting guide](docs/PORTING.md).
 
-## [2.57] - unreleased
+## [2.57] — 2026-09-13
+
+SNOWSKY DISC emulator source release; main OS **257**, recovery **18**.
+V2.57 is the default, with V2.40 regression coverage. Exact-commit CI links are
+recorded in the [release notes](https://github.com/eudj1n/snowsky-disc-qemu/releases/tag/v2.57).
 
 ### Added
 
@@ -141,5 +145,5 @@ Automatic media scanning, native stock WebSocket, LAN/phone-app interoperability
 USB/BT/DSD and hardware-accurate power behavior are not fully supported/validated.
 See [STATUS.md](docs/STATUS.md) for scope and evidence.
 
-[2.57]: https://github.com/eudj1n/snowsky-disc-qemu/compare/v2.40...2.x
+[2.57]: https://github.com/eudj1n/snowsky-disc-qemu/compare/v2.40...v2.57
 [v2.40]: https://github.com/eudj1n/snowsky-disc-qemu/releases/tag/v2.40
