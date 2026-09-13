@@ -9,6 +9,9 @@ emulator-only revisions use `v2.40-r1`, etc. See [the porting guide](docs/PORTIN
 
 ### Added
 
+- Experimental isolated diskOS source build and viewer over the stock V2.40 backend,
+  pinned to a reviewed upstream commit, with emulation-only framebuffer/startup
+  adaptations. See [the preview guide](docs/DISKOS_PREVIEW.md) for limitations.
 - Optional `DEVICE_BOOT_SCRIPT` for the viewer Power-on action. Empty by default;
   stock startup and `run.sh boot` retain their existing behaviour.
 
