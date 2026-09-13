@@ -5,7 +5,7 @@
 `2.x` is the default development branch for firmware 2.x. Keep `main` as historical
 context, not a second development target. A future incompatible major gets `3.x`.
 Firmware V2.40 is the released default; V2.57 has an opt-in profile and clean baseline
-checks. Its upstream-feature acceptance remains in [firmware/2.57.md](firmware/2.57.md).
+checks. Its emulator release scope and vendor notes are in [firmware/2.57.md](firmware/2.57.md).
 
 The first validated V2.40 milestone is
 [v2.40](https://github.com/eudj1n/snowsky-disc-qemu/releases/tag/v2.40). Emulator-only follow-up fixes
@@ -123,7 +123,7 @@ images. The hosted runner is discarded afterwards. Secret masking is not a guara
 against careless logging; never add `set -x`, verbose download output, or raw network
 exceptions. A secret also does not preserve an expired/disappeared upstream file.
 
-## Next: V2.57 acceptance
+## V2.57 emulator release scope
 
 V2.57 integration additionally runs `ci/storage_check.py --disposable`: cold-cache
 SD discovery, stock remove/add, repeated Auto update with result dismissal, screen
@@ -132,8 +132,13 @@ It uses V2.57-only fingerprinted UI reads; V2.40 keeps the existing integration
 coverage. See [MEDIA_LIBRARY.md](MEDIA_LIBRARY.md).
 
 Preserve the V2.40 tag/baseline and default profile. The second profile, download
-secret and test target are now separate. The user-provided
-changelog additionally calls for font sizes, Wi-Fi details, multilingual tags/lyrics,
-configurable list gestures, FiiO Link Favorites, AUTO EQ, MP3 seeking, external covers,
-USB AUDIO tag refresh and M3U/CD-number UI changes. Hardware-dependent BT/USB behavior
-must not be marked validated solely from emulation.
+secret and test target are separate. Release gates cover the parts implemented or
+affected by emulation: guarded boot/patches, framebuffer and input, storage/hotplug,
+network adapters, PCM/browser audio and guest power confinement. Both firmware
+profiles must pass integration on the exact release commit, alongside firmware-free CI.
+
+Vendor feature changes are reference information, not a mandatory acceptance suite
+for this project. Add a targeted check when a change affects an emulator interface,
+shim or patch, or reproduces an emulator regression. Unverified vendor fixes are not
+advertised as verified emulator features. Hardware-dependent BT/USB behavior remains
+outside this release's validated scope.

@@ -105,7 +105,12 @@ Test in this order and record the exact emulator commit and firmware/ELF hashes:
 3. Fresh SD Browse files **and** stock Update now; never seed catalog rows to make a test pass.
 4. Generated audio fixtures, format/rate/channel readback and byte-exact PCM where applicable.
 5. TCP/HTTP/WebSocket routing, request/reply framing, asynchronous events, controls and reconnect.
-6. Upstream change-specific cases, plus repeated boot/clean-volume runs and hosted CI.
+6. Targeted cases for upstream changes that affect emulator interfaces, shims or patches,
+   plus repeated boot/clean-volume runs and hosted CI.
+
+The release scope is emulator compatibility, not full vendor-software acceptance.
+Keep the vendor changelog as reference; testing every upstream feature is not a gate.
+Require extra cases for emulator-dependent behavior and reproduced regressions.
 
 Do not infer a scan from a spinner, playback from a log label, a query reply from its
 tag alone, or loader interception from the presence of a `.so`. Check the downstream
@@ -134,4 +139,5 @@ Dependabot PRs retain SHA pins but still need review/tests. Do not move an old r
 Static comparison, guarded profiles and the first clean baseline are complete; see
 [2.57 report](firmware/2.57.md). Select `FW_VERSION=2.57` for a disposable integration
 run; V2.40 remains the default. Firmware workflow dispatch selects the matching
-secret/profile. Next: upstream-feature cases; a baseline does not validate all vendor changes.
+secret/profile. Release gates validate emulator compatibility on the exact candidate
+commit; they do not certify every vendor feature or physical-device behavior.

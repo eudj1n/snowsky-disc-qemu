@@ -1,7 +1,7 @@
 # snowsky-disc-qemu
 
 Emulating the **FiiO Snowsky Disc** (Ingenic X2000, MIPS32) music player from its
-stock **V2.40** firmware, under `qemu-user` — booting the real UI to its main screen
+stock **V2.40 / V2.57** firmware, under `qemu-user` — booting the real UI to its main screen
 and driving it with synthetic touch, entirely without the hardware.
 
 Groundwork for building/testing custom firmware (cf. [b0hemia/diskos](https://github.com/b0hemia/diskos))
@@ -12,8 +12,10 @@ emulator revisions `v2.40-r1`, etc.). Firmware-free CI and manual secret-backed 
 integration: **[docs/CI.md](docs/CI.md)**. Firmware/rootfs are never release assets.
 First validated source release: **[v2.40](https://github.com/eudj1n/snowsky-disc-qemu/releases/tag/v2.40)**.
 Project history: [CHANGELOG.md](CHANGELOG.md). New-version workflow and evidence:
-[docs/PORTING.md](docs/PORTING.md); [V2.57 experimental baseline](docs/firmware/2.57.md).
-V2.40 remains the default; V2.57 is opt-in for isolated tests, with new-feature acceptance pending.
+[docs/PORTING.md](docs/PORTING.md); [V2.57 compatibility and release gates](docs/firmware/2.57.md).
+V2.40 remains the default; select V2.57 explicitly with `FW_VERSION=2.57`.
+Release checks cover emulator compatibility; vendor feature announcements are reference
+information, not a certification of FiiO's software.
 
 The GitHub project was renamed from `diskos-qemu`. Existing runtime names
 (`diskos-qemu` container/image, `diskos-work` volume, `diskos-qemu-ci` test image)

@@ -62,6 +62,10 @@ emulator-only revisions use `v2.40-r1`, etc. See [the porting guide](docs/PORTIN
 
 ### Changed
 
+- Release acceptance covers emulator compatibility and regressions. FiiO's feature
+  changelog remains reference information, outside the mandatory emulator test suite.
+- Confirmed the public V2.57 source page in the runtime profile and release documentation.
+
 - Renamed the root Compose configuration to `compose.yaml`; updated CI paths and
   documentation references.
 
@@ -83,11 +87,15 @@ emulator-only revisions use `v2.40-r1`, etc. See [the porting guide](docs/PORTIN
 
 ### Firmware compatibility
 
-- V2.40 remains the runnable/CI-validated target.
+- V2.40 remains the default; V2.57 is selected explicitly with `FW_VERSION=2.57`.
+  Both have separate validated profiles, guarded patches and diagnostics.
 - V2.57 clean boot, stock scan, TCP/WS, local PCM, basic physical controls and reboot
-  shim binding validated locally and in hosted CI on `0202310`; V2.40 regression also
-  passed. Upstream feature acceptance remains **not tested**;
-  no `v2.57` release yet. V2.40 pins remain separate and unchanged.
+  shim binding passed the initial hosted baseline; subsequent SD/viewer/audio fixes
+  have local evidence. Firmware-free CI passed on `5a73883`. Final release requires
+  both firmware integrations and firmware-free CI on the exact release commit;
+  historical baseline results do not replace that gate.
+- Vendor feature announcements are not emulator validation claims. Hardware BT/USB/DSD,
+  MCU behavior and hardware-accurate power remain outside the validated scope.
 
 ## [v2.40] — 2026-09-11
 

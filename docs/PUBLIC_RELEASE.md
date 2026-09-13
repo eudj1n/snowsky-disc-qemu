@@ -27,10 +27,11 @@ publish the repository, change immutable releases, or rewrite history.
   with the owner first. Do not silently force-push or move the tag.
 - Confirm retained screenshots are appropriate research illustrations and contain no
   private media/network/device identifiers. Vendor UI screenshots are not project art.
-- Confirm public source-page links for each firmware. V2.57's page is still unconfirmed;
-  direct acquisition URLs stay secrets, never artifacts or release assets.
+- Public source pages are recorded in the runtime profiles, including the confirmed
+  [FiiO V2.57 release page](https://forum.fiio.com/note/showNoteContent.do?id=202601311712087234434).
+  Direct acquisition URLs stay secrets, never artifacts or release assets.
 - Review fresh CI on the exact release commit for every advertised firmware; keep
-  untested upstream fixes explicitly marked in the per-version acceptance reports.
+  vendor announcements separate from observed emulator compatibility in the per-version reports.
 - Configure branch protection/required checks when the plan/visibility permits.
 - Have the owner explicitly approve public visibility and publication contents.
 
