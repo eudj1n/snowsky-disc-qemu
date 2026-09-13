@@ -35,6 +35,10 @@ emulator-only revisions use `v2.40-r1`, etc. See [the porting guide](docs/PORTIN
 
 ### Fixed
 
+- Run the independent SD-peripheral integration before playback selects a track.
+  Hosted V2.40 correctly rejected a busy-card eject after the playback probes;
+  rebooting alone did not establish an idle-card fixture. Busy-card rejection and
+  media-preservation assertions remain enabled.
 - Enable sound now joins current PCM instead of replaying accumulated capture from
   byte zero, which could mean minutes of service silence. Live playback rejoins after
   stalls; Replay capture retains historical playback. Debug distinguishes live/replay

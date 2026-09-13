@@ -36,6 +36,12 @@ compose exec -T emu bash /repo/scripts/00_extract_rootfs.sh /ota
 compose exec -T emu bash /repo/scripts/10_setup_env.sh
 compose exec -T emu bash /repo/scripts/20_boot.sh
 compose exec -T emu python3 -B /repo/ci/guest_check.py
+# Exercise peripherals after the stock scan but BEFORE selecting a track.
+# Paused playback can retain the selected file. Rebooting after those probes
+# still left the card busy in hosted V2.40 CI; it is not an idle-card fixture.
+# Restart here to dismiss the scanner UI without carrying playback state.
+compose exec -T emu bash /repo/scripts/20_boot.sh
+compose exec -T emu python3 -B /repo/ci/viewer_peripherals.py
 compose exec -T wsbridge python3 -B /repo/tools/verify_websocket.py --tcp-host emu --control
 compose exec -T emu python3 -B /repo/ci/guest_check.py --audio
 compose exec -T emu python3 -B /repo/ci/controls.py
@@ -43,8 +49,3 @@ compose exec -T emu bash /repo/ci/confinement.sh
 if [ "$FW_VERSION" = 2.57 ]; then
   compose exec -T emu python3 -B /repo/ci/storage_check.py --disposable
 fi
-
-# Playback probes can retain an open track even when paused. Start this
-# independent SD test at an idle boot; busy-card rejection is tested explicitly.
-compose exec -T emu bash /repo/scripts/20_boot.sh
-compose exec -T emu python3 -B /repo/ci/viewer_peripherals.py
