@@ -17,7 +17,7 @@ SD needs a re-mount after the guest's boot-time umount (`sd_mount()` in `lib.sh`
 
 ## How to run
 
-Host: `./run.sh up <…/main_os/ota_v240>` (once) → `./run.sh boot` → `./run.sh tap <x> <y>`.
+Host: `./run.sh up <…/main_os/ota_v257>` (once) → `./run.sh boot` → `./run.sh tap <x> <y>`.
 Screenshots are copied to `./shots/`. For an **interactive** session use `./run.sh view` →
 open `http://localhost:8080` (live screen, click=tap, drag=swipe; optional device-photo skin
 from `assets/skin.png`) — see `docs/VIEWER.md`; the daemon is `tools/stream.py` /
@@ -98,7 +98,7 @@ looks right / has the higher non-black pixel count printed by `fb2png.py`.
   report first. `firmware/inventory/` contains observed inputs, not runtime enablement
   profiles. Keep vendor-reported changes separate from verified emulator features;
   update `CHANGELOG.md` for emulator changes. Never replace V2.40 hashes/addresses blindly.
-- `FW_VERSION` selects a reviewed runtime profile (default `2.40`, opt-in `2.57`).
+- `FW_VERSION` selects a reviewed runtime profile (default `2.57`, opt-in `2.40`).
   Setup/boot validate product/version and six binary fingerprints before execution.
   Key patch validation normalizes only the permitted instruction, then checks the full
   stock hash and executable PT_LOAD mapping. Read-only key/network/HTTP diagnostics select

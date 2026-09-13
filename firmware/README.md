@@ -8,7 +8,7 @@ GitHub integration downloads use per-version secrets (`FIRMWARE_V240_URL`,
 
 ## Where to get it
 
-FiiO Snowsky Disc firmware **V2.40** (local-upgrade package):
+FiiO Snowsky Disc firmware **V2.57** (default, local-upgrade package):
 
 - FiiO forum release note: <https://forum.fiio.com/note/showNoteContent.do?id=202601311712087234434>
 
@@ -16,15 +16,15 @@ Download the local-upgrade ZIP and unzip it. You get this layout:
 
 ```
 SNOWSKY_DISC_update_.../
-├── ota_config.in                 # current_version=240  recovery_version=17
+├── ota_config.in                 # current_version=257  recovery_version=18
 ├── md5_file_info.txt             # md5 of every .enc chunk
 ├── main_os/
-│   └── ota_v240/                 # <-- point run.sh at THIS directory
+│   └── ota_v257/                 # <-- point run.sh at THIS directory
 │       ├── manifest.sha256(.sig) # ECDSA P-256 signature (the real flashing barrier)
 │       ├── ota_update.in.enc
-│       ├── rootfs.squashfs.0000.<sha>.enc … .0084.<sha>.enc   (85 chunks)
+│       ├── rootfs.squashfs.0000.<sha>.enc … .0076.<sha>.enc   (77 chunks)
 │       └── xImage.*.enc          # kernel (not needed for user-mode emulation)
-└── recovery/ota_v17/             # recovery image (not needed here)
+└── recovery/ota_v18/             # recovery image (not needed here)
 ```
 
 ## Distribution format (how the OTA is packed)
@@ -42,7 +42,7 @@ Decrypt one chunk:
 openssl enc -d -aes-256-cbc -pbkdf2 -iter 10000 -k fo123 -in <chunk>.enc -out <chunk>.dec
 ```
 
-The `rootfs.squashfs.NNNN.*.enc` chunks, decrypted and **concatenated in numeric
+For the historical **V2.40** package, the `rootfs.squashfs.NNNN.*.enc` chunks, decrypted and **concatenated in numeric
 index order (0000…0084)**, reassemble `rootfs.squashfs`:
 
 - size: 88 420 352 bytes

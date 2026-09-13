@@ -138,6 +138,6 @@ Dependabot PRs retain SHA pins but still need review/tests. Do not move an old r
 
 Static comparison, guarded profiles and the first clean baseline are complete; see
 [2.57 report](firmware/2.57.md). Select `FW_VERSION=2.57` for a disposable integration
-run; V2.40 remains the default. Firmware workflow dispatch selects the matching
+run; V2.57 is the default and V2.40 remains available explicitly. Firmware workflow dispatch selects the matching
 secret/profile. Release gates validate emulator compatibility on the exact candidate
 commit; they do not certify every vendor feature or physical-device behavior.

@@ -1,6 +1,6 @@
 # Container for the Snowsky Disc qemu emulator.
 #
-# 1. Point it at the firmware OTA chunk dir (…/main_os/ota_v240 of the unzipped firmware):
+# 1. Point it at the firmware OTA chunk dir (…/main_os/ota_v257 of the unzipped firmware):
 #      cp .env.example .env   &&   edit OTA_DIR   (or: OTA_DIR=/path ./run.sh up)
 # 2. Start it:
 #      docker compose up -d --build        (or ./run.sh up "$OTA_DIR", which also extracts+sets up)
@@ -17,13 +17,19 @@ services:
     privileged: true                     # qemu-user needs binfmt_misc, POSIX mqueue, a large VA reservation
     command: sleep infinity
     environment:
-      FW_VERSION: ${FW_VERSION:-2.40}     # exact-build profile; use a separate volume per version
+      FW_VERSION: ${FW_VERSION:-2.57}     # exact-build profile; use a separate volume per version
+      LANG_CODE: ${LANG_CODE:-2}
+      GUEST_TTL: ${GUEST_TTL:-1800}
+      STREAM_FPS: ${STREAM_FPS:-12}
+      SKIN_CX: ${SKIN_CX:-0.500}
+      SKIN_CY: ${SKIN_CY:-0.500}
+      SKIN_D: ${SKIN_D:-0.679}
     stop_grace_period: 2s
     networks:
       default:
         interface_name: eth1             # stock wired path; requires Compose >= 2.36
     volumes:
-      - ${OTA_DIR:?set OTA_DIR in .env (path to the firmware main_os/ota_v240 dir)}:/ota:ro
+      - ${OTA_DIR:?set OTA_DIR in .env (path to the firmware main_os/ota_v257 dir)}:/ota:ro
       - ./:/repo                         # this repository (scripts, shim, tools)
       - ${SD_DIR:-./sdcard}:/sdcard       # CI supplies an isolated generated library
       - work:/work                       # extracted rootfs + runtime state (persists across restarts)

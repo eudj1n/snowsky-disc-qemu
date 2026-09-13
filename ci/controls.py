@@ -55,7 +55,7 @@ def main():
     buttons = Buttons(root, device)
     buttons.reset()
     check_idle_key_cpu(device)
-    version = os.environ.get('FW_VERSION', '2.40')
+    version = os.environ.get('FW_VERSION', '2.57')
     network = network_snapshot(root, version)
     assert network['firmware'] == version and network['ready'] == 1, network
     assert network['storage_type'] == 1 and network['scan_running'] == 0, network
@@ -89,7 +89,7 @@ def main():
     with client:
         assert client.handshake() == '0306'
         settings = client.settings()
-        assert settings['soc_version'] == int(os.environ.get('FW_VERSION', '2.40').replace('.', ''))
+        assert settings['soc_version'] == int(os.environ.get('FW_VERSION', '2.57').replace('.', ''))
         initial = settings['currentVolume']
         assert initial > 0
         assert key_snapshot(root, version)['volume'] == initial

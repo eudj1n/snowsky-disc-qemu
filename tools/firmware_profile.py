@@ -7,10 +7,12 @@ from pathlib import Path
 import re
 import struct
 
+DEFAULT_VERSION = '2.57'
+
 PROFILES = Path(__file__).resolve().parents[1] / 'firmware'
 
 
-def load_profile(version='2.40'):
+def load_profile(version=DEFAULT_VERSION):
     if not re.fullmatch(r'\d+\.\d{2}', version):
         raise ValueError('Invalid firmware version')
     path = PROFILES / f'v{version}.json'
@@ -99,7 +101,7 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('operation', choices=['validate', 'patch-keys'])
     parser.add_argument('rootfs', type=Path)
-    parser.add_argument('--version', default='2.40')
+    parser.add_argument('--version', default=DEFAULT_VERSION)
     args = parser.parse_args()
     profile = load_profile(args.version)
     validate(args.rootfs, profile)

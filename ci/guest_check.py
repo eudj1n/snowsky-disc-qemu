@@ -68,7 +68,7 @@ def scan():
     # Sample the actual worker flag across the stock UI-triggered scan. A very
     # short scan may fit between samples; record observed values without making
     # scheduler timing a CI pass/fail condition.
-    with PlayerMemory(ROOT, os.environ.get('FW_VERSION', '2.40')) as player:
+    with PlayerMemory(ROOT, os.environ.get('FW_VERSION', '2.57')) as player:
         address = player.profile['diagnostics']['network']['scan_running']
         stop = Event()
         def sample_scan():
@@ -89,7 +89,7 @@ def scan():
         assert observed <= {0, 1}, observed
         print('Diagnostic scan_running samples:', sorted(observed))
     assert 'CI Tone' in str(tracks), tracks
-    print(f'Fresh V{os.environ.get("FW_VERSION", "2.40")}: stock UI scanned the generated track; TCP index verified.')
+    print(f'Fresh V{os.environ.get("FW_VERSION", "2.57")}: stock UI scanned the generated track; TCP index verified.')
 
 
 def audio():

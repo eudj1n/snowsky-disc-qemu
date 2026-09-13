@@ -1,11 +1,11 @@
 #!/usr/bin/env bash
 # Disposable stack, fresh work volume and generated media. Does not use run.sh/.env.
-# Usage: bash ci/integration.sh /absolute/path/to/main_os/ota_v240
+# Usage: bash ci/integration.sh /absolute/path/to/main_os/ota_v257
 # Build diskos-qemu-ci first. Requires Compose >=2.36 and a privileged Docker engine.
 set -euo pipefail
 cd "$(dirname "${BASH_SOURCE[0]}")/.."
 export OTA_DIR="$(cd "${1:?path to OTA chunks}" && pwd)"
-export FW_VERSION="${FW_VERSION:-2.40}"
+export FW_VERSION="${FW_VERSION:-2.57}"
 CI_TMP="$(mktemp -d "${TMPDIR:-/tmp}/diskos-ci.XXXXXXXX")"
 CI_ID="diskos-ci-$(basename "$CI_TMP" | tr '[:upper:].' '[:lower:]-')"
 export EMU_IMAGE="${EMU_IMAGE:-diskos-qemu-ci}"

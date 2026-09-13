@@ -4,8 +4,7 @@
 
 `2.x` is the default development branch for firmware 2.x. Keep `main` as historical
 context, not a second development target. A future incompatible major gets `3.x`.
-Firmware V2.40 is the released default; V2.57 has an opt-in profile and clean baseline
-checks. Its emulator release scope and vendor notes are in [firmware/2.57.md](firmware/2.57.md).
+Firmware V2.57 is the default; V2.40 remains an explicitly selected regression profile. Its emulator release scope and vendor notes are in [firmware/2.57.md](firmware/2.57.md).
 
 The first validated V2.40 milestone is
 [v2.40](https://github.com/eudj1n/snowsky-disc-qemu/releases/tag/v2.40). Emulator-only follow-up fixes
@@ -115,9 +114,9 @@ The workflow first runs the firmware-free suite on the same commit, then:
 Local equivalent using already extracted chunks:
 
 ```sh
-bash ci/integration.sh /absolute/path/to/main_os/ota_v240
+bash ci/integration.sh /absolute/path/to/main_os/ota_v257
 # Optional local diagnostic PNGs; never uploaded by Actions:
-CI_SHOTS="$PWD/shots/ci" bash ci/integration.sh /absolute/path/to/main_os/ota_v240
+FW_VERSION=2.40 CI_SHOTS="$PWD/shots/v240" bash ci/integration.sh /absolute/path/to/main_os/ota_v240
 FW_VERSION=2.57 CI_SHOTS="$PWD/shots/v257" bash ci/integration.sh /absolute/path/to/main_os/ota_v257
 ```
 
@@ -134,7 +133,7 @@ lock/unlock, and exact Cyrillic add/rename/delete comparisons across SD/SQLite/T
 It uses V2.57-only fingerprinted UI reads; V2.40 keeps the existing integration
 coverage. See [MEDIA_LIBRARY.md](MEDIA_LIBRARY.md).
 
-Preserve the V2.40 tag/baseline and default profile. The second profile, download
+Preserve the V2.40 tag/baseline and explicit regression profile. The second profile, download
 secret and test target are separate. Release gates cover the parts implemented or
 affected by emulation: guarded boot/patches, framebuffer and input, storage/hotplug,
 network adapters, PCM/browser audio and guest power confinement. Both firmware

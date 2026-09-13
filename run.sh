@@ -2,7 +2,7 @@
 # Host-side orchestrator for the Snowsky Disc qemu emulator.
 # Works on macOS or Linux with Docker installed.
 #
-#   ./run.sh up <path-to-ota_v240-dir>   build image, create/reuse container, extract rootfs, set up env
+#   ./run.sh up <path-to-ota_v257-dir>   build image, create/reuse container, extract rootfs, set up env
 #   ./run.sh start                       start the existing (stopped) container without re-extracting
 #   ./run.sh shell                       open a shell inside the running container
 #   ./run.sh boot [seconds]              boot to the main screen and capture PNGs into ./shots/
@@ -35,10 +35,16 @@ case "$cmd" in
     # OTA dir from arg, else $OTA_DIR, else .env
     OTA="${1:-${OTA_DIR:-}}"
     [ -n "$OTA" ] || OTA="$(sed -n 's/^OTA_DIR=//p' "$REPO_DIR/.env" 2>/dev/null | head -1)"
-    [ -n "$OTA" ] || { echo "usage: ./run.sh up <path-to-ota_v240-dir>   (or set OTA_DIR in .env — see .env.example)"; exit 1; }
+    [ -n "$OTA" ] || { echo "usage: ./run.sh up <path-to-ota_v257-dir>   (or set OTA_DIR in .env — see .env.example)"; exit 1; }
     OTA="$(cd "$OTA" && pwd)"
-    ls "$OTA"/rootfs.squashfs.*.enc >/dev/null 2>&1 || { echo "no rootfs.squashfs.*.enc in $OTA (point at main_os/ota_v240)"; exit 1; }
-    grep -qx "OTA_DIR=$OTA" "$REPO_DIR/.env" 2>/dev/null || printf 'OTA_DIR=%s\n' "$OTA" > "$REPO_DIR/.env"
+    ls "$OTA"/rootfs.squashfs.*.enc >/dev/null 2>&1 || { echo "no rootfs.squashfs.*.enc in $OTA (point at main_os/ota_v257)"; exit 1; }
+    # Preserve explicit firmware/volume settings when the OTA directory changes.
+    ENV_TMP="$(mktemp "$REPO_DIR/.env.XXXXXX")"
+    while IFS= read -r line || [ -n "$line" ]; do
+      case "$line" in OTA_DIR=*) ;; *) printf '%s\n' "$line" ;; esac
+    done < <(cat "$REPO_DIR/.env" 2>/dev/null || true) > "$ENV_TMP"
+    printf 'OTA_DIR=%s\n' "$OTA" >> "$ENV_TMP"
+    mv "$ENV_TMP" "$REPO_DIR/.env"
     echo "==> docker compose up (build)"
     ( cd "$REPO_DIR" && OTA_DIR="$OTA" docker compose up -d --build )
     echo "==> extracting rootfs (first run only takes a minute)"

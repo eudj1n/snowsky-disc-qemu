@@ -66,6 +66,10 @@ emulator-only revisions use `v2.40-r1`, etc. See [the porting guide](docs/PORTIN
 
 ### Changed
 
+- V2.57 is now the default in Compose, setup/extraction tools and CI entry points.
+  V2.40 remains explicitly selectable; existing rootfs volumes are never migrated
+  or overwritten. `run.sh up` preserves firmware/volume settings in `.env` when
+  updating the OTA path.
 - Release acceptance covers emulator compatibility and regressions. FiiO's feature
   changelog remains reference information, outside the mandatory emulator test suite.
 - Confirmed the public V2.57 source page in the runtime profile and release documentation.
@@ -91,7 +95,7 @@ emulator-only revisions use `v2.40-r1`, etc. See [the porting guide](docs/PORTIN
 
 ### Firmware compatibility
 
-- V2.40 remains the default; V2.57 is selected explicitly with `FW_VERSION=2.57`.
+- V2.57 is the default; V2.40 is selected explicitly with `FW_VERSION=2.40`.
   Both have separate validated profiles, guarded patches and diagnostics.
 - V2.57 clean boot, stock scan, TCP/WS, local PCM, basic physical controls and reboot
   shim binding passed the initial hosted baseline; subsequent SD/viewer/audio fixes

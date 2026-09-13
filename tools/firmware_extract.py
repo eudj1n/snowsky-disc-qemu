@@ -6,7 +6,7 @@ import subprocess
 import tempfile
 
 from firmware_inventory import CHUNK, plaintext_digest
-from firmware_profile import load_profile
+from firmware_profile import DEFAULT_VERSION, load_profile
 
 
 def extract(ota, destination, profile):
@@ -35,6 +35,6 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('ota', type=Path)
     parser.add_argument('destination', type=Path)
-    parser.add_argument('--version', default='2.40')
+    parser.add_argument('--version', default=DEFAULT_VERSION)
     args = parser.parse_args()
     extract(args.ota, args.destination, load_profile(args.version))

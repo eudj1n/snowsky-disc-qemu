@@ -5,8 +5,8 @@ on:
       version:
         description: Exact firmware profile
         type: choice
-        options: ['2.40', '2.57']
-        default: '2.40'
+        options: ['2.57', '2.40']
+        default: '2.57'
         required: true
 permissions:
   contents: read

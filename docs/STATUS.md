@@ -220,7 +220,7 @@ and investigation of other ECHO-based products are deferred to separate work.
   on the exact release commit; older runs are historical evidence only.
   Release checks cover emulator interfaces, shims, patches and regressions. FiiO's
   feature list is reference information, not a mandatory vendor-software acceptance
-  suite. V2.40 remains the default, V2.57 is explicitly selected, and no V2.57 tag
+  suite. V2.57 is the default, V2.40 remains explicitly selectable, and no V2.57 tag
   has been published. See [version report](firmware/2.57.md) and [release gates](CI.md).
 - **Public release preparation** — MIT selected; the owner confirmed skin-photo authorship.
   Root README no longer prints the OTA password or refers to private projects;

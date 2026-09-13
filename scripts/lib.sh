@@ -11,7 +11,7 @@ SHOTS="${SHOTS:-$WORK/shots}"         # captured PNG framebuffers
 QEMU="${QEMU:-/usr/bin/qemu-mipsel-static}"
 
 # Explicit runtime selection, defaulting to the released baseline. Pins live in firmware/v*.json.
-FW_VERSION="${FW_VERSION:-2.40}"
+FW_VERSION="${FW_VERSION:-2.57}"
 verify_firmware(){ python3 -B "$REPO/tools/firmware_profile.py" validate "$ROOTFS" --version "$FW_VERSION"; }
 
 # Screen geometry (360x360 round panel, 32bpp; virtual y = 3 sub-buffers).

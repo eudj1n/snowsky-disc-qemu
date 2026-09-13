@@ -38,3 +38,39 @@ publish the repository, change immutable releases, or rewrite history.
 “Internal documentation” means contributor-oriented, **not access-controlled**: files
 become readable with the repository when published. The retained OTA password is
 intentionally not being treated as a secret; download URLs are.
+
+## Audit snapshot — 2026-09-13
+
+Reviewed the 62 commits / 741 reachable Git objects through `bb4de8c` (both remote
+branches and `v2.40`), the published release metadata, all 39 available Actions logs
+at audit time, and the 20 current photo/documentation images.
+
+- **Current checkout:** no matches for the known private-project references. The
+  local path in `docs/firmware/2.40.md` is a vendor build path recovered from firmware,
+  not the owner's home directory. No firmware executable/archive blobs were found;
+  binary assets are the photo and documentation images.
+- **History needs an owner decision:** `origin/main`, `v2.40` and earlier commits
+  retain private-project names/links in historical README, Compose, protocol and
+  agent/status documentation. There is also one non-noreply author email in Git
+  metadata. A cleanup commit does not remove any of this from public history.
+- **Credential/URL checks:** pattern scans found no direct firmware package URLs,
+  GitHub/AWS token patterns or private-key headers in reachable text blobs; the
+  available Actions logs had no matching firmware URLs, token/key patterns or known
+  private-project references. This was a targeted scan, not proof that every possible
+  credential format is absent. Firmware decryption details are intentionally documented.
+- **Images:** reviewed current images, including the full protocol-inspector capture;
+  they show generated test tracks, emulator state and vendor UI. No personal library,
+  Wi-Fi credentials or owner-specific device identifiers were observed. The vendor
+  OTA service hostname in the inspector is not a direct package URL. Retain the
+  existing distinction between MIT project/photo assets and vendor UI illustrations.
+- **GitHub:** private; default branch `2.x`; both branches unprotected; Pages and Wiki
+  disabled; zero Actions artifacts and zero uploaded release assets. `v2.40` is
+  immutable. No visibility, history, release or protection settings were changed.
+
+Before making the existing repository public, explicitly accept the historical
+references and author metadata, or choose a separate clean public repository while
+preserving the private history. Do not move the immutable tag to hide old content.
+Then review the final candidate CI, enable branch protection/required checks and
+available secret scanning/push protection, and approve the visibility change itself.
+GitHub documents that Actions history/logs also become public:
+[visibility consequences](https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/managing-repository-settings/setting-repository-visibility).

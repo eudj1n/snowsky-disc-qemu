@@ -13,9 +13,15 @@ integration: **[docs/CI.md](docs/CI.md)**. Firmware/rootfs are never release ass
 First validated source release: **[v2.40](https://github.com/eudj1n/snowsky-disc-qemu/releases/tag/v2.40)**.
 Project history: [CHANGELOG.md](CHANGELOG.md). New-version workflow and evidence:
 [docs/PORTING.md](docs/PORTING.md); [V2.57 compatibility and release gates](docs/firmware/2.57.md).
-V2.40 remains the default; select V2.57 explicitly with `FW_VERSION=2.57`.
+V2.57 is the default; select V2.40 explicitly with `FW_VERSION=2.40`.
 Release checks cover emulator compatibility; vendor feature announcements are reference
 information, not a certification of FiiO's software.
+
+Existing V2.40 installations should keep `FW_VERSION=2.40` in `.env` before
+recreating their container. Changing the profile does not migrate an extracted
+rootfs: setup rejects mismatched firmware. For V2.57 use its OTA directory and a
+separate `WORK_VOLUME` (for example `diskos-work-v257`) in `.env`; the old volume
+is preserved. Run `./run.sh up` to recreate/setup the container, then boot it.
 
 The GitHub project was renamed from `diskos-qemu`. Existing runtime names
 (`diskos-qemu` container/image, `diskos-work` volume, `diskos-qemu-ci` test image)
@@ -41,8 +47,8 @@ The firmware is **not** in this repo — get it first:
 **[firmware/README.md](firmware/README.md)** (official download page and preparation instructions).
 
 ```sh
-# 1. point the tool at the OTA chunk directory (…/main_os/ota_v240 of the unzipped firmware)
-./run.sh up /path/to/SNOWSKY_DISC_update_.../main_os/ota_v240
+# 1. point the tool at the OTA chunk directory (…/main_os/ota_v257 of the unzipped firmware)
+./run.sh up /path/to/SNOWSKY_DISC_update_.../main_os/ota_v257
 
 # 2. boot to the main screen; PNGs land in ./shots/
 ./run.sh boot
@@ -67,7 +73,7 @@ reach the main screen, boots the two UI processes, and copies screenshots out.
 pipeline:
 
 ```sh
-cp .env.example .env      # then edit OTA_DIR to your …/main_os/ota_v240
+cp .env.example .env      # then edit OTA_DIR to your …/main_os/ota_v257
 docker compose up -d --build
 ./run.sh up               # extracts+sets up (reads OTA_DIR from .env); then boot/tap as above
 ```

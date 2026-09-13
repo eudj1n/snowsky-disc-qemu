@@ -13,11 +13,10 @@ import tempfile
 import urllib.parse
 import urllib.request
 import zipfile
-from firmware_profile import load_profile
+from firmware_profile import DEFAULT_VERSION, load_profile
 
 MAX_DOWNLOAD = 1024 * 1024 * 1024
 MAX_CHUNK = 4 * 1024 * 1024
-CHUNKS = load_profile('2.40')['rootfs_chunks']
 
 
 def https_url(url):
@@ -32,7 +31,7 @@ class HTTPSRedirect(urllib.request.HTTPRedirectHandler):
         return super().redirect_request(req, fp, code, msg, headers, https_url(newurl))
 
 
-def extract_chunks(archive, destination, version='2.40'):
+def extract_chunks(archive, destination, version=DEFAULT_VERSION):
     profile = load_profile(version)
     pattern = re.compile(r'(?:[^/]+/)*main_os/ota_v' + str(profile['main_os_version']) +
                          r'/(rootfs\.squashfs\.(\d{4})\.[0-9a-fA-F]{64}\.enc)')
@@ -57,7 +56,7 @@ def extract_chunks(archive, destination, version='2.40'):
                 shutil.copyfileobj(source, target)
 
 
-def fetch(url, destination, version='2.40'):
+def fetch(url, destination, version=DEFAULT_VERSION):
     request = urllib.request.Request(https_url(url), headers={'User-Agent': 'diskos-qemu-ci'})
     opener = urllib.request.build_opener(HTTPSRedirect())
     with tempfile.TemporaryFile() as archive:
@@ -75,7 +74,7 @@ def fetch(url, destination, version='2.40'):
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('destination', type=Path)
-    parser.add_argument('--version', default='2.40', choices=['2.40', '2.57'])
+    parser.add_argument('--version', default=DEFAULT_VERSION, choices=['2.40', '2.57'])
     args = parser.parse_args()
     # Pop so any later subprocess cannot inherit the URL. Never render an exception
     # originating in urllib: even its message/traceback can contain a signed URL.
