@@ -47,3 +47,25 @@ next-slot assumptions, and whether the recovery/backup path assumes ≤ 580 bloc
 
 Not flash-tested on hardware (stock V2.40 has no UART/root to run the live-preview path first). A
 full write-up was prepared as a GitHub issue for `b0hemia/diskos`.
+
+## Emulator findings (2026-09-13)
+
+A source-built diskOS UI at commit `85a327ca56af2676c850f24ddcba5f34135132d4` ran
+over the verified stock V2.40 backend in a separate emulator container. This was
+a warm UI handoff after stock startup, not the hardware installer/cold-boot path.
+
+- Its static musl UI needs a link-time framebuffer adapter; libc preload does not
+  apply. Explicit QEMU argv[0] avoids its self-exec loop under binfmt.
+- Touch navigation, the UI's own library scan and playback of a WAV under a
+  Cyrillic path worked. The supplied font displayed Cyrillic letters as boxes.
+- In a fresh control container without browser clients, the V2.40 startup route
+  reinitialisation stopped playback at 9.01 seconds. Skipping that redundant step
+  after stock initialisation let the complete 30-second test track play; captured
+  stereo 44.1 kHz PCM contained byte-exact periods of the generated waveform.
+- Re-selecting a previously selected track after reboot remains a separate open
+  issue. V2.57 and hardware installation are not validated by this experiment.
+
+The installer size cap in [upstream issue #1](https://github.com/b0hemia/diskos/issues/1)
+does not apply to loading the UI in an extracted emulator rootfs. Build scripts,
+launcher and detailed reproduction remain in the
+[experimental branch](https://github.com/eudj1n/snowsky-disc-qemu/blob/codex/diskos-emulator/docs/DISKOS_PREVIEW.md).

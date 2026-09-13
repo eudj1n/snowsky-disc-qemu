@@ -14,6 +14,12 @@ Then, in the browser: **click = tap**, **drag = swipe**, **long-press = hold**, 
 gesture shortcuts are available in the collapsed **Debug** section.
 They duplicate touch swipes and are not needed for normal use.
 
+`DEVICE_BOOT_SCRIPT` in `.env` optionally selects the script invoked by viewer
+Power when the guest is off. Leave it empty for the usual `/repo/scripts/20_boot.sh`.
+An override is an absolute path inside the container, executed by Bash with the
+selected `ROOTFS` and the existing 90-second startup timeout. Recreate the container
+and restart the viewer after changing it. This does not change `./run.sh boot`.
+
 The first headphone jack at the lower left is **Enable sound**. Enabling browser audio
 shows an inserted plug; clicking it again mutes sound and removes the plug. This is a
 browser audio switch, not a stock headphone-detection event. **Replay capture** lives

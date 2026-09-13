@@ -5,6 +5,19 @@ firmware vendor. Vendor notes and their verification status live in
 `docs/firmware/<version>.md`. The supported firmware version is explicit in each release;
 emulator-only revisions use `v2.40-r1`, etc. See [the porting guide](docs/PORTING.md).
 
+## [Unreleased]
+
+### Added
+
+- Optional `DEVICE_BOOT_SCRIPT` for the viewer Power-on action. Empty by default;
+  stock startup and `run.sh boot` retain their existing behaviour.
+
+### Fixed
+
+- Preserve literal escapes when registering the MIPS binfmt handler. Raw NULs
+  previously truncated its magic and made it intercept i386 executables. Setup
+  repairs only that handler and leaves other architecture registrations intact.
+
 ## [2.57] — 2026-09-13
 
 SNOWSKY DISC emulator source release; main OS **257**, recovery **18**.

@@ -17,10 +17,20 @@ bash "$REPO/scripts/16_network.sh" prepare
 #    too and hijacks the host's own native binaries -> "exec format error".
 log "binfmt_misc: mipsel interpreter"
 mountpoint -q /proc/sys/fs/binfmt_misc || mount -t binfmt_misc none /proc/sys/fs/binfmt_misc 2>/dev/null || true
+MAGIC='\x7f\x45\x4c\x46\x01\x01\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x02\x00\x08\x00'
+MASK='\xff\xff\xff\xff\xff\xff\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\xfe\xff\xff\xff'
+# Older printf used the registration as its FORMAT: embedded NULs truncated the
+# magic at byte 6 and accidentally matched i386 as well. Repair only our entry.
+if [ -e /proc/sys/fs/binfmt_misc/qemu-mipsel ] && ! python3 -c '
+from pathlib import Path
+p = Path("/proc/sys/fs/binfmt_misc/qemu-mipsel").read_text().splitlines()
+raise SystemExit(not ({"magic 7f454c4601010000000000000000000002000800",
+                      "mask ffffffffffff00000000000000000000feffffff"} <= set(p)))
+'; then
+  printf '%s\n' -1 > /proc/sys/fs/binfmt_misc/qemu-mipsel
+fi
 if [ ! -e /proc/sys/fs/binfmt_misc/qemu-mipsel ]; then
-  MAGIC='\x7f\x45\x4c\x46\x01\x01\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x02\x00\x08\x00'
-  MASK='\xff\xff\xff\xff\xff\xff\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\xfe\xff\xff\xff'
-  printf ":qemu-mipsel:M::${MAGIC}:${MASK}:${QEMU}:F" > /proc/sys/fs/binfmt_misc/register \
+  printf '%s' ":qemu-mipsel:M::${MAGIC}:${MASK}:${QEMU}:F" > /proc/sys/fs/binfmt_misc/register \
     && log "  registered" || err "  registration failed (already present?)"
 fi
 

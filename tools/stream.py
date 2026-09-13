@@ -43,7 +43,7 @@ BLACK_RGB = bytes(W * H * 3)
 FB = os.path.join(ROOTFS, "dev/fb0")
 EV = os.path.join(ROOTFS, "dev/input/event1")   # cst816t touch
 EV0 = os.path.join(ROOTFS, "dev/input/event0")  # x2000_key physical keys
-device = Device(ROOTFS)
+device = Device(ROOTFS, boot_script=os.environ.get('DEVICE_BOOT_SCRIPT'))
 buttons = Buttons(ROOTFS, device)
 viewer_controls = ViewerControls(device)
 
