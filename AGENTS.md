@@ -91,8 +91,9 @@ count printed by `fb2png.py` is only a fallback heuristic, not evidence of recen
 - Firmware acquisition + decrypt: `firmware/README.md` (password `fo123`; rootfs and
   six stock binary hashes pinned in `firmware/v<version>.json`).
 - Protocol + real-device RE: `docs/PROTOCOL.md` (FiiO Link frames, verified-live 12100 handshake
-  `0599…`, the corrected 12103 route mapping — **TCP device control is auth-free**, no file-upload
-  command), `docs/DEVICE.md` (ports/mDNS, no stock debug unlock), `docs/DISKOS.md` (V2.40 builds;
+  `0599…`, the corrected 12103 route mapping — **TCP device control is auth-free**;
+  stock file transfer uses separate HTTP, see `docs/HTTP_API.md`), `docs/DEVICE.md`
+  (ports/mDNS, no stock debug unlock), `docs/DISKOS.md` (V2.40 builds;
   only the size cap blocks). Network/auth `mq_player` function addresses are in `ghidra/README.md`.
 
 ## Conventions
@@ -171,6 +172,38 @@ do not launch it. CI enables the profile explicitly.
 `http://localhost:12103/bridge/` is a read-only protocol inspector; disconnect it before
 another client (stock TCP is single-client). See `docs/WEBSOCKET.md`. LAN discovery
 and FiiO Control app compatibility remain unvalidated.
+
+Stock HTTP file/playlist operations and remote settings are documented in
+`docs/HTTP_API.md` and `docs/REMOTE_SETTINGS.md`. Use `tools/fiio_http.py` for
+`/dir/`, raw-body `/audio/` uploads, `/progress/`, single-path `/file/` deletion and
+custom playlists. HTTP 200 is not success; progress can survive deletion. Playlist
+headers named `list_id`/`src_list_id`/`dst_list_id` use positions, not database IDs.
+Avoid stock batch recursive deletion (it constructs shell commands). `0622/0000`
+starts a scan; watch `a60a` start/finish and `a622` counts. Gain/DRE/filter/SPDIF and
+PEQ helpers are shared by TCP/WS; filter and EQ network enums differ from SQLite.
+The new CI scenarios use only disposable generated media. Never substitute the
+broad `0800` factory-reset command for the app's library-reset action.
+
+`docs/REMOTE_MODES_THEMES.md` covers stock work-mode control (Link 1 USB DAC,
+8 local, 10 AirPlay), the five `06d3` source-codec preferences, and lock-screen HTTP.
+Mode/codec readback does not establish hardware audio. Codec changes reopen the
+local player; restore the desired mode afterwards. `tools/fiio_theme.py` uploads
+and activates complete custom PNGs: an empty-body custom POST clears its image
+path, and `flag-in-use: 0` still clears the previously active theme. System-theme
+selection uses a separate source namespace. The capture checklist in that doc
+requires HTTP 12103 and TCP 12100; an ordinary HTTP proxy may miss the latter.
+
+Physical iOS captures are summarized in `docs/FIIO_CONTROL_APP.md`; only sanitized
+protocol fixtures live in `tools/fixtures/`. Full `a202` snapshots and state-only
+deltas coexist; DISC uses 0 playing / 1 paused. Paused seeks have no immediate
+position acknowledgement. Current queue is observed via HTTP `curlist/song`, then
+TCP `0100` index + type 0 + localized queue label. Next research step: validate
+the label requirement and empty/replaced queue behavior in a disposable emulator
+before adding a type-0 client helper. The last physical trace ran in random mode
+and moved 3 → 11 → 3, so never infer queue position by increment/decrement alone.
+`docs/M21_COMPARISON.md` is reference only: M21's FiiO Music uses UTF-16 length
+units, a different state enum and toggle semantics. DISC remains the priority;
+do not copy those Android rules into its client.
 
 Manual Update media lib now works too: `sd_mount()` mounts INSIDE chroot so
 `/proc/mounts` records source `/dev/mmcblk0p1`, accessible to the scanner. The old

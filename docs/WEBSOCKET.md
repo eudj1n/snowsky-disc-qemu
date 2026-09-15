@@ -57,6 +57,11 @@ docker exec diskos-qemu python3 /repo/tools/probe_keys.py
 
 ## Transport and application framing
 
+For the extended stock remote controls (selection, next/previous, seek, modes and
+albums), see [REMOTE_CONTROL.md](REMOTE_CONTROL.md). TCP and `WSClient` share payload
+validation and run the same disposable remote acceptance scenario. The bridge remains
+a transport adapter; it does not turn unsupported stock commands into capabilities.
+
 The transport is [RFC 6455 WebSocket](https://www.rfc-editor.org/rfc/rfc6455), handled
 by [aiohttp](https://docs.aiohttp.org/en/v3.8.4/web_reference.html#aiohttp.web.WebSocketResponse).
 Upgrade must succeed with HTTP **101** and the matching Sec-WebSocket-Accept. No

@@ -3,6 +3,24 @@
 Reference for the wire/IPC protocol used by the Snowsky Disc, gathered from the
 firmware (`control_core`/`fiio_link.c`, `http_server_mongoose.c`) and direct device probes.
 
+**Remote-control follow-up (2026-09-15):** see [REMOTE_CONTROL.md](REMOTE_CONTROL.md)
+for tested selection/navigation/seek/mode commands, distinct catalog/queue/favorites
+schemas, rate limits and physical V2.57 comparisons. Historical V2.40 observations
+below are not automatically capabilities of every firmware or the M21.
+
+**Stock capabilities follow-up:** [HTTP_API.md](HTTP_API.md) covers verified file
+upload, folders, custom playlists, cover retrieval and network scanning;
+[REMOTE_SETTINGS.md](REMOTE_SETTINGS.md) covers gain, DRE, filter, SPDIF and PEQ.
+[REMOTE_MODES_THEMES.md](REMOTE_MODES_THEMES.md) adds work-mode transitions,
+Bluetooth source-codec preferences, lock-screen upload/selection and a traffic
+capture checklist for comparison with FiiO Control.
+The supplied Android 4.6.0 APK, iOS HTTP captures and a raw TCP capture with
+physical mode transitions and capability metadata are recorded in
+[FIIO_CONTROL_APP.md](FIIO_CONTROL_APP.md).
+The [M21 comparison](M21_COMPARISON.md) records the related Android BLinker dialect:
+its UTF-16 length units, opposite playback-state enum, mode/favorite toggle
+semantics and separate HTTP API must not be applied to DISC.
+
 ## Frame format (FiiO Link)
 
 ASCII-hex header + payload:
@@ -18,11 +36,17 @@ TAG(4 hex chars) + LEN(4 hex chars) + VALUE
   returned nothing until `0599…` was sent.
 - **8-byte** query: `0202` + `0008`  (empty value — e.g. now-playing track)
 - **12-byte**: `0102` + `000C` + 4-byte value
+- **selection**: `0100` + length + zero-based position (4 hex) + list type (4 hex)
+  + optional UTF-8 name. The position is **not a song ID**.
+- **seek**: `0103` + `0010` + milliseconds (8 hex); local playback rounds down to
+  whole seconds. `a103` position notifications also use milliseconds.
 - **library list query** (12-byte): `<cmd>` + `000c` + `<offset>`
-  - `0401` tracks · `0402` artists · `0403` albums · `0404` genres · `0405` playlists
+  - `0401` tracks · `0402` artists · `0403` albums · `0404` genres · `0405` legacy playlists
   - `0406` queue · `0408` folders · `0413` album-by-name (`cmd+len+offset+name`)
   - response: `a4XX` + `<pagelen 4hex>` + `<total 4hex>` + `[json]`; page by re-sending the
     running `offset` until `offset ≥ total` (~900 bytes/page)
+  - **V2.57:** `0405` gave no response on both emulator and physical DISC.
+    Built-in favorites can be read with `0415` and the literal name `我的最爱`.
 - **reply tags** begin `aNNN`:
   - `a103` position tick · `a202` track/state · `a501` settings
   - boot push seen on the `ui` queue (see [EMULATION.md](EMULATION.md)):
@@ -47,8 +71,12 @@ Confirmed on the real player over **auth-free TCP 12100**. Library-list requests
 | `0413 <len> <off><name>` | `a413…` | tracks of a named album (title = filename) |
 | `a103…` | stream | position tick, ~1/s |
 
-**Only `a202` (now-playing) carries the file path.** The list frames return just
-`{id, title/filename, artist}` (+`count` for artists/albums) — **no `song_file_path`**. To match
+**Only `a202` (now-playing) provides a verified nonempty file path in these probes.**
+Track/album-track lists return `{id, title/filename, artist}`;
+artist/album groups return `{count, name}`. Queue `0406` uses
+`{songId, flag, itemName, itemInfo?}`; favorites `0415` has another schema with
+`songName` and an observed empty `songPath`. There is **no `song_file_path`** in
+the catalog pages. To match
 a full library by path you need `song.db` (`/usr/data/fiio/db/song.db`), not the list frames.
 The music SD is mounted at **`/tmp/sdcard/`** on the device (seen in the `a202` path).
 
@@ -98,16 +126,26 @@ what looked like a hard auth gate:
 - `libkey_jni.so` exports a `com.yscoco.ai` secret (`8DD8735BEB1B4CABBD6B17F7F9799E10`) — that is
   their cloud/AI SDK, unrelated to the device WS.
 
-## No file-upload command in the device protocol
+## File transfer is a separate HTTP investigation
 
-The device-WS command set (from Blutter) is control/query only — `requestApplicationGetList`,
+The analyzed device-WS command set (from Blutter) includes `requestApplicationGetList`,
 `requestVolume`, `requestWorkMode`, `requestAudioGain/Format`, `sendKeyEvent`, `sendPlayPosition`,
 `requestBluetoothDevices`, `requestStartApplication`, streaming opens (`requestKugou/Deezer/…`) —
-**there is no "push a file to the SD" command.** Even the official app does not upload tracks over
-the device protocol; it scans files already placed on the SD (via USB or a network share). So a
-sync bridge's "copy music to the player" step needs a separate file transport, while
-**library read + transport control are solved on auth-free 12100.** V2.40's active HTTP
-table includes `POST /audio/`; its upload semantics and safety still need investigation.
+no file-push command was identified in that analyzed subset. This does **not** establish
+that the official app cannot transfer files. User-provided FiiO Control screenshots
+(2026-09-15) show DISC's Wi-Fi transfer browser at `tmp/sdcard`, a new-folder action,
+and import choices for audio, images and folders. They establish the app UI, not a
+successful transfer or its exact wire format.
+
+The fingerprinted active HTTP tables provide concrete leads: `GET/POST /dir/`,
+`DELETE /file/`, `POST /audio/`, `GET /progress/`, and image routes. V2.57 additionally
+has `POST /image/`. Follow-up tests established raw-body upload, folder creation,
+single-path deletion and custom playlist operations; see [HTTP_API.md](HTTP_API.md)
+for the request contract and per-device evidence. A separately hosted remote can use
+stock HTTP 12103 for these operations alongside **auth-free TCP 12100 for playback,
+settings and scanning**.
+The earlier blanket claim that writing files requires a root shell or dashboard
+credentials was incorrect. See [REMOTE_CONTROL.md](REMOTE_CONTROL.md#official-app-ui-evidence).
 Do not chase supposed `/fs` credentials based on the earlier incorrect route mapping.
 
 ## Emulating the network side
@@ -127,6 +165,10 @@ under QEMU. See [NETWORK.md](NETWORK.md) for reproduction, confinement and the h
 
 Verified TCP setters: `0502 000C <volume 4hex>` (absolute 0..120),
 `0201 000C 0000` (selected-track play/pause toggle). These are not evdev key codes.
+The follow-up also verifies `0201/0001` next, `0201/0002` previous, `0100` selection,
+`0103` seek and `0102` modes; details and per-device evidence are in
+[REMOTE_CONTROL.md](REMOTE_CONTROL.md). No absolute play/pause command is established;
+V2.57 `0203` is an empty handler, not a replacement for the toggle.
 The host mappings are localhost-only. `/api/hi`, `/api/websocket` Upgrade and an invented
 URL give the same empty 200 **when querying direct stock HTTP on host 12113**.
 The traced active router has no WebSocket route/message dispatch. Our separate bridge

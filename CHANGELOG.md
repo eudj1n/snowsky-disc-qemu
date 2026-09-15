@@ -9,6 +9,26 @@ emulator-only revisions use `v2.40-r1`, etc. See [the porting guide](docs/PORTIN
 
 ### Added
 
+- Physical DISC protocol evidence from FiiO Control iOS captures, with sanitized
+  fixtures for themes, work modes, codecs, playback/favorites, paused seeks and
+  HTTP current-queue selection. Document Android M21 dialect differences and
+  remaining queue-label validation before exposing a type-0 selection helper.
+
+- Stock USB/local/AirPlay mode and Bluetooth source-codec preference helpers;
+  lock-screen HTTP client for system selection and full custom PNG/metadata upload.
+  Disposable TCP/WS and direct/proxy tests pin mode persistence, exact image bytes,
+  and stock empty-body/activation quirks; document an app traffic-capture checklist.
+
+- Stock HTTP file/catalog/playlist client and disposable direct/proxy acceptance:
+  Unicode uploads, directories, progress, playlist lifecycle and network reindexing.
+  Physical DISC comparisons include temporary FLAC transfer and current-cover retrieval.
+- TCP/WS setting and PEQ helpers with wire validation and readback/SQLite acceptance
+  for gain, DRE, filter, SPDIF, user EQ bands and master gain.
+- Stock FiiO Link remote-control helpers and TCP/WebSocket acceptance for track
+  selection, next/previous, seek, local play modes, albums and built-in favorites.
+  Document physical DISC V2.57 comparisons, navigation timing and distinct list schemas.
+- Three generated audio fixtures (Unicode WAV and tagged FLAC) for real stock
+  album/queue tests, retaining byte-exact audio and storage regression checks.
 - Three-version FIFO firmware support policy and OTA issue checklist: promotion
   follows validation/release preparation; retirement preserves historical evidence.
 - Daily stock OTA catalog monitoring with sanitized version outputs and one

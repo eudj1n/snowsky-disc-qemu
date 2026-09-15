@@ -88,6 +88,11 @@ docker exec diskos-qemu ip route
 
 ## Wire checks and controls
 
+The extended remote-control contract and repeatable TCP/WS acceptance are in
+[REMOTE_CONTROL.md](REMOTE_CONTROL.md): position selection, next/previous, seek,
+local modes, named albums/artists and built-in favorites. That report also records
+physical V2.57 comparisons and the stock navigation rate limit.
+
 The library scanner has a separate storage gate from Browse files. It checks
 `access(source)` for entries in `/proc/mounts` (`004bc890`, called by `004269e0`).
 The old source `/work/rootfs/dev/mmcblk0p1` was inaccessible inside chroot: Update now
@@ -200,7 +205,8 @@ own declared aiohttp dependency and Compose port mapping, documented separately.
 **Now implemented:** a separately identified local WebSocket → TCP 12100 bridge.
 Host 12103 reaches it; guest 12103 is unchanged, with direct access on host 12113.
 This is not stock WS support; see [WEBSOCKET.md](WEBSOCKET.md).
-Active `POST /audio/` is also a file-transfer lead; not tested in this investigation.
+Follow-up investigation verified `POST /audio/` file transfer, directory operations,
+custom playlists and remote scanning: see [HTTP_API.md](HTTP_API.md).
 
 ## Re-run the reverse engineering
 

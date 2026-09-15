@@ -5,6 +5,7 @@ import json
 import select
 import socket
 import time
+from fiio_settings import spec, setting_command, setting_value, peq_payload, peq_value
 
 
 def frame(tag, payload=b''):
@@ -15,6 +16,67 @@ def frame(tag, payload=b''):
     if len(payload) > 65535 - 8:
         raise ValueError('frame too large')
     return tag.encode('ascii') + f'{8 + len(payload):04X}'.encode() + payload
+
+
+def hex_value(value, maximum=65535, width=4):
+    if type(value) is not int or not 0 <= value <= maximum:
+        raise ValueError(f'value outside 0..{maximum}')
+    return f'{value:0{width}X}'
+
+
+def list_payload(list_type, name=None, *, indexed=False):
+    allowed = (1, 2, 3, 6) if indexed else (1, 2, 3)
+    if type(list_type) is not int or list_type not in allowed:
+        raise ValueError('unsupported list type')
+    if list_type in (2, 3):
+        if not isinstance(name, str) or not name or '\0' in name or len(name.encode('utf-8')) > 255:
+            raise ValueError('artist/album requires a name of 1..255 UTF-8 bytes without NUL')
+    elif name is not None:
+        raise ValueError('this list type takes no name')
+    return hex_value(list_type) + (name or '')
+
+
+def index_payload(index, list_type=1, name=None):
+    # This is a zero-based position in the selected list, NOT a catalog song ID.
+    return hex_value(index) + list_payload(list_type, name, indexed=True)
+
+
+def library_request(category, offset=0, name=None):
+    tags = {'tracks': '0401', 'artists': '0402', 'albums': '0403',
+            'genres': '0404', 'queue': '0406',
+            'artist_tracks': '0412', 'album_tracks': '0413', 'playlist_tracks': '0415'}
+    if category not in tags:
+        raise ValueError('unsupported library category')
+    suffix = ''
+    if category.endswith('_tracks'):
+        if not isinstance(name, str) or not name or '\0' in name or len(name.encode()) > 255:
+            raise ValueError('named list requires 1..255 UTF-8 bytes without NUL')
+        suffix = name
+    elif name is not None:
+        raise ValueError('this category takes no name')
+    return tags[category], hex_value(offset) + suffix
+
+
+def library_page(reply):
+    if len(reply) < 4 or any(b not in b'0123456789abcdefABCDEF' for b in reply[:4]):
+        raise ValueError('missing library count')
+    items = json.loads(reply[4:])
+    if not isinstance(items, list):
+        raise ValueError('library page must contain an array')
+    return {'total': int(reply[:4], 16), 'items': items}
+
+
+def playback_snapshot(reply):
+    # V2.40 can reply with an empty a202 while a favorites selection loads.
+    # Absence of a snapshot is not a known stopped/paused state.
+    if not reply:
+        return {}
+    result = json.loads(reply)
+    if not isinstance(result, dict):
+        raise ValueError('now-playing payload must be an object')
+    if isinstance(result.get('song'), str):
+        result['song'] = json.loads(result['song'])
+    return result
 
 
 class Frames:
@@ -65,6 +127,24 @@ class Client:
                 raise ConnectionError('player closed the connection')
             self.frames.feed(data)
 
+    def event(self, timeout=None):
+        """Read one frame without issuing a query or discarding notifications."""
+        deadline = time.monotonic() + (self.timeout if timeout is None else timeout)
+        previous_timeout = self.socket.gettimeout()
+        try:
+            while not self.pending:
+                remaining = deadline - time.monotonic()
+                if remaining <= 0:
+                    raise TimeoutError('no FiiO Link event')
+                self.socket.settimeout(remaining)
+                data = self.socket.recv(65536)
+                if not data:
+                    raise ConnectionError('player closed the connection')
+                self.pending.extend(self.frames.feed(data))
+            return self.pending.pop(0)
+        finally:
+            self.socket.settimeout(previous_timeout)
+
     def request(self, tag, payload=b''):
         self.drain_notifications()
         self.socket.sendall(frame(tag, payload))
@@ -93,14 +173,54 @@ class Client:
         return json.loads(self.request('0501'))
 
     def now_playing(self):
-        result = json.loads(self.request('0202'))
-        if isinstance(result.get('song'), str):
-            result['song'] = json.loads(result['song'])
-        return result
+        return playback_snapshot(self.request('0202'))
 
     def play_pause(self):
         # 0201 -> FUN_004e477c -> FUN_00424b2c(0, action); action 0 toggles.
         self.socket.sendall(frame('0201', '0000'))
+
+    def next_track(self):
+        self.socket.sendall(frame('0201', '0001'))
+
+    def previous_track(self):
+        # At >10 seconds stock restarts this track instead of moving backwards.
+        self.socket.sendall(frame('0201', '0002'))
+
+    def seek(self, position_ms):
+        self.socket.sendall(frame('0103', hex_value(position_ms, 0x7fffffff, 8)))
+
+    def set_play_mode(self, mode):
+        self.socket.sendall(frame('0102', hex_value(mode, 4)))
+
+    def scan_library(self):
+        """Start stock indexing; observe a60a status and a622 count events."""
+        self.socket.sendall(frame('0622', '0000'))
+
+    def device_setting(self, name):
+        return setting_value(name, self.request(spec(name)[0]))
+
+    def set_device_setting(self, name, value):
+        command = setting_command(name, value)
+        if name == 'bt_source_codec' and self.device_setting('work_mode') != 8:
+            raise ValueError('select local playback before changing Bluetooth source codec')
+        self.socket.sendall(frame(*command))
+
+    def peq(self):
+        return peq_value(self.request('0628'))
+
+    def set_peq(self, bands):
+        payload = peq_payload(bands)
+        if self.device_setting('eq_type') not in range(160, 170):
+            raise ValueError('select a user EQ preset before editing PEQ')
+        self.socket.sendall(frame('0678', payload))
+
+    def play_index(self, index, list_type=1, name=None):
+        payload = index_payload(index, list_type, name)
+        if list_type == 6:
+            version = self.settings()['soc_version']
+            if version != 257:
+                raise ValueError('favorite positions require DISC V2.57; V2.40 needs an internal ID absent from the list response')
+        self.socket.sendall(frame('0100', payload))
 
     def set_volume(self, value):
         if type(value) is not int or not 0 <= value <= 120:
@@ -108,16 +228,16 @@ class Client:
         # 0502 -> 004e4744 -> callback 0088cc44 -> 004e0fdc (DAC + UI + DB).
         self.socket.sendall(frame('0502', f'{value:04X}'))
 
-    def play_all(self):
+    def play_all(self, list_type=1, name=None):
         # 0101 -> 004e4cb4 -> comm_play_all(list_type=1), indexed local library.
         # Type 0 reuses the current queue and fails if LIST_SONG_0 is absent.
-        self.socket.sendall(frame('0101', '0001'))
+        self.socket.sendall(frame('0101', list_payload(list_type, name)))
+
+    def library(self, category='tracks', offset=0, name=None):
+        return library_page(self.request(*library_request(category, offset, name)))
 
     def tracks(self, offset=0):
-        if not 0 <= offset <= 65535:
-            raise ValueError('offset outside 0..65535')
-        reply = self.request('0401', f'{offset:04X}')
-        return {'total': int(reply[:4], 16), 'items': json.loads(reply[4:])}
+        return self.library('tracks', offset)
 
 
 def main():
@@ -126,16 +246,47 @@ def main():
     parser.add_argument('--port', type=int, default=12100)
     parser.add_argument('--play-pause', action='store_true', help='toggle the selected track')
     parser.add_argument('--volume', type=int, choices=range(121), metavar='0..120')
-    parser.add_argument('--play-all', action='store_true', help='start the indexed local library')
+    navigation = parser.add_mutually_exclusive_group()
+    navigation.add_argument('--play-all', action='store_true', help='start the selected indexed list')
+    navigation.add_argument('--next', action='store_true', help='next track')
+    navigation.add_argument('--previous', action='store_true', help='previous track, or restart after 10 seconds')
+    parser.add_argument('--seek-ms', type=int, help='seek in milliseconds (stock rounds down to seconds)')
+    parser.add_argument('--play-mode', type=int, choices=range(5), help='0 list once, 1 random, 2 repeat one, 3 repeat list, 4 single once')
+    navigation.add_argument('--play-index', type=int, help='zero-based list position, not song ID')
+    parser.add_argument('--list-type', type=int, choices=(1, 2, 3, 6), default=1,
+                        help='1 all tracks, 2 artist, 3 album, 6 favorites (index only)')
+    parser.add_argument('--name', help='exact artist/album name for list types 2/3')
     args = parser.parse_args()
+    try:
+        if args.play_index is not None:
+            index_payload(args.play_index, args.list_type, args.name)
+        elif args.play_all:
+            list_payload(args.list_type, args.name)
+        elif args.name is not None or args.list_type != 1:
+            parser.error('--list-type/--name require --play-index or --play-all')
+        if args.seek_ms is not None:
+            hex_value(args.seek_ms, 0x7fffffff, 8)
+    except ValueError as error:
+        parser.error(str(error))
     with Client(args.host, args.port) as client:
         result = {'protocol': client.handshake()}
         if args.volume is not None:
             client.set_volume(args.volume)
             time.sleep(0.2)
         if args.play_all:
-            client.play_all()
+            client.play_all(args.list_type, args.name)
             time.sleep(0.2)
+        if args.play_index is not None:
+            client.play_index(args.play_index, args.list_type, args.name)
+            time.sleep(0.2)
+        if args.next:
+            client.next_track()
+        if args.previous:
+            client.previous_track()
+        if args.seek_ms is not None:
+            client.seek(args.seek_ms)
+        if args.play_mode is not None:
+            client.set_play_mode(args.play_mode)
         if args.play_pause:
             client.play_pause()
             time.sleep(0.5)

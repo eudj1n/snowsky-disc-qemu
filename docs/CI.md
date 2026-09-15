@@ -122,7 +122,8 @@ The workflow first runs the firmware-free suite on the same commit, then:
 3. Decrypts/verifies/extracts the selected firmware, checks six binary fingerprints,
    applies its guarded key patch, primes a new config DB, and boots normally.
 4. Confirms an initially empty TCP catalog, slowly drags to Settings, scrolls to
-   Update media lib, taps Update now, and checks the generated WAV is indexed.
+   Update media lib, taps Update now, and checks all three generated tracks are
+   indexed (Unicode WAV and two FLACs with artist/album tags).
 5. Restarts before any track selection, verifies repeated viewer SD eject/insert,
    busy-card rejection, media preservation and the USB charging stub.
 6. Compares TCP/WS protocol/catalog/settings, checks volume restore, play/pause,
@@ -130,8 +131,22 @@ The workflow first runs the firmware-free suite on the same commit, then:
    generated waveform in the decoded 32-bit PCM (promoted from signed 16-bit WAV).
 7. Checks physical-button events with TCP/sysfs readback and dynamic BusyBox `reboot`
    binding to `fbshim` without invoking a kernel reboot.
-8. On V2.57, checks repeated automatic SD scanning and Cyrillic add/rename/delete.
-9. Stops its guest, unmounts/detaches its SD loop, removes only its own stack/work
+8. Runs the same [remote-control acceptance](REMOTE_CONTROL.md) over TCP and WS:
+   selection, next/previous, seek, modes, album/queue/favorites and physical event
+   notifications, with read-only memory/SQLite checks. The WS client uses Docker DNS
+   with a localhost Host header; server Host/Origin protections remain enabled.
+9. Runs [stock HTTP acceptance](HTTP_API.md) directly and through the proxy: streamed
+   upload with byte-exact file checks, directory operations, catalog paging, and
+   custom playlist lifecycle with internal-ID gaps. TCP/WS scans add the uploaded
+   fourth track and remove it from the index after file deletion. V2.57 also uploads PNG.
+10. Runs [remote settings/PEQ acceptance](REMOTE_SETTINGS.md) over TCP/WS, checking
+    gain, DRE, filter, SPDIF, user bands/master gain and SQLite persistence, then restores
+    settings.
+11. Runs [modes/codecs/themes acceptance](REMOTE_MODES_THEMES.md): USB/local/AirPlay
+    control transitions, five codec preferences, five stock lock screens, exact
+    custom PNG and metadata, and empty-body/activation quirks. TCP/WS and direct/proxy
+    HTTP are exercised. On V2.57, also checks automatic SD scanning and Cyrillic add/rename/delete.
+12. Stops its guest, unmounts/detaches its SD loop, removes only its own stack/work
    volume and generated media. The interactive `diskos-work`/`sdcard` remain untouched.
 
 Local equivalent using already extracted chunks:

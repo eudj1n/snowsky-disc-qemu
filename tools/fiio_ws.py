@@ -5,12 +5,17 @@ import asyncio
 import contextlib
 import json
 from aiohttp import ClientSession, ClientTimeout, WSMsgType
-from fiio_link import Frames, frame
+from fiio_link import (Frames, frame, hex_value, list_payload, index_payload,
+                       library_request, library_page, playback_snapshot)
+from fiio_settings import spec, setting_command, setting_value, peq_payload, peq_value
 
 
 class WSClient:
-    def __init__(self, url='ws://127.0.0.1:12103/api/websocket', timeout=8):
+    def __init__(self, url='ws://127.0.0.1:12103/api/websocket', timeout=8, *, host_header=None):
         self.url, self.timeout = url, timeout
+        # Disposable CI connects by Docker DNS while retaining the bridge's
+        # localhost HTTP authority policy. This does not change server checks.
+        self.host_header = host_header
         self.pending = asyncio.Queue(maxsize=256)
         self.error = None
         self.lock = asyncio.Lock()
@@ -18,7 +23,9 @@ class WSClient:
     async def __aenter__(self):
         self.session = ClientSession(timeout=ClientTimeout(total=self.timeout))
         try:
-            self.ws = await self.session.ws_connect(self.url, heartbeat=20, max_msg_size=65535)
+            headers = {'Host': self.host_header} if self.host_header is not None else None
+            self.ws = await self.session.ws_connect(self.url, heartbeat=20, max_msg_size=65535,
+                                                   headers=headers)
         except BaseException:
             await self.session.close()
             raise
@@ -56,10 +63,10 @@ class WSClient:
         async with asyncio.timeout(self.timeout):
             await self.ws.send_str(frame(tag, payload).decode('utf-8'))
 
-    async def event(self):
+    async def event(self, timeout=None):
         if self.error:
             raise self.error
-        result = await asyncio.wait_for(self.pending.get(), self.timeout)
+        result = await asyncio.wait_for(self.pending.get(), self.timeout if timeout is None else timeout)
         if result is None:
             raise self.error or ConnectionError('WebSocket closed')
         return result
@@ -84,16 +91,13 @@ class WSClient:
         return json.loads(await self.request('0501'))
 
     async def tracks(self, offset=0):
-        if type(offset) is not int or not 0 <= offset <= 65535:
-            raise ValueError('offset outside 0..65535')
-        reply = await self.request('0401', f'{offset:04X}')
-        return {'total': int(reply[:4], 16), 'items': json.loads(reply[4:])}
+        return await self.library('tracks', offset)
+
+    async def library(self, category='tracks', offset=0, name=None):
+        return library_page(await self.request(*library_request(category, offset, name)))
 
     async def now_playing(self):
-        result = json.loads(await self.request('0202'))
-        if isinstance(result.get('song'), str):
-            result['song'] = json.loads(result['song'])
-        return result
+        return playback_snapshot(await self.request('0202'))
 
     async def set_volume(self, value):
         if type(value) is not int or not 0 <= value <= 120:
@@ -103,8 +107,49 @@ class WSClient:
     async def play_pause(self):
         await self.send('0201', '0000')
 
-    async def play_all(self):
-        await self.send('0101', '0001')
+    async def next_track(self):
+        await self.send('0201', '0001')
+
+    async def previous_track(self):
+        await self.send('0201', '0002')
+
+    async def seek(self, position_ms):
+        await self.send('0103', hex_value(position_ms, 0x7fffffff, 8))
+
+    async def set_play_mode(self, mode):
+        await self.send('0102', hex_value(mode, 4))
+
+    async def scan_library(self):
+        await self.send('0622', '0000')
+
+    async def device_setting(self, name):
+        return setting_value(name, await self.request(spec(name)[0]))
+
+    async def set_device_setting(self, name, value):
+        command = setting_command(name, value)
+        if name == 'bt_source_codec' and await self.device_setting('work_mode') != 8:
+            raise ValueError('select local playback before changing Bluetooth source codec')
+        await self.send(*command)
+
+    async def peq(self):
+        return peq_value(await self.request('0628'))
+
+    async def set_peq(self, bands):
+        payload = peq_payload(bands)
+        if await self.device_setting('eq_type') not in range(160, 170):
+            raise ValueError('select a user EQ preset before editing PEQ')
+        await self.send('0678', payload)
+
+    async def play_index(self, index, list_type=1, name=None):
+        payload = index_payload(index, list_type, name)
+        if list_type == 6:
+            version = (await self.settings())['soc_version']
+            if version != 257:
+                raise ValueError('favorite positions require DISC V2.57; V2.40 needs an internal ID absent from the list response')
+        await self.send('0100', payload)
+
+    async def play_all(self, list_type=1, name=None):
+        await self.send('0101', list_payload(list_type, name))
 
 
 async def main():

@@ -5,6 +5,12 @@ scans work under emulation after fixing SD discovery and respecting the UI gates
 USB mass-storage mode is **not a prerequisite** for the SD-insertion scan path.
 User-facing configuration is covered in [SETTINGS.md](SETTINGS.md).
 
+For an explicit remote scan, the stock Link command `0622000C0000` is now verified
+on disposable V2.40 and V2.57 guests through TCP and WS. It does not require an SD
+insertion event or screen tap. See [HTTP_API.md](HTTP_API.md#upload--index--play)
+for completion events and the upload/reindex acceptance scenario. The automatic
+insertion workflow below is a separate trigger.
+
 ## Conditions for an automatic scan
 
 The stock `aa22` SD notification updates the card-present state and shows a popup.

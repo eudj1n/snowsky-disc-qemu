@@ -6,6 +6,15 @@ from fiio_link import Client, Frames, frame
 
 
 class FramingTests(unittest.TestCase):
+    def test_disc_length_is_not_android_utf16_length(self):
+        # Android BLinker declares 0x10 UTF-16 units for this same favorite key.
+        # DISC needs 0x18 UTF-8 bytes; do not share the Android framing rule.
+        self.assertEqual(frame('0415', '0000我的最爱'),
+                         b'04150018' + '0000我的最爱'.encode())
+        # Supplementary characters also distinguish UTF-8, UTF-16 and code points.
+        self.assertEqual(frame('0413', '0000A😀'),
+                         b'04130011' + '0000A😀'.encode())
+
     def test_handshake(self):
         self.assertEqual(frame('0599', '0000'), b'0599000C0000')
 
