@@ -5,6 +5,11 @@ framebuffer to a browser and turns pointer events on that page into synthetic to
 you drive the real stock UI from the host with no hardware. Optionally it composites the
 live round screen into a photo of the player so it looks like the real device.
 
+![Current V2.57 browser viewer](images/readme-viewer.png)
+
+*Actual browser capture, 2026-09-15: physical-button hotspots and headphone,
+USB-charging and SD controls on the device skin. Debug is collapsed.*
+
 ```sh
 ./run.sh boot          # start the guests (they now stay alive ~30 min, see GUEST_TTL)
 ./run.sh view          # -> http://localhost:8080   (add a port arg to change it)
@@ -52,7 +57,9 @@ mount before preparing the helper mount. Cyrillic filenames and media hashes are
 checked across repeated cycles in disposable integration tests. Insertion follows the
 stock auto-scan gates described in [MEDIA_LIBRARY.md](MEDIA_LIBRARY.md).
 An ejected card stays out across viewer/guest restarts; a full setup rebuilds it from
-`./sdcard`. The host media directory itself is never ejected or modified.
+`./sdcard`. Host `./run.sh boot` includes that setup, so it also refreshes the card
+from the host folder and replaces guest-only card changes. Viewer Power-on alone
+does not rebuild it. The host media directory itself is never ejected or modified.
 Each PCM session replaces the recording; `./run.sh audio` saves a WAV to `shots/audio.wav`.
 See [AUDIO.md](AUDIO.md) for limits and verification.
 

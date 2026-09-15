@@ -1,7 +1,8 @@
-# Physical buttons (V2.40)
+# Physical buttons
 
-For version-aware read-only probes and the V2.57 address map, see
-[DIAGNOSTICS.md](DIAGNOSTICS.md). Historical addresses below refer to V2.40.
+Controls are available on V2.40 and V2.57 (default). For version-aware read-only
+probes and the V2.57 address map, see [DIAGNOSTICS.md](DIAGNOSTICS.md).
+Historical addresses below refer to V2.40.
 
 
 Implemented and tested on 2026-09-11. The viewer now has **Volume −, Volume +,

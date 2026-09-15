@@ -1,156 +1,208 @@
 # snowsky-disc-qemu
 
-Emulating the **FiiO Snowsky Disc** (Ingenic X2000, MIPS32) music player from its
-stock **V2.40 / V2.57** firmware, under `qemu-user` — booting the real UI to its main screen
-and driving it with synthetic touch, entirely without the hardware.
+**Run the FiiO SNOWSKY DISC firmware on your computer — and use it from your browser.**
 
-Groundwork for building/testing custom firmware (cf. [b0hemia/diskos](https://github.com/b0hemia/diskos))
-and a media-library sync bridge against an emulated device instead of a physical one.
+The real stock interface, media library and audio decoder run under `qemu-user`.
+Browse an SD card, play a track, navigate by touch and operate the player's buttons
+without a physical device.
 
-Development branch: **`2.x`**. Releases follow the exact firmware version (`v2.40`;
-emulator revisions `v2.40-r1`, etc.). Firmware-free CI and manual secret-backed firmware
-integration: **[docs/CI.md](docs/CI.md)**. Firmware/rootfs are never release assets.
-Latest source release: **[v2.57](https://github.com/eudj1n/snowsky-disc-qemu/releases/tag/v2.57)**.
-First validated source release: **[v2.40](https://github.com/eudj1n/snowsky-disc-qemu/releases/tag/v2.40)**.
-Project history: [CHANGELOG.md](CHANGELOG.md). New-version workflow and evidence:
-[docs/PORTING.md](docs/PORTING.md); [V2.57 compatibility and release gates](docs/firmware/2.57.md).
-V2.57 is the default; select V2.40 explicitly with `FW_VERSION=2.40`.
-Release checks cover emulator compatibility; vendor feature announcements are reference
-information, not a certification of FiiO's software.
+[Quick start](#run-the-emulator) · [Browser viewer](#viewer) · [Source releases](https://github.com/eudj1n/snowsky-disc-qemu/releases) · [Validation & screenshots](docs/STATUS.md)
 
-Existing V2.40 installations should keep `FW_VERSION=2.40` in `.env` before
-recreating their container. Changing the profile does not migrate an extracted
-rootfs: setup rejects mismatched firmware. For V2.57 use its OTA directory and a
-separate `WORK_VOLUME` (for example `diskos-work-v257`) in `.env`; the old volume
-is preserved. Run `./run.sh up` to recreate/setup the container, then boot it.
+<table>
+  <tr>
+    <td align="center"><img src="docs/images/readme-menu.png" width="240" alt="Stock V2.57 main menu running in the emulator"></td>
+    <td align="center"><img src="docs/images/readme-playing.png" width="240" alt="Stock V2.57 Now playing screen during local audio playback"></td>
+    <td align="center"><img src="docs/images/readme-clock.png" width="240" alt="Stock V2.57 clock lockscreen running in the emulator"></td>
+  </tr>
+  <tr>
+    <td align="center"><b>Navigate the stock UI</b></td>
+    <td align="center"><b>Play local audio</b></td>
+    <td align="center"><b>Explore device screens</b></td>
+  </tr>
+</table>
 
-The GitHub project was renamed from `diskos-qemu`. Existing runtime names
-(`diskos-qemu` container/image, `diskos-work` volume, `diskos-qemu-ci` test image)
-remain unchanged for compatibility; commands below deliberately use those names.
+*Actual V2.57 emulator captures ([capture details](docs/images/README.md)). The browser viewer adds the device skin and interactive controls shown below.*
 
-![main menu](docs/images/04-main-menu.png)
+Two parts work together:
 
-_The stock main menu running under qemu — battery 100%, volume 120, app carousel
-(Settings · File Browser · Now Playing). Reached by tapping through the first-boot
-language wizard via injected touch events._
+- **Emulator** — runs the original MIPS firmware in Docker, provides the device interfaces
+  it needs, and makes its UI, storage, audio and local protocol available for testing.
+- **Viewer** — a browser interface to the running emulator, with a live screen,
+  touch gestures, physical controls, sound and peripheral simulation.
 
-## What works
+## Emulator
 
-Splash → first-boot language wizard → **main menu** → into apps (file browser shows the
-SD content), plus working **touch injection**. Full detail + screenshots: **[docs/STATUS.md](docs/STATUS.md)**.
-**Local audio capture and browser playback** also work: select a track, enable sound in the
-viewer, or run `./run.sh audio` to export `shots/audio.wav`. See [docs/AUDIO.md](docs/AUDIO.md).
+The stock `mq_ui` and `mq_player` applications for **Ingenic X2000 / MIPS32**
+run under `qemu-user`. The project supplies framebuffer, input, storage and hardware stubs so the
+original applications can operate together.
 
-## Quickstart
+### What you can do
 
-Requires **Docker Engine 28.1+** (macOS or Linux) and **Compose 2.36+** (`eth1` naming).
-The firmware is **not** in this repo — get it first:
-**[firmware/README.md](firmware/README.md)** (official download page and preparation instructions).
+| Capability | Verified behavior |
+| --- | --- |
+| **Boot and navigate** | Boot to the English main menu; open applications and settings with taps, holds and swipes. |
+| **Browse and scan media** | Browse a FAT SD card, build the stock media-library index, and exercise V2.57 insertion-triggered scans, including Cyrillic filenames. |
+| **Decode local audio** | Capture the stock decoder's PCM output, listen through the viewer, or export WAV. Captured samples have been checked against source audio. |
+| **Exercise device controls** | Play/pause, assigned volume gestures, screen sleep/wake, and guest-only power lifecycle. |
+| **Connect a client** | Query settings, library and playback over local FiiO Link TCP; control volume and playback from the host. |
+| **Reproduce a firmware build** | Validate version and binary fingerprints before boot; run integration checks in a fresh disposable environment. |
+
+### Run the emulator
+
+Requires **Docker Engine 28.1+** and **Docker Compose 2.36+** on macOS or Linux.
+Download and unpack the official firmware first:
+**[firmware preparation](firmware/README.md)**. Firmware is not included in this repository.
 
 ```sh
-# 1. point the tool at the OTA chunk directory (…/main_os/ota_v257 of the unzipped firmware)
-./run.sh up /path/to/SNOWSKY_DISC_update_.../main_os/ota_v257
+git clone https://github.com/eudj1n/snowsky-disc-qemu.git
+cd snowsky-disc-qemu
 
-# 2. boot to the main screen; PNGs land in ./shots/
+# Put your music in ./sdcard before setup.
+# Point to the unpacked main-OS chunk directory, not the ZIP or its parent.
+./run.sh up /path/to/SNOWSKY_DISC_update_.../main_os/ota_v257
 ./run.sh boot
 
-# 3. tap something (coordinates are what you SEE in the PNG; flipped internally)
-./run.sh tap 180 315      # e.g. the Confirm button on the language screen
-
-# 3b. …or drive it interactively in the browser: live screen + click/drag/swipe
-./run.sh view             # -> http://localhost:8080  (click=tap, drag=swipe)
-./run.sh shell            # or drop into the container to poke around
-
-# stop / teardown
-./run.sh stop
-./run.sh down             # remove container (keeps the extracted-rootfs volume)
+# Open the interactive viewer at http://localhost:8080.
+./run.sh view
 ```
 
-`run.sh` builds the container, extracts+verifies the rootfs, applies every fix needed to
-reach the main screen, boots the two UI processes, and copies screenshots out.
+V2.57 is the default. Setup verifies and extracts the firmware, builds the shims,
+prepares the emulated SD card, and saves the OTA path in `.env`. Boot starts the
+firmware processes and writes screen captures to `shots/`.
 
-**Prefer Docker Compose?** The container is also defined in `compose.yaml` (which builds
-`docker/Dockerfile`). Set the firmware path once and use compose for lifecycle, `run.sh` for the
-pipeline:
+Inside the stock UI, open **Browse files** to select your music. Use
+**Settings → Update media lib → Update now** to populate the indexed library.
+Normal boot remounts the card; it does not generate an SD-insertion auto-scan event.
+After changing files in `./sdcard`, run `./run.sh boot` again to rebuild the emulated
+card from that folder. Guest-only card changes are replaced during this setup.
+
+<details>
+<summary><b>Command-line controls and container lifecycle</b></summary>
 
 ```sh
-cp .env.example .env      # then edit OTA_DIR to your …/main_os/ota_v257
-docker compose up -d --build
-./run.sh up               # extracts+sets up (reads OTA_DIR from .env); then boot/tap as above
+./run.sh capture          # Save framebuffer captures in ./shots/.
+./run.sh tap 180 180      # Tap using visible screen coordinates.
+./run.sh audio            # Export the current recording to ./shots/audio.wav.
+./run.sh shell            # Open a shell inside the emulator container.
+./run.sh stop             # Stop guest processes and the viewer.
+./run.sh down             # Remove containers; keep the extracted-rootfs volume.
 ```
 
-Compose starts only `emu` by default and **publishes on localhost only**: **12100**
-(raw FiiO Link), **12113** (direct stock HTTP), UDP **12101** (not a LAN multicast
-relay), and viewer **8080**. Try `python3 tools/fiio_link.py`.
+The pipeline lives in `scripts/`; `run.sh` is its host entry point.
+`compose.yaml` defines the container and localhost port mappings.
+For direct Compose setup, copy `.env.example` to `.env`, set `OTA_DIR`, then run
+`./run.sh up` and `./run.sh boot`.
 
-The optional `wsbridge` profile adds **12103** (WebSocket→TCP bridge + stock HTTP
-proxy) for WebSocket clients and protocol debugging:
+</details>
+
+<details>
+<summary><b>FiiO Link and the optional WebSocket bridge</b></summary>
+
+The emulator publishes FiiO Link TCP on **127.0.0.1:12100** and direct stock HTTP on
+**127.0.0.1:12113**. Try `python3 tools/fiio_link.py` for a read-only host query.
+UDP 12101 is also mapped locally; LAN multicast discovery is not implemented.
+
+An optional native WebSocket-to-TCP adapter provides **12103** and a read-only
+protocol inspector:
 
 ```sh
 docker compose --profile wsbridge up -d wsbridge
-./run.sh wscheck --control
-docker compose --profile wsbridge stop wsbridge  # when finished
+./run.sh wscheck --control  # Verify TCP/WS control; leaves playback paused.
+# Inspector: http://localhost:12103/bridge/
+docker compose --profile wsbridge stop wsbridge
 ```
 
-With the bridge enabled, the read-only browser protocol inspector is at
-**http://localhost:12103/bridge/**; disconnect it before using another control client.
-See [docs/WEBSOCKET.md](docs/WEBSOCKET.md) for verified framing and bridge limits,
-[docs/NETWORK.md](docs/NETWORK.md) for network setup. Stock V2.40 itself has no WS route.
-(`./run.sh up <dir>` writes `.env` for you.)
+The bridge is an explicit adapter to the stock service. It runs as a separate,
+optional container. Disconnect the inspector before using another control client:
+the stock TCP service accepts one client at a time.
+See [network setup](docs/NETWORK.md), [WebSocket bridge](docs/WEBSOCKET.md),
+and [protocol reference](docs/PROTOCOL.md).
 
-> **Why `--privileged`?** qemu-user needs a large contiguous VA reservation, writable
-> `binfmt_misc`, and mountable POSIX mqueues. The container registers **only** a mipsel
-> binfmt handler — see [docs/EMULATION.md](docs/EMULATION.md) for why not to auto-register all.
+</details>
 
-## Repository layout
+**Scope:** this is userspace emulation, with host-managed guest shutdown and
+simulated hardware interfaces. USB storage/DAC, Bluetooth audio, DSD and
+hardware-accurate timing remain unvalidated. Docker runs the emulator container
+privileged for its mounts, message queues and MIPS binfmt setup; services bind to
+localhost. See [emulation internals](docs/EMULATION.md) and [validation limits](docs/STATUS.md).
 
-```
-run.sh                 host orchestrator (up / boot / tap / capture / diag / shell / stop / down / nuke)
-docker/Dockerfile      reproducible environment (qemu-user, mipsel toolchain, tools)
-compose.yaml           container definition (builds the Dockerfile) + FiiO Link port mappings
-.env.example           OTA_DIR (firmware path) for compose; copy to .env
-scripts/               in-container pipeline
-  00_extract_rootfs.sh   decrypt+assemble+unsquashfs the firmware (sha256-verified)
-  10_setup_env.sh        binfmt, mounts, /dev + sysfs stubs, battery, LOCAL_IMG_ANIM, shim
-  20_boot.sh             run mq_ui + mq_player, capture the framebuffer
-  30_tap.sh              inject a tap at a screen coordinate, re-capture
-  capture.sh 99_stop.sh lib.sh
-  40_stream.sh           live viewer + touch/swipe bridge daemon (./run.sh view)
-sdcard/                drop media here -> appears as the device's SD card (/tmp/sdcard) in the File Browser
-assets/                optional viewer skin (owner's original photo; included)
-shim/                  freestanding MIPS ioctl shim (fbshim.c) + build script; mqshim.c (diag)
-tools/                 inject.py (touch), uisniff.c (mqueue sniffer), fb2png.py (fb → PNG), stream.py (viewer)
-ghidra/                headless decompile scripts + RE notes
-firmware/README.md     how to obtain + decrypt the firmware (NO firmware here)
-docs/                  STATUS, EMULATION (deep dive), PROTOCOL, TOUCH, images/
-AGENTS.md              shared instructions for coding agents continuing this work
-```
+## Viewer
 
-## Documentation
+**A live, interactive player in the browser.** The viewer streams the emulator's
+actual framebuffer into the included device-photo skin. Its controls send input
+back to the stock applications.
 
-- **[docs/STATUS.md](docs/STATUS.md)** — what works, screenshots, what's next
-- **[docs/EMULATION.md](docs/EMULATION.md)** — the stack + every non-obvious fix (read this first)
-- **[docs/TOUCH.md](docs/TOUCH.md)** — touch event format + coordinate mapping
-- **[docs/VIEWER.md](docs/VIEWER.md)** — live browser viewer + touch/swipe bridge (`./run.sh view`)
-- **[docs/AUDIO.md](docs/AUDIO.md)** — PCM capture, browser sound, WAV export, and card discovery
-- **[docs/KEYS.md](docs/KEYS.md)** — physical-button audit, corrected codes, app assignments, remaining work
-- **[docs/SETTINGS.md](docs/SETTINGS.md)** — settings storage, confirmed values and configuration without UI navigation
-- **[docs/NETWORK.md](docs/NETWORK.md)** — reproducible eth1/network setup (Compose 2.36+), localhost client, safety and live checks
-- **[docs/PROTOCOL.md](docs/PROTOCOL.md)** — FiiO Link frames, mqueues, network ports, auth
-- **[docs/DEVICE.md](docs/DEVICE.md)** — the real device on the network (ports, mDNS, no debug unlock)
-- **[docs/DISKOS.md](docs/DISKOS.md)** — diskOS V2.40 compatibility (build works; only the size cap blocks)
-- **[firmware/README.md](firmware/README.md)** — download + decrypt + device facts
-- **[docs/RE.md](docs/RE.md)** — deep-analysis playbook (method + findings per direction; new firmware versions)
-- **[ghidra/README.md](ghidra/README.md)** — reverse-engineering setup + findings
+<p align="center">
+  <img src="docs/images/readme-viewer.png" width="960" alt="Current browser viewer with the SNOWSKY DISC skin, live screen, physical-button hotspots and headphone, USB and SD controls">
+</p>
 
-## Legal / scope
+Start it with `./run.sh view` after boot, then open **http://localhost:8080**.
 
-Independent research project; not affiliated with or endorsed by FiiO/SNOWSKY.
-This is a source-code emulator release, not firmware to flash onto a device.
-Project code and the owner's skin photo are [MIT licensed](LICENSE). Vendor firmware,
-branding and firmware UI depicted in screenshots are not relicensed by this project.
+| Control | Interaction |
+| --- | --- |
+| **Screen** | Click to tap, drag to swipe, hold to long-press. |
+| **Volume buttons** | Single, double and hold gestures follow the assignments in the stock settings. |
+| **Play / pause** | Use the physical-button hotspot or the stock player screen. |
+| **Power / lock** | Click to sleep/wake; hold to stop the guest; click while off to boot again. |
+| **Headphone jack** | Click the lower-left jack to enable browser sound. Stock volume controls also adjust browser output gain. |
+| **USB connector** | Toggle the charging-state simulation. |
+| **SD slot** | Remove and reinsert the emulated card; insertion follows the stock auto-scan rules. |
+| **Debug** | Expand for gesture shortcuts, skin alignment and replaying the current audio capture. |
 
-For interoperability research and personal customization of a device you own. Firmware is
-downloaded by the user from FiiO and is not redistributed here. Flashing modified images to
-real hardware is gated by an ECDSA signature the manufacturer controls; this project only
-runs the unpacked binaries under emulation.
+Screen brightness follows the stock shade slider. The stream sends lossless PNGs
+when pixels change, with occasional idle refreshes. Without a skin, the viewer
+falls back to a plain screen with labelled controls.
+
+The headphone control enables browser audio; USB simulates charging only. SD
+removal performs an actual guest unmount and refuses a busy card. These behaviors
+and setup options are covered in the **[viewer guide](docs/VIEWER.md)**.
+
+## Firmware support & development
+
+**Supported: V2.57 (default) and V2.40.** Support follows a **three-version FIFO
+window**: after a fourth firmware is validated and its release prepared, the oldest
+leaves current runtime support and CI. Historical tags, inventories and analysis
+remain available. An OTA announcement alone does not move the window.
+
+A daily [OTA monitor](docs/OTA.md) creates one tracking Issue for each newly detected
+main-OS/recovery pair. Firmware analysis, support PRs, release preparation and Issue
+closure remain manual. See the [porting process](docs/PORTING.md).
+
+<details>
+<summary><b>Existing installations and switching firmware</b></summary>
+
+Keep `FW_VERSION=2.40` in `.env` for an existing V2.40 rootfs. Switching the version
+setting does not migrate an extracted rootfs; mismatches are rejected.
+
+To use V2.57 separately, set `FW_VERSION=2.57` and a distinct `WORK_VOLUME`, such as
+`diskos-work-v257`, in `.env`. Run `./run.sh up` with the V2.57 OTA directory, then
+`./run.sh boot`. This preserves the previous work volume.
+
+</details>
+
+Development happens on **`2.x`**. Firmware-based source tags such as `v2.57` preserve
+validated snapshots; emulator revisions against the same firmware use tags such as
+`v2.40-r1`. Firmware-free CI and clean-volume firmware integration provide release
+evidence. See [CI & release gates](docs/CI.md), [release notes](https://github.com/eudj1n/snowsky-disc-qemu/releases)
+and [CHANGELOG.md](CHANGELOG.md).
+
+## Documentation & source map
+
+| Area | Start here | Source |
+| --- | --- | --- |
+| **Emulator** | [How it works](docs/EMULATION.md) · [Current results](docs/STATUS.md) | `run.sh`, `scripts/`, `shim/`, `docker/` |
+| **Viewer** | [Viewer guide](docs/VIEWER.md) · [Touch](docs/TOUCH.md) · [Buttons](docs/KEYS.md) | `tools/stream.py`, `tools/*.js`, `assets/` |
+| **Media** | [Audio](docs/AUDIO.md) · [Library](docs/MEDIA_LIBRARY.md) · [Settings](docs/SETTINGS.md) | `sdcard/`, `tools/audio.py` |
+| **Connectivity** | [Network](docs/NETWORK.md) · [Protocol](docs/PROTOCOL.md) · [WebSocket](docs/WEBSOCKET.md) | `tools/fiio_link.py`, `tools/ws_bridge.py` |
+| **Firmware research** | [Acquisition](firmware/README.md) · [Porting](docs/PORTING.md) · [Reverse engineering](docs/RE.md) | `firmware/`, `ghidra/` |
+| **Contributing** | [CI](docs/CI.md) · [Agent instructions](AGENTS.md) | `ci/`, `.github/workflows/` |
+
+## License & scope
+
+Independent project, not affiliated with or endorsed by FiiO/SNOWSKY.
+Project code and the owner's device photo are [MIT licensed](LICENSE). Vendor
+firmware, branding and firmware UI shown in screenshots are not relicensed here.
+
+Firmware is obtained separately from FiiO and is not distributed in this repository
+or its releases. This project runs unpacked applications for research and testing;
+its releases are emulator source code, not firmware to flash onto a device.

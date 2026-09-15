@@ -6,6 +6,10 @@ GitHub integration downloads use per-version secrets (`FIRMWARE_V240_URL`,
 `FIRMWARE_V257_URL`), never a committed direct URL. Runtime profiles:
 [v2.40.json](v2.40.json), [v2.57.json](v2.57.json). See [CI policy](../docs/CI.md).
 
+The daily [OTA monitor](../docs/OTA.md) opens a tracking Issue for a new vendor
+version. It does not download the full archive or enable that firmware for runtime
+use. Reviewed versions follow the [three-version support window](../docs/PORTING.md#support-window--three-versions-fifo).
+
 ## Where to get it
 
 FiiO Snowsky Disc firmware **V2.57** (default, local-upgrade package):

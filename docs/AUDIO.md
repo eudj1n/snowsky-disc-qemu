@@ -5,14 +5,15 @@ No audio patches to `mq_player` are needed; the key-enable patch is unrelated.
 
 ```sh
 ./run.sh boot
-./run.sh view                 # http://localhost:8080 → Enable sound
+./run.sh view                 # http://localhost:8080 → click the lower-left headphone jack
 # Browse files → select a track in the device UI.
 ./run.sh audio                # snapshot → shots/audio.wav
 ```
 
-**Enable sound** joins the current captured PCM through Web Audio with a 150 ms
-look-back; it does not replay the recording from its beginning. **Mute sound** stops
-browser playback; **Replay capture** starts the current recording again. These buttons do
+The lower-left headphone jack (**Enable sound**) joins the current captured PCM
+through Web Audio with a 150 ms look-back; it does not replay the recording from
+its beginning. Click the jack again to mute. **Debug → Replay capture** starts
+the current recording again. These viewer controls do
 not change firmware play/pause state. Browser playback buffers a little and can pause if
 emulation cannot supply data fast enough. If live playback falls more than two seconds
 behind (for example after a background-tab stall), it drops queued history and rejoins

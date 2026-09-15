@@ -20,6 +20,42 @@ Add an Unreleased changelog entry with each meaningful change, then move it into
 release entry when the exact commit passes the release gates. Vendor announcements
 must never become "working" emulator features just by copying their changelog.
 
+## Support window — three versions, FIFO
+
+Maintain at most **three validated firmware versions** for this product in the
+current development branch. The newest supported version is the default; the
+other two remain selectable and covered by regression/release checks. Emulator
+revision tags such as `v2.40-r1` do not occupy another firmware slot.
+
+An OTA announcement creates a research candidate, not a supported version.
+Do not retire a working version while the candidate is still being analysed or
+has failing checks. Promote the candidate only after validation and release
+preparation; when this adds a fourth supported version, retire the oldest
+supported firmware version in the same support-window update (FIFO).
+
+As of this policy's introduction, the supported window is **2.40, 2.57** (oldest
+first). The third validated version fills the remaining slot; the fourth
+replaces 2.40. There is no retirement to perform now.
+
+Include this maintenance in the firmware-support PR and release checklist:
+
+- Record the supported window before/after and set the newest version as default.
+- Update selectable runtime profiles, version-specific patch/diagnostic code,
+  downloader/workflow choices and tests together. Remove the retired version
+  from current runtime support and required CI; remove obsolete compatibility
+  branches when they serve no retained version.
+- Run firmware-free checks and firmware integration for every version retained
+  in the resulting window on the exact release commit.
+- Preserve immutable tags/releases, inventory records and per-version analysis
+  reports. Mark retired reports as historical and point users to the last
+  validated tag for that firmware; current code no longer guarantees support.
+  Retirement does not delete a user's local firmware or work volumes.
+- Document promotion/retirement in the changelog and support status, then close
+  the OTA tracking issue manually after release preparation is complete.
+
+The OTA monitor does not change this window automatically. See [OTA.md](OTA.md)
+for issue tracking and [CI.md](CI.md) for release gates.
+
 ## 1. Intake and provenance — no execution
 
 Record the original archive name, public vendor release page (when confirmed), main
