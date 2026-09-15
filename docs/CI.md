@@ -88,6 +88,9 @@ command argument or put it in `.env`, YAML, docs or a chat. The downloader selec
 Version, rootfs size/hash, chunk count and exact binary/patch fingerprints are in
 `firmware/v<version>.json`; no direct download URL is committed.
 
+For the daily OTA monitor and verified OTA file access, see [OTA.md](OTA.md).
+Firmware integration still uses fixed ZIP inputs.
+
 `tools/fetch_firmware.py` receives the secret only in its download step. It requires
 HTTPS (including redirects), suppresses download exception details, bounds ZIP/chunk
 sizes and extracts validated chunk basenames (85 for V2.40, 77 for V2.57). It never extracts archive paths,

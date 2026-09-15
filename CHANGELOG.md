@@ -9,6 +9,8 @@ emulator-only revisions use `v2.40-r1`, etc. See [the porting guide](docs/PORTIN
 
 ### Added
 
+- Daily stock OTA catalog monitoring with sanitized version outputs, release
+  warnings and a job summary; no firmware download or automatic profile changes.
 - Optional `DEVICE_BOOT_SCRIPT` for the viewer Power-on action. Empty by default;
   stock startup and `run.sh boot` retain their existing behaviour.
 
