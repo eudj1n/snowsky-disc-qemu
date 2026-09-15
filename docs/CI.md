@@ -2,8 +2,9 @@
 
 ## Version policy
 
-`2.x` is the default development branch for firmware 2.x. Keep `main` as historical
-context, not a second development target. A future incompatible major gets `3.x`.
+`2.x` is the default development branch for firmware 2.x. The obsolete `main`
+branch has been removed; its commits remain in `2.x`. A future incompatible major
+gets `3.x`.
 Firmware V2.57 is the default; V2.40 remains an explicitly selected regression profile. Its emulator release scope and vendor notes are in [firmware/2.57.md](firmware/2.57.md).
 
 Current support follows a **three-version FIFO window**: a fourth validated
@@ -33,8 +34,13 @@ The daily OTA metadata check does not replace these release gates.
 - `2.x`: changes through pull requests, mandatory **Firmware-free checks** from
   GitHub Actions, branch up to date before merging and resolved review conversations.
   No mandatory second-person approval for this owner-maintained project.
-- Rules include administrators; force pushes and branch deletion are disabled.
-- `main`: historical, locked against new changes; development continues on `2.x`.
+- Protection for `2.x` includes administrators; force pushes and branch deletion
+  are disabled.
+- GitHub automatically deletes PR head branches after merge when permitted by
+  branch protection. Keep development in short-lived branches targeting `2.x`.
+  Local branches are not deleted automatically; use `git fetch --prune` to remove
+  stale remote-tracking references and `git branch -d <branch>` for merged local
+  branches after switching to an updated `2.x`.
 - Firmware integrations remain exact-commit release gates, not required checks on
   fork PRs. Secrets are only used in trusted manual integration runs on `2.x`.
 
