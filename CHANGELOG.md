@@ -19,6 +19,8 @@ emulator-only revisions use `v2.40-r1`, etc. See [the porting guide](docs/PORTIN
 
 ### Fixed
 
+- Remove the obsolete `main` branch and enable automatic deletion of merged PR
+  branches; document `2.x` protection and local branch cleanup.
 - Refresh the README around the emulator and viewer, with current V2.57 captures;
   reconcile setup, controls and status documentation while retaining dated evidence.
 - Preserve literal escapes when registering the MIPS binfmt handler. Raw NULs
