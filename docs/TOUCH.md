@@ -1,7 +1,9 @@
 # Touch injection
 
 How to drive the emulated GUI by feeding synthetic touch events, derived from the
-decompiled LVGL input read-callback in `mq_ui` (`FUN_0055db8c`, see `ghidra/`).
+decompiled LVGL input read-callback in `mq_ui` (`FUN_0055db8c` in V2.40,
+see `ghidra/`). Touch injection is also validated on V2.57; raw function addresses
+in this investigation are version-specific.
 
 ## Mechanism
 

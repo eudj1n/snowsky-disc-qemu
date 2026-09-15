@@ -5,6 +5,11 @@ thing that had to be true before the UI would reach its main screen.
 
 ## Stack
 
+Current runtime profiles are V2.57 (default) and V2.40. The blocker investigations
+below describe how support was established; raw function addresses refer to the
+original V2.40 analysis unless labelled otherwise. Use [DIAGNOSTICS.md](DIAGNOSTICS.md)
+for version-aware addresses and [VIEWER.md](VIEWER.md) for current interaction.
+
 ```
 macOS/Linux host
   └─ Docker (privileged Linux VM)
@@ -105,7 +110,9 @@ With a healthy battery the UI went *back* to the SNOWSKY splash and stayed. Trac
 loops observed). The config key `LOCAL_IMG_ANIM` controls it.
 
 **Fix:** `sqlite3 sysconfig.db "UPDATE SYSCONFIG SET LOCAL_IMG_ANIM=0"` → the overlay is
-skipped and the real first-boot flow appears: **splash → language wizard → main menu**.
+skipped and the real first-boot flow can proceed. Current setup also presets
+English, so the normal flow reaches the main menu without the language wizard;
+the wizard appears only with an out-of-range `LANGUAGE` value.
 
 **Catch on a fresh rootfs (two parts):** `/usr/data` is a **separate UBIFS partition** on the
 device (`etc/init.d/S21mount_ubifs`) and is *empty* in the squashfs. On hardware the init
@@ -163,6 +170,11 @@ rootfs path — the container-path mount survives and keeps the exact `/tmp/sdca
 `FUN_004147ac` looks for present across the whole boot. The browser then lists the card and is
 navigable all the way to the leaf tracks (`Test Artist / Greatest Hits / *.wav`).
 
+Current setup mounts the guest card **inside chroot**, so the source recorded in
+`/proc/mounts` is `/dev/mmcblk0p1`; see the scanner fix below. The viewer now also
+supports explicit SD removal/insertion. Boot remounting and insertion-triggered
+auto-scanning remain separate operations; see [MEDIA_LIBRARY.md](MEDIA_LIBRARY.md).
+
 ## Scanner source-path fix (2026-09-11)
 
 Browse files only needed the mountpoint above; **Update media lib** also checks
@@ -204,8 +216,11 @@ BGRX and the panel is 180°-rotated, so the converter reverses pixel order.
 
 ## Ordering / timing
 
-Start `mq_ui` first (creates `ui`), then `mq_player` (retries `mq_open("ui")`). Reaching the
-language screen / main menu takes ~20–24 s under qemu — allow ≥24 s before capturing.
+Start `mq_ui` first (creates `ui`), then `mq_player` (retries `mq_open("ui")`).
+Current `20_boot.sh` waits for network listeners, both input devices and a new
+framebuffer flush, then remounts the SD before capturing. Input/frame readiness
+has a 60-second timeout. The historical ~20–24 s boot measurement is not a fixed
+startup delay; `./run.sh boot <seconds>` adds only an optional diagnostic wait.
 
 ## Known hardware errors
 
@@ -222,8 +237,9 @@ later ioctls still fail). `/dev/jz_adc_aux_0`'s ADC reads still fail — not nee
 ## Troubleshooting
 
 - **`fb2png` prints `…-b2 non_black_px=0`** — normal. There are three sub-buffers; `mq_ui`
-  only ever draws to buf0/buf1 (alternating), so buf2 stays black. The current screen is
-  whichever of `-b0`/`-b1` has the higher non-black count.
+  only ever draws to buf0/buf1 (alternating), so buf2 stays black. Prefer the
+  `emu/fb-live` marker (0/1) or the viewer's `/frame` endpoint for the current frame.
+  Non-black counts alone cannot distinguish an old frame from the latest one.
 - **`sysconfig.db missing` on the very first `10_setup_env` of a fresh rootfs** — expected
   (see the `/usr/data` catch above); the script seeds `/usr/data` then primes the DB. If it
   still reports missing after priming, check `/work/mq_player.log`.

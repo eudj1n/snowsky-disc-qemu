@@ -1,61 +1,76 @@
 # Status
 
-_Current release preparation updated 2026-09-13; dated sections retain historical evidence._
+_Current overview updated 2026-09-15. Dated experiments below retain their original findings._
 
-## Working ✅
+## Current capabilities
 
-- **WebSocket FiiO Link bridge on host 12103** — real HTTP 101, handshake 0306,
-  identical TCP/WS settings and four-track library, volume and play/pause. Independent
-  guest readback agrees. This is a native adapter to stock TCP, not patched firmware
-  WS support. HTTP still proxies through; direct stock HTTP is on host 12113. Compose,
-  Dockerfile, client, protocol inspector and tests are reproducible. See [WEBSOCKET.md](WEBSOCKET.md).
+**V2.57 is the default; V2.40 remains supported.** The emulator boots the stock UI,
+browses and scans local media, decodes audio, and exposes the FiiO Link service.
+The browser viewer adds live navigation, sound, physical-button gestures and
+peripheral controls. See the [README](../README.md) for setup and the visual overview.
 
-- **Local FiiO Link TCP 12100** — host handshake, settings, indexed library, now-playing
-  path, absolute volume and play/pause. Compose provides real `eth1`; startup re-announces
-  its IP via netlink. No Wi-Fi DB overrides or network binary patches. HTTP 12103 also
-  listens; its active router does not register WebSocket (see investigation below).
-  Ports are localhost-only. See [NETWORK.md](NETWORK.md).
-- **Manual media-library synchronization** — Settings → Update media lib → Update now
-  found all **4 test WAVs**; TCP returned the same four records. Fixed the scanner's extra
-  SD gate: the mount source must be guest-accessible `/dev/mmcblk0p1`, not
-  `/work/rootfs/dev/mmcblk0p1`. Browse files alone had not exposed this problem.
+| Area | Current result | Details |
+| --- | --- | --- |
+| **Boot / UI** | Fingerprint-validated firmware, English main menu without the first-boot wizard, taps/holds/swipes. Boot waits for network, input and framebuffer readiness. | [Emulation](EMULATION.md), [Touch](TOUCH.md) |
+| **Storage** | FAT SD browsing and stock manual indexing. V2.57 insertion-triggered automatic scans handle Cyrillic add/rename/delete cases. Boot remounting alone does not trigger auto-scan. | [Media library](MEDIA_LIBRARY.md) |
+| **Audio** | Stock decoder → tinyalsa → PCM capture; source-sample comparisons, WAV export and browser playback with DAC gain. Browser live mode joins the current capture rather than replaying its full history. | [Audio](AUDIO.md) |
+| **Viewer** | Current device skin, button hotspots, headphone sound switch, USB charging simulation, real guest SD hotplug, brightness, and collapsed Debug controls. | [Viewer](VIEWER.md) |
+| **Controls / power** | Assigned volume gestures, play/pause, sleep/wake and guest-only off/on. Stock libc reboot calls are confined and automatic poweroff requests handled by the viewer. | [Keys](KEYS.md) |
+| **Frame transport** | Last-written buffer marker, lossless PNGs on visible changes, periodic idle refresh and device-state SSE. | [Viewer internals](VIEWER.md#how-it-works) |
+| **Local protocol** | TCP 12100 settings/library/playback control; optional native WS→TCP bridge on host 12103 and direct stock HTTP on 12113. | [Network](NETWORK.md), [WebSocket](WEBSOCKET.md) |
+| **OTA monitoring** | Daily catalog check and one tracking Issue per new main-OS/recovery pair. First GitHub-hosted run passed. Package metadata/signature and one chunk were checked separately; guest installation remains untested. | [OTA](OTA.md) |
 
-- **Firmware unpack** — decrypt + assemble + `unsquashfs` the V2.40 rootfs, sha256-verified.
-- **Boot under qemu-user** — `mq_player` + `mq_ui` run; POSIX-mqueue IPC between them works.
-- **Full boot to main screen** — splash → first-boot language wizard → main menu carousel.
-- **Battery reported healthy** (100%) via stubbed cw2215 sysfs.
-- **Touch injection** — inject `input_event`s into the touch stub; tap coordinates mapped
-  (180°-rotated). A short press (~0.3 s) is a click; a long press (~1 s) opens the item's
-  context menu (select / delete / add-to-playlist) — see [TOUCH.md](TOUCH.md).
-- **Live interactive viewer** — `./run.sh view` streams the framebuffer to a browser and
-  turns clicks/drags into taps/**swipes** (shade pull-down, left→right back), optionally
-  composited into a photo of the player. Verified live: menu → tap **Browse files** → swipe
-  **back** → menu. See [VIEWER.md](VIEWER.md).
-- **SD card / File Browser** — drop media into `./sdcard`; it is built into a FAT image exposed
-  as `/dev/mmcblk0[p1]` and mounted at `/tmp/sdcard`. The File Browser lists it and is fully
-  navigable to the leaf tracks. Verified end-to-end: main menu → **Browse files** →
-  `Test Artist` → `Greatest Hits` → the two `.wav` tracks.
-- **Reverse engineering** — Ghidra 12 headless on `mq_ui`/`mq_player`; decompiled the touch
-  read-callback, boot IPC, and the `mount_storage_dev.c` SD-mount logic.
-- **Local audio** — stock decoder → tinyalsa → PCM capture, with Web Audio in the viewer
-  and `./run.sh audio` WAV export. I2S3 card discovery works without audio binary patches.
-  Captured samples were checked against the source. See [AUDIO.md](AUDIO.md).
-- **Physical controls in the viewer** — Volume −/+, Play / pause, Power / lock. Volume
-  single/double/hold gestures use the stock app's assignments; holds include GPIO state
-  and repeat/cancel handling. Play/pause, screen sleep/wake and touch blocking were
-  verified live. Long Power stops only this guest; Power while off boots it again without
-  stopping Docker or the viewer. See [KEYS.md](KEYS.md) for tests and fidelity limits.
-- **Stock automatic power-off confinement** — BusyBox's libc `reboot` is intercepted;
-  the viewer consumes a shutdown request and stops only the guest. Verified by executing
-  guest `poweroff -f`: Docker and the page stayed alive, and Power booted the guest again.
-- **Browser output volume** — stock CS43131 attenuation writes now control Web Audio's
-  left/right gain. Volume 115 → 114 → 115 produced gain 0.37584 → 0.35481 → 0.37584.
-  Raw PCM/WAV exports stay bit-exact before the hardware volume stage.
-- **Active framebuffer selection** — the shim records the last buffer written by the UI;
-  the viewer no longer has to guess when both buffers changed between polls.
+### Current visual evidence
 
-The language choice persists to `sysconfig.db` after the first successful tap, so subsequent
-boots go **straight to the main menu** (~24 s), skipping the wizard.
+| Main menu | Local playback | Clock lockscreen |
+| --- | --- | --- |
+| ![V2.57 menu](images/readme-menu.png) | ![V2.57 playback](images/readme-playing.png) | ![V2.57 clock](images/readme-clock.png) |
+
+Fresh captures from the actual V2.57 guest, 2026-09-15. The current browser skin
+and controls are shown in [VIEWER.md](VIEWER.md). These are screenshots, not mockups;
+they illustrate the interface rather than replacing protocol/audio assertions.
+
+## Releases and verification
+
+- [v2.57 source release](https://github.com/eudj1n/snowsky-disc-qemu/releases/tag/v2.57):
+  release notes link the exact commit and hosted firmware-free/V2.40/V2.57 checks.
+- [V2.57 report](firmware/2.57.md): input fingerprints, compatibility findings and
+  validation scope. Vendor feature announcements are reference material, not
+  claims that every hardware or stock-software feature was tested.
+- [Daily OTA run](https://github.com/eudj1n/snowsky-disc-qemu/actions/runs/34932983704):
+  catalog access from a GitHub runner succeeded; V2.57/recovery 18 had no update,
+  so issue creation was correctly skipped. Creation/deduplication has synthetic tests.
+- [CI policy](CI.md): release gates apply to the exact release commit and every
+  version in the resulting [three-version FIFO support window](PORTING.md#support-window--three-versions-fifo).
+  The current window contains 2.40 and 2.57; OTA detection alone does not retire either.
+
+## Remaining work and limits
+
+- **Hardware/audio:** USB storage and USB DAC, Bluetooth audio, DSD and MCU/UART
+  behavior require separate validation. Viewer USB is only a charging-state stub;
+  its headphone control enables browser audio, not stock headphone detection.
+- **Networking:** LAN multicast discovery, FiiO Control phone-app compatibility,
+  Wi-Fi association and cloud streaming remain unvalidated. The bridge is an
+  emulator adapter, not newly discovered native stock WebSocket support.
+- **Power/timing:** guest-only process stop is not hardware standby or a stock
+  shutdown animation. qemu-user does not reproduce hardware timing and the
+  privileged container is not a general sandbox for arbitrary firmware syscalls.
+- **Updates:** the monitor creates a research task; downloading an entire new
+  package, analysing its binaries, preparing support/release and closing the
+  Issue remain manual. Guest OTA flashing is not exercised by the monitor.
+- **Frames:** the active-buffer marker is a selection hint, not an atomic framebuffer
+  fence. Older shims fall back to a heuristic; standalone captures still export
+  both raw sub-buffers. See the transport limits in [VIEWER.md](VIEWER.md).
+
+## Historical evidence
+
+The log below records what was known **at the time of each experiment**, including
+failures later fixed, old viewer layouts and the pre-publication phase. Use the
+current overview above for today's support claims. Historical binary addresses
+are version-specific.
+
+<details>
+<summary>Earlier captures, investigation notes and CI milestones</summary>
 
 ## Screens reached
 
@@ -208,44 +223,5 @@ it remains private, with `2.x` as default. Local directory and Docker image/cont
 volume names remain unchanged to preserve state. Public-facing documentation cleanup
 and investigation of other ECHO-based products are deferred to separate work.
 
-## Not done yet / next
 
-- **V2.57 source release:** V2.57 is the default; V2.40 remains explicitly selectable.
-  Boot, stock scanning, TCP/WS, PCM, controls, power confinement and SD hotplug have
-  integration coverage. Viewer improvements include backlight/peripherals, current-tail
-  browser audio, readiness-based startup and lower idle CPU. The final commit and all
-  three CI runs are recorded in the [v2.57 release notes](https://github.com/eudj1n/snowsky-disc-qemu/releases/tag/v2.57).
-  Vendor changes remain reference information, not a mandatory software acceptance suite.
-- **Public repository:** publication and preservation of the audited history were
-  approved by the owner on 2026-09-13. See [publication audit](PUBLIC_RELEASE.md) and
-  [branch policy](CI.md). Earlier dated sections describe the private-repository phase.
-- **Additional audio routes** — USB/BT, DSD, and hardware-accurate timing still need separate
-  validation. Local PCM works; see [AUDIO.md](AUDIO.md).
-- **Auto update (media library)** — V2.57's flag is UI-local, defaults to enabled and
-  resets on guest restart. Click the text row to toggle it. A stock SD-insertion
-  notification supports repeated automatic scans, including Cyrillic add/rename/delete,
-  verified against SD files, SQLite and TCP. The previous result must be dismissed
-  with OK and the screen unlocked. `sd_mount()` now primes stock blkid discovery for
-  the partition alias so hotplug can remount it. Normal boot does not send insertion;
-  physical USB-storage exit remains unvalidated. See [SETTINGS](SETTINGS.md) and
-  [research evidence](MEDIA_LIBRARY.md).
-- **Remaining network work** — LAN multicast discovery, FiiO Control phone-app
-  compatibility, Wi-Fi association and cloud streaming. The local WS→TCP bridge works;
-  stock V2.40 still has no registered WS route. `POST /audio/` is an active HTTP
-  route worth investigating separately for file transfer. Automatic OTA/NTP helpers
-  are blocked; OTA downloads/installations were not tested.
-- **Carousel swipes** — ✅ done via the viewer's drag/`/swipe` (intermediate position events
-  over time).
-- **Power fidelity** — viewer power-off is a deliberate guest-only process stop, not stock
-  standby/shutdown policy or its animation. Raw firmware `0x108` is blocked in the viewer
-  because it invokes stock shutdown side effects. Automatic poweroff's libc reboot call
-  is now intercepted too; hardware-accurate standby/MCU behavior and a security sandbox
-  for arbitrary direct syscalls are not implemented. See [KEYS.md](KEYS.md).
-- **MCU/UART** — the FiiO MCU (`/dev/ttyS*`) is absent; not required to reach/use the main
-  screen; MCU-specific behavior such as charging reports remains unemulated. Physical
-  key delivery itself uses `event0`, not UART (see [KEYS.md](KEYS.md)).
-- **Other firmware versions / rendering paths** — last-buffer tracking is validated for
-  V2.40's framebuffer memcpy path. The viewer retains its old heuristic as a fallback when
-  an older shim supplies no marker. Standalone captures still export both raw sub-buffers.
-
-See [EMULATION.md](EMULATION.md) for the how/why behind everything above.
+</details>

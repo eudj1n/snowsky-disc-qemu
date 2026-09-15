@@ -1,7 +1,8 @@
-# Local network emulation (V2.40)
+# Local network emulation
 
-For version-aware read-only probes and the V2.57 address map, see
-[DIAGNOSTICS.md](DIAGNOSTICS.md). Historical addresses below refer to V2.40.
+The setup/control flow supports V2.40 and V2.57 (default). For version-aware
+read-only probes and the V2.57 address map, see [DIAGNOSTICS.md](DIAGNOSTICS.md).
+Historical function addresses below refer to V2.40.
 
 
 The stock firmware serves FiiO Link on TCP **12100** and Mongoose HTTP on **12103**.
@@ -14,7 +15,7 @@ browser inspector and live control results. Guest port numbers remain unchanged.
 
 ## Reproduce
 
-Use Docker Compose **2.36+** (tested with 5.5.1):
+Use Docker Engine **28.1+** and Compose **2.36+**. CI pins are in [CI.md](CI.md).
 
 ```sh
 docker compose up -d --build
@@ -26,7 +27,7 @@ docker compose --profile wsbridge up -d wsbridge  # optional WS diagnostics
 ./run.sh wscheck --control
 ```
 
-For a new work volume, first use `./run.sh up /path/to/ota_v240` as in the README.
+For a new work volume, first use `./run.sh up /path/to/main_os/ota_v257` as in the README.
 Do not delete an existing volume to upgrade. Setup stops the guest before updating
 mapped shims or rebuilding its SD. Power-on from the viewer reruns network preparation
 and announcement too. The viewer itself must be started again after container recreation.
@@ -74,6 +75,8 @@ Wrappers are installed atomically without following BusyBox symlinks. No utiliti
 were installed ad hoc in the image. Dockerfile checks `setpriv` and `ip` availability.
 These wrappers are an accident-prevention measure, **not an outbound firewall**;
 library-level connections and direct syscalls are not comprehensively sandboxed.
+The separate host-side [OTA monitor](OTA.md) reads the vendor catalog and creates
+release tracking issues; it does not enable the guest OTA installer.
 
 Read-only live state/capability check (never writes `/proc/PID/mem`):
 

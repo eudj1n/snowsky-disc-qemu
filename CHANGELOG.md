@@ -9,6 +9,8 @@ emulator-only revisions use `v2.40-r1`, etc. See [the porting guide](docs/PORTIN
 
 ### Added
 
+- Three-version FIFO firmware support policy and OTA issue checklist: promotion
+  follows validation/release preparation; retirement preserves historical evidence.
 - Daily stock OTA catalog monitoring with sanitized version outputs and one
   tracking issue per new main-OS/recovery pair; release preparation and issue
   closure remain manual, with no firmware download or automatic profile changes.
@@ -17,6 +19,8 @@ emulator-only revisions use `v2.40-r1`, etc. See [the porting guide](docs/PORTIN
 
 ### Fixed
 
+- Refresh the README around the emulator and viewer, with current V2.57 captures;
+  reconcile setup, controls and status documentation while retaining dated evidence.
 - Preserve literal escapes when registering the MIPS binfmt handler. Raw NULs
   previously truncated its magic and made it intercept i386 executables. Setup
   repairs only that handler and leaves other architecture registrations intact.

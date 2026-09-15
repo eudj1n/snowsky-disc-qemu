@@ -6,6 +6,11 @@
 context, not a second development target. A future incompatible major gets `3.x`.
 Firmware V2.57 is the default; V2.40 remains an explicitly selected regression profile. Its emulator release scope and vendor notes are in [firmware/2.57.md](firmware/2.57.md).
 
+Current support follows a **three-version FIFO window**: a fourth validated
+firmware replaces the oldest supported version only after validation and release
+preparation. OTA detection alone does not move the window. Today only two slots
+are occupied (2.40, 2.57). See [the support-window policy](PORTING.md#support-window--three-versions-fifo).
+
 The first validated V2.40 milestone is
 [v2.40](https://github.com/eudj1n/snowsky-disc-qemu/releases/tag/v2.40). Emulator-only follow-up fixes
 for that firmware use `v2.40-r1`, `v2.40-r2`, etc. Never move/reuse an existing tag.
@@ -14,10 +19,14 @@ V2.57 uses `v2.57` after its own validation. Do not merely replace the rootfs ha
 binary patches, diagnostic addresses, UI coordinates and protocol behavior must be checked.
 GitHub immutable releases are enabled: publish only once the release contents are final.
 
-Before releasing, require both workflows below to have succeeded **on the exact
+Before releasing, require firmware-free CI and firmware integration for **every
+version in the resulting support window** to have succeeded **on the exact
 release commit**, review the declared limitations in STATUS.md, and publish only
 source/release notes, never firmware. Tags/releases are not created automatically.
 For example, inspect `gh run list --branch 2.x --commit <full-sha>` before publishing.
+Retired versions leave current workflow choices and required integration coverage;
+their immutable tags and analysis reports remain available as historical snapshots.
+The daily OTA metadata check does not replace these release gates.
 
 ### Branch policy after public publication
 
@@ -53,12 +62,13 @@ OTA_DIR=/tmp/unused docker compose config --quiet
 ```
 
 Checkout is pinned to a full action commit SHA and does not persist credentials.
-Actions use Node.js 24 (`checkout` v6, `setup-docker-action` v5 and
+Actions use Node.js 24 (`checkout` v7, `setup-docker-action` v5 and
 `setup-compose-action` v2). `.github/dependabot.yml` checks GitHub Actions weekly and
 groups proposed updates into PRs; SHA pins are retained and tested by `test_ci_pins.py`.
 No automatic merging is enabled. This updater does not change Docker Engine/Compose
 input versions, the Debian snapshot, or firmware checksums; those require explicit updates.
-Both workflows install **Docker Engine 28.5.2 and Compose 2.39.4** using official
+The firmware-free and firmware-integration workflows install **Docker Engine
+28.5.2 and Compose 2.39.4** using official
 Docker actions pinned to full SHAs. Compose's binary cache is disabled. The first
 hosted integration attempt exposed an older preinstalled Engine: `interface_name`
 requires Engine >=28.1 as well as Compose >=2.36. Do not rely on runner defaults.

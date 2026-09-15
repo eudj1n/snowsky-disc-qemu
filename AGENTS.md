@@ -27,8 +27,9 @@ from `assets/skin.png`) — see `docs/VIEWER.md`; the daemon is `tools/stream.py
 rootfs and runtime state.
 
 To view a captured screen, `Read` the PNGs in `./shots/` (e.g. `boot-b0.png`, `boot-b1.png`).
-Because `mq_ui` alternates two sub-buffers, the current screen is whichever of `-b0`/`-b1`
-looks right / has the higher non-black pixel count printed by `fb2png.py`.
+Because `mq_ui` alternates two sub-buffers, use `emu/fb-live` (0 or 1) to identify
+the last-written buffer, or the viewer's `/frame` endpoint. The non-black pixel
+count printed by `fb2png.py` is only a fallback heuristic, not evidence of recency.
 
 ## Hard-won facts (don't rediscover these)
 
@@ -43,12 +44,14 @@ looks right / has the higher non-black pixel count printed by `fb2png.py`.
   toolchain is 2.36, so a normal `.so` won't load. Preload via `/rootfs/etc/ld.so.preload`,
   not `LD_PRELOAD` (env doesn't survive the guest's `popen()` children). ELF must carry the
   **nan2008** flag (`build_shims.sh` stamps it).
-- Start **`mq_ui` first** (creates the `ui` queue), then `mq_player`. Boot to a UI screen
-  takes ~20–24 s under qemu — wait before capturing.
+- Start **`mq_ui` first** (creates the `ui` queue), then `mq_player`. Boot waits for
+  network listeners, both input devices and a framebuffer flush before capturing;
+  use the readiness result rather than a fixed sleep (see `docs/VIEWER.md`).
 - Touch: append 16-byte `input_event`s to `/rootfs/dev/input/event1`. Press =
   `ABS_MT_TRACKING_ID=0` / `BTN_TOUCH=1`; release = `TRACKING_ID=-1` / `BTN_TOUCH=0`. The
   read-cb drains all queued events per call, so **inject press → sleep ~1s → release**, else
-  LVGL only sees the net (released). Tap point = `(359-x, 359-y)` of what you see;
+  LVGL only sees the net (released). The ~1 s hold above is a diagnostic long press;
+  use the normal ~0.3 s tap helper for list items. Tap point = `(359-x, 359-y)` of what you see;
   `30_tap.sh` flips it for you.
 - The first-boot **language wizard** is gated on the `LANGUAGE` column: it shows only while
   LANGUAGE is out of range (the fresh default is 100). `LANGUAGE` is a **0-based index** (switch
@@ -98,6 +101,10 @@ looks right / has the higher non-black pixel count printed by `fb2png.py`.
   report first. `firmware/inventory/` contains observed inputs, not runtime enablement
   profiles. Keep vendor-reported changes separate from verified emulator features;
   update `CHANGELOG.md` for emulator changes. Never replace V2.40 hashes/addresses blindly.
+- Support at most three validated firmware versions (FIFO). Promote only after
+  validation and release preparation; a fourth retires the oldest from current
+  runtime support and CI. OTA detection alone does not move the window. Preserve
+  historical tags, inventories and analysis; see `docs/PORTING.md` for the checklist.
 - `FW_VERSION` selects a reviewed runtime profile (default `2.57`, opt-in `2.40`).
   Setup/boot validate product/version and six binary fingerprints before execution.
   Key patch validation normalizes only the permitted instruction, then checks the full

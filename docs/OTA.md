@@ -124,7 +124,11 @@ notifications depends on each user's repository notification settings.
    of `Fixes`/`Closes`, so merging the PR does not close the tracking issue early.
 3. Complete CI and firmware integration, then prepare the release and document
    verified behavior and limitations.
-4. Close the tracking issue manually after release preparation is complete.
+4. Update the [three-version FIFO support window](PORTING.md#support-window--three-versions-fifo).
+   A fourth validated version retires the oldest from current runtime support
+   and CI; preserve historical tags, inventories and analysis. Detection alone
+   does not retire a version.
+5. Close the tracking issue manually after release preparation is complete.
 
 The monitor does not download firmware, implement support, merge PRs, prepare
 releases, or close issues. Recovery-only updates get their own tracking issue.
