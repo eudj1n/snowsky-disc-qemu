@@ -79,6 +79,15 @@ def playback_snapshot(reply):
     return result
 
 
+def play_mode_value(reply):
+    if len(reply) != 4 or any(b not in b'0123456789abcdefABCDEF' for b in reply):
+        raise ValueError('play mode must be four hex digits')
+    value = int(reply, 16)
+    if value > 4:
+        raise ValueError('unsupported DISC play mode')
+    return value
+
+
 class Frames:
     """TCP is a byte stream: handle fragments, coalesced replies and UTF-8 bytes."""
     def __init__(self):
@@ -145,10 +154,10 @@ class Client:
         finally:
             self.socket.settimeout(previous_timeout)
 
-    def request(self, tag, payload=b''):
+    def request(self, tag, payload=b'', *, expected=None):
         self.drain_notifications()
         self.socket.sendall(frame(tag, payload))
-        expected = 'a' + tag[1:].lower()
+        expected = expected or 'a' + tag[1:].lower()
         deadline = time.monotonic() + self.timeout
         while True:
             pending, self.pending = self.pending, []
@@ -192,6 +201,10 @@ class Client:
     def set_play_mode(self, mode):
         self.socket.sendall(frame('0102', hex_value(mode, 4)))
 
+    def play_mode(self):
+        # Stock 0105 reads the mode but replies with a102, not a105.
+        return play_mode_value(self.request('0105', expected='a102'))
+
     def scan_library(self):
         """Start stock indexing; observe a60a status and a622 count events."""
         self.socket.sendall(frame('0622', '0000'))
@@ -221,6 +234,17 @@ class Client:
             if version != 257:
                 raise ValueError('favorite positions require DISC V2.57; V2.40 needs an internal ID absent from the list response')
         self.socket.sendall(frame('0100', payload))
+
+    def play_queue_index(self, index):
+        """Select a zero-based position in the current queue, with a fresh bounds check.
+
+        The queue can still change between query and selection; Link has no revision
+        token. Never replay this command after reconnecting or reuse a cached count.
+        """
+        position = hex_value(index)
+        if index >= self.library('queue')['total']:
+            raise ValueError('position outside the current queue')
+        self.socket.sendall(frame('0100', position + '0000'))
 
     def set_volume(self, value):
         if type(value) is not int or not 0 <= value <= 120:

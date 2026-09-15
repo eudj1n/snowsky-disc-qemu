@@ -3,10 +3,14 @@
 Reference for the wire/IPC protocol used by the Snowsky Disc, gathered from the
 firmware (`control_core`/`fiio_link.c`, `http_server_mongoose.c`) and direct device probes.
 
-**Remote-control follow-up (2026-09-15):** see [REMOTE_CONTROL.md](REMOTE_CONTROL.md)
+**Remote-control follow-up (2026-09-16):** see [REMOTE_CONTROL.md](REMOTE_CONTROL.md)
 for tested selection/navigation/seek/mode commands, distinct catalog/queue/favorites
 schemas, rate limits and physical V2.57 comparisons. Historical V2.40 observations
 below are not automatically capabilities of every firmware or the M21.
+The follow-up also documents `0105` → `a102` mode reads and the unassigned DISC
+`0426` queue-counter handler; use the verified TCP/HTTP queue APIs instead.
+The [research continuation plan](PROTOCOL_RESEARCH.md) records remaining tasks,
+their priority and the validation status of the current checkpoint.
 
 **Stock capabilities follow-up:** [HTTP_API.md](HTTP_API.md) covers verified file
 upload, folders, custom playlists, cover retrieval and network scanning;
@@ -35,6 +39,8 @@ TAG(4 hex chars) + LEN(4 hex chars) + VALUE
   rev **3.06** on V2.40). On the raw TCP socket this must precede the other queries — `0202`
   returned nothing until `0599…` was sent.
 - **8-byte** query: `0202` + `0008`  (empty value — e.g. now-playing track)
+- **play-mode read**: `01050008` → `a102000C<mode>`; the reply tag is shared with
+  mode-change notifications and is not `a105`.
 - **12-byte**: `0102` + `000C` + 4-byte value
 - **selection**: `0100` + length + zero-based position (4 hex) + list type (4 hex)
   + optional UTF-8 name. The position is **not a song ID**.
@@ -53,8 +59,9 @@ TAG(4 hex chars) + LEN(4 hex chars) + VALUE
     `aa1d` battery · `aa24` settings json · `a620` device-info json · `a202 {"state":2}` …
 
 The full set of tags seen in `mq_player` (~350) is broader than the ones above; the `04xx`/`a4xx`
-family is the library, `0[15]xx`/`a[15]xx` control+state. Only read/query tags
-(`0599`/`0501`/`0202`/`04xx`) are safe to send blindly — setters change playback.
+family concerns the library, `0[15]xx`/`a[15]xx` control+state. A prefix is not a
+read-only guarantee: `04xx` includes mutations and unimplemented handlers. Probe
+only individually identified commands; setters change playback or library state.
 
 ## Verified live against the physical V2.40 device
 

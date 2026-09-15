@@ -130,6 +130,10 @@ count printed by `fb2png.py` is only a fallback heuristic, not evidence of recen
 
 ## Likely next tasks (see docs/STATUS.md "Next")
 
+For continuing DISC protocol research, start with `docs/PROTOCOL_RESEARCH.md`:
+it records the checkpoint, remaining tasks in priority order and validation status.
+Update that document when completing a research item so another session can resume.
+
 Local audio works: `tinyshim` redirects `/proc/asound/cards` discovery to `/etc/asound.cards`
 (x2000), so stock firmware selects I2S3_OUT (6), hw:0,3. No audio binary patches.
 Capture: `/audio.pcm` + `/audio.fmt`; `./run.sh audio` exports a WAV, and the viewer offers
@@ -197,10 +201,16 @@ Physical iOS captures are summarized in `docs/FIIO_CONTROL_APP.md`; only sanitiz
 protocol fixtures live in `tools/fixtures/`. Full `a202` snapshots and state-only
 deltas coexist; DISC uses 0 playing / 1 paused. Paused seeks have no immediate
 position acknowledgement. Current queue is observed via HTTP `curlist/song`, then
-TCP `0100` index + type 0 + localized queue label. Next research step: validate
-the label requirement and empty/replaced queue behavior in a disposable emulator
-before adding a type-0 client helper. The last physical trace ran in random mode
+TCP `0100` index + type 0 + localized queue label. `play_queue_index()` now reads
+the current queue length before selecting without a label; `ci/queue_check.py`
+checks label variants and empty/replaced queues (`CI_SCENARIO=queue` for fresh
+empty-queue coverage). A raw out-of-range selector can leave `0202` silent until
+a valid album is selected again. Never replay stale queue selections. The physical trace ran in random mode
 and moved 3 → 11 → 3, so never infer queue position by increment/decrement alone.
+`play_mode()` reads `0105` but expects `a102`, not the mechanically derived `a105`.
+`0426` has no assigned handler in V2.40/V2.57; retained counter JSON strings do not prove
+support. Use `0406`, HTTP `curlist/song` and `0202` instead. The focused
+`CI_SCENARIO=queue-reads` verifies both read commands without relying on M21 semantics.
 `docs/M21_COMPARISON.md` is reference only: M21's FiiO Music uses UTF-16 length
 units, a different state enum and toggle semantics. DISC remains the priority;
 do not copy those Android rules into its client.

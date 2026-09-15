@@ -71,6 +71,15 @@ class FramingTests(unittest.TestCase):
         with self.assertRaises(ConnectionError):
             client.handshake()
 
+    def test_play_mode_uses_a102_and_ignores_a105(self):
+        client = Client.__new__(Client)
+        client.socket = Mock()
+        client.timeout, client.frames, client.pending = 1, Frames(), []
+        client.drain_notifications = Mock()
+        client.socket.recv.side_effect = [b'a105000C0004a103000C0001a10200', b'0C0003']
+        self.assertEqual(client.play_mode(), 3)
+        client.socket.sendall.assert_called_once_with(b'01050008')
+
     def test_old_state_notification_is_not_a_new_query_reply(self):
         client = Client.__new__(Client)
         client.socket, peer = socket.socketpair()

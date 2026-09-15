@@ -87,8 +87,9 @@ does; a production backend needs centralized event routing.
 
 ## Leads requiring DISC verification
 
-- `0105` → `a102`: read current play-order mode (Android notes).
-- `0426` → `a426`: current queue counters; `0100` list type 0: current-queue selection.
+- Followed up for DISC: `0105` reads play mode via `a102`; `0100` type 0 selects
+  the current queue. `0426` counters remain an Android feature, not a supported
+  DISC read. See [DISC results](REMOTE_CONTROL.md#remaining-queue-related-reads-0105-and-0426).
 - `0407`, `0427`–`042a`: recent tracks, composer/year/sample-rate/format categories.
 - `0408` with offset and folder key: Android folder listing and device-defined order.
 - `0511`: Android settings command; do not replace DISC's individually verified setters.

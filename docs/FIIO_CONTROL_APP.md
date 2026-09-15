@@ -398,9 +398,10 @@ No general shuffle-history or queue mutation rule is proven by this sequence.
 
 Type-0 selection on DISC is now physically observed, with a localized queue-label
 suffix and UTF-8 byte length **0x3b = 59**. Do not replace this with the Android
-M21 header length or silently omit the suffix. Whether the label is ignored,
-required, or locale-dependent remains a separate check. Existing generic clients
-still reject type 0; a dedicated helper requires validating the intended form.
+M21 header length. This capture alone cannot establish whether the label is
+required. The later [emulator checks](REMOTE_CONTROL.md#validated-current-queue-helper)
+compare Russian, absent and arbitrary labels and introduce a guarded dedicated
+helper; generic `play_index()` still rejects type 0.
 
 The [fixture](../tools/fixtures/fiio_control_ios_460_queue.json) retains exact queue
 selection/navigation commands and HTTP request metadata. Catalog text and song
@@ -436,9 +437,10 @@ the earlier silence remains a narrower track-context question. Custom-theme
 metadata saves still need the backup/restore scenario in the checklist; library
 reset remains unobserved. Further mode captures are unnecessary to establish
 the app's enum mapping; actual end-of-track/list behavior is a separate check.
-Before exposing type-0 selection in a helper, validate the queue-label suffix
-and behavior on an empty/replaced queue in a disposable guest. The optional
-`0105`/`0426` reads remain leads from M21, not commands observed in these DISC traces.
+Type-0 label/empty/replaced-queue checks now have a dedicated disposable scenario
+and client helper, described in the remote-control contract.
+`0105`/`0426` are not observed in these DISC app traces. They were subsequently
+investigated directly in the emulator: [read-command results](REMOTE_CONTROL.md#remaining-queue-related-reads-0105-and-0426).
 
 Record both app versions and actual capture topology alongside a trace. A successful
 HTTP capture does not establish capture of the separate Link TCP stream on 12100.

@@ -11,6 +11,69 @@ from fiio_http import HTTPClient, Reply
 
 
 class RemoteControlTests(unittest.IsolatedAsyncioTestCase):
+    async def test_play_mode_reader_validates_disc_values(self):
+        tcp = Client.__new__(Client)
+        tcp.request = Mock()
+        ws = WSClient()
+        ws.request = AsyncMock()
+        for value in range(5):
+            tcp.request.return_value = ws.request.return_value = f'{value:04X}'.encode()
+            self.assertEqual(tcp.play_mode(), value)
+            self.assertEqual(await ws.play_mode(), value)
+        for invalid in (b'', b'0', b'00000', b'0005', b'FFFF', b' 003', b'-001', b'xxxx'):
+            tcp.request.return_value = ws.request.return_value = invalid
+            with self.assertRaises(ValueError):
+                tcp.play_mode()
+            with self.assertRaises(ValueError):
+                await ws.play_mode()
+        tcp.request.assert_called_with('0105', expected='a102')
+        ws.request.assert_awaited_with('0105', expected='a102')
+
+    async def test_ws_play_mode_reply_override_filters_other_tags(self):
+        ws = WSClient()
+        ws.send = AsyncMock()
+        ws.event = AsyncMock(side_effect=[('a105', b'0004'), ('a103', b'0001'),
+                                         ('a102', b'0002')])
+        self.assertEqual(await ws.play_mode(), 2)
+        ws.send.assert_awaited_once_with('0105', b'')
+
+    async def test_queue_selection_checks_fresh_count_and_omits_label(self):
+        tcp = Client.__new__(Client)
+        tcp.socket = Mock()
+        tcp.library = Mock(return_value={'total': 3, 'items': []})
+        ws = WSClient()
+        ws.send = AsyncMock()
+        ws.library = AsyncMock(return_value={'total': 3, 'items': []})
+        tcp.play_queue_index(2)
+        await ws.play_queue_index(2)
+        tcp.socket.sendall.assert_called_once_with(b'0100001000020000')
+        ws.send.assert_awaited_once_with('0100', '00020000')
+        # The next call must read the new queue, not reuse the earlier length.
+        for total in (2, 0):
+            tcp.library.return_value = ws.library.return_value = {'total': total, 'items': []}
+            with self.assertRaises(ValueError):
+                tcp.play_queue_index(2)
+            with self.assertRaises(ValueError):
+                await ws.play_queue_index(2)
+        self.assertEqual(tcp.library.call_args_list, [unittest.mock.call('queue')] * 3)
+        self.assertEqual(ws.library.await_args_list, [unittest.mock.call('queue')] * 3)
+        self.assertEqual(tcp.socket.sendall.call_count, 1)
+        self.assertEqual(ws.send.await_count, 1)
+
+    async def test_queue_query_failure_cannot_send_selector(self):
+        tcp = Client.__new__(Client)
+        tcp.socket = Mock()
+        tcp.library = Mock(side_effect=TimeoutError('no queue response'))
+        ws = WSClient()
+        ws.send = AsyncMock()
+        ws.library = AsyncMock(side_effect=TimeoutError('no queue response'))
+        with self.assertRaises(TimeoutError):
+            tcp.play_queue_index(0)
+        with self.assertRaises(TimeoutError):
+            await ws.play_queue_index(0)
+        tcp.socket.sendall.assert_not_called()
+        ws.send.assert_not_awaited()
+
     async def test_physical_ios_http_queue_and_random_navigation(self):
         observed = json.loads((Path(__file__).parent / 'fixtures' /
                                'fiio_control_ios_460_queue.json').read_text())
@@ -206,7 +269,9 @@ class RemoteControlTests(unittest.IsolatedAsyncioTestCase):
                  ('play_index', (-1,)), ('play_index', (65536,)), ('play_index', (True,)),
                  ('play_index', (0, 99)), ('play_index', (0, 3)),
                  ('play_index', (0, 3, 'x\0y')), ('play_index', (0, 3, 'Ё' * 128)),
-                 ('play_all', (6,)), ('play_all', (1, 'unexpected'))]
+                 ('play_all', (6,)), ('play_all', (1, 'unexpected')),
+                 ('play_queue_index', (-1,)), ('play_queue_index', (65536,)),
+                 ('play_queue_index', (True,)), ('play_queue_index', (1.5,))]
         for method, args in cases:
             with self.subTest(method=method, args=args):
                 with self.assertRaises(ValueError):

@@ -135,6 +135,11 @@ The workflow first runs the firmware-free suite on the same commit, then:
    selection, next/previous, seek, modes, album/queue/favorites and physical event
    notifications, with read-only memory/SQLite checks. The WS client uses Docker DNS
    with a localhost Host header; server Host/Origin protections remain enabled.
+   Then runs `ci/queue_check.py`: optional queue-label equivalence, guarded current
+   queue selection, replacement and stale-index rejection, and recovery after a
+   raw invalid-index probe. Both TCP/WS and HTTP mark/metadata readback are checked.
+   `ci/queue_reads_check.py` follows with five-mode `0105` reads and bounded `0426`
+   absence checks during playback, pause and after queue replacement.
 9. Runs [stock HTTP acceptance](HTTP_API.md) directly and through the proxy: streamed
    upload with byte-exact file checks, directory operations, catalog paging, and
    custom playlist lifecycle with internal-ID gaps. TCP/WS scans add the uploaded
@@ -156,7 +161,22 @@ bash ci/integration.sh /absolute/path/to/main_os/ota_v257
 # Optional local diagnostic PNGs; never uploaded by Actions:
 FW_VERSION=2.40 CI_SHOTS="$PWD/shots/v240" bash ci/integration.sh /absolute/path/to/main_os/ota_v240
 FW_VERSION=2.57 CI_SHOTS="$PWD/shots/v257" bash ci/integration.sh /absolute/path/to/main_os/ota_v257
+# Focused queue run: fresh setup/scan/reboot, fresh-empty checks, then TCP/WS queue checks.
+CI_SCENARIO=queue FW_VERSION=2.57 bash ci/integration.sh /absolute/path/to/main_os/ota_v257
+# Focused 0105/0426 reads, including an initially empty queue on TCP and WS.
+CI_SCENARIO=queue-reads FW_VERSION=2.57 bash ci/integration.sh /absolute/path/to/main_os/ota_v257
 ```
+
+`CI_SCENARIO` accepts `full` (default), `queue` or `queue-reads`. All use the same
+random-name isolated stack and cleanup. Focused runs do not execute unrelated audio,
+peripheral, settings or storage integration scenarios. Only focused runs assert the queue
+is empty before any track has been played; the full run reaches queue checks after
+other playback scenarios.
+
+`queue-reads` prepares its index with the verified stock TCP `0622/0000` scanner
+instead of navigating the settings UI. It checks the generated files byte-for-byte,
+requires an initially empty index, and verifies all three indexed names. The full
+scenario and `queue` retain the UI scan test in `ci/guest_check.py`.
 
 The workflow does not upload/cache firmware, rootfs, guest logs, captures or derived
 images. The hosted runner is discarded afterwards. Secret masking is not a guarantee

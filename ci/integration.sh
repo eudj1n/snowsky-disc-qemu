@@ -6,6 +6,8 @@ set -euo pipefail
 cd "$(dirname "${BASH_SOURCE[0]}")/.."
 export OTA_DIR="$(cd "${1:?path to OTA chunks}" && pwd)"
 export FW_VERSION="${FW_VERSION:-2.57}"
+CI_SCENARIO="${CI_SCENARIO:-full}"
+case "$CI_SCENARIO" in full|queue|queue-reads) ;; *) echo 'CI_SCENARIO must be full, queue or queue-reads' >&2; exit 2;; esac
 CI_TMP="$(mktemp -d "${TMPDIR:-/tmp}/diskos-ci.XXXXXXXX")"
 CI_ID="diskos-ci-$(basename "$CI_TMP" | tr '[:upper:].' '[:lower:]-')"
 export EMU_IMAGE="${EMU_IMAGE:-diskos-qemu-ci}"
@@ -35,17 +37,31 @@ compose up -d --no-build --wait --wait-timeout 60
 compose exec -T emu bash /repo/scripts/00_extract_rootfs.sh /ota
 compose exec -T emu bash /repo/scripts/10_setup_env.sh
 compose exec -T emu bash /repo/scripts/20_boot.sh
-compose exec -T emu python3 -B /repo/ci/guest_check.py
+if [ "$CI_SCENARIO" = queue-reads ]; then
+  compose exec -T emu python3 -B /repo/ci/queue_reads_check.py --prepare
+else
+  compose exec -T emu python3 -B /repo/ci/guest_check.py
+fi
 # Exercise peripherals after the stock scan but BEFORE selecting a track.
 # Paused playback can retain the selected file. Rebooting after those probes
 # still left the card busy in hosted V2.40 CI; it is not an idle-card fixture.
 # Restart here to dismiss the scanner UI without carrying playback state.
 compose exec -T emu bash /repo/scripts/20_boot.sh
+if [ "$CI_SCENARIO" = queue ]; then
+  compose exec -T emu python3 -B /repo/ci/queue_check.py --fresh
+  exit 0
+fi
+if [ "$CI_SCENARIO" = queue-reads ]; then
+  compose exec -T emu python3 -B /repo/ci/queue_reads_check.py --fresh
+  exit 0
+fi
 compose exec -T emu python3 -B /repo/ci/viewer_peripherals.py
 compose exec -T wsbridge python3 -B /repo/tools/verify_websocket.py --tcp-host emu --control
 compose exec -T emu python3 -B /repo/ci/guest_check.py --audio
 compose exec -T emu python3 -B /repo/ci/controls.py
 compose exec -T emu python3 -B /repo/ci/remote_control.py
+compose exec -T emu python3 -B /repo/ci/queue_check.py
+compose exec -T emu python3 -B /repo/ci/queue_reads_check.py
 compose exec -T emu python3 -B /repo/ci/http_check.py
 compose exec -T emu python3 -B /repo/ci/settings_check.py
 compose exec -T emu python3 -B /repo/ci/modes_themes_check.py

@@ -19,8 +19,10 @@ and counts **UTF-8 bytes**, not characters. Complete examples:
 | Previous | `0201000C0002` | Previous entry near the start; **restart this track if position >10 s** |
 | Seek to 15 seconds | `0103001000003A98` | Eight hex digits of **milliseconds**; `a103` position notifications |
 | Repeat the list | `0102000C0003` | Four hex digits of mode; `a102` event and `0501.playMode` |
+| Read play mode | `01050008` | `play_mode()` returns 0..4 from **`a102`**, not `a105`; four hex digits |
 | Select second catalog entry | `0100001000010001` | Position `0001` (zero-based), then list type `0001` |
 | Select third current-queue entry (physical iOS trace) | `0100003b00020000Список воспроизведения` | Index 2, list type 0, observed app-localized queue label; raw form only |
+| Select third current-queue entry (client helper) | `0100001000020000` | `play_queue_index(2)` first checks current queue length through `0406`; no label needed in tested emulator |
 | Select second album entry | `0100001800010003CI Album` | Position, list type 3, exact UTF-8 album name |
 | Play whole album | `010100140003CI Album` | List type 3, name; starts the first album entry |
 | Play all indexed songs | `0101000C0001` | List type 1 |
@@ -154,10 +156,10 @@ in this capture. It does not establish that album and queue always share order.
 
 Choosing the third queue row sends the exact byte-counted frame in the command
 table above. DISC reports `playerflag: 0`, `playing_num: "3/15"`, nested
-`song.pos_id: 3`, and the matching song. The Russian label is observed, not proven
-mandatory or ignored; other locales and omission of the label remain untested.
-The generic `play_index()` helper still rejects type 0 pending a dedicated
-validated helper. Raw frame evidence must not silently widen supported list types.
+`song.pos_id: 3`, and the matching song. This capture alone did not establish
+whether the Russian label was required. Subsequent disposable emulator checks
+below establish the label-free helper. Generic `play_index()` still rejects type 0;
+use the dedicated method with its bounds check.
 
 Initial `0501.playMode` is 1 (random). Next moves **3 → 11**, previous returns
 **11 → 3**; response song names/artists match the corresponding HTTP queue rows.
@@ -171,6 +173,110 @@ with old-track ticks in between: do not infer completion from a write or a tick.
 
 See [capture details](FIIO_CONTROL_APP.md#ios-current-queue-capture-2026-09-16)
 and the [sanitized fixture](../tools/fixtures/fiio_control_ios_460_queue.json).
+
+### Validated current-queue helper
+
+`Client.play_queue_index(index)` and `WSClient.play_queue_index(index)` select a
+zero-based position in the **current** queue. They validate the integer, query
+TCP `0406` for the current total, reject an empty queue or index outside that
+total, then send `0100` with index + type 0 and **no label**. A failed queue read
+sends no selector; there is no automatic mutation retry. No full queue download
+is needed to obtain its total.
+
+Disposable tests compare Russian, absent and arbitrary labels after rebuilding
+the same two-track album queue. All select its second track. Full `a202` reports
+`playerflag: 0`, one-based `pos_id`/`playing_num`; a fresh HTTP `curlist/song` read
+reports the same queue entries and zero-based `mark-pos` of the selected row.
+
+The test replaces a three-track queue with a two-track album. The helper rejects
+old index 2 before sending a selector; valid index 1 now selects the second track
+of the **new** queue. It does not preserve an old queue identity. A queue can also
+change between the length query and the selector: stock Link has no revision token
+or atomic compare-and-select operation. UI code must refresh its queue when the
+source changes and confirm the resulting track through events/readback.
+
+The raw out-of-range probe deliberately bypasses this guard in the disposable
+guest. The HTTP queue remains readable, but `0202` stops returning a full snapshot
+(the tested raw query times out). Re-selecting a valid album restores current-track
+responses, then the helper works again. A fresh empty queue returns zero entries
+over TCP/HTTP and ignores the raw type-0 selector without a playback response.
+These are protocol/state behaviors, not proof that the physical player crashes.
+They provide one reproducible cause of a silent `0202`; they do not establish why
+the user's earlier captures started in that state.
+
+`ci/queue_check.py` exercises both TCP/direct HTTP and WS/proxied HTTP, restores the
+original play mode and leaves playback paused. `CI_SCENARIO=queue` runs it with
+fresh-empty checks in an isolated generated-media stack. The full integration
+pipeline runs the populated-queue checks after existing remote-control acceptance.
+
+Validation on 2026-09-16: the focused `CI_SCENARIO=queue` scenario passed on fresh
+V2.40 and V2.57 guests through both transports, including empty queues, all three
+label variants, replacement, invalid-index behavior and recovery. The firmware-free
+suite passed 174 Python tests, 23 JavaScript tests, shell checks and four shim builds.
+These runs validate the queue scenario; they are not a new full integration or
+release-gate result. Existing interactive containers and the physical DISC were
+not used for these checks.
+
+### Remaining queue-related reads: `0105` and `0426`
+
+`0105` is a read of the play-order mode, not a playback-state query or a toggle.
+Its response is `a102000C0000` through `a102000C0004`, using the same mapping as
+`0102`: list once, random, repeat one, repeat list, single once. Both clients expose
+`play_mode()` and explicitly expect `a102`; deriving `a105` from the request tag
+would discard the actual response and time out. `0501.playMode` remains the mode
+field in the complete settings snapshot.
+
+V2.57 static evidence: `0105` table entry at `00838d80` points to wrapper
+`0041fc50`, callback slot `0083a3d4` points to `004ed5f8`, and `0042b10c` reads the
+mode with `00450d18` and sends `a102` through `004ddaec`. The latter formats the
+four-digit hexadecimal value. Addresses are specific to the fingerprinted V2.57
+binary, not portable to V2.40.
+
+`0426` must not be advertised as a supported DISC counter query. The V2.57
+parser recognizes it, but its dispatch-table entry at `00838e80` has a NULL
+handler. The binary retains a `curlistlength`/`songposition` JSON serializer at
+`004d88dc`; no direct references to that function were found in the saved Ghidra
+analysis. Dispatcher `00420130` looks up the table and returns without invoking
+anything for a NULL handler. Data-segment addresses above use the ELF PT_LOAD
+mapping (file offset + `00410000`), not the text segment's + `00400000` mapping.
+Those strings alone do not demonstrate a working service.
+
+The separately fingerprinted V2.40 binary also has a NULL `0426` handler, at
+table entry `0082d510`; its `0105` entry `0082d410` points to `0041c540` and
+`0406` entry `0082d508` points to `0041c620`. These values were read through the
+ELF segment mapping from the disposable guest's binary.
+
+`ci/queue_reads_check.py` checks `04260008` and `0426000C0000` with bounded waits,
+then verifies settings and HTTP queue on the same connection. It also checks all
+five modes with repeated `0105` reads, ensuring pause and selected track remain
+unchanged, and covers queue replacement. `CI_SCENARIO=queue-reads` additionally
+starts with an empty queue for both TCP and WS. The normal full integration run
+executes its populated-queue scenarios.
+
+Validation on 2026-09-16: `CI_SCENARIO=queue-reads` passed on fresh V2.40 and
+V2.57 guests over TCP and WS. In each transport, both `0426` forms timed out with
+an empty queue, during playback, while paused, and after replacement/selection;
+subsequent settings and HTTP queue reads succeeded. All five `0105` mode values
+were read twice without changing the selected track or pause state. Original mode
+was restored and playback left paused. Firmware-free checks passed 177 Python
+tests, 23 JavaScript tests, shell checks and four shim builds; later changes to
+test preparation passed syntax checks and both targeted runs. These initial runs
+were focused checks; subsequent full-regression results are recorded in the
+[continuation plan](PROTOCOL_RESEARCH.md#validation-log-for-this-checkpoint).
+The physical DISC was not probed for these reads.
+
+The focused run uses stock network indexing to avoid coupling these reads to UI
+navigation. An earlier UI preparation attempt failed before reaching the reads;
+early selector/pause probes also exposed the existing navigation rate gate. The
+final test respects the 2.1-second interval before selection and subsequent pause.
+
+For the remote, use `0406` for queue entries/count, HTTP `curlist/song` for its
+zero-based `mark-pos`, and `0202` for current-track metadata and one-based
+`pos_id`/`playing_num`. These are separate snapshots; refresh after source changes.
+Do not keep polling an unsupported `0426` or interpret its timeout as an empty
+queue. The diagnostic clients discard old notifications before a query; a future
+production backend still needs one event reader, since unsolicited `a102` and the
+read response have the same tag and no request identifier.
 
 ### List schemas
 

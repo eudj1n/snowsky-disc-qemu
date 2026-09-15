@@ -6,7 +6,7 @@ import contextlib
 import json
 from aiohttp import ClientSession, ClientTimeout, WSMsgType
 from fiio_link import (Frames, frame, hex_value, list_payload, index_payload,
-                       library_request, library_page, playback_snapshot)
+                       library_request, library_page, playback_snapshot, play_mode_value)
 from fiio_settings import spec, setting_command, setting_value, peq_payload, peq_value
 
 
@@ -71,7 +71,7 @@ class WSClient:
             raise self.error or ConnectionError('WebSocket closed')
         return result
 
-    async def request(self, tag, payload=b''):
+    async def request(self, tag, payload=b'', *, expected=None):
         async with self.lock:
             while not self.pending.empty():
                 self.pending.get_nowait()
@@ -81,7 +81,7 @@ class WSClient:
                 await self.send(tag, payload)
                 while True:
                     reply_tag, reply = await self.event()
-                    if reply_tag == 'a' + tag[1:].lower():
+                    if reply_tag == (expected or 'a' + tag[1:].lower()):
                         return reply
 
     async def handshake(self):
@@ -119,6 +119,9 @@ class WSClient:
     async def set_play_mode(self, mode):
         await self.send('0102', hex_value(mode, 4))
 
+    async def play_mode(self):
+        return play_mode_value(await self.request('0105', expected='a102'))
+
     async def scan_library(self):
         await self.send('0622', '0000')
 
@@ -147,6 +150,13 @@ class WSClient:
             if version != 257:
                 raise ValueError('favorite positions require DISC V2.57; V2.40 needs an internal ID absent from the list response')
         await self.send('0100', payload)
+
+    async def play_queue_index(self, index):
+        """Select the current queue after a fresh bounds check; no mutation retry."""
+        position = hex_value(index)
+        if index >= (await self.library('queue'))['total']:
+            raise ValueError('position outside the current queue')
+        await self.send('0100', position + '0000')
 
     async def play_all(self, list_type=1, name=None):
         await self.send('0101', list_payload(list_type, name))

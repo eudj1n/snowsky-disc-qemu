@@ -9,10 +9,19 @@ emulator-only revisions use `v2.40-r1`, etc. See [the porting guide](docs/PORTIN
 
 ### Added
 
+- TCP/WS `play_mode()` reads via `0105` with the stock `a102` response tag.
+  Add focused `CI_SCENARIO=queue-reads` acceptance for all five modes and `0426`
+  response absence, with settings/queue checks after each timeout. Document the
+  unassigned DISC `0426` handler and supported queue-read alternatives.
+- Current-queue selection helpers for TCP/WS with a fresh queue-length check and
+  no localized label. Disposable tests cover label variants, empty/replaced queues,
+  stale-index rejection and recovery from a raw out-of-range selector. Add focused
+  `CI_SCENARIO=queue` integration runs and a persistent protocol-research checklist
+  with validation status and remaining work for session handoff.
 - Physical DISC protocol evidence from FiiO Control iOS captures, with sanitized
   fixtures for themes, work modes, codecs, playback/favorites, paused seeks and
   HTTP current-queue selection. Document Android M21 dialect differences and
-  remaining queue-label validation before exposing a type-0 selection helper.
+  current-queue semantics and Android compatibility boundaries.
 
 - Stock USB/local/AirPlay mode and Bluetooth source-codec preference helpers;
   lock-screen HTTP client for system selection and full custom PNG/metadata upload.

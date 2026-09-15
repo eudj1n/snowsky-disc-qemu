@@ -1,6 +1,6 @@
 # Status
 
-_Current overview updated 2026-09-15. Dated experiments below retain their original findings._
+_Current overview updated 2026-09-16. Dated experiments below retain their original findings._
 
 ## Current capabilities
 
@@ -17,7 +17,7 @@ peripheral controls. See the [README](../README.md) for setup and the visual ove
 | **Viewer** | Current device skin, button hotspots, headphone sound switch, USB charging simulation, real guest SD hotplug, brightness, and collapsed Debug controls. | [Viewer](VIEWER.md) |
 | **Controls / power** | Assigned volume gestures, play/pause, sleep/wake and guest-only off/on. Stock libc reboot calls are confined and automatic poweroff requests handled by the viewer. | [Keys](KEYS.md) |
 | **Frame transport** | Last-written buffer marker, lossless PNGs on visible changes, periodic idle refresh and device-state SSE. | [Viewer internals](VIEWER.md#how-it-works) |
-| **Local protocol** | TCP 12100 settings/catalog and remote playback: list-position selection, next/previous, seek, modes, albums and built-in favorites. Optional native WS→TCP bridge on host 12103; direct stock HTTP on 12113. Physical DISC V2.57 comparisons are recorded separately. | [Remote control](REMOTE_CONTROL.md), [WebSocket](WEBSOCKET.md) |
+| **Local protocol** | TCP 12100 settings/catalog and remote playback: list-position selection, next/previous, seek, modes, albums and built-in favorites. Current-queue selection checks fresh bounds and needs no label, verified on V2.40/V2.57. Optional native WS→TCP bridge on host 12103; direct stock HTTP on 12113. Physical DISC V2.57 comparisons are recorded separately. | [Remote control](REMOTE_CONTROL.md), [WebSocket](WEBSOCKET.md) |
 | **Stock file/library API** | HTTP folders, streamed uploads/progress and single-path deletion; custom playlist create/rename/add/remove/delete. Network scanning indexes uploaded music. Current-cover JPEG retrieved on physical V2.57. | [HTTP API](HTTP_API.md) |
 | **Remote settings** | TCP/WS gain, DRE, filter, SPDIF and user PEQ/master gain with readback and SQLite persistence checks. Actual USB/AirPlay/BT and DSP response remain unvalidated. | [Settings protocol](REMOTE_SETTINGS.md) |
 | **Modes and lock screen** | Stock USB/local/AirPlay control transitions, five Bluetooth source-codec preferences, five system themes and full custom PNG/overlay metadata. Physical audio and screen rendering need separate checks. | [Modes and themes](REMOTE_MODES_THEMES.md) |
@@ -48,6 +48,10 @@ they illustrate the interface rather than replacing protocol/audio assertions.
   The current window contains 2.40 and 2.57; OTA detection alone does not retire either.
 
 ## Remaining work and limits
+
+The actionable DISC protocol backlog and session handoff are maintained in
+[PROTOCOL_RESEARCH.md](PROTOCOL_RESEARCH.md), including checkpoint validation,
+remaining settings/library investigations and future web-remote work.
 
 - **Hardware/audio:** USB storage and USB DAC, Bluetooth audio, DSD and MCU/UART
   behavior require separate validation. Viewer USB is only a charging-state stub;
