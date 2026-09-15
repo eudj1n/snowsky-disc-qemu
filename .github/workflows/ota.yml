@@ -13,6 +13,9 @@ jobs:
     name: Check stock firmware release
     runs-on: ubuntu-24.04
     timeout-minutes: 5
+    permissions:
+      contents: read
+      issues: write
     outputs:
       update_available: ${{ steps.ota.outputs.update_available }}
       newer_release_available: ${{ steps.ota.outputs.newer_release_available }}
@@ -25,7 +28,19 @@ jobs:
         with:
           persist-credentials: false
       - name: Test catalog handling
-        run: python3 -B -m unittest discover -s tools -p test_check_ota.py -v
+        run: |
+          python3 -B -m unittest discover -s tools -p test_check_ota.py -v
+          python3 -B -m unittest discover -s tools -p test_notify_ota.py -v
       - name: Read stock OTA catalog
         id: ota
         run: python3 -B tools/check_ota.py
+      - name: Open release tracking issue
+        if: steps.ota.outputs.newer_release_available == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          OTA_CURRENT_VERSION: ${{ steps.ota.outputs.current_version }}
+          OTA_CURRENT_RECOVERY: ${{ steps.ota.outputs.current_recovery }}
+          OTA_LATEST_VERSION: ${{ steps.ota.outputs.latest_version }}
+          OTA_LATEST_RECOVERY: ${{ steps.ota.outputs.latest_recovery }}
+        run: python3 -B tools/notify_ota.py

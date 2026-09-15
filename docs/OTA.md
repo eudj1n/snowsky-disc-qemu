@@ -2,7 +2,8 @@
 
 Investigated on 2026-09-15 using the pinned V2.57 rootfs, static MIPS
 disassembly, and read-only HTTPS requests from the host. No guest OTA installer
-was executed. GitHub-hosted access has not yet been tested.
+was executed. GitHub-hosted results are recorded separately in the
+[OTA workflow run history](https://github.com/eudj1n/snowsky-disc-qemu/actions/workflows/ota.yml).
 
 ## Result
 
@@ -99,13 +100,34 @@ python3 -B tools/check_ota.py --version 2.40
 ```
 
 The workflow runs the catalog tests, then queries the service from host Python.
-No Docker, firmware binaries, secrets, downloads of package files, or uploaded
-artifacts are needed. Each run produces a summary with the reviewed, offered,
+No Docker, firmware binaries, package downloads, uploaded artifacts, or custom
+secrets are needed. Each run produces a summary with the reviewed, offered,
 and highest advertised main-OS/recovery pairs. A newer advertised pair emits a
-GitHub warning; the check remains successful when valid metadata was obtained.
-This is a workflow summary/annotation signal, not an email or issue notification.
-The warning repeats daily until the reviewed profile catches up or the catalog
-changes; no persistent last-seen state is maintained.
+GitHub warning and creates a tracking issue through [notify_ota.py](../tools/notify_ota.py),
+using the job's built-in GitHub token with `issues: write`. The check remains
+successful when metadata and any required notification were handled; a failed
+issue API call fails the job and can be retried on the next run.
+
+The issue body carries a stable `snowsky-disc-ota:<main>:<recovery>` marker.
+The notifier lists all issue states and pages, without relying on search indexing.
+An existing open **or closed** issue prevents another issue for that pair; closed
+issues are never reopened. The workflow's concurrency group serializes scheduled
+and manual runs. Preserve the marker when editing an issue. No separate last-seen
+file, cache, or repository commit is needed. Delivery of GitHub email/mobile
+notifications depends on each user's repository notification settings.
+
+### After a release is detected
+
+1. Keep the tracking issue open while obtaining and checking the firmware package
+   using [PORTING.md](PORTING.md).
+2. Prepare the firmware-support PR manually. Link it with `Refs #<issue>` instead
+   of `Fixes`/`Closes`, so merging the PR does not close the tracking issue early.
+3. Complete CI and firmware integration, then prepare the release and document
+   verified behavior and limitations.
+4. Close the tracking issue manually after release preparation is complete.
+
+The monitor does not download firmware, implement support, merge PRs, prepare
+releases, or close issues. Recovery-only updates get their own tracking issue.
 
 Job outputs include `update_available` for the reviewed version's route and
 `newer_release_available` across all catalog routes, along with target/latest
@@ -119,7 +141,7 @@ The parser accepts strict JSON arrays and the vendor's trailing array comma.
 It discards package URLs after validation; exceptions are not printed because
 they can contain server response text or URLs.
 
-## Possible download/notification extensions
+## Possible OTA download integration
 
 1. **Download:** implement an OTA input mode separately from the current ZIP
    input. Resolve the selected record, require the expected target version,
@@ -128,11 +150,9 @@ they can contain server response text or URLs.
    existing pinned assembled-rootfs SHA-256 before extraction/execution. The
    signed manifest can add vendor verification if a reviewed trust anchor is
    provisioned; MD5 alone is not an authenticity check.
-2. **State/notifications:** store the last observed release tuple separately
-   from supported runtime profiles to avoid repeated alerts. A workflow output
-   or job summary is the minimal signal; an issue or another notification can
-   be added explicitly. Catalog changes must not automatically make unreviewed
-   firmware executable in integration CI; follow [PORTING.md](PORTING.md).
+2. Catalog changes must not automatically make unreviewed firmware executable
+   in integration CI; follow [PORTING.md](PORTING.md). Tracking issues provide
+   notification/deduplication without changing supported runtime profiles.
 
 Keep package URLs and raw catalog responses out of logs/artifacts, following
 [CI.md](CI.md). Retain fixed historical ZIP inputs: the observed catalog points
@@ -145,5 +165,6 @@ Public-repository schedules can be disabled after 60 days without
 repository activity. The repository's default branch was confirmed as `2.x`.
 See [GitHub's schedule documentation](https://docs.github.com/en/actions/reference/workflows-and-actions/events-that-trigger-workflows#schedule).
 
-The remaining deployment check is one read-only run on a GitHub-hosted runner:
-host access succeeded here, but runner egress/CDN behavior has not been measured.
+Use manual dispatch to verify service access after workflow changes; inspect
+the run summary and notification step. Synthetic unit tests exercise issue
+creation and deduplication without publishing fake firmware announcements.
