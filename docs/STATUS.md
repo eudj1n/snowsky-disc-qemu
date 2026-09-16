@@ -135,6 +135,9 @@ remaining settings/library investigations and future web-remote work.
 Current research: capture FiiO Control's custom-theme color/overlay-only save and
 audit its DISC screens against existing protocol helpers using user-provided
 screenshots; see [the audit plan](FIIO_CONTROL_APP.md#screen-coverage-audit).
+The first six wallpaper screenshots are inventoried: the app offers four custom
+layouts, while the current helper exposes only `default/0`. Their wire mapping
+and metadata-only save behavior await capture; theme parity is not complete.
 Physical iOS background/reconnect testing is deferred unless an error appears
 (owner decision, 2026-09-16), not a blocker for the completed idle/USB checkpoint.
 Long power tests remain opt-in under the [test selection policy](CI.md#test-selection-policy).

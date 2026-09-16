@@ -74,9 +74,12 @@ owner deferred physical iOS background/reconnect testing unless a concrete error
 appears; it is not a remaining acceptance gate for this checkpoint. Long-test
 selection is recorded in [CI.md](CI.md#test-selection-policy).
 
-Current work: custom-theme metadata-save capture, followed by a screenshot-led
-audit of the DISC screens in FiiO Control. No new capture/screenshots have been
-received for this audit yet. See [the audit plan](FIIO_CONTROL_APP.md#screen-coverage-audit).
+Current work: custom-theme metadata-save capture and a screenshot-led audit of
+the DISC screens in FiiO Control. First wallpaper batch (`IMG_6789`–`IMG_6794`),
+confirmed by the owner to use a physical DISC, is inventoried: four custom
+layouts expose a gap in the helper's fixed `default/0` style; official-catalog
+and color-slider semantics remain unknown.
+No new traffic capture yet. See [the audit](FIIO_CONTROL_APP.md#wallpaper-screens-first-batch-2026-09-16).
 
 ## Previous checkpoint completion: LAN discovery
 

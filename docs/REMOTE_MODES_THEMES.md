@@ -187,9 +187,12 @@ in ignored `work/`, and document only the minimal protocol evidence.
 
 ### Custom-theme metadata-save capture
 
-Active investigation, 2026-09-16; awaiting a new owner-provided capture. First
-inspect screenshots of theme selection and all custom editor panels to identify
-the actual controls and Save/Apply behavior; do not invent control names.
+Active investigation, 2026-09-16; awaiting a new owner-provided traffic capture.
+Six supplied screenshots confirm **Apply now**, background transparency, four
+overlay checkboxes, four style thumbnails and two unlabeled color sliders.
+See [screen coverage and gaps](FIIO_CONTROL_APP.md#wallpaper-screens-first-batch-2026-09-16).
+The custom helper currently fixes `msg-style` to `default/0`; the four visible
+choices must be mapped from traffic before exposing additional style values.
 Previously captured modes, codecs and stock-theme selections need not be repeated.
 
 Use a recoverable custom slot: retain the original image, all settings and the
@@ -200,11 +203,13 @@ firmware versions, then capture TCP 12100 and HTTP 12103 throughout this sequenc
 1. Open the theme editor and record the starting settings. If needed, upload and
    save the test image once, recording that as the baseline upload.
 2. Change **only the text/front color**, leaving the image and overlays unchanged;
-   save if the UI requires it. Note the action time and chosen value.
+   use **Apply now**. Note the action time and slider positions (no numeric color
+   value is shown in the supplied screenshots). Capture before moving a slider
+   too, since automatic writes have not been ruled out.
 3. Leave and reopen the editor to trigger fresh reads and verify the image and
    selected color survived. Record the actual result, including any missing image.
-4. Change **one overlay flag** only (for example date visibility, if offered),
-   save, leave and reopen again. Keep opacity/image/other fields unchanged.
+4. Change only **Date**, use **Apply now**, leave and reopen again. Keep
+   opacity/image/style/other fields unchanged.
 5. Restore the original custom image/settings and previously active theme, then
    reopen to verify restoration before stopping the capture.
 

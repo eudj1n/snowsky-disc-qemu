@@ -2,9 +2,10 @@
 
 ## Screen coverage audit
 
-Started 2026-09-16; awaiting the owner's screenshots. Scope: the DISC interface
-of FiiO Control, not every other supported product. Record the app version,
-platform and DISC firmware with each batch; do not assume an unchanged build.
+Started 2026-09-16; first wallpaper screenshots received and inventoried below.
+Scope: the DISC interface of FiiO Control, not every other supported product.
+Record the app version, platform and DISC firmware with each batch; do not
+assume an unchanged build.
 
 Start with theme selection and every custom-theme editor panel. Then inventory
 the other screens, including scrolled portions, nested settings, option dialogs,
@@ -31,6 +32,40 @@ Raw screenshots/captures stay in ignored `shots/` or `work/`. Commit only minima
 sanitized evidence; approved curated screenshots belong in `docs/images/`, not
 links to ignored local files. The first concrete protocol question is the
 [custom-theme save sequence](REMOTE_MODES_THEMES.md#custom-theme-metadata-save-capture).
+
+### Wallpaper screens: first batch (2026-09-16)
+
+Owner-provided iPhone screenshots `IMG_6789.PNG` through `IMG_6794.PNG`, Russian
+UI, show 17:30–17:31. The owner explicitly confirms this inspection used the
+**physical DISC**, not the emulator. These are phone-app screens while connected
+to that device, not photographs of the player's display or a network capture.
+App/firmware versions are not visible; the earlier reported
+iOS 4.6.0 / DISC V2.57 context is not fresh version evidence. Images are not copied
+into Git; filenames identify the supplied evidence, not repository links.
+
+| Screen/control | Screenshot | Existing coverage and remaining evidence |
+| --- | --- | --- |
+| Wallpapers → My wallpapers carousel / All | 6789, 6791 | One custom and five system tiles match the tested slot counts. `read_lock_screen()` reads each slot. No separate list/catalog helper or remote frontend. |
+| Apply / Applied | 6789, 6791 | Clock is marked applied in the app. `select_system_lock_screen()` covers system selection; custom upload also activates. Screenshot alone does not prove device readback or a standalone custom-activation request. |
+| Official wallpapers | 6790 | Shows “No wallpapers”. No catalog helper; source/endpoint and reason for the empty list unknown. Do not infer a cloud source, unsupported API or zero available wallpapers globally. |
+| Custom → tap image to change / Apply now | 6792–6794 | Full 360×360 PNG replacement/activation implemented. Image picker, crop and conversion flow are not shown or implemented by the helper. Existing-image reapply sequence awaits capture. |
+| Background transparency, displayed 100% | 6792 | Helper exposes `alpha=0..100` via `back-groud`; emulator checks persistence. UI percentage-to-wire mapping and opacity direction on the physical display remain unverified. |
+| Time, Date, Battery, Track information | 6793 | All four appear checked. Helper exposes `time/date/battery/id3`; metadata is emulator-tested. Exact iOS save sequence and physical rendering still require evidence. |
+| Style selection, four thumbnails | 6794 | Three digital layouts and one analog clock are visible; the first thumbnail is selected. **Implementation gap:** custom helper hardcodes `msg-style: default/0` and `subclass: lock_screen/custom/default`. No verified mapping from these four choices to wire values; do not equate thumbnail position with a style ID. |
+| Two unlabeled color-gradient sliders | 6794 | Helper accepts RGB via `front-color`. Exact slider semantics, color conversion, endpoints and save sequence unknown; do not label them RGB/HSV components from appearance alone. |
+
+The two tiles labelled FIIO Sheep have different artwork; names are not unique
+theme identities. Clock is the selected wallpaper in the list, while the first
+custom layout is selected in its editor: these are different selection levels.
+The custom image preview lacks overlays even though all four checkboxes appear
+checked; this does not prove a rendering failure or that flags are ignored.
+
+Next capture: preserve the existing image and change only color, then only Date,
+using the visible **Apply now** button and reopening after each operation. A
+subsequent style-only sequence should cover each thumbnail separately while
+holding image/color/flags/alpha fixed, to map both `msg-style` and `subclass` and
+identify any coupled changes. Official-catalog loading and image-picker/cropping
+are separate gaps, not prerequisites for the metadata-save capture.
 
 ## Android 4.6.0 input (2026-09-15)
 
