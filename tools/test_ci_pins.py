@@ -29,6 +29,8 @@ class FirmwareWorkflowPolicyTests(unittest.TestCase):
         self.assertEqual(versions, [DEFAULT_VERSION])
         secrets = re.findall(r'\$\{\{\s*secrets\.(\w+)\s*\}\}', self.workflow)
         self.assertEqual(secrets, [load_profile()['url_secret']])
+        secret = load_profile()['url_secret']
+        self.assertIn(f'{secret}: ${{{{ secrets.{secret} }}}}', self.workflow)
         self.assertNotIn('inputs.version', self.workflow)
         self.assertNotRegex(self.workflow, re.compile(r'^\s+inputs:', re.MULTILINE))
 

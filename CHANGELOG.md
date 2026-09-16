@@ -12,6 +12,7 @@ emulator-only revisions use `v2.40-r1`, etc. See [the porting guide](docs/PORTIN
 - Single-active-firmware policy and CI: manual integration runs only the reviewed
   V2.57 profile and receives only its download secret. Tests guard active-profile/
   secret consistency and trusted-branch execution. V2.40 runtime cleanup is separate.
+  OTA tracking issues use the same single-active-firmware transition checklist.
 - Daily stock OTA catalog monitoring with sanitized version outputs and one
   tracking issue per new main-OS/recovery pair; release preparation and issue
   closure remain manual, with no firmware download or automatic profile changes.
