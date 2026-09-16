@@ -1,10 +1,12 @@
 # Status
 
-_Current overview updated 2026-09-15. Dated experiments below retain their original findings._
+_Current overview updated 2026-09-16. Dated experiments below retain their original findings._
 
 ## Current capabilities
 
-**V2.57 is the default; V2.40 remains supported.** The emulator boots the stock UI,
+**V2.57 is the active/default firmware; V2.40 is historical.** Its legacy runtime
+profile remains selectable pending a separate cleanup, without ongoing support
+or backport guarantees. The emulator boots the stock UI,
 browses and scans local media, decodes audio, and exposes the FiiO Link service.
 The browser viewer adds live navigation, sound, physical-button gestures and
 peripheral controls. See the [README](../README.md) for setup and the visual overview.
@@ -32,17 +34,20 @@ they illustrate the interface rather than replacing protocol/audio assertions.
 
 ## Releases and verification
 
-- [v2.57 source release](https://github.com/eudj1n/snowsky-disc-qemu/releases/tag/v2.57):
-  release notes link the exact commit and hosted firmware-free/V2.40/V2.57 checks.
+- [v2.40 historical stable release](https://github.com/eudj1n/snowsky-disc-qemu/releases/tag/v2.40)
+  remains Latest. [v2.57](https://github.com/eudj1n/snowsky-disc-qemu/releases/tag/v2.57)
+  is retained as a Pre-release snapshot, with its original exact-commit test evidence.
+  The next stable V2.57 release will use a new name such as `v2.57-r1`.
 - [V2.57 report](firmware/2.57.md): input fingerprints, compatibility findings and
   validation scope. Vendor feature announcements are reference material, not
   claims that every hardware or stock-software feature was tested.
 - [Daily OTA run](https://github.com/eudj1n/snowsky-disc-qemu/actions/runs/34932983704):
   catalog access from a GitHub runner succeeded; V2.57/recovery 18 had no update,
   so issue creation was correctly skipped. Creation/deduplication has synthetic tests.
-- [CI policy](CI.md): release gates apply to the exact release commit and every
-  version in the resulting [three-version FIFO support window](PORTING.md#support-window--three-versions-fifo).
-  The current window contains 2.40 and 2.57; OTA detection alone does not retire either.
+- [CI policy](CI.md): release gates apply to the exact release commit and the
+  firmware being released. The [single-active-firmware policy](PORTING.md#support-policy--one-active-firmware)
+  keeps V2.57 active and older releases historical; an OTA announcement alone
+  does not replace the working version.
 
 ## Remaining work and limits
 

@@ -2,13 +2,15 @@
 
 The firmware is **not** stored in this repository. Download it yourself from FiiO.
 
-GitHub integration downloads use per-version secrets (`FIRMWARE_V240_URL`,
-`FIRMWARE_V257_URL`), never a committed direct URL. Runtime profiles:
+GitHub integration downloads use only the active version's secret
+(`FIRMWARE_V257_URL`), never a committed direct URL. Legacy V2.40 local tooling
+still understands `FIRMWARE_V240_URL`, but hosted CI does not receive it. Runtime profiles:
 [v2.40.json](v2.40.json), [v2.57.json](v2.57.json). See [CI policy](../docs/CI.md).
 
 The daily [OTA monitor](../docs/OTA.md) opens a tracking Issue for a new vendor
 version. It does not download the full archive or enable that firmware for runtime
-use. Reviewed versions follow the [three-version support window](../docs/PORTING.md#support-window--three-versions-fifo).
+use. Active support follows the [single-firmware policy](../docs/PORTING.md#support-policy--one-active-firmware).
+V2.57 is active; the V2.40 profile remains temporarily pending legacy cleanup.
 
 ## Where to get it
 
