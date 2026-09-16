@@ -145,8 +145,9 @@ The workflow first runs the firmware-free suite on the same commit, then:
    custom playlist lifecycle with internal-ID gaps. TCP/WS scans add the uploaded
    fourth track and remove it from the index after file deletion. V2.57 also uploads PNG.
 10. Runs [remote settings/PEQ acceptance](REMOTE_SETTINGS.md) over TCP/WS, checking
-    gain, DRE, filter, SPDIF, user bands/master gain and SQLite persistence, then restores
-    settings.
+    gain, DRE, filter, SPDIF, channel balance, user bands/master gain and SQLite
+    persistence, then restores settings. Balance also checks left/right DAC
+    attenuation mirrors at center, ±1 and ±20.
 11. Runs [modes/codecs/themes acceptance](REMOTE_MODES_THEMES.md): USB/local/AirPlay
     control transitions, five codec preferences, five stock lock screens, exact
     custom PNG and metadata, and empty-body/activation quirks. TCP/WS and direct/proxy
@@ -165,11 +166,14 @@ FW_VERSION=2.57 CI_SHOTS="$PWD/shots/v257" bash ci/integration.sh /absolute/path
 CI_SCENARIO=queue FW_VERSION=2.57 bash ci/integration.sh /absolute/path/to/main_os/ota_v257
 # Focused 0105/0426 reads, including an initially empty queue on TCP and WS.
 CI_SCENARIO=queue-reads FW_VERSION=2.57 bash ci/integration.sh /absolute/path/to/main_os/ota_v257
+# Focused settings/PEQ and channel-balance checks over TCP and WS.
+CI_SCENARIO=settings FW_VERSION=2.57 bash ci/integration.sh /absolute/path/to/main_os/ota_v257
 ```
 
-`CI_SCENARIO` accepts `full` (default), `queue` or `queue-reads`. All use the same
-random-name isolated stack and cleanup. Focused runs do not execute unrelated audio,
-peripheral, settings or storage integration scenarios. Only focused runs assert the queue
+`CI_SCENARIO` accepts `full` (default), `queue`, `queue-reads` or `settings`. All use the same
+random-name isolated stack and cleanup. Focused runs execute only their selected
+checks after setup/scan/reboot, not unrelated integration scenarios.
+Only focused queue runs assert the queue
 is empty before any track has been played; the full run reaches queue checks after
 other playback scenarios.
 

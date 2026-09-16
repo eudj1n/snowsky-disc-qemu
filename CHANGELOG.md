@@ -9,6 +9,10 @@ emulator-only revisions use `v2.40-r1`, etc. See [the porting guide](docs/PORTIN
 
 ### Added
 
+- TCP/WS channel-balance helper: stock L20..0..R20 range, packed direction/magnitude
+  encoding, readback and SQLite persistence. Disposable tests check center, ±1,
+  ±20 and opposite-channel DAC attenuation; add `CI_SCENARIO=settings` for focused
+  settings/PEQ regression runs. No firmware patch or physical-audio claim.
 - TCP/WS `play_mode()` reads via `0105` with the stock `a102` response tag.
   Add focused `CI_SCENARIO=queue-reads` acceptance for all five modes and `0426`
   response absence, with settings/queue checks after each timeout. Document the

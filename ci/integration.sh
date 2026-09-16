@@ -7,7 +7,7 @@ cd "$(dirname "${BASH_SOURCE[0]}")/.."
 export OTA_DIR="$(cd "${1:?path to OTA chunks}" && pwd)"
 export FW_VERSION="${FW_VERSION:-2.57}"
 CI_SCENARIO="${CI_SCENARIO:-full}"
-case "$CI_SCENARIO" in full|queue|queue-reads) ;; *) echo 'CI_SCENARIO must be full, queue or queue-reads' >&2; exit 2;; esac
+case "$CI_SCENARIO" in full|queue|queue-reads|settings) ;; *) echo 'CI_SCENARIO must be full, queue, queue-reads or settings' >&2; exit 2;; esac
 CI_TMP="$(mktemp -d "${TMPDIR:-/tmp}/diskos-ci.XXXXXXXX")"
 CI_ID="diskos-ci-$(basename "$CI_TMP" | tr '[:upper:].' '[:lower:]-')"
 export EMU_IMAGE="${EMU_IMAGE:-diskos-qemu-ci}"
@@ -53,6 +53,10 @@ if [ "$CI_SCENARIO" = queue ]; then
 fi
 if [ "$CI_SCENARIO" = queue-reads ]; then
   compose exec -T emu python3 -B /repo/ci/queue_reads_check.py --fresh
+  exit 0
+fi
+if [ "$CI_SCENARIO" = settings ]; then
+  compose exec -T emu python3 -B /repo/ci/settings_check.py
   exit 0
 fi
 compose exec -T emu python3 -B /repo/ci/viewer_peripherals.py

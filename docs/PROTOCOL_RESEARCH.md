@@ -11,10 +11,10 @@ Priority: stock SNOWSKY DISC functionality for a future locally hosted web remot
 and V2.40. Android FiiO Music/M21 is reference material only; it is a different
 implementation from FiiO Control and must not define DISC semantics.
 
-Working branch: `codex/disc-protocol-research`. Research checkpoint before the queue
-work: `f210645`. Use `git log -5 --oneline` and `git status --short` to identify the
+Working branch: `codex/disc-protocol-research`. Research checkpoint before channel
+balance: `09951b8`. Use `git log -5 --oneline` and `git status --short` to identify the
 latest checkpoint and any work left uncommitted; do not assume the earlier hash
-contains the later queue helpers.
+contains the later balance helper.
 
 ### Completed
 
@@ -23,6 +23,9 @@ contains the later queue helpers.
   [HTTP API](HTTP_API.md). Playlist CRUD does not yet establish playlist playback.
 - [x] Gain, DRE, filter, SPDIF, PEQ read/write and persistence:
   [settings](REMOTE_SETTINGS.md). These checks do not measure DSP output.
+- [x] Channel-balance contract: `0712` read / `0713` write / `a712` reply,
+  L20..0..R20, packed direction/magnitude, opposite-channel attenuation:
+  [evidence and reproduction](REMOTE_SETTINGS.md#channel-balance).
 - [x] Work-mode and Bluetooth source-codec preference controls, stock/custom theme
   APIs: [modes and themes](REMOTE_MODES_THEMES.md).
 - [x] Sanitized FiiO Control iOS capture fixtures, app-version evidence, and
@@ -38,16 +41,15 @@ contains the later queue helpers.
 ## Checkpoint completion
 
 - [x] Run the firmware-free suite on the final changes.
-- [x] Run **full** disposable integration on V2.57, including the new queue checks.
+- [x] Run **full** disposable integration on V2.57, including channel balance.
 - [x] Run **full** disposable integration on V2.40.
 - [x] Review the complete diff, record validation and remaining limitations here,
   then commit the checkpoint. A local commit is authorized; pushing/publishing is
   not part of this step.
 
-Before this full-regression step, 177 Python tests, 23 JavaScript tests, shell
-checks and four shim builds passed. Focused `queue` and `queue-reads` scenarios
-passed on both profiles via TCP and WS. These focused results alone are not full
-integration or release-gate results.
+Channel-balance firmware-free checks passed: 180 Python tests, 23 JavaScript tests,
+shell checks and four shim builds. Focused `settings` passed on V2.57 via TCP and WS.
+These focused results alone are not full integration or release-gate results.
 
 ### Reproduction
 
@@ -64,6 +66,7 @@ CI_SCENARIO=full FW_VERSION=2.40 bash ci/integration.sh "$OTA_240"
 # Focused diagnostics, not substitutes for the full runs above:
 CI_SCENARIO=queue FW_VERSION=2.57 bash ci/integration.sh "$OTA_257"
 CI_SCENARIO=queue-reads FW_VERSION=2.57 bash ci/integration.sh "$OTA_257"
+CI_SCENARIO=settings FW_VERSION=2.57 bash ci/integration.sh "$OTA_257"
 ```
 
 Run firmware integration sequentially to limit resource pressure. Each run uses
@@ -89,9 +92,9 @@ explicitly instead of retrying them indefinitely.
 
 ### 1. Settings useful to the remote
 
-- [ ] **Channel balance:** identify getter/setter, sign/range/units, verify left,
-  center and right values and restoration. Request a short app capture if static
-  analysis cannot establish the mapping.
+- [x] **Channel balance:** mapped from stock UI and player handlers. Shared TCP/WS
+  helper and tests cover -20, -1, 0, +1, +20, SQLite, per-channel DAC writes and
+  restoration. Hardware analog effects remain a separate check.
 - [ ] **Playback preferences:** investigate gapless (`0647`), ReplayGain (`0718`),
   folder jump (`0687`), artist grouping (`0648`), CD/track display (`064d`) and list
   interaction (`064e`). These are leads, not validated remote setters.
@@ -147,23 +150,29 @@ is indexed in [FIIO_CONTROL_APP.md](FIIO_CONTROL_APP.md).
 
 | Check | Result |
 | --- | --- |
-| Firmware-free | Passed: 177 Python tests, 23 JavaScript tests, shell syntax and four shim builds |
-| Full V2.57 | Passed, exit 0; UI scan, audio, controls, TCP/WS remote and queue checks, HTTP, settings, modes/themes, confinement and SD rescanning |
-| Full V2.40 | Passed, exit 0; UI scan, audio, controls, TCP/WS remote and queue checks, HTTP, settings, modes/themes and confinement |
+| Firmware-free | Passed: 180 Python tests, 23 JavaScript tests, shell syntax and four shim builds |
+| Focused settings V2.57 | Passed; TCP/WS balance endpoints/center/±1, DAC mirrors, SQLite and settings restoration |
+| Full V2.57 | Passed, exit 0; UI scan, audio, controls, TCP/WS remote and queue checks, HTTP, balance/settings, modes/themes, confinement and SD rescanning |
+| Full V2.40 | Passed, exit 0; UI scan, audio, controls, TCP/WS remote and queue checks, HTTP, balance/settings, modes/themes and confinement |
 | Final review / commit | Reviewed; included in the local checkpoint commit containing this document |
 
-Both full runs passed on their first attempt at this checkpoint. The queue-test
-cleanup now waits 2.1 seconds before pausing after selection, matching the known
-stock rate gate; both full runs exercised that final test code. Temporary stacks
-and volumes were removed. These are local integration results, not hosted release
-gates; no hardware-audio claim or publication is implied.
+Both full runs passed on their first attempt in this balance checkpoint, on the
+current computer. TCP and WS each checked center, ±1 and ±20, with baseline DAC
+L/R (12,12), L20 (12,32), R20 (32,12), matching SQLite and unchanged master volume.
+All temporary stacks/volumes were removed; the interactive stack was not changed.
+The CI image was also rebuilt from the tracked Dockerfile and the firmware-free
+suite passed again. Its package inventory matched the pre-existing test image
+except for the previously absent `strace`; V2.40 ran in the rebuilt image.
+These are local integration results, not hosted release gates; no physical analog
+output claim or publication is implied.
 
-**Resume with channel balance**, then the remaining playback preferences in
-section 1. Check the worktree and latest commit first. No checkpoint validation
-item remains open; later research items above are deliberately unchecked.
+**Resume with playback preferences** in section 1. Check the worktree and latest
+commit first. Balance is complete; its physical analog effects remain unvalidated.
 
 Detailed local logs for this checkpoint are ignored under `work/http-research/`:
-`checkpoint-final-unit.log`, `checkpoint-full-v257.log` and
-`checkpoint-full-v240.log`. The summary here must remain sufficient to resume even
+`balance-unit.log`, `balance-unit-rebuilt.log`, `balance-full-v257.log` and
+`balance-full-v240.log`.
+The prior checkpoint ran on another computer; its local files are not required.
+The summary here must remain sufficient to resume even
 when those machine-local logs are unavailable. Update results, failure explanations
 and the next unchecked item before handing off the session.

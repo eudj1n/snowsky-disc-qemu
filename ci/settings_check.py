@@ -43,6 +43,47 @@ async def set_and_read(client, name, value):
     raise AssertionError(f'{name}: {actual} != {value}')
 
 
+def dac_attenuation():
+    return tuple((Path('/work/rootfs/emu') / f'dac-{side}').read_bytes()[0]
+                 for side in ('left', 'right'))
+
+
+async def wait_dac(expected):
+    deadline = time.monotonic() + 5
+    while time.monotonic() < deadline:
+        actual = dac_attenuation()
+        if actual == expected:
+            return
+        await asyncio.sleep(.05)
+    raise AssertionError(f'DAC attenuation: {actual} != {expected}')
+
+
+async def balance_check(client, label):
+    original = await call(client.device_setting, 'balance')
+    saved_db = db('SELECT BALANCE_VOL FROM SYSCONFIG')
+    baseline = None
+    try:
+        await set_and_read(client, 'balance', 0)
+        await wait_db('SELECT BALANCE_VOL FROM SYSCONFIG', [(0,)])
+        baseline = dac_attenuation()
+        assert baseline[0] == baseline[1] and baseline[0] < 235, baseline
+        for value in (-20, -1, 0, 1, 20, 0):
+            await set_and_read(client, 'balance', value)
+            packed = 0x100 + value if value > 0 else -value
+            await wait_db('SELECT BALANCE_VOL FROM SYSCONFIG', [(packed,)])
+            expected = (baseline[0] + max(value, 0), baseline[1] + max(-value, 0))
+            await wait_dac(expected)
+            print(f'{label}: balance {value:+d}, SQLite {packed:04X}, DAC L/R {expected}', flush=True)
+    finally:
+        await set_and_read(client, 'balance', original)
+        # Both 0000 and 0100 mean center; the helper writes canonical 0000.
+        restored = 0x100 + original if original > 0 else -original
+        await wait_db('SELECT BALANCE_VOL FROM SYSCONFIG', [(restored,)])
+        assert saved_db == [(restored,)] or (original == 0 and saved_db == [(0x100,)])
+        if baseline is not None:
+            await wait_dac((baseline[0] + max(original, 0), baseline[1] + max(-original, 0)))
+
+
 async def exercise(client, label):
     await call(client.handshake)
     before_volume = (await call(client.settings))['currentVolume']
@@ -51,6 +92,7 @@ async def exercise(client, label):
     saved_bands = None
     saved_master = None
     try:
+        await balance_check(client, label)
         for name, value, column, persisted in (
             ('gain', 1 - original['gain'], 'VOL_MODE', 1 - original['gain']),
             ('dre', 1 - original['dre'], 'DRE_STATUS', 1 - original['dre']),
@@ -83,7 +125,7 @@ async def exercise(client, label):
         for name, value in original.items():
             await set_and_read(client, name, value)
     assert (await call(client.settings))['currentVolume'] == before_volume
-    print(f'{label}: gain/DRE/filter/SPDIF and user PEQ readback + SQLite persistence; settings restored', flush=True)
+    print(f'{label}: balance/gain/DRE/filter/SPDIF and user PEQ readback + SQLite persistence; settings restored', flush=True)
 
 
 async def main():

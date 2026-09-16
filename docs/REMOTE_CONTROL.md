@@ -344,7 +344,7 @@ settings/PEQ are in [REMOTE_SETTINGS.md](REMOTE_SETTINGS.md).
 | Work mode | USB DAC/local/AirPlay control transitions and persisted enums tested; actual hardware audio remains separate. See [modes](REMOTE_MODES_THEMES.md). |
 | Local playback | Catalog/play-all and HTTP custom playlist lifecycle are tested. Playback selection within custom lists still needs separate coverage. |
 | PEQ | User-preset selection, frequency/gain/Q, master gain, readback and SQLite persistence tested in emulator. Actual DSP response remains unmeasured. |
-| Settings | Network indexing, gain, SPDIF, filter, DRE and five Bluetooth source-codec preferences tested in emulator. Dedicated library reset, negotiated codec/audio and channel balance remain unvalidated. |
+| Settings | Network indexing, gain, SPDIF, filter, DRE, channel balance and five Bluetooth source-codec preferences tested in emulator. Dedicated library reset, negotiated codec and physical audio effects remain unvalidated. |
 | Lock screen / cover | Physical V2.57 current-cover JPEG; emulator checks general PNG upload, five stock themes and custom lock-screen PNG/metadata. See [theme quirks](REMOTE_MODES_THEMES.md#lock-screen-http). |
 
 Custom playlist operations use `GET/DELETE /song_category_tree/`,

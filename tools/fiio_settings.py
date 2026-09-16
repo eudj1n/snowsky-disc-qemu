@@ -8,6 +8,7 @@ SETTINGS = {
     'gain': ('064a', '0649', (0, 1)),
     'dre': ('0813', '0812', (0, 1)),
     'spdif': ('0824', '0823', (0, 1)),
+    'balance': ('0712', '0713', tuple(range(-20, 21))),
     'filter': ('0603', '0653', tuple(range(6))),
     'eq_type': ('0639', '0690', (255, 0, 1, 2, 3, 4, 5, 6, 8, 9, 10, *range(160, 170))),
     'eq_master_db': ('0629', '0630', None),
@@ -44,6 +45,10 @@ def setting_command(name, value):
             raise ValueError('unsupported setting value')
         if name == 'filter':
             value += 9  # Link enum 9..14; device/UI enum 0..5.
+        elif name == 'balance':
+            # Stock UI: L20..0..R20. High byte 1 = right, 0 = left;
+            # low byte is attenuation steps, NOT a signed 16-bit number.
+            value = 0x100 + value if value > 0 else -value
     return tag, f'{value:04X}'
 
 
@@ -52,6 +57,11 @@ def setting_value(name, payload):
     if len(payload) != 4:
         raise ValueError('expected four hexadecimal setting digits')
     value = int(payload, 16)
+    if name == 'balance':
+        direction, steps = value >> 8, value & 0xff
+        if direction not in (0, 1) or steps > 20:
+            raise ValueError('unknown balance encoding')
+        return steps if direction else -steps
     if name == 'eq_master_db':
         return (value if value < 32768 else value - 65536) / 10
     if name == 'filter':

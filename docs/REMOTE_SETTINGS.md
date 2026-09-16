@@ -19,6 +19,7 @@ before its SQLite save finishes.
 | `dre` | `0813` | `0812`, 0/1 | `DRE_STATUS` |
 | `filter` | `0603` | `0653`, **9..14** | `FILTER_TYPE`, 0..5 |
 | `spdif` | `0824` | `0823`, 0/1 | `SPDIF` |
+| `balance` | `0712` | `0713`, packed direction/magnitude; helper accepts -20..20 | `BALANCE_VOL`, packed wire value |
 | `eq_type` | `0639` | `0690`, network preset enum | `EQ_TYPE`, a different enum |
 | `eq_master_db` | `0629` | `0630`, signed 16-bit tenths of dB | `song.db.PEQ.MASTER_GAIN` |
 | `work_mode` | `0607` | `0657`, 1 USB DAC / 8 local / 10 AirPlay | See [mode mappings](REMOTE_MODES_THEMES.md#work-modes) |
@@ -42,6 +43,72 @@ EQ network **255 = off**, **160..169 = user presets 1..10**. Those user presets 
 to database `EQ_TYPE` **11..20**. Other observed mappings (network → database):
 `0→1, 1→5, 2→2, 3→6, 4→3, 5→7, 6→4, 8→8, 9→9, 10→10`.
 Acceptance exercises off/current restoration and first user preset, not every preset.
+
+## Channel balance
+
+`client.set_device_setting('balance', value)` accepts integer **-20..20**:
+negative = left (L), positive = right (R), zero = center, matching the stock UI.
+`client.device_setting('balance')` returns the same signed UI scale. These are
+attenuation steps, not percentages or signed dB values.
+
+The stock wire format is **not two's complement**: high byte `00` = left,
+`01` = right; low byte = magnitude 0..20. The getter replies with `a712` and
+the setter also emits `a712`. SQLite stores the packed integer unchanged.
+
+| UI/helper value | Setter frame | DAC attenuation relative to center (L, R) |
+| --- | --- | --- |
+| L20 / -20 | `0713000C0014` | (0, +20) |
+| L1 / -1 | `0713000C0001` | (0, +1) |
+| Center / 0 | `0713000C0000` | (0, 0) |
+| R1 / +1 | `0713000C0101` | (+1, 0) |
+| R20 / +20 | `0713000C0114` | (+20, 0) |
+
+The client rejects out-of-range values, floats and booleans before sending.
+It accepts either `0000` or `0100` as a center readback and writes canonical
+`0000`. Unknown direction bytes/magnitudes are rejected, not silently normalized.
+`0711` is a neighboring setting, **not** the balance setter.
+
+The firmware adds the magnitude to the opposite channel's attenuation, leaving
+the favored channel and master volume unchanged. The existing CS43131 viewer
+model interprets each step as 0.5 dB, so 20 steps means 10 dB attenuation, **not
+full muting**. DAC writes are clamped at 255. Tests use a non-muted baseline below
+the clamp and verify the exact per-channel ioctl mirrors (`emu/dac-left/right`),
+network readback, SQLite and restoration. This validates the emulator control
+path; it does not measure physical analog output. PCM capture is pre-DAC and is
+not expected to contain this attenuation.
+
+### Static evidence and reproduction
+
+Addresses below belong only to the fingerprinted stock builds. Use the native
+`mipsel-linux-gnu-objdump` in the repository's Docker image on an extracted ELF;
+do not execute unreviewed firmware or reuse addresses for another version.
+
+| Layer | V2.40 | V2.57 |
+| --- | --- | --- |
+| `0712` / `0713` command-table entries | `82cf90` / `82cf98` | `8388f0` / `8388f8` |
+| Getter / setter dispatch wrappers | `412b90` / `412bb0` | `414380` / `4143a0` |
+| Callback slots | `82e6a4` / `82e6a8` | `83a464` / `83a468` |
+| Network getter / setter callbacks | `4e5368` / `4e53a0` | `4ee4ec` / `4ee524` |
+| Hardware balance setter | `4e0f20` | `4e9c68` |
+
+V2.57 `mq_ui`: `458480` formats positive values with `R%d`, negative with `L%d`
+and sends `0713`; `458568` clamps button changes to ±20; `458bd0` sets the slider
+range to -20..20; `458ce0` decodes the packed state. In `mq_player`, `4e91a0`
+reads packed state at `83a750` and emits `a712`. Setter `4e9c68` stores channel
+offsets at config+13/+14, applies them through `4e9ad0` → `4e81a8`, emits `a712`
+and persists configuration field 19 (`BALANCE_VOL`). No binary patch is needed.
+V2.40 UI equivalents are `477a70` (slider event, `R%d`/`L%d`, `0713`),
+`4781c0` (slider range ±20) and `4782d0` (packed-state decoder).
+
+For example, inside the build image, with an extracted firmware at `$ROOTFS`:
+
+```sh
+mipsel-linux-gnu-objdump -d --start-address=0x458480 --stop-address=0x4586d4 "$ROOTFS/usr/bin/mq_ui"
+mipsel-linux-gnu-objdump -d --start-address=0x4e9c68 --stop-address=0x4e9d24 "$ROOTFS/usr/bin/mq_player"
+```
+
+These example addresses are **V2.57 only**. Resolve file offsets via ELF PT_LOAD
+segments, not a guessed constant VA offset.
 
 ## PEQ bands
 
@@ -108,7 +175,10 @@ table is not proof of a usable remote feature.
 ## Reproduce
 
 `ci/settings_check.py` runs TCP and WS against the disposable integration guest,
-changes/restores gain, DRE, filter, SPDIF and user PEQ, and reads SQLite without writes.
+changes/restores balance, gain, DRE, filter, SPDIF and user PEQ, and reads SQLite without writes.
+Balance additionally checks both channel-attenuation mirrors at center, ±1 and ±20.
+Use `CI_SCENARIO=settings` with `ci/integration.sh` for an isolated focused run;
+the full integration scenario includes the same checks.
 `tools/test_fiio_settings.py` pins wire examples, signed gain, binary PEQ structure,
 validation and the user-preset guard.
 

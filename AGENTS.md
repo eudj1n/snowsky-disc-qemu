@@ -185,6 +185,12 @@ headers named `list_id`/`src_list_id`/`dst_list_id` use positions, not database 
 Avoid stock batch recursive deletion (it constructs shell commands). `0622/0000`
 starts a scan; watch `a60a` start/finish and `a622` counts. Gain/DRE/filter/SPDIF and
 PEQ helpers are shared by TCP/WS; filter and EQ network enums differ from SQLite.
+Channel balance uses getter `0712`, setter `0713`, reply `a712`: helper integers
+-20..20 mean L20..0..R20; wire high byte 0=left/1=right, low byte=magnitude.
+It is not signed 16-bit or percent. `BALANCE_VOL` stores the packed value;
+the opposite DAC channel receives 0..20 attenuation steps. `ci/settings_check.py`
+checks TCP/WS, SQLite and DAC mirrors and restores state; focused scenario
+`CI_SCENARIO=settings` is available. Physical analog output remains unvalidated.
 The new CI scenarios use only disposable generated media. Never substitute the
 broad `0800` factory-reset command for the app's library-reset action.
 

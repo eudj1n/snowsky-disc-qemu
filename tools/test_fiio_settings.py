@@ -93,6 +93,8 @@ class SettingTests(unittest.IsolatedAsyncioTestCase):
         for name, value, wire in (
             ('gain', 0, b'0649000C0000'), ('dre', 1, b'0812000C0001'),
             ('spdif', 0, b'0823000C0000'), ('filter', 1, b'0653000C000A'),
+            ('balance', -20, b'0713000C0014'), ('balance', 0, b'0713000C0000'),
+            ('balance', 20, b'0713000C0114'),
             ('eq_type', 160, b'0690000C00A0'), ('eq_master_db', -1, b'0630000CFFF6'),
             ('work_mode', 10, b'0657000C000A'), ('bt_source_codec', 4, b'06d3000C0004'),
         ):
@@ -133,6 +135,45 @@ class SettingTests(unittest.IsolatedAsyncioTestCase):
         for payload in (b'', b'00000009', b'0000000A', b'0000xxxx', b'00000000FF'):
             with self.assertRaises(ValueError):
                 peq_value(payload)
+
+    def test_balance_range_and_direction(self):
+        for value in range(-20, 21):
+            tag, payload = setting_command('balance', value)
+            self.assertEqual(tag, '0713')
+            self.assertEqual(setting_value('balance', payload.encode()), value)
+        for payload, expected in ((b'0014', -20), (b'0114', 20),
+                                  (b'0001', -1), (b'0101', 1),
+                                  (b'0000', 0), (b'0100', 0)):
+            self.assertEqual(setting_value('balance', payload), expected)
+        for value in (-21, 21, True, 1.0, '1', None):
+            with self.assertRaises(ValueError):
+                setting_command('balance', value)
+        for payload in (b'FFFF', b'0201', b'0015', b'0115', b'000', b'00000'):
+            with self.assertRaises(ValueError):
+                setting_value('balance', payload)
+
+    async def test_balance_getter_tcp_ws(self):
+        tcp = Client.__new__(Client)
+        tcp.request = Mock(return_value=b'0014')
+        ws = WSClient()
+        ws.request = AsyncMock(return_value=b'0114')
+        self.assertEqual(tcp.device_setting('balance'), -20)
+        self.assertEqual(await ws.device_setting('balance'), 20)
+        tcp.request.assert_called_once_with('0712')
+        ws.request.assert_awaited_once_with('0712')
+
+    async def test_invalid_balance_never_sends(self):
+        tcp = Client.__new__(Client)
+        tcp.socket = Mock()
+        ws = WSClient()
+        ws.send = AsyncMock()
+        for value in (-21, 21, True, 1.0, '1', None):
+            with self.assertRaises(ValueError):
+                tcp.set_device_setting('balance', value)
+            with self.assertRaises(ValueError):
+                await ws.set_device_setting('balance', value)
+        tcp.socket.sendall.assert_not_called()
+        ws.send.assert_not_called()
 
     async def test_peq_requires_complete_valid_fields_and_user_preset(self):
         band = dict(position=0, frequency=1000, gain=-1.0, qValue=1.5, filterType=0)
