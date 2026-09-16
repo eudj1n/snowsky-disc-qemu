@@ -145,6 +145,8 @@ async def exercise(transport):
         await asyncio.sleep(2.1)
         await call(client.play_all, 3, 'CI Album')
         await snapshot(client, lambda s: s['state'] == 0 and s['playerflag'] == 3)
+        # Restoration must respect the same navigation interval as selection.
+        await asyncio.sleep(2.1)
         await call(client.play_pause)
         await snapshot(client, lambda s: s['state'] == 1)
         http.delete_playlist(0)

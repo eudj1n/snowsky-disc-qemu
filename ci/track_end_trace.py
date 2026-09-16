@@ -59,5 +59,9 @@ def validate(events, mode, start, order, duration=6):
         if complete:
             assert ticks[-1][2] == duration * 1000, 'track did not reach its end'
             assert ticks[-1][0] - segment[0][0] >= duration - .5
-            assert any(e[1] == 'a202' and e[2] == 1 for e in segment)
+            # Decoder-only transitions can omit the transient paused delta.
+            # Completion still requires full duration/progress, next metadata,
+            # correct queue order and (for the last track) the terminal sequence.
+            if stopped and cycle == len(starts) - 1:
+                assert any(e[1] == 'a202' and e[2] == 1 for e in segment)
     return positions

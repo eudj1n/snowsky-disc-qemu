@@ -127,6 +127,8 @@ by creating `/ui` yourself and reading it before `mq_player` connects: `tools/ui
   `/log/`. No `/api/websocket` route is registered. Unknown URLs return HTTP 200/empty
   via `0048f8f8`. See [NETWORK.md](NETWORK.md#websocket-investigation).
 - **UDP 12101** — discovery, multicast `224.0.0.255`, ~2 s heartbeat.
+  V2.57 sends raw `SNOWSKY DISC`, not a Link frame, and suppresses beacons while
+  a TCP client is connected. See [discovery evidence and opt-in LAN bridge](DISCOVERY.md).
 
 ## Authorization: device control is auth-free; `mg_dash` is unused by the apps
 

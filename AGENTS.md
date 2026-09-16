@@ -183,7 +183,18 @@ do not launch it. CI enables the profile explicitly.
 `./run.sh wscheck --control` compares TCP/WS and checks volume/playback (leaves paused).
 `http://localhost:12103/bridge/` is a read-only protocol inspector; disconnect it before
 another client (stock TCP is single-client). See `docs/WEBSOCKET.md`. LAN discovery
-and FiiO Control app compatibility remain unvalidated.
+and FiiO Control app compatibility are tracked in `docs/DISCOVERY.md`.
+V2.57 UDP discovery is plain `SNOWSKY DISC` to 224.0.0.255:12101, ~2 s, no
+embedded IP/ports. TCP accept suppresses it before handshake; disconnect resumes
+it (`CI_SCENARIO=discovery`). Passive host tool: `tools/fiio_discovery.py`.
+Opt-in `tools/lan_bridge.py` runs on the HOST, binds a specific LAN IPv4 and allows
+one phone IP; TCP 12100 -> localhost 12100, HTTP 12103 -> localhost 12113. It exposes
+unauthenticated control/file APIs: require explicit approval, trusted LAN, acknowledgement
+flag and bounded duration. Never autostart it or change default Compose localhost
+bindings. mDNS `_fiio._tcp` statically uses 12102, not a substitute control endpoint.
+Physical iPhone FiiO Control discovered the host adapter, connected, opened the
+emulator library and rediscovered it after confirmed disconnect. LAN listeners
+were then closed. This does not validate every app operation or idle wake/reconnect.
 
 Stock HTTP file/playlist operations and remote settings are documented in
 `docs/HTTP_API.md` and `docs/REMOTE_SETTINGS.md`. Use `tools/fiio_http.py` for

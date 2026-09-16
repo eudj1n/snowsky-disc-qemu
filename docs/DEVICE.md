@@ -23,6 +23,12 @@ dns-sd -B _fiio._tcp           # an instance appears only while a control channe
 arp -n <ip>                    # MAC, to re-find the device after a DHCP change
 ```
 
+V2.57 follow-up: the UDP payload is exactly `SNOWSKY DISC`, with no embedded
+address/port. Stock TCP acceptance suppresses its beacons until disconnect.
+The `_fiio._tcp` registration code uses port **12102**; do not infer control port
+12100 from that service name. Current physical/emulator evidence, caveats and
+the opt-in host LAN bridge are in [DISCOVERY.md](DISCOVERY.md).
+
 ## Open ports (stock V2.40, full 65535 scan)
 
 | port | service | notes |

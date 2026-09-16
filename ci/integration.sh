@@ -7,9 +7,9 @@ cd "$(dirname "${BASH_SOURCE[0]}")/.."
 export OTA_DIR="$(cd "${1:?path to OTA chunks}" && pwd)"
 export FW_VERSION="${FW_VERSION:-2.57}"
 CI_SCENARIO="${CI_SCENARIO:-full}"
-case "$CI_SCENARIO" in full|queue|queue-reads|settings|preferences|playlists|scan-cancel|library-reset|track-end|formats) ;; *) echo 'Unknown CI_SCENARIO' >&2; exit 2;; esac
-if [[ "$CI_SCENARIO" = preferences || "$CI_SCENARIO" = playlists || "$CI_SCENARIO" = scan-cancel || "$CI_SCENARIO" = library-reset || "$CI_SCENARIO" = track-end || "$CI_SCENARIO" = formats ]] && [ "$FW_VERSION" != 2.57 ]; then
-  echo 'Preference/playlist/scan-cancel/library-reset/track-end/formats acceptance requires active firmware V2.57' >&2
+case "$CI_SCENARIO" in full|queue|queue-reads|settings|preferences|playlists|scan-cancel|library-reset|track-end|formats|discovery) ;; *) echo 'Unknown CI_SCENARIO' >&2; exit 2;; esac
+if [[ "$CI_SCENARIO" = preferences || "$CI_SCENARIO" = playlists || "$CI_SCENARIO" = scan-cancel || "$CI_SCENARIO" = library-reset || "$CI_SCENARIO" = track-end || "$CI_SCENARIO" = formats || "$CI_SCENARIO" = discovery ]] && [ "$FW_VERSION" != 2.57 ]; then
+  echo 'Preference/playlist/scan-cancel/library-reset/track-end/formats/discovery acceptance requires active firmware V2.57' >&2
   exit 2
 fi
 CI_TMP="$(mktemp -d "${TMPDIR:-/tmp}/diskos-ci.XXXXXXXX")"
@@ -53,6 +53,10 @@ fi
 compose exec -T emu bash /repo/scripts/20_boot.sh
 if [ "$FW_VERSION" = 2.57 ]; then
   compose exec -T emu python3 -B /repo/ci/awake_check.py
+fi
+if [[ "$FW_VERSION" = 2.57 && ( "$CI_SCENARIO" = full || "$CI_SCENARIO" = discovery ) ]]; then
+  compose exec -T emu python3 -B /repo/ci/discovery_check.py
+  if [ "$CI_SCENARIO" = discovery ]; then exit 0; fi
 fi
 if [ "$CI_SCENARIO" = scan-cancel ]; then
   compose exec -T emu python3 -B /repo/ci/scan_cancel_check.py

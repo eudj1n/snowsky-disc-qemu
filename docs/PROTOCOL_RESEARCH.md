@@ -52,20 +52,25 @@ checkpoint and any work left uncommitted. Do not publish this branch implicitly.
   `curlist/song` and `0202` instead. No additional phone capture is needed for
   these two commands.
 
-## Current checkpoint completion: CUE/DSF/DFF metadata and identity
+## Current checkpoint completion: LAN discovery
 
-Natural-EOF checkpoint: `c3d15c2`; library reset: `4da1de6`; scan cancellation: `53fb0eb`;
+CUE/DSF/DFF checkpoint: `70114b2`; natural EOF: `c3d15c2`;
+library reset: `4da1de6`; scan cancellation: `53fb0eb`;
 playlist: `392c8bc`; preferences: `274bce4`.
 Their validation/failure history remains below.
 
-- [x] Trace CUE expansion, queue construction and source-ID fallback.
-- [x] Generate original CUE/WAV, DSF and DFF; verify metadata and positional
-  selection on TCP/WS, including two distinct CUE favorites.
-- [x] Run firmware-free checks: 232 Python tests, 23 JavaScript tests, shell
+- [x] Move SACD ISO into separate [issue #8](https://github.com/eudj1n/snowsky-disc-qemu/issues/8).
+- [x] Trace V2.57 UDP announcement format and connected-state gate; observe
+  physical beacons and compare the address with the user's iPhone search result.
+- [x] Run focused disposable `discovery` acceptance: idle, TCP pre/post-handshake
+  silence, fresh reads and disconnect recovery.
+- [x] Add an opt-in host TCP/HTTP LAN bridge with explicit interface, one-phone
+  allowlist, lifetime and unauthenticated-control acknowledgement.
+- [x] Run firmware-free checks: 250 Python tests, 23 JavaScript tests, shell
   checks and four shim builds.
-- [x] Run final focused `formats` acceptance via TCP/WS, with catalog/database/
-  selected-metadata assertions and restored generated fixture.
-- [x] Run **full** disposable integration on active V2.57 with formats acceptance.
+- [x] Verify phone-to-emulator discovery/connection and library browsing in an
+  explicitly approved, one-phone LAN session.
+- [x] Run **full** disposable integration on active V2.57 with discovery acceptance.
 - [x] Review the complete diff, record validation and create the local checkpoint
   commit. Pushing/publishing is not part of this step.
 
@@ -93,6 +98,7 @@ CI_SCENARIO=scan-cancel FW_VERSION=2.57 bash ci/integration.sh "$OTA_257"
 CI_SCENARIO=library-reset FW_VERSION=2.57 bash ci/integration.sh "$OTA_257"
 CI_SCENARIO=track-end FW_VERSION=2.57 bash ci/integration.sh "$OTA_257"
 CI_SCENARIO=formats FW_VERSION=2.57 bash ci/integration.sh "$OTA_257"
+CI_SCENARIO=discovery FW_VERSION=2.57 bash ci/integration.sh "$OTA_257"
 ```
 
 Run firmware integration sequentially to limit resource pressure. Each run uses
@@ -153,7 +159,8 @@ explicitly instead of retrying them indefinitely.
 - [x] **CUE/DSF/DFF metadata and identity:** generated external UTF-8 CUE and
   stereo DSD64 fixtures, queue/favorite positions, shared path/zero track and
   ID/HTTP-mark ambiguity. See [scope and limitations](FORMATS.md).
-- [ ] **SACD ISO:** requires a suitable multi-track test sample; DSF/DFF do not
+- [ ] **SACD ISO:** tracked separately in [issue #8](https://github.com/eudj1n/snowsky-disc-qemu/issues/8);
+  requires a suitable multi-track test sample; DSF/DFF do not
   establish ISO support. Embedded/multi-file CUE and higher DSD rates remain
   secondary extensions, not covered by the current fixtures.
   Historical V2.40 favorite-position playback remains guarded;
@@ -165,8 +172,11 @@ explicitly instead of retrying them indefinitely.
   of only color/overlay settings. Preserve and restore the original custom slot.
   Our verified full-image API already works; empty-body custom POST clears the
   image path. See the [capture checklist](REMOTE_MODES_THEMES.md#fiio-control-capture-checklist).
-- [ ] **LAN discovery and official-app compatibility:** establish discovery
-  packets/advertisements, then connect FiiO Control to the emulator. Existing
+- [x] **UDP LAN discovery contract:** exact physical payload observed; controlled
+  emulator idle/connected/disconnected lifecycle passed. [Details](DISCOVERY.md).
+- [x] **Official-app connection to emulator:** iPhone FiiO Control discovered
+  the opt-in host LAN bridge, connected and opened the emulator library.
+  Broader app compatibility and mDNS remain separate. Existing
   localhost WS bridge is our adapter, not a native stock DISC WebSocket endpoint.
 - [ ] **Remote connection versus idle power:** observe screen-off, pause,
   power counters, shutdown and safe wake/reconnect. The CI display-time fixture
@@ -496,8 +506,93 @@ machine-local files. Fixtures and all CI setup are tracked; no image-only edits,
 new Docker dependency or interactive emulator/media changes. No viewer UI changed;
 existing curated screenshots remain current.
 
-**Next unchecked format item: SACD ISO**, requiring a suitable multi-track sample.
+**Deferred format item: SACD ISO**, tracked in
+[issue #8](https://github.com/eudj1n/snowsky-disc-qemu/issues/8), requiring a suitable multi-track sample.
 Its static decoder branch is mapped, but DSF/DFF are not a substitute. Without
 that input, the next independent backlog is exact app behavior/discovery, not
 more speculative format-support claims. Embedded/multi-file CUE, CUE seek/EOF
 boundaries and hardware DSD output remain outside this checkpoint.
+
+## LAN discovery investigation (2026-09-16)
+
+SACD ISO moved to [issue #8](https://github.com/eudj1n/snowsky-disc-qemu/issues/8)
+at the user's request; no ISO was added or marked supported. The next work item
+became LAN discovery. See [DISCOVERY.md](DISCOVERY.md) for the wire contract,
+exact V2.57 addresses, host tooling, exposure risks and repeatable commands.
+
+Static UDP sender `4da780` sends only literal `SNOWSKY DISC` to multicast
+224.0.0.255:12101, not a Link frame or a response to a query. TCP accept in
+`4db020` sets connected flag `898950` and suppresses beacons even before a Link
+handshake. A fresh disposable focused run passed: four idle beacons (~2.01 s),
+silence before/after handshake, fresh settings/protocol reads, then four resumed
+beacons after disconnect. No source/settings changes or firmware patch.
+
+Passive physical capture received 15 exact beacons in 30 seconds (~1.84–2.15 s).
+The user saw the same device address in iPhone FiiO Control. Their brief physical
+connect/disconnect was not precisely aligned with the observer; retain that limit
+instead of claiming measured physical suppression. A short mDNS browse saw no
+`_fiio._tcp` instance. Static registration `489d70` uses port 12102, with TXT
+fields built by `4898a4`; it is not evidence of a TCP-12100 discovery requirement.
+
+Added passive `tools/fiio_discovery.py` and explicit host `tools/lan_bridge.py`.
+The latter synthesizes the verified announcement from the selected host interface
+and forwards TCP 12100 and direct stock HTTP 12103 to existing loopback ports.
+It requires a single allowed phone IP, acknowledgement of unauthenticated control
+and a bounded lifetime; default Compose stays localhost-only. No Avahi, WS
+translation, arbitrary multicast relay or image-only dependency was introduced.
+
+After explicit approval, the existing V2.57 guest was booted (no SD rebuild) and
+the bridge opened for one iPhone. The user confirmed discovery of the emulator's
+host address, successful connection and library browsing. Bridge logs independently
+showed control and HTTP connections. On confirmed disconnect, announcements
+resumed in the host observer and the device returned to the phone's search list.
+The bridge was stopped and its LAN listeners checked absent. Normal local guest
+was left running; no library reset, file deletion or setting mutation was part
+of the manual test. The phone-to-emulator path worked without mDNS advertising.
+
+Firmware-free validation passed: 250 Python tests, 23 JavaScript tests, shell
+checks and four shim builds. Bridge tests include byte-exact forwarding,
+half-close, disallowed peers, single control owner, HTTP readiness/failure,
+connection/readiness race, upstream-failure cleanup and explicit multicast TTL.
+The first full run passed discovery and all later scenarios through formats, then
+failed the EOF oracle's requirement for an intermediate `a202 state=1` between
+tracks. Its trace still shows six seconds/6000 ms, correct next full metadata,
+restarted progress and final zero/state-2 stop. Guest logs independently show
+natural completion and a decoder-only transition; the precise reason for the
+missing wire delta was not established. The oracle now permits that transient
+delta to be absent **between** tracks, while retaining duration, order, new
+metadata, restarted progress, final-stop and runtime/readback requirements. Two
+regression tests cover this valid sequence and retain the terminal pause check.
+The original saved failing trace also passes the corrected oracle unchanged.
+The failure was not suppressed or retried unchanged. The second full run passed
+all five TCP EOF modes (including another transition without state 1), but failed
+the fixture's album-restoration pause before reaching WS. That path sent pause
+immediately after selection, violating the already documented 2.1-second
+navigation interval. It now waits before the single pause command, as the format
+scenario already does; no mutation retry was added. The third full run passed
+(exit 0): discovery, all existing protocol/settings/format checks, all ten EOF
+mode/transport combinations and their restoration, scan cancellation, library
+reset, SD/Unicode and preference checks. The final firmware-free suite passed
+again (250 Python / 23 JavaScript / shell checks / four shim builds), and Compose
+validation passed. Disposable stack, volume and generated host fixture were
+removed. This is local validation, not a hosted exact-commit release gate.
+Reviewed and included in the local checkpoint commit; no push is implied.
+
+Ignored evidence under `work/preferences/`: `discovery-refs.log`,
+`discovery-static.log`, `discovery-state-refs.log`, `discovery-lifecycle.log`,
+`discovery-mdns.log`, `discovery-mdns-register.log`; physical observations
+`discovery-physical.log`, `discovery-physical-lifecycle.log`; host bridge observations
+`discovery-host-bridge.log`, `discovery-phone-disconnect.log`; focused
+`discovery-focused.log` / `discovery-focused-logs/`; firmware-free
+`discovery-unit.log`, `discovery-bridge-unit.log`, `discovery-unit-final.log`,
+`discovery-unit-reviewed.log`, `discovery-unit-verified.log`; failed full
+`discovery-full.log` / `discovery-full-logs/`; second failed full
+`discovery-full-final.log` / `discovery-full-final-logs/`; third full
+`discovery-full-verified.log` / `discovery-full-verified-logs/`. Logs contain local addresses:
+do not upload them as CI artifacts. Reproduction uses tracked scripts and does
+not depend on these machine-local records. Viewer UI is unchanged.
+
+Next: exact custom-theme metadata-only save in FiiO Control, or the separately
+listed remote connection/idle-power lifecycle. Discovery/library browsing does
+not validate every app command, Android, mDNS/AirPlay or sleep/wake behavior.
+Do not start an automatic LAN service or weaken default network exposure.

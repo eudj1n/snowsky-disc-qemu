@@ -133,6 +133,9 @@ The workflow first runs the firmware-free suite on the same commit, then:
    randomly named container/work volume and a separate generated SD directory.
 3. Decrypts/verifies/extracts the selected firmware, checks six binary fingerprints,
    applies its guarded key patch, primes a new config DB, and boots normally.
+   On V2.57, `ci/discovery_check.py` observes stock UDP announcements, suppression
+   before/after a TCP handshake and recovery after disconnect, without changing
+   media/settings or exposing LAN ports. See [discovery](DISCOVERY.md).
 4. Confirms an initially empty TCP catalog, slowly drags to Settings, scrolls to
    Update media lib, taps Update now, and checks all three generated tracks are
    indexed (Unicode WAV and two FLACs with artist/album tags).
@@ -219,14 +222,19 @@ CI_SCENARIO=library-reset FW_VERSION=2.57 bash ci/integration.sh /absolute/path/
 CI_SCENARIO=track-end FW_VERSION=2.57 bash ci/integration.sh /absolute/path/to/main_os/ota_v257
 # CUE/DSF/DFF metadata, ambiguous identities and positional selection.
 CI_SCENARIO=formats FW_VERSION=2.57 bash ci/integration.sh /absolute/path/to/main_os/ota_v257
+# Stock UDP announcements before, during and after one control connection.
+CI_SCENARIO=discovery FW_VERSION=2.57 bash ci/integration.sh /absolute/path/to/main_os/ota_v257
 ```
 
 `CI_SCENARIO` accepts `full` (default), `queue`, `queue-reads`, `settings`,
-`preferences`, `playlists`, `scan-cancel`, `library-reset`, `track-end` or `formats`. All use the same
+`preferences`, `playlists`, `scan-cancel`, `library-reset`, `track-end`, `formats` or `discovery`. All use the same
 random-name isolated stack and cleanup. Focused runs execute only their selected
 checks, not unrelated integration scenarios. Most use the shared setup/scan/reboot
 preparation; `scan-cancel`, `library-reset`, `track-end` and `formats` start after boot and prepare their
 own network scans.
+`discovery` is V2.57-only, starts after boot and does not need a media scan. It
+observes multicast inside the disposable namespace, not across the host/LAN
+boundary. The opt-in phone LAN bridge is never launched by CI or normal Compose.
 `formats` is V2.57-only and generates its original fixtures with Python's standard
 library. No FFprobe/container dependency is added; SACD ISO and native DSD output
 are not covered. See [scope and reproduction](FORMATS.md).

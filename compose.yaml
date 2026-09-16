@@ -9,6 +9,8 @@
 # emu idles (`sleep infinity`); ./run.sh execs its /repo/scripts/* pipeline.
 # Optional wsbridge profile: docker compose --profile wsbridge up -d
 # Separate unprivileged native service; no MIPS rootfs changes.
+# Opt-in phone LAN testing uses tools/lan_bridge.py on the host (docs/DISCOVERY.md).
+# Keep these Docker publications loopback-only; no automatic LAN exposure.
 services:
   emu:
     build: ./docker

@@ -9,6 +9,10 @@ emulator-only revisions use `v2.40-r1`, etc. See [the porting guide](docs/PORTIN
 
 ### Added
 
+- Passive DISC UDP discovery helper, V2.57 announcement/connection lifecycle
+  acceptance and an explicit host-side phone LAN bridge with selected interface,
+  single-IP allowlist and bounded lifetime. Default Compose remains localhost-only;
+  the bridge forwards stock TCP/HTTP, not WebSocket. SACD ISO deferred to issue #8.
 - Generated V2.57 CUE/DSF/DFF metadata/selection fixtures and `CI_SCENARIO=formats`.
   Document shared CUE paths, zero wire track numbers, lossy favorites flags,
   colliding queue IDs and misleading HTTP marks. Keep SACD ISO and native DSD
@@ -87,6 +91,10 @@ emulator-only revisions use `v2.40-r1`, etc. See [the porting guide](docs/PORTIN
 
 ### Fixed
 
+- EOF test oracle no longer requires a transient paused delta between automatic
+  tracks: a V2.57 decoder-only transition omitted it while complete progress,
+  next metadata and final stop were correct. Duration/order/terminal checks remain.
+  EOF fixture restoration also respects the stock selection-to-pause interval.
 - Read-only player discovery tolerates brief ambiguous PID snapshots by bounded
   re-enumeration, while still refusing persistent multiple players. No arbitrary
   PID selection, memory write or mutation retry.

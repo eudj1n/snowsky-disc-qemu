@@ -162,8 +162,10 @@ request IDs; the client is sequential and intentionally does not support concurr
 
 Direct stock Mongoose (host 12113) `/api/hi` and `/api/websocket` return the generic empty HTTP 200 fallback,
 not an API reply or WebSocket upgrade. See the investigation below.
-Multicast discovery across the Mac/Docker/LAN boundary is also not implemented;
-publishing UDP 12101 is not a multicast relay. Use explicit localhost connections.
+Publishing UDP 12101 is not a multicast relay. Normal Compose remains localhost-only.
+Stock V2.57 announcement/lifecycle probes and an opt-in, allowlisted **host**
+LAN bridge are described in [DISCOVERY.md](DISCOVERY.md); the bridge is separate
+from wsbridge and must be explicitly enabled for a bounded phone test.
 OTA installation, NTP, internet services and actual Wi-Fi association are out of scope.
 
 ## WebSocket investigation

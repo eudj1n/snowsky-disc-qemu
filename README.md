@@ -100,7 +100,10 @@ For direct Compose setup, copy `.env.example` to `.env`, set `OTA_DIR`, then run
 
 The emulator publishes FiiO Link TCP on **127.0.0.1:12100** and direct stock HTTP on
 **127.0.0.1:12113**. Try `python3 tools/fiio_link.py` for a read-only host query.
-UDP 12101 is also mapped locally; LAN multicast discovery is not implemented.
+UDP 12101 is also mapped locally; this alone does not relay LAN discovery.
+For a trusted-phone test, an [opt-in host LAN bridge](docs/DISCOVERY.md) adds
+discovery and stock TCP/HTTP forwarding with an explicit IP allowlist and time
+limit. Default startup stays localhost-only; the stock APIs have no password.
 
 An optional native WebSocket-to-TCP adapter provides **12103** and a read-only
 protocol inspector:
@@ -121,7 +124,7 @@ and [protocol reference](docs/PROTOCOL.md).
 </details>
 
 **Scope:** this is userspace emulation, with host-managed guest shutdown and
-simulated hardware interfaces. USB storage/DAC, Bluetooth audio, DSD and
+simulated hardware interfaces. USB storage/DAC, Bluetooth audio, native DSD/DoP and
 hardware-accurate timing remain unvalidated. Docker runs the emulator container
 privileged for its mounts, message queues and MIPS binfmt setup; services bind to
 localhost. See [emulation internals](docs/EMULATION.md) and [validation limits](docs/STATUS.md).
@@ -200,7 +203,7 @@ and [CHANGELOG.md](CHANGELOG.md).
 | **Emulator** | [How it works](docs/EMULATION.md) · [Current results](docs/STATUS.md) | `run.sh`, `scripts/`, `shim/`, `docker/` |
 | **Viewer** | [Viewer guide](docs/VIEWER.md) · [Touch](docs/TOUCH.md) · [Buttons](docs/KEYS.md) | `tools/stream.py`, `tools/*.js`, `assets/` |
 | **Media** | [Audio](docs/AUDIO.md) · [Library](docs/MEDIA_LIBRARY.md) · [Settings](docs/SETTINGS.md) | `sdcard/`, `tools/audio.py` |
-| **Connectivity** | [Network](docs/NETWORK.md) · [Protocol](docs/PROTOCOL.md) · [WebSocket](docs/WEBSOCKET.md) | `tools/fiio_link.py`, `tools/ws_bridge.py` |
+| **Connectivity** | [Network](docs/NETWORK.md) · [Protocol](docs/PROTOCOL.md) · [WebSocket](docs/WEBSOCKET.md) · [Opt-in phone LAN bridge](docs/DISCOVERY.md) | `tools/fiio_link.py`, `tools/ws_bridge.py`, `tools/lan_bridge.py` |
 | **Firmware research** | [Acquisition](firmware/README.md) · [Porting](docs/PORTING.md) · [Reverse engineering](docs/RE.md) | `firmware/`, `ghidra/` |
 | **Contributing** | [CI](docs/CI.md) · [Agent instructions](AGENTS.md) | `ci/`, `.github/workflows/` |
 

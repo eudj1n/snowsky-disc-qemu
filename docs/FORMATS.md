@@ -5,6 +5,7 @@ output or audible fidelity. Fixtures are generated locally: one 12-second WAV
 with a two-track UTF-8 CUE sheet, an eight-second stereo DSD64 DSF with ID3v2.3
 tags, and an uncompressed DSDIFF/DFF with a title. No downloaded music is needed.
 SACD ISO remains a separate, unvalidated source; it is not equivalent to DSF/DFF.
+Follow-up research is tracked in [issue #8](https://github.com/eudj1n/snowsky-disc-qemu/issues/8).
 
 ## Observed formats
 

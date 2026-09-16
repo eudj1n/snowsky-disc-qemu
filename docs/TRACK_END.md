@@ -28,7 +28,9 @@ position locally, especially in random mode; read the supplied metadata/mark.
 Each selected/repeated track starts with full `a202` metadata reporting
 `state: 2`, followed by state-only `{"state":0}` notifications, often duplicated.
 Ticks arrive as `a103` hexadecimal milliseconds: 1000, 2000, …, 6000 in this
-fixture. At EOF the player briefly sends `{"state":1}`.
+fixture. At EOF the player often briefly sends `{"state":1}`; a later full-run
+trace omitted it between two automatically selected tracks. The final-stop
+sequence below remained intact. See [the discovery-checkpoint failure analysis](PROTOCOL_RESEARCH.md#lan-discovery-investigation-2026-09-16).
 
 - For automatic continuation, a new full snapshot follows, including for
   repeat-one with the **same** filename. Progress starts again at 1000 ms.
@@ -52,7 +54,9 @@ Consequences for a future remote:
   state 2 is not sufficient to conclude that playback has finally stopped.
 - Do not count duplicate playing deltas as repeated tracks. Track identity alone
   cannot detect repeat-one either: observe the full snapshot and progress restart.
-- A transient state 1 at EOF is not evidence of a user pause. Allow the subsequent
+- A transient state 1 at EOF is not evidence of a user pause, and can be absent
+  between automatically selected tracks (observed in V2.57 decoder-only transition).
+  Do not require that delta as proof of each track's completion. Allow the subsequent
   stop/selection sequence to resolve it; do not send a compensating toggle.
 - Use the observed stop sequence, not a query timeout, to report final stop.
   After a reconnect without that history, missing `0202` leaves current playback

@@ -37,6 +37,18 @@ class TrackEndTraceTests(unittest.TestCase):
         for positions in ([1, 2, 0, 2], [1, 0, 1, 2]):
             validate(trace(positions, False), 1, 1, ORDER)
 
+    def test_automatic_transition_can_omit_pause_delta(self):
+        # Observed in V2.57 full integration: 6000 ms, next full metadata,
+        # playing deltas, restarted ticks; no state=1 between B and C.
+        events = [e for e in trace([1, 2], True)
+                  if not (e[1] == 'a202' and e[2] == 1 and e[0] < 7)]
+        self.assertEqual(validate(events, 0, 1, ORDER), [1, 2])
+
+    def test_terminal_pause_delta_still_required(self):
+        events = [e for e in trace([1], True) if not (e[1] == 'a202' and e[2] == 1)]
+        with self.assertRaises(AssertionError):
+            validate(events, 4, 1, ORDER)
+
     def test_loading_state_is_not_terminal(self):
         with self.assertRaises(AssertionError):
             validate(trace([1], False), 4, 1, ORDER)

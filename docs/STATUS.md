@@ -20,6 +20,7 @@ peripheral controls. See the [README](../README.md) for setup and the visual ove
 | **Controls / power** | Assigned volume gestures, play/pause, sleep/wake and guest-only off/on. Stock libc reboot calls are confined and automatic poweroff requests handled by the viewer. | [Keys](KEYS.md) |
 | **Frame transport** | Last-written buffer marker, lossless PNGs on visible changes, periodic idle refresh and device-state SSE. | [Viewer internals](VIEWER.md#how-it-works) |
 | **Local protocol** | TCP 12100 settings/catalog and remote playback: list-position selection, next/previous, seek, modes, albums and built-in favorites. Current-queue selection checks fresh bounds and needs no label, verified on V2.40/V2.57. Optional native WS→TCP bridge on host 12103; direct stock HTTP on 12113. Physical DISC V2.57 comparisons are recorded separately. | [Remote control](REMOTE_CONTROL.md), [WebSocket](WEBSOCKET.md) |
+| **LAN discovery** | Exact UDP announcements observed on physical V2.57; emulator tests confirm suppression during TCP connection and resumption after disconnect. FiiO Control on iPhone discovered the emulator and opened its library through the opt-in, one-phone host TCP/HTTP bridge. Default ports stay localhost-only. | [Discovery and safe manual test](DISCOVERY.md) |
 | **Stock file/library API** | HTTP folders, streamed uploads/progress and single-path deletion; custom playlist create/rename/add/remove/delete. Network scanning indexes uploaded music. Current-cover JPEG retrieved on physical V2.57. | [HTTP API](HTTP_API.md) |
 | **Custom playlist playback** | V2.57 TCP/WS whole-list and track selection with fresh HTTP name/bounds checks. Tests distinguish list position from SQLite ID and cover rename/edit/position shifts. Physical app comparison remains separate. | [Playlist contract](PLAYLISTS.md) |
 | **Natural track/list end** | V2.57 five-mode EOF behavior observed over TCP/WS on a short WAV/FLAC custom queue: stop, repeat-one, wrap and random continuation. Gapless/folder jump off. Final stop leaves the queue intact but `0202` silent; loading state 2 is not terminal stop. | [EOF contract and acceptance](TRACK_END.md) |
@@ -40,11 +41,20 @@ peripheral controls. See the [README](../README.md) for setup and the visual ove
 Fresh captures from the actual V2.57 guest, 2026-09-15. The current browser skin
 and controls are shown in [VIEWER.md](VIEWER.md). These are screenshots, not mockups;
 they illustrate the interface rather than replacing protocol/audio assertions.
-The 2026-09-16 preference/playlist/scan/reset/EOF/formats investigations change protocol helpers/tests, not
+The 2026-09-16 preference/playlist/scan/reset/EOF/formats/discovery investigations change protocol helpers/tests, not
 the viewer UI; these captures remain the current visual reference.
 
 ## Releases and verification
 
+- 2026-09-16 LAN discovery checkpoint: 250 Python and 23 JavaScript tests, four
+  shim builds, focused discovery and full local V2.57 integration passed. Physical
+  iPhone FiiO Control discovered the emulator, connected, opened its library and
+  found it again after disconnect via the explicitly approved one-phone host
+  bridge. Temporary LAN listeners were then closed; defaults remain localhost-only.
+  Full-run validation exposed and corrected two old EOF test assumptions; both
+  failures and the successful third run are recorded in
+  [the investigation](PROTOCOL_RESEARCH.md#lan-discovery-investigation-2026-09-16).
+  This is not a hosted release gate or validation of all official-app functions.
 - 2026-09-16 CUE/DSF/DFF checkpoint: 232 Python and 23 JavaScript tests, four
   shim builds, focused TCP/WS acceptance and full local V2.57 integration passed.
   Generated sources verify metadata and positional selection, including two CUE
@@ -107,8 +117,9 @@ remaining settings/library investigations and future web-remote work.
 - **Hardware/audio:** USB storage and USB DAC, Bluetooth audio, native DSD/DoP and MCU/UART
   behavior require separate validation. Viewer USB is only a charging-state stub;
   its headphone control enables browser audio, not stock headphone detection.
-- **Networking:** LAN multicast discovery, FiiO Control phone-app compatibility,
-  Wi-Fi association and cloud streaming remain unvalidated. The bridge is an
+- **Networking:** Full FiiO Control phone-app compatibility, mDNS lifecycle,
+  Wi-Fi association and cloud streaming remain unvalidated. UDP discovery evidence
+  and the bounded LAN bridge are documented separately. The WS bridge is an
   emulator adapter, not newly discovered native stock WebSocket support.
 - **Power/timing:** guest-only process stop is not hardware standby or a stock
   shutdown animation. qemu-user does not reproduce hardware timing and the
