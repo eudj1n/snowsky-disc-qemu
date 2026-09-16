@@ -159,10 +159,13 @@ and setup options are covered in the **[viewer guide](docs/VIEWER.md)**.
 
 ## Firmware support & development
 
-**Supported: V2.57 (default) and V2.40.** Support follows a **three-version FIFO
-window**: after a fourth firmware is validated and its release prepared, the oldest
-leaves current runtime support and CI. Historical tags, inventories and analysis
-remain available. An OTA announcement alone does not move the window.
+**Active development: V2.57 on `2.x`.** We support one firmware at a time: the
+latest version validated in the emulator. Older versions remain available as
+historical releases, without promised backports or continuing integration coverage.
+An OTA announcement alone does not replace the working version.
+
+V2.40's runtime profile is still selectable during the transition; its removal
+from current code is a separate task. The historical `v2.40` release is retained.
 
 A daily [OTA monitor](docs/OTA.md) creates one tracking Issue for each newly detected
 main-OS/recovery pair. Firmware analysis, support PRs, release preparation and Issue
@@ -180,9 +183,11 @@ To use V2.57 separately, set `FW_VERSION=2.57` and a distinct `WORK_VOLUME`, suc
 
 </details>
 
-Development happens on **`2.x`**. Firmware-based source tags such as `v2.57` preserve
-validated snapshots; emulator revisions against the same firmware use tags such as
-`v2.40-r1`. Firmware-free CI and clean-volume firmware integration provide release
+Development happens on **`2.x`**. Before switching to the next validated firmware,
+preserve the previous version's final validated snapshot in a source release.
+Releases may also ship improvements before the next vendor update; emulator
+revisions against the same firmware use tags such as `v2.40-r1`.
+Firmware-free CI and clean-volume integration for the active firmware provide release
 evidence. See [CI & release gates](docs/CI.md), [release notes](https://github.com/eudj1n/snowsky-disc-qemu/releases)
 and [CHANGELOG.md](CHANGELOG.md).
 

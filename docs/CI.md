@@ -5,28 +5,35 @@
 `2.x` is the default development branch for firmware 2.x. The obsolete `main`
 branch has been removed; its commits remain in `2.x`. A future incompatible major
 gets `3.x`.
-Firmware V2.57 is the default; V2.40 remains an explicitly selected regression profile. Its emulator release scope and vendor notes are in [firmware/2.57.md](firmware/2.57.md).
+Firmware V2.57 is the active/default version. V2.40's legacy runtime profile and
+manual integration choice remain temporarily, pending a separate cleanup task.
+Its presence is not a promise of continuing support or backports.
 
-Current support follows a **three-version FIFO window**: a fourth validated
-firmware replaces the oldest supported version only after validation and release
-preparation. OTA detection alone does not move the window. Today only two slots
-are occupied (2.40, 2.57). See [the support-window policy](PORTING.md#support-window--three-versions-fifo).
+We actively support **one validated firmware** and retain older releases as
+historical snapshots. Switch only after validating the candidate and preserving
+the previous version's final validated snapshot; OTA detection alone does not
+trigger the transition. See [the support policy](PORTING.md#support-policy--one-active-firmware).
 
 The first validated V2.40 milestone is
 [v2.40](https://github.com/eudj1n/snowsky-disc-qemu/releases/tag/v2.40). Emulator-only follow-up fixes
 for that firmware use `v2.40-r1`, `v2.40-r2`, etc. Never move/reuse an existing tag.
 This is a firmware-based naming convention, not npm/SemVer package versioning.
-V2.57 uses `v2.57` after its own validation. Do not merely replace the rootfs hash:
+Choose an unused firmware-based tag after validation. Do not merely replace the rootfs hash:
 binary patches, diagnostic addresses, UI coordinates and protocol behavior must be checked.
 GitHub immutable releases are enabled: publish only once the release contents are final.
+Deleting an immutable release/tag does not free its name for later reuse, even
+if the repository setting is subsequently disabled. Use an unused `-rN` name;
+do not delete a published tag merely to republish different code under that name.
+See [GitHub's immutable-release rules](https://docs.github.com/en/code-security/concepts/supply-chain-security/immutable-releases).
 
-Before releasing, require firmware-free CI and firmware integration for **every
-version in the resulting support window** to have succeeded **on the exact
-release commit**, review the declared limitations in STATUS.md, and publish only
+Before releasing, require firmware-free CI and full integration for **the firmware
+being released** to have succeeded **on the exact release commit**, review the
+declared limitations in STATUS.md, and publish only
 source/release notes, never firmware. Tags/releases are not created automatically.
 For example, inspect `gh run list --branch 2.x --commit <full-sha>` before publishing.
-Retired versions leave current workflow choices and required integration coverage;
-their immutable tags and analysis reports remain available as historical snapshots.
+Retired versions leave required integration coverage; remove their current workflow
+choices and compatibility code in the corresponding cleanup task.
+Their immutable tags and analysis reports remain available as historical snapshots.
 The daily OTA metadata check does not replace these release gates.
 
 ### Branch policy after public publication
@@ -195,11 +202,12 @@ lock/unlock, and exact Cyrillic add/rename/delete comparisons across SD/SQLite/T
 It uses V2.57-only fingerprinted UI reads; V2.40 keeps the existing integration
 coverage. See [MEDIA_LIBRARY.md](MEDIA_LIBRARY.md).
 
-Preserve the V2.40 tag/baseline and explicit regression profile. The second profile, download
-secret and test target are separate. Release gates cover the parts implemented or
+Preserve the historical V2.40 tag/baseline. Its legacy profile, download secret and
+test target remain separate until cleanup, and are no longer mandatory release gates.
+Release gates cover the parts implemented or
 affected by emulation: guarded boot/patches, framebuffer and input, storage/hotplug,
-network adapters, PCM/browser audio and guest power confinement. Both firmware
-profiles must pass integration on the exact release commit, alongside firmware-free CI.
+network adapters, PCM/browser audio and guest power confinement. The active firmware
+must pass integration on the exact release commit, alongside firmware-free CI.
 
 Vendor feature changes are reference information, not a mandatory acceptance suite
 for this project. Add a targeted check when a change affects an emulator interface,

@@ -14,47 +14,56 @@ remain in [RE.md](RE.md) and [ghidra/README.md](../ghidra/README.md).
 | Shared scripts/tools + this guide | Repeatable methods and regression tests useful for later versions/products. |
 
 Keep development on `2.x`, using short-lived task branches where useful. Do not fork
-the entire emulator for every minor firmware. Immutable `v2.40`, `v2.57`, etc. preserve
+the entire emulator for every minor firmware. Firmware-based immutable tags preserve
 validated snapshots; `v2.40-r1` means an emulator revision against the same firmware.
 Add an Unreleased changelog entry with each meaningful change, then move it into the
 release entry when the exact commit passes the release gates. Vendor announcements
 must never become "working" emulator features just by copying their changelog.
 
-## Support window — three versions, FIFO
+## Support policy — one active firmware
 
-Maintain at most **three validated firmware versions** for this product in the
-current development branch. The newest supported version is the default; the
-other two remain selectable and covered by regression/release checks. Emulator
-revision tags such as `v2.40-r1` do not occupy another firmware slot.
+Adopted 2026-09-16, replacing the three-version FIFO policy. Actively support
+**one firmware version for this product/hardware revision**: the latest version
+validated in the emulator. Development follows FiiO releases on `2.x`; historical
+versions are frozen snapshots, not maintenance branches. No backports or ongoing
+integration coverage are promised for them.
 
 An OTA announcement creates a research candidate, not a supported version.
-Do not retire a working version while the candidate is still being analysed or
-has failing checks. Promote the candidate only after validation and release
-preparation; when this adds a fourth supported version, retire the oldest
-supported firmware version in the same support-window update (FIFO).
+Investigate the candidate in a task branch and a separate work volume. Keep the
+existing active version until the candidate passes compatibility checks; never
+replace a working version merely because a higher version number appeared.
 
-As of this policy's introduction, the supported window is **2.40, 2.57** (oldest
-first). The third validated version fills the remaining slot; the fourth
-replaces 2.40. There is no retirement to perform now.
+At each transition:
 
-Include this maintenance in the firmware-support PR and release checklist:
+1. Preserve the previous firmware's final validated snapshot as a source tag/release
+   before removing its support code. An existing release can serve as that snapshot;
+   if later changes should be included, publish the next unused `-rN` revision after
+   exact-commit validation. Never move an existing tag.
+2. Validate the candidate, document evidence/limitations and switch the active
+   profile/default in the support PR. Release gates are firmware-free checks plus
+   full integration for the firmware being released, on the exact release commit.
+3. Retire old runtime profiles, version-specific patch/diagnostic branches and
+   downloader/workflow choices together. Preserve shared tools and useful generic
+   tests; do not maintain old-version compatibility solely for a historical release.
+4. Preserve inventory records and version-specific research as historical evidence,
+   with a link to the last validated release. Never delete users' firmware or work
+   volumes as part of retirement. Old snapshots still require separately obtained
+   firmware; upstream download availability is not guaranteed.
+5. Record the transition in STATUS, the firmware report and CHANGELOG, then close
+   the OTA tracking issue manually after transition/release preparation is complete.
 
-- Record the supported window before/after and set the newest version as default.
-- Update selectable runtime profiles, version-specific patch/diagnostic code,
-  downloader/workflow choices and tests together. Remove the retired version
-  from current runtime support and required CI; remove obsolete compatibility
-  branches when they serve no retained version.
-- Run firmware-free checks and firmware integration for every version retained
-  in the resulting window on the exact release commit.
-- Preserve immutable tags/releases, inventory records and per-version analysis
-  reports. Mark retired reports as historical and point users to the last
-  validated tag for that firmware; current code no longer guarantees support.
-  Retirement does not delete a user's local firmware or work volumes.
-- Document promotion/retirement in the changelog and support status, then close
-  the OTA tracking issue manually after release preparation is complete.
+Releases need not wait for the next FiiO update: useful emulator improvements may
+ship against the current firmware. The next vendor release is a handoff point,
+not the only opportunity to publish. Historical releases normally remain intact;
+deleting any published release/tag requires explicit owner approval.
 
-The OTA monitor does not change this window automatically. See [OTA.md](OTA.md)
-for issue tracking and [CI.md](CI.md) for release gates.
+**Current transition:** V2.57 is active. V2.40's historical `v2.40` release remains;
+its runtime/diagnostic profile and manual CI choice are still present until a
+separate cleanup task removes them. This policy change does not remove those files
+or rewrite past validation results. V2.40 is no longer an ongoing release gate.
+
+The OTA monitor does not promote or retire firmware automatically. See
+[OTA.md](OTA.md) for issue tracking and [CI.md](CI.md) for release gates.
 
 ## 1. Intake and provenance — no execution
 

@@ -7,8 +7,11 @@ contracts and evidence remain in the linked documents.
 ## Scope and current checkpoint
 
 Priority: stock SNOWSKY DISC functionality for a future locally hosted web remote
-(backend + frontend, potentially Docker). Supported emulator profiles are V2.57
-and V2.40. Android FiiO Music/M21 is reference material only; it is a different
+(backend + frontend, potentially Docker). Active development targets V2.57;
+V2.40 is historical and its legacy profile remains temporarily pending cleanup.
+Earlier two-version validation below is retained as evidence, not a continuing
+requirement. See [the support policy](PORTING.md#support-policy--one-active-firmware).
+Android FiiO Music/M21 is reference material only; it is a different
 implementation from FiiO Control and must not define DISC semantics.
 
 Working branch: `codex/disc-protocol-research`. Research checkpoint before channel
@@ -138,6 +141,10 @@ is indexed in [FIIO_CONTROL_APP.md](FIIO_CONTROL_APP.md).
 
 ## Separate subsequent work
 
+- [ ] Retire the legacy V2.40 runtime/diagnostic profile, manual workflow choice
+  and obsolete compatibility branches in a dedicated cleanup. Preserve `v2.40`
+  and the research records; choose a final `-rN` snapshot only if later changes
+  should be retained. Do not fold this cleanup into protocol research.
 - [ ] Hardware validation: real USB DAC/AirPlay/Bluetooth audio, negotiated codec,
   actual PEQ/filter/balance effects, DSD and physical theme rendering. Emulator
   readback/persistence cannot establish those results.

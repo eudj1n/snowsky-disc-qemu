@@ -102,10 +102,12 @@ count printed by `fb2png.py` is only a fallback heuristic, not evidence of recen
   report first. `firmware/inventory/` contains observed inputs, not runtime enablement
   profiles. Keep vendor-reported changes separate from verified emulator features;
   update `CHANGELOG.md` for emulator changes. Never replace V2.40 hashes/addresses blindly.
-- Support at most three validated firmware versions (FIFO). Promote only after
-  validation and release preparation; a fourth retires the oldest from current
-  runtime support and CI. OTA detection alone does not move the window. Preserve
-  historical tags, inventories and analysis; see `docs/PORTING.md` for the checklist.
+- Actively support one firmware: the latest validated version (currently V2.57).
+  Develop on `2.x`; preserve older versions as historical release snapshots, without
+  promised backports or continuing integration gates. Promote only after validation,
+  not on an OTA announcement. Preserve inventories and analysis; see `docs/PORTING.md`.
+  V2.40 runtime/diagnostic profiles and optional CI selection remain temporarily;
+  their removal is a separate implementation task, not part of this policy change.
 - `FW_VERSION` selects a reviewed runtime profile (default `2.57`, opt-in `2.40`).
   Setup/boot validate product/version and six binary fingerprints before execution.
   Key patch validation normalizes only the permitted instruction, then checks the full

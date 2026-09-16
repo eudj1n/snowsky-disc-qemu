@@ -42,8 +42,8 @@ emulator-only revisions use `v2.40-r1`, etc. See [the porting guide](docs/PORTIN
   Document physical DISC V2.57 comparisons, navigation timing and distinct list schemas.
 - Three generated audio fixtures (Unicode WAV and tagged FLAC) for real stock
   album/queue tests, retaining byte-exact audio and storage regression checks.
-- Three-version FIFO firmware support policy and OTA issue checklist: promotion
-  follows validation/release preparation; retirement preserves historical evidence.
+- Firmware transition and OTA issue checklist: promotion follows validation/release
+  preparation; retirement preserves historical releases and research evidence.
 - Daily stock OTA catalog monitoring with sanitized version outputs and one
   tracking issue per new main-OS/recovery pair; release preparation and issue
   closure remain manual, with no firmware download or automatic profile changes.
@@ -52,6 +52,10 @@ emulator-only revisions use `v2.40-r1`, etc. See [the porting guide](docs/PORTIN
 
 ### Fixed
 
+- Replace the three-version FIFO policy with one actively supported, validated
+  firmware on `2.x`, plus historical release snapshots without promised backports.
+  V2.57 is active; V2.40 runtime/CI cleanup is tracked separately. New vendor
+  announcements do not trigger promotion until emulator validation succeeds.
 - Remove the obsolete `main` branch and enable automatic deletion of merged PR
   branches; document `2.x` protection and local branch cleanup.
 - Refresh the README around the emulator and viewer, with current V2.57 captures;
