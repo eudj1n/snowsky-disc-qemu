@@ -1,0 +1,36 @@
+{
+  "source": {
+    "har_sha256": "efb72d46707667ba93bf67b759695abd0bd9d2e766c930c6ee187fe1ea465283",
+    "pcap_sha256": "94a482c29c968eae93648a640fade76abd7a7eb57ca24feab3aff0c79334b093",
+    "date": "2026-09-16",
+    "device": "physical DISC; versions not newly confirmed",
+    "scope": "Sanitized HTTP metadata only; no image, address or unrelated traffic"
+  },
+  "image": {
+    "size": 203218,
+    "sha256": "ef76ab578f8daa06a5ff1b52101259420cb5da701d276cc4dce87757409e1442",
+    "width": 360,
+    "height": 360,
+    "unchanged_in_all_custom_posts_and_gets": true
+  },
+  "common_post_headers": {
+    "content-type": "image/png",
+    "x-fields-to-update": "0",
+    "file-source": "lock_screen/custom",
+    "subclass": "lock_screen/custom/default",
+    "msg-style": "default/0",
+    "flag-in-use": "1",
+    "back-groud": "alpha=100"
+  },
+  "app_alias": "Пользовательский",
+  "initial": {"color": [255, 255, 255], "date": false, "active": false},
+  "other_flags": {"time": false, "battery": false, "id3": false},
+  "posts": [
+    {"time": "17:39:46.832+05:00", "color": [0, 96, 226], "date": false, "readback": "17:39:47.283+05:00"},
+    {"time": "17:40:05.075+05:00", "color": [0, 96, 226], "date": true, "readback": "17:40:05.382+05:00"},
+    {"time": "17:40:14.736+05:00", "color": [0, 96, 226], "date": true, "readback": null},
+    {"time": "17:40:31.940+05:00", "color": [255, 255, 255], "date": false, "readback": "17:40:32.157+05:00"}
+  ],
+  "final_system_selection": {"time": "17:40:35.832+05:00", "slot": 0, "alias": "Clock", "body_size": 0, "status": 200, "readback": null},
+  "tcp_12100_packets": 0
+}

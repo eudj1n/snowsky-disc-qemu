@@ -55,6 +55,11 @@ only illustrate the UI. [Capture provenance](images/README.md).
 
 ## Releases and verification
 
+- 2026-09-16 physical custom-theme capture: HAR/PCAP confirms unchanged full-PNG
+  uploads for color/Date edits and subsequent metadata/image readback. Sanitized
+  fixture and tests added; 259 Python / 23 JavaScript tests, shell checks and four
+  shim builds passed. Runtime unchanged; firmware integration and long power
+  tests not rerun. [Evidence and limits](FIIO_CONTROL_APP.md#physical-custom-theme-save-2026-09-16).
 - 2026-09-16 idle/USB checkpoint: 257 Python and 23 JavaScript tests, four shim
   builds, focused `idle` / `idle-usb` / `library-reset` and full local V2.57
   integration passed. USB held the native idle counter at zero for 310 seconds
@@ -132,12 +137,14 @@ The actionable DISC protocol backlog and session handoff are maintained in
 [PROTOCOL_RESEARCH.md](PROTOCOL_RESEARCH.md), including checkpoint validation,
 remaining settings/library investigations and future web-remote work.
 
-Current research: capture FiiO Control's custom-theme color/overlay-only save and
-audit its DISC screens against existing protocol helpers using user-provided
+Current research: remaining custom-theme styles and an audit of FiiO Control's
+DISC screens against existing protocol helpers using user-provided
 screenshots; see [the audit plan](FIIO_CONTROL_APP.md#screen-coverage-audit).
 The first six wallpaper screenshots are inventoried: the app offers four custom
-layouts, while the current helper exposes only `default/0`. Their wire mapping
-and metadata-only save behavior await capture; theme parity is not complete.
+layouts, while the current helper exposes only `default/0`. Physical HAR/PCAP
+now confirms full unchanged PNG retransmission for color/Date saves, with fresh
+image/metadata readback. Other custom styles, long app alias and catalog remain
+gaps; theme parity is not complete. See [capture evidence](FIIO_CONTROL_APP.md#physical-custom-theme-save-2026-09-16).
 Physical iOS background/reconnect testing is deferred unless an error appears
 (owner decision, 2026-09-16), not a blocker for the completed idle/USB checkpoint.
 Long power tests remain opt-in under the [test selection policy](CI.md#test-selection-policy).

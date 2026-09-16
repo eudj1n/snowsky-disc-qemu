@@ -113,7 +113,10 @@ Stock quirks confirmed by the regression scenario:
 
 - A **custom POST with an empty body clears the stored image path**. The file can
   remain on disk, but GET becomes empty `image/none`. To edit custom metadata,
-  resend the image too; no metadata-only helper is exposed.
+  resend the image too; no metadata-only helper is exposed. The owner's physical
+  iOS capture on 2026-09-16 confirms that the app resends the identical full PNG
+  for color/Date edits and reads it back with the updated metadata; see
+  [packet evidence and alias limitation](FIIO_CONTROL_APP.md#physical-custom-theme-save-2026-09-16).
 - **`flag-in-use: 0` still clears the other active theme.** It can leave no theme
   selected. It is not a harmless way to upload a draft.
 - Custom alias is saved correctly in SQLite, but V2.57 GET returns an empty alias
@@ -187,12 +190,20 @@ in ignored `work/`, and document only the minimal protocol evidence.
 
 ### Custom-theme metadata-save capture
 
-Active investigation, 2026-09-16; awaiting a new owner-provided traffic capture.
+Color/Date save investigation completed with the owner's 2026-09-16 HAR/PCAP:
+full PNG retransmission and fresh metadata/image readback confirmed. The
+[capture evidence](FIIO_CONTROL_APP.md#physical-custom-theme-save-2026-09-16)
+records restoration limits and an app alias outside our conservative guard.
 Six supplied screenshots confirm **Apply now**, background transparency, four
 overlay checkboxes, four style thumbnails and two unlabeled color sliders.
 See [screen coverage and gaps](FIIO_CONTROL_APP.md#wallpaper-screens-first-batch-2026-09-16).
 The custom helper currently fixes `msg-style` to `default/0`; the four visible
 choices must be mapped from traffic before exposing additional style values.
+The sequence below is retained for reproduction, not a request to repeat the
+completed color/Date capture. Next: style-only saves for the other three custom
+layouts (one at a time, reopening after each), holding image/color/flags/alpha
+fixed and restoring the initial custom style and active theme. Record which
+thumbnail was chosen; do not infer wire values from its position.
 Previously captured modes, codecs and stock-theme selections need not be repeated.
 
 Use a recoverable custom slot: retain the original image, all settings and the

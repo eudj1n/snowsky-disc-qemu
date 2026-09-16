@@ -9,6 +9,10 @@ emulator-only revisions use `v2.40-r1`, etc. See [the porting guide](docs/PORTIN
 
 ### Added
 
+- Physical FiiO Control custom-theme save fixture and regression checks: color
+  and Date edits resend the unchanged full PNG and have fresh HTTP readback.
+  Record wallpaper-screen coverage, unimplemented custom-style choices and the
+  app's localized alias exceeding the client's conservative bound.
 - V2.57 USB-power emulation behind the existing viewer cable switch: stock
   sink-role/ADC detection controls the firmware's idle-power inhibit, without
   changing POWER_SAVE or enabling USB DAC/storage. Add disposable long idle,

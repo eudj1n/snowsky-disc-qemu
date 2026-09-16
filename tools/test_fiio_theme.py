@@ -10,6 +10,41 @@ from fiio_theme import read_lock_screen, upload_lock_screen, select_system_lock_
 
 
 class ThemeTests(unittest.TestCase):
+    def test_custom_metadata_save_matches_physical_capture_except_alias(self):
+        fixture = json.loads((Path(__file__).parent / 'fixtures' /
+                              'fiio_control_ios_custom_theme_save.json').read_text())
+        # Original artwork stays private. Exercise the same header changes with
+        # synthetic bytes and assert every save still sends the complete image.
+        data = (b'\x89PNG\r\n\x1a\n' + struct.pack('>I', 13) + b'IHDR' +
+                struct.pack('>II', 360, 360) + b'\0' * 9)
+        with tempfile.TemporaryDirectory() as d:
+            p = Path(d) / 'fixture.png'
+            p.write_bytes(data)
+            for post in fixture['posts']:
+                with self.subTest(time=post['time']):
+                    http = Mock()
+                    upload_lock_screen(http, p, color=post['color'],
+                                       show_time=False, show_date=post['date'],
+                                       show_battery=False, show_id3=False)
+                    args, kw = http.request.call_args
+                    self.assertEqual(args, ('POST', '/image/lock_screen/'))
+                    expected = dict(fixture['common_post_headers'], alias='')
+                    expected['front-color'] = 'r=%d;g=%d;b=%d' % tuple(post['color'])
+                    expected['lock-screen'] = (
+                        f'time=0;date={int(post["date"])};battery=0;id3=0')
+                    self.assertEqual(kw['headers'], expected)
+                    self.assertEqual(kw['body'], data)
+
+    def test_observed_long_app_alias_remains_outside_reviewed_limit(self):
+        fixture = json.loads((Path(__file__).parent / 'fixtures' /
+                              'fiio_control_ios_custom_theme_save.json').read_text())
+        http = Mock()
+        # The app sends this localized label, but GET returns an empty alias.
+        # That is not proof of lossless persistence or permission to lift the guard.
+        with self.assertRaisesRegex(ValueError, '63-byte'):
+            upload_lock_screen(http, '/not-read.png', alias=fixture['app_alias'])
+        http.request.assert_not_called()
+
     def test_selection_matches_observed_ios_requests(self):
         fixture = json.loads((Path(__file__).parent / 'fixtures' /
                               'fiio_control_ios_460_themes.json').read_text())

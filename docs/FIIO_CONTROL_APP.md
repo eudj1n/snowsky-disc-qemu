@@ -60,12 +60,74 @@ custom layout is selected in its editor: these are different selection levels.
 The custom image preview lacks overlays even though all four checkboxes appear
 checked; this does not prove a rendering failure or that flags are ignored.
 
-Next capture: preserve the existing image and change only color, then only Date,
-using the visible **Apply now** button and reopening after each operation. A
-subsequent style-only sequence should cover each thumbnail separately while
+The subsequent [physical capture](#physical-custom-theme-save-2026-09-16) resolves
+the color/Date save sequence: the app resends the complete image. A remaining
+style-only sequence should cover each thumbnail separately while
 holding image/color/flags/alpha fixed, to map both `msg-style` and `subclass` and
 identify any coupled changes. Official-catalog loading and image-picker/cropping
 are separate gaps, not prerequisites for the metadata-save capture.
+
+### Physical custom-theme save (2026-09-16)
+
+Inputs: `2026-09-16-173912.har` and matching `.pcap`, captured by the owner on
+physical DISC. Surge HAR creator: iOS 5.22.0. App/firmware versions were not
+newly confirmed. Source hashes and sanitized fields are in the
+[regression fixture](../tools/fixtures/fiio_control_ios_custom_theme_save.json).
+Raw captures and PNG bodies are not committed.
+
+Of 17 HAR entries, 14 target DISC HTTP 12103, all `/image/lock_screen/`:
+six initial GETs, four custom POSTs, three custom readbacks and one system POST.
+All 14 have HTTP 200 responses. Other traffic is excluded from the evidence.
+The PCAP has matching 14 HTTP connections and **no TCP 12100 packets**; it does
+not establish that the app never uses TCP for other theme actions.
+
+TCP payloads were reassembled by sequence number in each direction: no gaps or
+conflicting overlaps, all relevant payload packets untruncated, and all 28 HTTP
+messages' bodies match Content-Length. Request/response body multisets match the
+HAR exactly. All nonempty bodies are 360×360 PNGs. HAR timestamps have only
+whole-second precision and entries are not reliably chronological within a
+second; the PCAP establishes POST-before-GET ordering below. Times are UTC+05:00
+and identify the start of each request, not completion of the large upload.
+
+| Time | Operation | Observed result |
+| --- | --- | --- |
+| 17:39:23 | Read custom and five system slots | Clock active; custom inactive, white RGB, alpha 100, all four overlay flags 0, `default/0` |
+| 17:39:46.832 | Custom POST: color `(0,96,226)` | Complete original PNG resent; activates custom slot. GET at 17:39:47.283 confirms color, active flag and identical image |
+| 17:40:05.075 | Custom POST: date 0 → 1 | Color unchanged, other flags 0; same complete PNG. GET at 17:40:05.382 confirms date and image |
+| 17:40:14.736 | Identical custom POST repeated | Same metadata and image; 200, no immediate readback. No action log to distinguish another tap from app behavior |
+| 17:40:31.940 | Custom POST: white color and date 0 | Same PNG. GET at 17:40:32.157 confirms original custom metadata/image, still active |
+| 17:40:35.832 | Select system Clock, slot 0 | Empty-body system POST, 200; no final GET proving active-theme restoration |
+
+Every custom POST and custom GET contains the same **203,218-byte** PNG, SHA-256
+`ef76ab578f8daa06a5ff1b52101259420cb5da701d276cc4dce87757409e1442`.
+There is no metadata-only write in this trace: color/Date changes use ordinary
+full-image replacement plus all metadata. This agrees with `upload_lock_screen()`
+and the previously tested empty-custom-body path-clearing quirk. No new endpoint,
+TCP command or speculative metadata-only helper is necessary for these actions.
+
+Two important limits remain:
+
+- App POST alias is the percent-encoded label `Пользовательский` (90 encoded
+  bytes), beyond our reviewed 63-byte guard. Custom GET returns empty alias.
+  Successful color/image reads do not prove lossless alias persistence; the
+  guard is unchanged. Tests compare all other semantic headers and deliberately
+  retain alias rejection. This is not exact whole-request parity.
+- Initial wire overlay flags are all **0**, despite the earlier screenshot's
+  checked-looking circles. The inputs are not simultaneous and there is no action
+  log connecting them; neither a UI bug nor ignored flags is established.
+
+System GET metadata contains `clock/0`, `default/0`, `default/1`, `default/2`,
+but every custom save here uses `default/0`. These system values are leads, not
+validation of the other custom styles or their visual-thumbnail mapping. Alpha
+never changes; the two color sliders' individual semantics remain unobserved.
+
+Validation: all five `tools/test_fiio_theme.py` tests pass, including synthetic
+full-image saves for the four captured metadata states and long-alias rejection.
+The container firmware-free suite passed: **259 Python / 23 JavaScript tests**,
+shell checks and four shim builds. No runtime/helper change or physical write by
+our tools was needed. Firmware integration and long power tests were not rerun
+for this fixture/test/documentation change; prior emulator evidence is identified
+separately above, not reported as a fresh firmware run.
 
 ## Android 4.6.0 input (2026-09-15)
 
