@@ -107,7 +107,34 @@ The helper exposes one custom slot, 360×360 PNG, alias (at most 63 percent-enco
 bytes), alpha 0..100, four overlay flags and RGB color. It always uploads the full
 file and activates the result. Byte preservation, headers, decoded alias and
 `CUSTOM_THEME` fields are checked independently. This does not measure overlay
-layout, opacity or colors on a physical screen. GIF and other styles remain leads.
+layout, opacity or colors on a physical screen. GIF remains unvalidated.
+
+### Custom styles (V2.57)
+
+`upload_lock_screen(..., style='default/0')` now accepts exactly `default/0`,
+`default/1`, `default/2`, `clock/0`. The default is unchanged. Unknown values are
+rejected before reading the file or opening a connection. Only `msg-style`
+changes; all four use `subclass: lock_screen/custom/default` and a full PNG body.
+The [physical style capture](FIIO_CONTROL_APP.md#physical-custom-style-save-2026-09-16)
+confirms POST and GET for all four values without changing the image.
+
+Style and overlay flags remain independent helper arguments; do not silently
+turn time on or clear another flag when changing styles. In the captured app
+sequence, time changes from 0 to 1 with the analog-clock POST and stays 1 after
+returning to `default/0`. The capture alone cannot distinguish automatic UI
+coupling from a separate tap, and cannot prove visual output with flags off.
+Keep the caller's explicit flags and verify readback.
+
+```python
+upload_lock_screen(http, png_path, style='clock/0', show_time=True,
+                   show_date=False, show_battery=False, show_id3=False)
+reply = read_lock_screen(http)  # verify metadata and complete original image
+```
+
+The physical test followed a requested sequential-thumbnail walkthrough, yielding
+`default/0 → default/1 → default/2 → clock/0 → default/0`. Without a synchronized
+action log, thumbnail-to-wire ordering is inferred from that walkthrough, not
+encoded in the packets. The API uses wire strings rather than guessed UI indices.
 
 Stock quirks confirmed by the regression scenario:
 
@@ -155,6 +182,12 @@ TCP and WS, then themes over direct and proxied HTTP. `tools/test_fiio_theme.py`
 and `tools/test_fiio_settings.py` cover wire values, metadata encoding, complete
 selection readback and invalid-input rejection.
 
+Focused V2.57 theme acceptance (no unrelated media/mode/power tests):
+
+```sh
+CI_SCENARIO=themes FW_VERSION=2.57 bash ci/integration.sh /absolute/path/to/main_os/ota_v257
+```
+
 V2.57 static references: mode setter `4f1110`, getter `4eeaa4`, mode map `6e0b70`,
 player selection `466a70`; codec setter/getter `4f0aec`/`4f0c58`; theme GET `48d268`,
 POST `48dd80`, metadata application `48b690`. These are build-specific addresses.
@@ -197,13 +230,13 @@ records restoration limits and an app alias outside our conservative guard.
 Six supplied screenshots confirm **Apply now**, background transparency, four
 overlay checkboxes, four style thumbnails and two unlabeled color sliders.
 See [screen coverage and gaps](FIIO_CONTROL_APP.md#wallpaper-screens-first-batch-2026-09-16).
-The custom helper currently fixes `msg-style` to `default/0`; the four visible
-choices must be mapped from traffic before exposing additional style values.
+The second capture confirms all four custom `msg-style` values with fresh GET
+readback; the helper now exposes the allowlist documented above.
 The sequence below is retained for reproduction, not a request to repeat the
-completed color/Date capture. Next: style-only saves for the other three custom
-layouts (one at a time, reopening after each), holding image/color/flags/alpha
-fixed and restoring the initial custom style and active theme. Record which
-thumbnail was chosen; do not infer wire values from its position.
+completed color/Date or style captures. Remaining questions include the two
+color sliders' individual semantics, alpha's UI mapping, the long localized
+alias and the official catalog. Do not request another full walkthrough merely
+to repeat already captured style values.
 Previously captured modes, codecs and stock-theme selections need not be repeated.
 
 Use a recoverable custom slot: retain the original image, all settings and the

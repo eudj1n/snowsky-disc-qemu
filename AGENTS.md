@@ -271,6 +271,13 @@ and activates complete custom PNGs: an empty-body custom POST clears its image
 path, and `flag-in-use: 0` still clears the previously active theme. System-theme
 selection uses a separate source namespace. The capture checklist in that doc
 requires HTTP 12103 and TCP 12100; an ordinary HTTP proxy may miss the latter.
+Physical app captures confirm full unchanged PNG retransmission for color/Date
+and four custom styles. `upload_lock_screen(..., style=...)` allows `default/0`,
+`default/1`, `default/2`, `clock/0`; `subclass` stays custom/default and flags
+remain explicit. `CI_SCENARIO=themes` checks direct/proxied HTTP on disposable
+V2.57 without unrelated tests. Do not infer automatic time-flag changes or
+physical rendering from style readback. The app's 90-byte encoded Russian alias
+exceeds our reviewed 63-byte bound; the bound remains unchanged.
 
 Physical iOS captures are summarized in `docs/FIIO_CONTROL_APP.md`; only sanitized
 protocol fixtures live in `tools/fixtures/`. Full `a202` snapshots and state-only

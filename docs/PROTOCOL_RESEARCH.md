@@ -74,14 +74,14 @@ owner deferred physical iOS background/reconnect testing unless a concrete error
 appears; it is not a remaining acceptance gate for this checkpoint. Long-test
 selection is recorded in [CI.md](CI.md#test-selection-policy).
 
-Current work: custom-theme style coverage and a screenshot-led audit of
+Current work: remaining wallpaper questions and a screenshot-led audit of
 the DISC screens in FiiO Control. First wallpaper batch (`IMG_6789`–`IMG_6794`),
-confirmed by the owner to use a physical DISC, is inventoried: four custom
-layouts expose a gap in the helper's fixed `default/0` style; official-catalog
-and color-slider semantics remain unknown.
+confirmed by the owner to use a physical DISC, is inventoried. Its four custom
+styles are now exposed by the helper and tested in fresh V2.57 `themes` acceptance;
+official-catalog and color-slider semantics remain unknown.
 Color/Date saves are now confirmed by physical HAR/PCAP: the app resends the full
-unchanged PNG and GET returns updated metadata. Other custom styles, the long
-localized alias and official catalog remain separate gaps. See
+unchanged PNG and GET returns updated metadata. The four style saves/readbacks
+are also captured; the long localized alias and official catalog remain gaps. See
 [capture evidence](FIIO_CONTROL_APP.md#physical-custom-theme-save-2026-09-16).
 
 ## Previous checkpoint completion: LAN discovery
@@ -124,6 +124,7 @@ CI_SCENARIO=full FW_VERSION=2.57 bash ci/integration.sh "$OTA_257"
 CI_SCENARIO=queue FW_VERSION=2.57 bash ci/integration.sh "$OTA_257"
 CI_SCENARIO=queue-reads FW_VERSION=2.57 bash ci/integration.sh "$OTA_257"
 CI_SCENARIO=settings FW_VERSION=2.57 bash ci/integration.sh "$OTA_257"
+CI_SCENARIO=themes FW_VERSION=2.57 bash ci/integration.sh "$OTA_257"
 CI_SCENARIO=preferences FW_VERSION=2.57 bash ci/integration.sh "$OTA_257"
 CI_SCENARIO=playlists FW_VERSION=2.57 bash ci/integration.sh "$OTA_257"
 CI_SCENARIO=scan-cancel FW_VERSION=2.57 bash ci/integration.sh "$OTA_257"
@@ -206,8 +207,11 @@ explicitly instead of retrying them indefinitely.
   full unchanged PNG retransmission and fresh GET readback; no metadata-only
   command needed. Original custom settings/image restored in readback; final
   Clock selection has 200 but no final GET. See [evidence](FIIO_CONTROL_APP.md#physical-custom-theme-save-2026-09-16).
-- [ ] **Remaining wallpaper coverage:** four custom layout mappings (helper
-  currently fixes `default/0`), color-slider/alpha semantics, app alias exceeding
+- [x] **Four custom styles:** physical POST/GET captures confirm `default/0`,
+  `default/1`, `default/2`, `clock/0` with unchanged subclass and PNG. Helper
+  allowlist and focused direct/proxy V2.57 `themes` acceptance pass, including
+  independent time off/on. [Evidence and limits](FIIO_CONTROL_APP.md#physical-custom-style-save-2026-09-16).
+- [ ] **Remaining wallpaper coverage:** color-slider/alpha semantics, app alias exceeding
   the reviewed guard and official-catalog source. Do not expand accepted values
   from screenshots or system-theme metadata alone.
 - [ ] **Screen coverage audit:** map user-provided DISC app screens and controls

@@ -51,7 +51,7 @@ into Git; filenames identify the supplied evidence, not repository links.
 | Custom → tap image to change / Apply now | 6792–6794 | Full 360×360 PNG replacement/activation implemented. Image picker, crop and conversion flow are not shown or implemented by the helper. Existing-image reapply sequence awaits capture. |
 | Background transparency, displayed 100% | 6792 | Helper exposes `alpha=0..100` via `back-groud`; emulator checks persistence. UI percentage-to-wire mapping and opacity direction on the physical display remain unverified. |
 | Time, Date, Battery, Track information | 6793 | All four appear checked. Helper exposes `time/date/battery/id3`; metadata is emulator-tested. Exact iOS save sequence and physical rendering still require evidence. |
-| Style selection, four thumbnails | 6794 | Three digital layouts and one analog clock are visible; the first thumbnail is selected. **Implementation gap:** custom helper hardcodes `msg-style: default/0` and `subclass: lock_screen/custom/default`. No verified mapping from these four choices to wire values; do not equate thumbnail position with a style ID. |
+| Style selection, four thumbnails | 6794 | Three digital layouts and one analog clock are visible; the first thumbnail is selected. Initially a fixed-style helper gap; now four wire values are captured and emulator-tested (see style-save evidence below). Thumbnail ordering is inferred from the requested walkthrough, not encoded in packets. |
 | Two unlabeled color-gradient sliders | 6794 | Helper accepts RGB via `front-color`. Exact slider semantics, color conversion, endpoints and save sequence unknown; do not label them RGB/HSV components from appearance alone. |
 
 The two tiles labelled FIIO Sheep have different artwork; names are not unique
@@ -61,11 +61,10 @@ The custom image preview lacks overlays even though all four checkboxes appear
 checked; this does not prove a rendering failure or that flags are ignored.
 
 The subsequent [physical capture](#physical-custom-theme-save-2026-09-16) resolves
-the color/Date save sequence: the app resends the complete image. A remaining
-style-only sequence should cover each thumbnail separately while
-holding image/color/flags/alpha fixed, to map both `msg-style` and `subclass` and
-identify any coupled changes. Official-catalog loading and image-picker/cropping
-are separate gaps, not prerequisites for the metadata-save capture.
+the color/Date save sequence: the app resends the complete image. The second
+[style capture](#physical-custom-style-save-2026-09-16) confirms four custom
+style values and unchanged subclass, with a time-flag change in the request.
+Official-catalog loading and image-picker/cropping remain separate gaps.
 
 ### Physical custom-theme save (2026-09-16)
 
@@ -128,6 +127,61 @@ shell checks and four shim builds. No runtime/helper change or physical write by
 our tools was needed. Firmware integration and long power tests were not rerun
 for this fixture/test/documentation change; prior emulator evidence is identified
 separately above, not reported as a fresh firmware run.
+
+### Physical custom-style save (2026-09-16)
+
+Inputs: `2026-09-16-174708.har` / `.pcap`, continuation of the physical DISC
+walkthrough. The [sanitized fixture](../tools/fixtures/fiio_control_ios_custom_theme_styles.json)
+records source hashes, request times, styles and flags without image bytes or
+addresses. Versions were not newly confirmed by these files.
+
+All 17 HAR entries are `/image/lock_screen/` on HTTP 12103: six initial reads,
+five custom saves and five readbacks, then one system selection. All receive 200.
+PCAP sequence reassembly verifies complete, nonconflicting byte coverage and
+Content-Length for 34 HTTP messages; HAR/PCAP request and response body multisets
+match. No TCP 12100 packets occur. PCAP resolves the within-second ordering which
+the HAR alone cannot establish. Each custom POST is followed by its GET.
+
+| POST start (UTC+05:00) | Custom style | Time flag | Subsequent GET start |
+| --- | --- | --- | --- |
+| 17:47:22.463 | `default/0` | 0 | 17:47:22.716 |
+| 17:47:32.790 | `default/1` | 0 | 17:47:33.043 |
+| 17:47:38.350 | `default/2` | 0 | 17:47:38.536 |
+| 17:47:44.101 | `clock/0` | 1 | 17:47:44.302 |
+| 17:48:00.313 | `default/0` | 1 | 17:48:00.501 |
+
+Each GET confirms the posted style, time flag and active custom slot. Date,
+battery and ID3 flags remain 0; alpha remains 100, RGB white, and subclass always
+`lock_screen/custom/default`. Every custom POST/GET carries the same 203,218-byte
+PNG as the preceding capture, with SHA-256
+`ef76ab578f8daa06a5ff1b52101259420cb5da701d276cc4dce87757409e1442`.
+Clock system selection at 17:48:03.856 is empty-body and receives 200; there is
+again no final GET proving active-theme restoration. The custom time flag is 1
+at the end versus 0 at entry: restoration of all custom settings is **not** proven.
+
+The app's clock POST already contains time=1, so firmware did not introduce that
+particular change in its response. A separate tap versus automatic app coupling
+cannot be determined from packets. The requested sequential-thumbnail walkthrough
+suggests three digital styles in order followed by the analog clock, but there
+is no synchronized action log; expose wire strings, not undocumented UI indices.
+
+Implementation: `upload_lock_screen(..., style=...)` allowlists these four values
+and preserves independent flags, full image, current subclass and alias guard.
+The earlier long Russian app alias still exceeds the helper bound; fixture tests
+compare the remaining semantic headers and generated image bytes, not claim
+whole-request equality or copy private artwork.
+
+Validation: focused fresh **V2.57 `themes` passed** directly and through the HTTP
+proxy, including every style with time=0 and time=1, unchanged image and metadata,
+SQLite flag values, five system slots, unsafe empty-body behavior and restoration
+of the original active system theme. Stock preserves time=0 even for `clock/0`;
+this is persistence/readback evidence, not physical rendering evidence.
+The test uses a generated PNG, disposable volume, no published ports and no edits
+to the interactive or physical player. Stack and volume were removed afterwards.
+Firmware-free suite: **261 Python / 23 JavaScript tests**, shell checks and four
+shim builds passed. No full integration, legacy-profile integration or long power
+rerun for this narrowly scoped helper change. No Dockerfile/Compose changes:
+the existing image/dependencies and tracked scenario reproduce the experiment.
 
 ## Android 4.6.0 input (2026-09-15)
 

@@ -30,7 +30,7 @@ peripheral controls. See the [README](../README.md) for setup and the visual ove
 | **Library reset** | Dedicated V2.57 `0621` discards index/favorites, not files/settings/custom-list rows. Requires explicit confirmation. Immediate replies can be inconsistent; rescan alone does not recreate favorites. | [Reset scope and recovery](LIBRARY_RESET.md) |
 | **Remote settings** | TCP/WS gain, DRE, filter, SPDIF, channel balance and user PEQ/master gain with readback and SQLite persistence checks. Balance L20..R20 also checks the opposite-channel DAC attenuation writes. Actual USB/AirPlay/BT and DSP response remain unvalidated. | [Settings protocol](REMOTE_SETTINGS.md) |
 | **Playback preferences** | V2.57 gapless, folder jump and ReplayGain are readable via fresh `0501` snapshots. Six local UI setter tags are rejected by the independent TCP allowlist, also through the WS bridge; no remote setters exposed. | [Evidence and limits](REMOTE_SETTINGS.md#playback-preferences-v257) |
-| **Modes and lock screen** | Stock USB/local/AirPlay control transitions, five Bluetooth source-codec preferences, five system themes and full custom PNG/overlay metadata. Physical audio and screen rendering need separate checks. | [Modes and themes](REMOTE_MODES_THEMES.md) |
+| **Modes and lock screen** | Stock USB/local/AirPlay control transitions, five Bluetooth source-codec preferences, five system themes, full custom PNG/overlay metadata and four V2.57 custom styles. Physical audio and screen rendering need separate checks. | [Modes and themes](REMOTE_MODES_THEMES.md) |
 | **OTA monitoring** | Daily catalog check and one tracking Issue per new main-OS/recovery pair. First GitHub-hosted run passed. Package metadata/signature and one chunk were checked separately; guest installation remains untested. | [OTA](OTA.md) |
 
 ### Current visual evidence
@@ -55,6 +55,11 @@ only illustrate the UI. [Capture provenance](images/README.md).
 
 ## Releases and verification
 
+- 2026-09-16 custom styles: physical app POST/GET confirms all four values with
+  unchanged PNG. Added style allowlist and focused `themes` integration; fresh
+  V2.57 direct/proxy checks pass with explicit time off/on. Firmware-free checks:
+  261 Python / 23 JavaScript, shell checks and four shims. Full and long power
+  tests not rerun. [Evidence and limits](FIIO_CONTROL_APP.md#physical-custom-style-save-2026-09-16).
 - 2026-09-16 physical custom-theme capture: HAR/PCAP confirms unchanged full-PNG
   uploads for color/Date edits and subsequent metadata/image readback. Sanitized
   fixture and tests added; 259 Python / 23 JavaScript tests, shell checks and four
@@ -137,14 +142,14 @@ The actionable DISC protocol backlog and session handoff are maintained in
 [PROTOCOL_RESEARCH.md](PROTOCOL_RESEARCH.md), including checkpoint validation,
 remaining settings/library investigations and future web-remote work.
 
-Current research: remaining custom-theme styles and an audit of FiiO Control's
+Current research: remaining wallpaper questions and an audit of FiiO Control's
 DISC screens against existing protocol helpers using user-provided
 screenshots; see [the audit plan](FIIO_CONTROL_APP.md#screen-coverage-audit).
-The first six wallpaper screenshots are inventoried: the app offers four custom
-layouts, while the current helper exposes only `default/0`. Physical HAR/PCAP
-now confirms full unchanged PNG retransmission for color/Date saves, with fresh
-image/metadata readback. Other custom styles, long app alias and catalog remain
-gaps; theme parity is not complete. See [capture evidence](FIIO_CONTROL_APP.md#physical-custom-theme-save-2026-09-16).
+The first six wallpaper screenshots are inventoried. Physical HAR/PCAP confirms
+full unchanged PNG retransmission for color/Date and four custom styles, now
+exposed by the helper and tested on V2.57. Color-slider/alpha UI semantics, the
+long app alias and catalog remain gaps; theme parity is not complete. See
+[capture evidence](FIIO_CONTROL_APP.md#physical-custom-style-save-2026-09-16).
 Physical iOS background/reconnect testing is deferred unless an error appears
 (owner decision, 2026-09-16), not a blocker for the completed idle/USB checkpoint.
 Long power tests remain opt-in under the [test selection policy](CI.md#test-selection-policy).

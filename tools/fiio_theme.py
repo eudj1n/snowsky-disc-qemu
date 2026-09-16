@@ -5,6 +5,7 @@ from urllib.parse import quote
 
 
 ROUTE = '/image/lock_screen/'
+CUSTOM_STYLES = ('default/0', 'default/1', 'default/2', 'clock/0')
 FIELDS = ('alias', 'x-fields-to-update', 'back-groud', 'lock-screen', 'msg-style',
           'front-color', 'flag-in-use', 'file-source', 'subclass', 'content-type')
 
@@ -24,13 +25,16 @@ def read_lock_screen(http, slot=0, *, system=False, preview=False):
 
 def upload_lock_screen(http, source, *, alias='', alpha=100,
                        show_time=True, show_date=True, show_battery=True,
-                       show_id3=False, color=(255, 255, 255)):
+                       show_id3=False, color=(255, 255, 255), style='default/0'):
     """Replace AND activate custom slot 0. Always send the complete PNG and metadata.
 
     Stock empty-body custom updates clear the image path. Even flag-in-use=0
     clears another active theme, so this helper intentionally activates its upload.
     A 200 response is not success: read the original back with preview=False.
+    V2.57 custom styles are allowlisted; style never implicitly changes flags.
     """
+    if not isinstance(style, str) or style not in CUSTOM_STYLES:
+        raise ValueError('unsupported DISC custom lock-screen style')
     if (not isinstance(alias, str) or any(ord(c) < 32 for c in alias)
             or len(quote(alias, safe='')) > 63):
         raise ValueError('alias must fit the 63-byte percent-encoded stock header')
@@ -52,7 +56,7 @@ def upload_lock_screen(http, source, *, alias='', alpha=100,
         'lock-screen': ';'.join(f'{name}={int(value)}' for name, value in
                                zip(('time', 'date', 'battery', 'id3'), flags)),
         'front-color': 'r=%d;g=%d;b=%d' % tuple(color),
-        'msg-style': 'default/0', 'flag-in-use': '1',
+        'msg-style': style, 'flag-in-use': '1',
         'file-source': 'lock_screen/custom', 'subclass': 'lock_screen/custom/default',
     })
 

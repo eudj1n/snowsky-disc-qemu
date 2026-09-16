@@ -1,5 +1,7 @@
 """Stock mode/codec/theme acceptance, ONLY on a disposable integration guest."""
 import asyncio
+import argparse
+import os
 from pathlib import Path
 import sqlite3
 import struct
@@ -11,7 +13,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1] / 'tools'))
 from fiio_link import Client
 from fiio_ws import WSClient
 from fiio_http import HTTPClient
-from fiio_theme import read_lock_screen, upload_lock_screen, select_system_lock_screen, FIELDS, ROUTE
+from fiio_theme import read_lock_screen, upload_lock_screen, select_system_lock_screen, FIELDS, ROUTE, CUSTOM_STYLES
 from settings_check import call, set_and_read, wait_db
 
 ROOT = Path('/work/rootfs')
@@ -78,6 +80,27 @@ def themes(host, label):
     assert (row['ALPHA'], row['LOCK_TIME'], row['LOCK_DATE'], row['LOCK_BATTERY'],
             row['LOCK_ID3'], row['FRONT_COLOR'], row['USE']) == (70, 1, 1, 1, 0, 0x0c2238, 1)
     assert (ROOT / row['PATH'].lstrip('/')).read_bytes() == source.read_bytes()
+    if os.environ.get('FW_VERSION') == '2.57':
+        # Explicitly probe time both off/on, including analog clock, rather than
+        # inferring firmware coupling from the app's observed clock time=1 POST.
+        for style in CUSTOM_STYLES:
+            for show_time in (False, True):
+                upload_lock_screen(http, source, style=style, show_time=show_time,
+                                   show_date=False, show_battery=False, show_id3=False,
+                                   alias='Styles', alpha=70, color=(12, 34, 56))
+                reply = read_lock_screen(http)
+                assert reply.body == source.read_bytes()
+                assert reply.headers['msg-style'] == style
+                assert reply.headers['subclass'] == 'lock_screen/custom/default'
+                assert reply.headers['lock-screen'] == f'time={int(show_time)};date=0;battery=0;id3=0'
+                assert reply.headers['back-groud'] == 'alpha=70'
+                assert reply.headers['front-color'] == 'r=12;g=34;b=56'
+                assert reply.headers['flag-in-use'] == '1'
+                row = next(r for r in theme_rows() if not r['IS_SYSTEM'])
+                assert (row['LOCK_TIME'], row['LOCK_DATE'], row['LOCK_BATTERY'],
+                        row['LOCK_ID3'], row['USE']) == (int(show_time), 0, 0, 0, 1)
+                assert (ROOT / row['PATH'].lstrip('/')).read_bytes() == source.read_bytes()
+        print(f'{label}: four custom styles with time off/on, image and metadata preserved', flush=True)
     # Pin the unsafe stock semantics so callers do not introduce metadata-only updates.
     select_system_lock_screen(http, active[0]['POS_ID'])
     headers = {k: reply.headers[k] for k in FIELDS}
@@ -119,4 +142,13 @@ async def main():
 
 
 if __name__ == '__main__':
-    asyncio.run(main())
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument('--themes-only', action='store_true')
+    args = parser.parse_args()
+    if os.environ.get('CI_DISPOSABLE') != '1':
+        raise SystemExit('requires CI_DISPOSABLE=1; never run against interactive state')
+    if args.themes_only:
+        themes('127.0.0.1', 'direct')
+        themes('wsbridge', 'proxy')
+    else:
+        asyncio.run(main())

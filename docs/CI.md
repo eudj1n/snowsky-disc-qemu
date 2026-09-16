@@ -239,6 +239,8 @@ CI_SCENARIO=queue FW_VERSION=2.57 bash ci/integration.sh /absolute/path/to/main_
 CI_SCENARIO=queue-reads FW_VERSION=2.57 bash ci/integration.sh /absolute/path/to/main_os/ota_v257
 # Focused settings/PEQ and channel-balance checks over TCP and WS.
 CI_SCENARIO=settings FW_VERSION=2.57 bash ci/integration.sh /absolute/path/to/main_os/ota_v257
+# Stock/system and four custom styles via direct/proxied HTTP; no media scan.
+CI_SCENARIO=themes FW_VERSION=2.57 bash ci/integration.sh /absolute/path/to/main_os/ota_v257
 # Three read-only preferences and six rejected local-only writes over TCP/WS.
 CI_SCENARIO=preferences FW_VERSION=2.57 bash ci/integration.sh /absolute/path/to/main_os/ota_v257
 # Custom playlist playback and fresh HTTP preflight over TCP and WS.
@@ -259,13 +261,19 @@ CI_SCENARIO=idle FW_VERSION=2.57 bash ci/integration.sh /absolute/path/to/main_o
 CI_SCENARIO=idle-usb FW_VERSION=2.57 bash ci/integration.sh /absolute/path/to/main_os/ota_v257
 ```
 
-`CI_SCENARIO` accepts `full` (default), `queue`, `queue-reads`, `settings`,
+`CI_SCENARIO` accepts `full` (default), `queue`, `queue-reads`, `settings`, `themes`,
 `preferences`, `playlists`, `scan-cancel`, `library-reset`, `track-end`, `formats`,
 `discovery`, `idle` or `idle-usb`. All use the same
 random-name isolated stack and cleanup. Focused runs execute only their selected
 checks, not unrelated integration scenarios. Most use the shared setup/scan/reboot
 preparation; `scan-cancel`, `library-reset`, `track-end` and `formats` start after boot and prepare their
 own network scans.
+`themes` is V2.57-only, starts after boot without a media scan, and calls
+`modes_themes_check.py --themes-only`. It covers five system slots, four custom
+styles with explicit time off/on, full-image and metadata preservation, unsafe
+empty-body/activation semantics and system-theme restoration over direct and
+proxied HTTP. No TCP/WS mode/codec changes, interactive volume or long power
+checks are involved. The same style assertions run in ordinary `full` on V2.57.
 `discovery` is V2.57-only, starts after boot and does not need a media scan. It
 observes multicast inside the disposable namespace, not across the host/LAN
 boundary. The opt-in phone LAN bridge is never launched by CI or normal Compose.

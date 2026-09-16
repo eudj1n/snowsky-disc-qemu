@@ -9,6 +9,10 @@ emulator-only revisions use `v2.40-r1`, etc. See [the porting guide](docs/PORTIN
 
 ### Added
 
+- V2.57 custom lock-screen style allowlist (`default/0`, `default/1`,
+  `default/2`, `clock/0`), backed by physical FiiO Control POST/GET captures.
+  Add focused disposable `CI_SCENARIO=themes` for direct/proxied HTTP, image
+  preservation and independent time flags; retain full-image saves and alias guard.
 - Physical FiiO Control custom-theme save fixture and regression checks: color
   and Date edits resend the unchanged full PNG and have fresh HTTP readback.
   Record wallpaper-screen coverage, unimplemented custom-style choices and the

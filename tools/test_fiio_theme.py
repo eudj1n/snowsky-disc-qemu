@@ -6,10 +6,41 @@ from pathlib import Path
 from unittest.mock import Mock
 
 from fiio_http import Reply
-from fiio_theme import read_lock_screen, upload_lock_screen, select_system_lock_screen, FIELDS
+from fiio_theme import read_lock_screen, upload_lock_screen, select_system_lock_screen, FIELDS, CUSTOM_STYLES
 
 
 class ThemeTests(unittest.TestCase):
+    def test_custom_styles_match_physical_capture_except_alias(self):
+        fixture = json.loads((Path(__file__).parent / 'fixtures' /
+                              'fiio_control_ios_custom_theme_styles.json').read_text())
+        self.assertEqual(set(CUSTOM_STYLES), {p['style'] for p in fixture['posts']})
+        data = (b'\x89PNG\r\n\x1a\n' + struct.pack('>I', 13) + b'IHDR' +
+                struct.pack('>II', 360, 360) + b'\0' * 9)
+        with tempfile.TemporaryDirectory() as d:
+            path = Path(d) / 'fixture.png'
+            path.write_bytes(data)
+            for post in fixture['posts']:
+                with self.subTest(style=post['style'], flags=post['flags']):
+                    flags = dict(item.split('=') for item in post['flags'].split(';'))
+                    http = Mock()
+                    upload_lock_screen(http, path, style=post['style'],
+                                       **{f'show_{key}': value == '1' for key, value in flags.items()})
+                    args, kw = http.request.call_args
+                    self.assertEqual(args, ('POST', '/image/lock_screen/'))
+                    self.assertEqual(kw['body'], data)
+                    expected = dict(fixture['common_post_headers'], alias='')
+                    expected.update({'msg-style': post['style'], 'lock-screen': post['flags']})
+                    self.assertEqual(kw['headers'], expected)
+
+    def test_style_validation_precedes_file_and_network_access(self):
+        for style in (None, True, 0, [], {}, 'default/3', 'clock/1',
+                      'DEFAULT/0', 'default/0\r\nInjected: yes'):
+            with self.subTest(style=style):
+                http = Mock()
+                with self.assertRaisesRegex(ValueError, 'unsupported DISC'):
+                    upload_lock_screen(http, '/not-read.png', style=style)
+                http.request.assert_not_called()
+
     def test_custom_metadata_save_matches_physical_capture_except_alias(self):
         fixture = json.loads((Path(__file__).parent / 'fixtures' /
                               'fiio_control_ios_custom_theme_save.json').read_text())
