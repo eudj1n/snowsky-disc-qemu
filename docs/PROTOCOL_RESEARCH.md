@@ -85,9 +85,10 @@ selection is recorded in [CI.md](CI.md#test-selection-policy).
 Current checkpoint: genre/folder/bulk-add helpers and focused `library` acceptance
 are complete. The previously deferred physical genre capture is now analyzed:
 `style` → `style/album` → `style/album/song` and type-8 scoped-album commands are
-confirmed. Whole-genre Play all instead uses **type 8 with empty album**, not our
-emulator-tested type 10: next validate that variant on disposable overlapping
-genre/album fixtures before exposing it. See [capture evidence](LIBRARY_BROWSING.md#physical-genre-flow-2026-09-16).
+confirmed. Whole-genre Play all now uses the captured **type 8 with empty album**,
+compared with type 10 on disposable overlapping genre/album fixtures over TCP/WS
+in modes 0/4. Indexed genre tracks retain type 10; the empty-album indexed probe
+did not produce the expected playing state. See [capture evidence](LIBRARY_BROWSING.md#physical-genre-flow-2026-09-16).
 Pending: app folder selection, root-category Play all, folder-to-playlist workflow
 and Delete confirmation/source scope. No repeat genre capture needed. Do not issue
 physical deletes to obtain evidence. PEQ remains separate issue #9.
@@ -99,7 +100,9 @@ styles are now exposed by the helper and tested in fresh V2.57 `themes` acceptan
 official-catalog and color-slider semantics remain unknown.
 Color/Date saves are now confirmed by physical HAR/PCAP: the app resends the full
 unchanged PNG and GET returns updated metadata. The four style saves/readbacks
-are also captured; the long localized alias and official catalog remain gaps. See
+are also captured. Long aliases are now resolved: stock truncates at 63 encoded
+bytes before decoding, potentially saving invalid UTF-8; keep the helper guard.
+The official catalog remains a gap. See
 [capture evidence](FIIO_CONTROL_APP.md#physical-custom-theme-save-2026-09-16).
 
 ## Previous checkpoint completion: LAN discovery
@@ -178,6 +181,10 @@ explicitly instead of retrying them indefinitely.
 
 ### 1. Settings useful to the remote
 
+- [x] **Stock Gain/filter labels:** V2.57 UI/resource/callback tracing maps
+  0 Low / 1 High and all six filter abbreviations. Every value has TCP/WS reads,
+  SQLite persistence and restoration coverage. Expanded iPhone filter labels
+  still need paired wire evidence; [verified table](REMOTE_SETTINGS.md#gain-and-filter-labels-v257).
 - [x] **Channel balance:** mapped from stock UI and player handlers. Shared TCP/WS
   helper and tests cover -20, -1, 0, +1, +20, SQLite, per-channel DAC writes and
   restoration. Hardware analog effects remain a separate check.
@@ -194,6 +201,10 @@ explicitly instead of retrying them indefinitely.
 
 ### 2. Library and playback edge cases
 
+- [x] **Captured whole-genre Play all:** type 8 / empty album now exposed after
+  TCP/WS queue/order/restart comparison with type 10 on generated overlapping
+  fixtures. Indexed whole-genre selection stays type 10; named scoped albums
+  stay type 8. [Contract and limits](LIBRARY_BROWSING.md).
 - [x] **Custom playlist playback:** `0100`/`0101`, type 5 plus decimal JSON
   `{"id":<list position>}`. Fresh HTTP preflight checks expected name and track
   bounds; TCP/WS tests cover ID gaps, rename/add/remove, empty and stale positions.
@@ -230,16 +241,19 @@ explicitly instead of retrying them indefinitely.
   `default/1`, `default/2`, `clock/0` with unchanged subclass and PNG. Helper
   allowlist and focused direct/proxy V2.57 `themes` acceptance pass, including
   independent time off/on. [Evidence and limits](FIIO_CONTROL_APP.md#physical-custom-style-save-2026-09-16).
-- [ ] **Remaining wallpaper coverage:** color-slider/alpha semantics, app alias exceeding
-  the reviewed guard and official-catalog source. Do not expand accepted values
+- [x] **Long localized alias:** static buffer tracing and disposable direct/proxy
+  boundary tests confirm truncation before decoding. Keep the 63-byte encoded
+  guard; blank GET alias and HTTP 200 do not prove lossless persistence.
+- [ ] **Remaining wallpaper coverage:** color-slider/alpha semantics and
+  official-catalog source. Do not expand accepted values
   from screenshots or system-theme metadata alone.
 - [ ] **Screen coverage audit:** map user-provided DISC app screens and controls
   to existing client helpers, protocol evidence and validation limits. Screenshots
   establish visible UI, not wire behavior or working hardware. Request additional
   captures only for concrete gaps; see [audit plan](FIIO_CONTROL_APP.md#screen-coverage-audit).
   Second batch (`IMG_6795`–`IMG_6806`) inventories library/PEQ/settings. Open gaps:
-  exact app folder playback, whole-genre selector parity, root-category Play all semantics, batch action menus,
-  exact PEQ preset/Save flow and gain/filter label-to-wire mapping. Existing
+  exact app folder playback, root-category Play all semantics, batch action menus,
+  exact PEQ preset/Save flow and expanded iPhone filter label-to-wire mapping. Existing
   catalog/settings helpers are not proof of complete app parity. See
   [coverage matrix](FIIO_CONTROL_APP.md#library-peq-and-settings-screens-second-batch-2026-09-16).
   Third batch (`IMG_6807`–`IMG_6815`) shows genre → albums → tracks, Add to Playlist
@@ -249,7 +263,7 @@ explicitly instead of retrying them indefinitely.
   emulator acceptance in [LIBRARY_BROWSING.md](LIBRARY_BROWSING.md); exact app
   folder/root-category sequences, remaining delete scope, BYPASS and PEQ save/cloud
   workflows are not established. The genre capture now confirms HTTP filters and
-  scoped-album selection, with the whole-genre variant difference recorded above. See
+  scoped-album selection; whole-genre Play all parity is now tested as above. See
   [third-batch audit](FIIO_CONTROL_APP.md#genre-hierarchy-batch-actions-and-peq-third-batch-2026-09-16).
   **PEQ is documentation-only here and deferred to issue #9** by owner decision;
   it is not a blocker for the current library/playback work or a request for
@@ -298,6 +312,26 @@ no capture is currently needed for those preferences.
   stock single-client TCP connection, centralized event routing, partial-state
   merging, reconnection without replaying mutations, pending paused-seek state,
   refreshed queue identities and firmware-specific capabilities.
+
+## Validation: genre variant, settings labels and alias boundary (2026-09-16)
+
+Fresh disposable V2.57 `library`, `settings` and `themes` scenarios passed, exit 0.
+Library compares captured Play all against type 10 in modes 0/4 on TCP/WS;
+settings checks both gains and all six filters with SQLite/restoration; themes
+checks 63/64-byte ASCII and encoded Cyrillic boundaries through direct/proxy HTTP.
+Firmware-free checks passed **276 Python / 23 JavaScript tests**, shell syntax
+and four shim builds. Binary copies used for static tracing match V2.57's pinned
+full hashes. No shared runtime, image setup or Compose changes; full and long
+idle/USB checks were not needed. Temporary stacks/volumes were removed; physical
+player and interactive guest were not changed. No UI change/new screenshot is
+claimed; existing curated images remain the visual reference.
+
+The initial raw indexed type-8/empty-album experiment failed to reach the expected
+playing snapshot. It is not included as a supported selector or generalized from
+Play all; final acceptance retains indexed type 10. Logs/decompilation stay in
+ignored `work/library-research/`. The alias probe establishes a firmware limit,
+not permission to lift the public guard. Expanded iPhone filter names remain
+distinct from the verified stock UI abbreviation map.
 
 ## Historical validation: channel-balance checkpoint
 

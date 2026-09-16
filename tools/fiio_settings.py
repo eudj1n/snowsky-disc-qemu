@@ -4,6 +4,13 @@ import math
 import struct
 
 
+# Verified V2.57 stock UI labels, keyed by helper/SQLite value, not menu position.
+# FiiO Control's expanded filter names still need a paired label/wire capture.
+GAIN_LABELS = {0: 'Low', 1: 'High'}
+FILTER_LABELS = {0: 'FAST_LL', 1: 'SLOW_LL', 2: 'SLOW_PC',
+                 3: 'FAST_PC', 4: 'NON_OS', 5: 'Wideband_FF'}
+
+
 SETTINGS = {
     'gain': ('064a', '0649', (0, 1)),
     'dre': ('0813', '0812', (0, 1)),

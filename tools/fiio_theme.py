@@ -35,6 +35,8 @@ def upload_lock_screen(http, source, *, alias='', alpha=100,
     """
     if not isinstance(style, str) or style not in CUSTOM_STYLES:
         raise ValueError('unsupported DISC custom lock-screen style')
+    # Stock copies at most 63 header bytes, then percent-decodes; exceeding
+    # this can persist truncated/invalid UTF-8 even though HTTP returns 200.
     if (not isinstance(alias, str) or any(ord(c) < 32 for c in alias)
             or len(quote(alias, safe='')) > 63):
         raise ValueError('alias must fit the 63-byte percent-encoded stock header')

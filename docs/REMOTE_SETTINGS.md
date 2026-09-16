@@ -36,8 +36,8 @@ Queries above use empty payloads. Setters use four ASCII hex digits. For example
 
 Filter readback can include both device 0..5 and network 9..14 values in successive
 `a603` notifications. The client normalizes both to 0..5. Do not copy a database enum
-into a network setter blindly. Filter names and gain levels in dB are not inferred
-from numeric values.
+into a network setter blindly. Stock UI names are mapped below; gain levels in
+dB and physical filter response are not inferred from numeric values.
 
 EQ network **255 = off**, **160..169 = user presets 1..10**. Those user presets map
 to database `EQ_TYPE` **11..20**. Other observed mappings (network → database):
@@ -52,6 +52,44 @@ alias BYPASS to 255 or claim Auto EQ from the existing band setter. See the
 The owner deferred this larger PEQ investigation to
 [issue #9](https://github.com/eudj1n/snowsky-disc-qemu/issues/9); no new PEQ capture
 or implementation is required by the current library audit.
+
+## Gain and filter labels (V2.57)
+
+`GAIN_LABELS` / `FILTER_LABELS` in `tools/fiio_settings.py` use helper/SQLite
+values, not menu positions. Stock Gain lists **H first, L second**, but its
+callback maps those rows to **1 and 0**, respectively.
+
+| Stock UI label | Helper / SQLite value | Network setter value |
+| --- | --- | --- |
+| L / Low (`Низкий`) | 0 | `0649/0000` |
+| H / High (`Высокий`) | 1 | `0649/0001` |
+| FAST_LL | 0 | `0653/0009` |
+| SLOW_LL | 1 | `0653/000A` |
+| SLOW_PC | 2 | `0653/000B` |
+| FAST_PC | 3 | `0653/000C` |
+| NON_OS | 4 | `0653/000D` |
+| Wideband_FF | 5 | `0653/000E` |
+
+These are the stock firmware's actual labels, not expanded names guessed from
+the iPhone menu. The latter uses descriptive phase/roll-off names, including two
+truncated labels in `IMG_6806`; exact app label-to-wire correspondence still
+requires a paired capture. No physical gain/filter changes were made here.
+
+Static V2.57 UI chain: gain page `460a1c` uses `others.json` labels 68/69;
+callback `4608ec` maps row 0 → 1, row 1 → 0 in `8e171a`; sender `460cc0`
+uses `0649`. Filter page `46cb18` uses labels 70..75 with row indices 0..5;
+callback `46c9a0` stores that index in `8e1703`, timer `46ca78` sends the local
+setting. Player network setter `4ee628` maps wire 9..14 to persisted 0..5.
+Gain setter/getter are `4f182c` / `4f18e0`. Labels come from the English/Russian
+`/usr/project/config/ui/set_menu/others.json`; fallback code calls the last
+filter `HIGH_PASS`, but the shipped resource displays `Wideband_FF`.
+
+Reproduce with `FindText.java`, `RefsTo.java` and `DecAt.java` in the
+[Ghidra workflow](../ghidra/README.md), using fingerprinted V2.57 binaries.
+Focused `settings` acceptance exercises **both gain values and all six filters**
+over TCP/WS, checks normalized network reads and SQLite, restores originals and
+checks unchanged volume. This establishes control/persistence, not analog/DSP
+effects or a live iPhone mapping.
 
 ## Channel balance
 

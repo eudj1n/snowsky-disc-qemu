@@ -233,7 +233,8 @@ sending; the HTTP client must target the same device. Catalog ordering need not
 match insertion order. No atomic revision exists; serialize edits and never
 replay selections. See `docs/PLAYLISTS.md`; focused `CI_SCENARIO=playlists` checks
 TCP/WS with ID gaps, rename/add/remove and stale/empty-selector rejection.
-V2.57 `play_genre` uses type 10, or type 8 for a genre-scoped album; type 8's
+V2.57 `play_genre` uses captured type 8 with empty album for whole-genre Play all,
+type 10 for an indexed genre track, or type 8 for a named genre-scoped album; type 8's
 argument is parsed by sscanf, not JSON (fixed keys/spacing, no quote/backslash
 escaping). `play_folder` uses type 4 and positions from fresh HTTP localdir,
 including directory rows; Play all skips directories, not recursive. Both check
@@ -243,13 +244,17 @@ does not accept these group categories even though it returns HTTP 200. Focused
 `CI_SCENARIO=library` tests generated media, TCP/WS and direct/proxied HTTP,
 including index-only scoped track deletion and rescan recovery. No arbitrary
 source-delete helper. Physical capture `2026-09-16-185016` confirms scoped-album
-commands and HTTP genre hierarchy, but app whole-genre Play all uses type 8 with
-empty album, unlike our tested type 10. Validate this variant in disposable CI
-before changing helpers. Folder playback/bulk actions are not in the capture;
+commands and HTTP genre hierarchy. Whole-genre type 8 is now compared against
+type 10 in disposable CI (modes 0/4, queue/order/restart). Do not use empty-album
+type 8 for indexed playback: that separate path failed the exploratory probe.
+Folder playback/bulk actions are not in the capture;
 see `docs/LIBRARY_BROWSING.md` before continuing the remaining workflows.
 Avoid stock batch recursive deletion (it constructs shell commands). `0622/0000`
 starts a scan; watch `a60a` start/finish and `a622` counts. Gain/DRE/filter/SPDIF and
 PEQ helpers are shared by TCP/WS; filter and EQ network enums differ from SQLite.
+V2.57 gain is 0 Low / 1 High, not menu row order. `GAIN_LABELS`/`FILTER_LABELS`
+map stock UI names; all two/six values have TCP/WS and SQLite acceptance. Expanded
+iPhone filter labels still need paired capture; do not infer them by menu order.
 V2.57 `cancel_library_scan()` sends `0622/0001` once without draining events.
 Cancellation leaves a partial replacement index, not a rollback; `a60a/0005`
 also occurs after cancel. Do not query through the sequential client while
@@ -293,8 +298,10 @@ and four custom styles. `upload_lock_screen(..., style=...)` allows `default/0`,
 `default/1`, `default/2`, `clock/0`; `subclass` stays custom/default and flags
 remain explicit. `CI_SCENARIO=themes` checks direct/proxied HTTP on disposable
 V2.57 without unrelated tests. Do not infer automatic time-flag changes or
-physical rendering from style readback. The app's 90-byte encoded Russian alias
-exceeds our reviewed 63-byte bound; the bound remains unchanged.
+physical rendering from style readback. The app's 96-byte encoded Russian alias
+exceeds the stock 63-byte bound: header truncation occurs BEFORE percent-decoding
+and can persist invalid UTF-8. Boundary tests verify this through direct/proxy HTTP
+and raw SQLite bytes; keep the client rejection despite HTTP 200/blank GET alias.
 
 Physical iOS captures are summarized in `docs/FIIO_CONTROL_APP.md`; only sanitized
 protocol fixtures live in `tools/fixtures/`. Full `a202` snapshots and state-only

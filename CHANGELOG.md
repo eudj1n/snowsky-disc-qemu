@@ -15,13 +15,16 @@ Active firmware: **V2.57**. Protocol research is tracked in
 - Remote playback, seeking, play modes, favorites and guarded queue selection,
   with natural end-of-track/list checks. [Playback](docs/REMOTE_CONTROL.md).
 - HTTP file transfer, library browsing and custom playlist management/playback;
-  genre/folder selection and guarded bulk playlist additions. [Library](docs/LIBRARY_BROWSING.md).
+  genre/folder selection (including captured FiiO Control Play all) and guarded
+  bulk playlist additions. [Library](docs/LIBRARY_BROWSING.md).
 - Library scan cancellation and dedicated index reset with recovery checks;
   reset preserves source files. [Scan](docs/LIBRARY_SCAN.md), [reset](docs/LIBRARY_RESET.md).
-- Remote audio settings, channel balance and basic PEQ helpers; read-only gapless,
+- Remote audio settings with verified stock Gain/filter labels, channel balance
+  and basic PEQ helpers; read-only gapless,
   folder-jump and ReplayGain preferences. [Settings and limits](docs/REMOTE_SETTINGS.md).
 - Work-mode/codec preferences and custom wallpaper uploads, including four styles
-  and captured color/Date save behavior. [Modes and themes](docs/REMOTE_MODES_THEMES.md).
+  and captured color/Date save behavior, with verified safe name limits.
+  [Modes and themes](docs/REMOTE_MODES_THEMES.md).
 - Passive LAN discovery and an opt-in, time-limited bridge for one phone;
   initial FiiO Control connection verified. [Discovery](docs/DISCOVERY.md).
 - USB-power emulation that inhibits stock idle shutdown, plus idle/reconnect

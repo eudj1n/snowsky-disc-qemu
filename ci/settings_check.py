@@ -10,6 +10,7 @@ import time
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / 'tools'))
 from fiio_link import Client
 from fiio_ws import WSClient
+from fiio_settings import GAIN_LABELS, FILTER_LABELS
 
 
 async def call(fn, *args):
@@ -93,10 +94,15 @@ async def exercise(client, label):
     saved_master = None
     try:
         await balance_check(client, label)
+        for name, labels, column in (('gain', GAIN_LABELS, 'VOL_MODE'),
+                                     ('filter', FILTER_LABELS, 'FILTER_TYPE')):
+            for value, title in labels.items():
+                await set_and_read(client, name, value)
+                await wait_db(f'SELECT {column} FROM SYSCONFIG', [(value,)])
+                print(f'{label}: {name} {value} = {title}, network + SQLite verified', flush=True)
+            await set_and_read(client, name, original[name])
         for name, value, column, persisted in (
-            ('gain', 1 - original['gain'], 'VOL_MODE', 1 - original['gain']),
             ('dre', 1 - original['dre'], 'DRE_STATUS', 1 - original['dre']),
-            ('filter', (original['filter'] + 1) % 6, 'FILTER_TYPE', (original['filter'] + 1) % 6),
             ('spdif', 1 - original['spdif'], 'SPDIF', 1 - original['spdif']),
         ):
             await set_and_read(client, name, value)
@@ -124,6 +130,8 @@ async def exercise(client, label):
             await set_and_read(client, 'eq_master_db', saved_master)
         for name, value in original.items():
             await set_and_read(client, name, value)
+        for name, column in (('gain', 'VOL_MODE'), ('filter', 'FILTER_TYPE')):
+            await wait_db(f'SELECT {column} FROM SYSCONFIG', [(original[name],)])
     assert (await call(client.settings))['currentVolume'] == before_volume
     print(f'{label}: balance/gain/DRE/filter/SPDIF and user PEQ readback + SQLite persistence; settings restored', flush=True)
 

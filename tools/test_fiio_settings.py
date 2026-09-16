@@ -6,10 +6,23 @@ from unittest.mock import Mock, AsyncMock
 
 from fiio_link import Client, Frames, frame
 from fiio_ws import WSClient
-from fiio_settings import SETTINGS, SETTING_FIELDS, setting_command, setting_value, peq_payload, peq_value
+from fiio_settings import (SETTINGS, SETTING_FIELDS, GAIN_LABELS, FILTER_LABELS,
+                           setting_command, setting_value, peq_payload, peq_value)
 
 
 class SettingTests(unittest.IsolatedAsyncioTestCase):
+    def test_stock_gain_filter_label_values(self):
+        self.assertEqual(GAIN_LABELS, {0: 'Low', 1: 'High'})
+        self.assertEqual(list(FILTER_LABELS.values()),
+                         ['FAST_LL', 'SLOW_LL', 'SLOW_PC', 'FAST_PC', 'NON_OS', 'Wideband_FF'])
+        for value in GAIN_LABELS:
+            self.assertEqual(setting_command('gain', value), ('0649', f'{value:04X}'))
+            self.assertEqual(setting_value('gain', f'{value:04X}'.encode()), value)
+        for value in FILTER_LABELS:
+            self.assertEqual(setting_command('filter', value), ('0653', f'{value + 9:04X}'))
+            for wire in (value, value + 9):
+                self.assertEqual(setting_value('filter', f'{wire:04X}'.encode()), value)
+
     async def test_read_only_and_local_only_preferences_never_send_setters(self):
         tcp = Client.__new__(Client)
         tcp.socket = Mock()

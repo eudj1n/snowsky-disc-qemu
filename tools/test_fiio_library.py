@@ -46,13 +46,13 @@ class LibraryTests(unittest.IsolatedAsyncioTestCase):
             http.request.assert_called_with('GET', '/song_category_tree/',
                                             headers=expected)
 
-    def test_captured_empty_album_variant_is_not_silently_substituted(self):
+    def test_captured_whole_genre_and_separate_indexed_path(self):
         fixture = self.capture()
         observed = [c for c in fixture['commands'] if c['action'] == 'genre_all']
         self.assertTrue(all(c['payload'].startswith('0008') for c in observed))
-        # Existing type-10 implementation has emulator evidence. Type 8 with
-        # an empty album has physical evidence but needs its own runtime check.
-        self.assertEqual(genre_command(fixture['genre'])[1], '000A' + fixture['genre'])
+        self.assertEqual(genre_command(fixture['genre']),
+                         (observed[1]['tag'], observed[1]['payload']))
+        self.assertEqual(genre_command(fixture['genre'], 2)[1], '0002000A' + fixture['genre'])
         with self.assertRaises(ValueError):
             genre_command(fixture['genre'], album='')
 
@@ -66,7 +66,8 @@ class LibraryTests(unittest.IsolatedAsyncioTestCase):
         return tcp, ws
 
     def test_wire_context_and_utf8(self):
-        self.assertEqual(genre_command('Genre Ё'), ('0101', '000AGenre Ё'))
+        self.assertEqual(genre_command('Genre Ё'),
+                         ('0101', '0008{"style":"Genre Ё", "album":""}'))
         self.assertEqual(genre_command('Genre Ё', 2), ('0100', '0002000AGenre Ё'))
         command = genre_command('Genre Ё', 1, 'Shared Album')
         self.assertEqual(command, ('0100', '00010008{"style":"Genre Ё", "album":"Shared Album"}'))
@@ -80,6 +81,7 @@ class LibraryTests(unittest.IsolatedAsyncioTestCase):
                                    ('unknown_style', None, None), ('x', True, None),
                                    ('x', 65536, None), ('x', -1, None),
                                    ('x', 0, 'unknown_album'), ('x"y', 0, 'a'),
+                                   ('x"y', None, None), ('x\\y', None, None),
                                    ('x', 0, 'a\\b'), ('Ё' * 43, 0, None)):
             with self.assertRaises(ValueError):
                 genre_command(genre, index, album)

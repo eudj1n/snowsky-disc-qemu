@@ -4,12 +4,30 @@ import tempfile
 import unittest
 from pathlib import Path
 from unittest.mock import Mock
+from urllib.parse import quote
 
 from fiio_http import Reply
 from fiio_theme import read_lock_screen, upload_lock_screen, select_system_lock_screen, FIELDS, CUSTOM_STYLES
 
 
 class ThemeTests(unittest.TestCase):
+    def test_alias_limit_counts_encoded_bytes_before_decoding(self):
+        data = (b'\x89PNG\r\n\x1a\n' + struct.pack('>I', 13) + b'IHDR' +
+                struct.pack('>II', 360, 360) + b'\0' * 9)
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / 'fixture.png'
+            path.write_bytes(data)
+            for alias in ('A' * 63, 'Ё' * 10 + 'ABC'):
+                self.assertEqual(len(quote(alias, safe='')), 63)
+                http = Mock()
+                upload_lock_screen(http, path, alias=alias)
+                self.assertEqual(http.request.call_args.kwargs['headers']['alias'], quote(alias, safe=''))
+        for alias in ('A' * 64, 'Ё' * 11):
+            http = Mock()
+            with self.assertRaisesRegex(ValueError, '63-byte'):
+                upload_lock_screen(http, '/not-read.png', alias=alias)
+            http.request.assert_not_called()
+
     def test_custom_styles_match_physical_capture_except_alias(self):
         fixture = json.loads((Path(__file__).parent / 'fixtures' /
                               'fiio_control_ios_custom_theme_styles.json').read_text())
@@ -70,6 +88,7 @@ class ThemeTests(unittest.TestCase):
         fixture = json.loads((Path(__file__).parent / 'fixtures' /
                               'fiio_control_ios_custom_theme_save.json').read_text())
         http = Mock()
+        self.assertEqual(len(quote(fixture['app_alias'], safe='')), 96)
         # The app sends this localized label, but GET returns an empty alias.
         # That is not proof of lossless persistence or permission to lift the guard.
         with self.assertRaisesRegex(ValueError, '63-byte'):

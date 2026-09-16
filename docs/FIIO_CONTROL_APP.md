@@ -106,11 +106,12 @@ TCP command or speculative metadata-only helper is necessary for these actions.
 
 Two important limits remain:
 
-- App POST alias is the percent-encoded label `Пользовательский` (90 encoded
-  bytes), beyond our reviewed 63-byte guard. Custom GET returns empty alias.
-  Successful color/image reads do not prove lossless alias persistence; the
-  guard is unchanged. Tests compare all other semantic headers and deliberately
-  retain alias rejection. This is not exact whole-request parity.
+- App POST alias is the percent-encoded label `Пользовательский` (96 encoded
+  bytes; the earlier count of 90 was incorrect). Custom GET returns empty alias.
+  Follow-up [boundary tests](REMOTE_MODES_THEMES.md#alias-limit-v257) prove stock
+  truncation before decoding, including incomplete UTF-8 in SQLite. The 63-byte
+  guard is retained. Tests compare other semantic headers and deliberately
+  reject the app's unsafe alias; this is not exact whole-request parity.
 - Initial wire overlay flags are all **0**, despite the earlier screenshot's
   checked-looking circles. The inputs are not simultaneous and there is no action
   log connecting them; neither a UI bug nor ignored flags is established.
@@ -203,9 +204,9 @@ tests, **not** a completed replacement frontend or validation of every app actio
 | Mini-player | 6795–6801 | Track/artist metadata, play/pause and next have physical captures and emulator tests. Placeholder artwork alone does not prove cover retrieval failed. Opening the full player is frontend navigation, not a new protocol command. |
 | PEQ, off/save, graph, master and band controls | 6803 | `eq_type`, `peq()`, `set_peq()` and `eq_master_db` exist; first user preset, one band and master gain are integration-tested. **Partial coverage:** exact app preset selection, Save sequence and remaining editor fields are not shown/captured here. |
 | Update / Reset music library | 6804 | `scan_library()`, cooperative cancel and dedicated `reset_library(confirm=True)` are tested. Actual app reset command sequence is unobserved; do not reset a personal library merely for this audit. |
-| Gain | 6804–6805 | High/Low choices, High checked. Binary getter/setter and persistence tested; this screenshot does not map High/Low to wire 0/1 or measure dB. |
+| Gain | 6804–6805 | High/Low choices, High checked. Follow-up stock UI tracing establishes **0 Low / 1 High**, both TCP/WS values and SQLite tested. The screenshot alone does not establish that mapping or measure dB. |
 | Bluetooth codec, SPDIF, balance, DRE | 6804 | Existing settings helpers/tested control paths; five source-codec choices already physically captured. SPDIF appears off and DRE on; balance/codec subpages are not included in this batch. No claim about physical audio/DSP output. |
-| Filter | 6806 | Six choices; slow minimum-phase checked. Client normalizes 0..5 and writes 9..14. **Gap:** app label-to-wire mapping is not established by menu order. Last two labels are truncated; do not invent their full names. Acceptance changes one filter and restores it, not six separately mapped labels. |
+| Filter | 6806 | Six choices; slow minimum-phase checked. Client normalizes 0..5 and writes 9..14. Follow-up maps the six stock firmware abbreviations and tests every value. **Gap:** expanded iPhone label-to-wire mapping is not established by menu order. Last two app labels are truncated; do not invent their full names. [Verified stock table](REMOTE_SETTINGS.md#gain-and-filter-labels-v257). |
 | User Feedback | 6804 | Entry visible only. No implementation; classify as app/support functionality unless capture demonstrates a device operation. Destination and submitted data unknown. |
 
 PEQ screenshot: visible scale -24..+12 dB, master control, graph labels 31..16k,
@@ -232,7 +233,7 @@ folder selection, Delete workflow and folder-to-playlist expansion remain unvali
 The third batch below supplies genre/album batch toolbars and PEQ selection/save
 screens. Folder contents and individual-item menus remain unseen. Request
 targeted TCP/HTTP captures for concrete gaps, not repeat screenshots already supplied.
-Gain/filter label mapping can be captured separately while preserving settings;
+Expanded iPhone filter label mapping can be captured separately while preserving settings;
 do not sweep unknown codes or change physical gain with active listening.
 
 ### Genre hierarchy, batch actions and PEQ: third batch (2026-09-16)
@@ -286,9 +287,10 @@ contains source hashes and frame references; raw captures/artwork stay outside G
   `style` → `style/album` → `style/album/song`; the last carries both genre/album.
 - Scoped-album indexed and whole-list playback match our type-8 helper. Position
   15 selects the 16th of 19 tracks; two Next commands select 17/19 and 18/19.
-- Whole-genre Play all uses type **8 with an empty album**, not the helper's
-  emulator-tested type 10. This app variant needs focused emulator validation
-  before changing the public helper; physical readback shows a 54-track queue.
+- Whole-genre Play all uses type **8 with an empty album**; physical readback
+  shows a 54-track queue. Follow-up disposable TCP/WS comparison with type 10
+  passes in modes 0/4, and the helper now uses the captured form for Play all.
+  Indexed whole-genre selection retains type 10; it is not covered by this capture.
 - The first genre attempts six CUE entries with zero duration, loading state and
   repeated `a60a/000D`, without playback progress. Do not call that successful EOF
   or infer a decoder/file defect without further evidence. Ordinary tracks in the
@@ -297,8 +299,8 @@ contains source hashes and frame references; raw captures/artwork stay outside G
   A root folder GET alone does not validate folder playback.
 
 See [timeline, client differences and reproduction](LIBRARY_BROWSING.md#physical-genre-flow-2026-09-16).
-Firmware-free tests cover matching HTTP filters/scoped selectors and preserve
-the boundary between the captured empty-album variant and the existing helper.
+Firmware-free tests cover matching HTTP filters/scoped selectors and the captured
+Play-all form, keeping indexed genre selection on its independently tested path.
 
 ## Android 4.6.0 input (2026-09-15)
 

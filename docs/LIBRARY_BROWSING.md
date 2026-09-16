@@ -1,8 +1,9 @@
 # Genres, folders and bulk selections (V2.57)
 
 The helpers below have stock V2.57 emulator evidence. A subsequent physical
-FiiO Control capture confirms genre browsing and scoped-album selection, but
-uses a different whole-genre selector; see [physical evidence](#physical-genre-flow-2026-09-16).
+FiiO Control capture confirms genre browsing and scoped-album selection; its
+whole-genre selector is now validated and used by the helper. See
+[physical evidence](#physical-genre-flow-2026-09-16).
 Emulator tests use disposable generated media, not the interactive guest or user
 library. Raw physical captures remain private; no commands are replayed to the device.
 
@@ -10,13 +11,14 @@ library. Raw physical captures remain private; no commands are replayed to the d
 
 | Context | HTTP source | Link type / argument |
 | --- | --- | --- |
-| Genre tracks | `style/song`, header `style` | `10` (`000A`), raw UTF-8 genre name |
+| Whole genre, Play all | `style/song`, header `style` | `8` (`0008`), `{"style":"Genre", "album":""}` |
+| Indexed genre track | `style/song`, header `style` | `10` (`000A`), raw UTF-8 genre name |
 | Albums within a genre | `style/album`, header `style` | Browse/group selection only; drill down before selecting a track |
 | Tracks within a genre's album | `style/album/song`, headers `style`, `album` | `8` (`0008`), `{"style":"Genre", "album":"Album"}` |
 | Folder entries | `/localdir/tmp/sdcard/.../` | `4` (`0004`), raw absolute directory path |
 
-This table describes the tested helpers. The phone's whole-genre action instead
-uses type `8` with an empty album; it is not yet exposed by these helpers.
+Whole-genre Play all matches the captured phone request. Indexed genre selection
+retains the separately tested type-10 path; the app capture does not cover it.
 
 `0100` carries four hexadecimal digits of zero-based position, then four of
 list type, then the argument. `0101` omits the position and starts the list.
@@ -27,7 +29,7 @@ The genre-scoped album is **not** equivalent to `album/song`: the fixture's
 `Shared Album` contains Alpha/Beta in `Genre Ё` and Gamma in `Genre Other`.
 Scoped reads, playback and queues contain only Alpha/Beta. Genre playback adds
 Delta from another album. Whole-list and last-position selection are checked
-over TCP and WS; `playerflag` is respectively 10, 8 or 4.
+over TCP and WS; `playerflag` matches the chosen type (8, 10 or 4).
 
 Folder positions include subdirectories. For example, `Nested`, `01.flac`,
 `02.flac` occupy positions 0, 1, 2. Selecting 2 plays the second audio file;
@@ -56,7 +58,7 @@ path (stock uses substring detection). Missing/renamed/out-of-range selections
 are rejected before a playback write. Generic `play_index`/`play_all` deliberately
 retain their old allowlist; use the guarded context-specific helpers.
 
-The scoped-album argument is parsed by stock **`sscanf`, not JSON**. Keep key
+The type-8 genre/album argument is parsed by stock **`sscanf`, not JSON**. Keep key
 order and colon spacing; do not use a generic serializer that escapes Unicode
 or inserts spaces after colons. Names containing quotes/backslashes are rejected
 for this context. HTTP name-header length limits also apply. Reserved
@@ -148,17 +150,24 @@ uppercase `000F` encode the same position. HTTP uses percent-encoded headers;
 Link names are raw UTF-8. The app sends unused name headers as empty and requests
 100 rows; our client omits unused headers and defaults to 200 rows. Fixture tests
 compare the meaningful filters with an explicit 100-row request, not identical
-default HTTP bytes. Firmware-free validation passed 274 Python / 23 JavaScript
-tests, shell syntax and four shim builds. Runtime code is unchanged; no new
-firmware integration or long idle run was needed for capture/fixture documentation.
+default HTTP bytes. The initial capture-only checkpoint passed 274 Python / 23
+JavaScript tests, shell syntax and four shim builds without changing runtime code.
+The helper change and focused firmware acceptance followed as described below.
 
-**Whole-genre difference:** our existing `play_genre(genre)` sends type 10 with
-a plain genre name, validated in the emulator. The app sends type 8 with an
-empty album. The physical queue count spans the genre, but equivalence of ordering,
-start position and empty/unknown-name handling is not established. Do not silently
-replace the helper or loosen its empty-name guard; first test the captured variant
-against overlapping albums/genres in disposable `library` acceptance. The initial
-`7/54` is an observation, not evidence of random mode or a promised start position.
+**Whole-genre follow-up:** `play_genre(genre)` now sends the captured type 8 with
+an empty album. Fresh disposable V2.57 `library` acceptance compares this with
+type 10 over TCP/WS in modes 0 and 4: identical three-track queue/order, no
+cross-genre leak, and restart at the first track after selecting the last one.
+This is generated playable-FLAC evidence, not a guarantee for failed/CUE tracks
+or random-mode start positions. The physical `7/54` remains an observation,
+not evidence of random mode or a promised start position.
+
+Do not generalize the empty-album form to indexed `0100`: an exploratory probe
+did not reach the expected playing snapshot (last state was paused), and stock
+`429008` takes a different path from Play all `429500`. Indexed whole-genre
+selection therefore retains validated type 10; named scoped albums retain type 8.
+Explicit empty/unknown names are still rejected. Only the internal Play-all
+encoding introduces the empty album; quotes/backslashes are rejected for type 8.
 
 **CUE caveat:** after the first genre selection, six full loading snapshots show
 `is_cue=true`, zero duration and positions `1/17` through `6/17`, all referencing

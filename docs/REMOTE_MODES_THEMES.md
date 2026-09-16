@@ -109,6 +109,27 @@ file and activates the result. Byte preservation, headers, decoded alias and
 `CUSTOM_THEME` fields are checked independently. This does not measure overlay
 layout, opacity or colors on a physical screen. GIF remains unvalidated.
 
+### Alias limit (V2.57)
+
+The **63-byte percent-encoded limit is a firmware constraint**, not an arbitrary
+client cap. POST handler `48dd80` reads `alias` into a 64-byte buffer through
+`496c60`, which copies at most `size - 1` bytes and terminates them. Only then
+does `48b690` percent-decode and save the result. The larger decoded destination
+does not make longer headers safe.
+
+Fresh disposable `themes` acceptance checks direct/proxied HTTP and raw SQLite
+bytes: 63 ASCII bytes and `Ё` × 10 + `ABC` (63 encoded bytes) persist losslessly;
+64 ASCII bytes lose their last character. `Ё` × 11 (66 encoded bytes) and the
+captured `Пользовательский` label (**96**, not the previously documented 90,
+encoded bytes) are cut to 63 before decoding, leaving 21 stored bytes ending
+in an incomplete UTF-8 character. HTTP still returns 200; custom GET still has
+an empty alias and the complete PNG. Neither response proves name preservation.
+
+The public helper therefore keeps its rejection before file/network access;
+it neither silently truncates nor sends the app's over-limit alias. Only the
+disposable diagnostic uses raw over-limit requests and immediately restores a
+valid alias through stock HTTP. No firmware patch or physical write is needed.
+
 ### Custom styles (V2.57)
 
 `upload_lock_screen(..., style='default/0')` now accepts exactly `default/0`,
@@ -146,7 +167,7 @@ Stock quirks confirmed by the regression scenario:
   [packet evidence and alias limitation](FIIO_CONTROL_APP.md#physical-custom-theme-save-2026-09-16).
 - **`flag-in-use: 0` still clears the other active theme.** It can leave no theme
   selected. It is not a harmless way to upload a draft.
-- Custom alias is saved correctly in SQLite, but V2.57 GET returns an empty alias
+- In-limit custom alias is saved correctly in SQLite, but V2.57 GET returns an empty alias
   header. Do not interpret that header as proof that the name was lost.
 - Custom image upload uses a slot-derived path under
   `/usr/data/fiio/wifi_transfer/pic/lock_screen/`, replacing prior image extensions
@@ -226,7 +247,7 @@ in ignored `work/`, and document only the minimal protocol evidence.
 Color/Date save investigation completed with the owner's 2026-09-16 HAR/PCAP:
 full PNG retransmission and fresh metadata/image readback confirmed. The
 [capture evidence](FIIO_CONTROL_APP.md#physical-custom-theme-save-2026-09-16)
-records restoration limits and an app alias outside our conservative guard.
+records restoration limits and an app alias exceeding the verified firmware limit.
 Six supplied screenshots confirm **Apply now**, background transparency, four
 overlay checkboxes, four style thumbnails and two unlabeled color sliders.
 See [screen coverage and gaps](FIIO_CONTROL_APP.md#wallpaper-screens-first-batch-2026-09-16).
@@ -234,8 +255,8 @@ The second capture confirms all four custom `msg-style` values with fresh GET
 readback; the helper now exposes the allowlist documented above.
 The sequence below is retained for reproduction, not a request to repeat the
 completed color/Date or style captures. Remaining questions include the two
-color sliders' individual semantics, alpha's UI mapping, the long localized
-alias and the official catalog. Do not request another full walkthrough merely
+color sliders' individual semantics, alpha's UI mapping and the official catalog.
+The long localized alias is resolved by the boundary tests above. Do not request another full walkthrough merely
 to repeat already captured style values.
 Previously captured modes, codecs and stock-theme selections need not be repeated.
 

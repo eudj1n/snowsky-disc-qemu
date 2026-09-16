@@ -17,14 +17,19 @@ def genre_command(genre, index=None, album=None):
     name_header(genre)
     if genre == 'unknown_style':
         raise ValueError('reserved unknown-genre token is not supported')
-    if album is None:
+    if album is None and index is not None:
         payload = '000A' + genre
     else:
-        name_header(album)
+        if album is None:
+            # FiiO Control's whole-genre selector. Do not use this empty-album
+            # form for indexed playback: that takes a different stock path.
+            album = ''
+        else:
+            name_header(album)
         # Stock uses sscanf, NOT a JSON parser: quoted/backslash names cannot
         # safely be escaped with json.dumps. Key order and colon spacing matter.
         if any(c in genre + album for c in ('"', '\\')) or album == 'unknown_album':
-            raise ValueError('scoped album names cannot contain quotes/backslashes or reserved tokens')
+            raise ValueError('type-8 genre/album names cannot contain quotes/backslashes or reserved tokens')
         payload = '0008' + '{"style":"' + genre + '", "album":"' + album + '"}'
     return ('0101' if index is None else '0100', prefix + payload)
 

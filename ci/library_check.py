@@ -10,6 +10,7 @@ from scan_cancel_check import scan
 from player_memory import PlayerMemory
 from track_end_check import sources
 from fiio_http import range_body
+from fiio_link import frame
 
 
 async def exercise(transport):
@@ -75,7 +76,19 @@ async def exercise(transport):
                 'style/song' if album is None else 'style/album/song', **filters)['items']]
             for index in (None, len(expected) - 1):
                 await selected(lambda: client.play_genre('Genre Ё', index, album=album, http=http),
-                               expected, index or 0, 10 if album is None else 8)
+                               expected, index or 0, 10 if album is None and index is not None else 8)
+
+        # Physical FiiO Control uses type 8 with an empty album for a genre.
+        # Compare its queue/order/start against the independently tested type 10.
+        expected = [x['name'] for x in http.catalog('style/song', style='Genre Ё')['items']]
+        for play_mode in (0, 4):
+            await call(client.set_play_mode, play_mode)
+            await selected(lambda: client.send('0101', '000AGenre Ё') if transport == 'ws'
+                           else client.socket.sendall(frame('0101', '000AGenre Ё')), expected, 0, 10)
+            # Select the last track first, so replay-all must reset its position.
+            await selected(lambda: client.play_genre('Genre Ё', len(expected) - 1, http=http),
+                           expected, len(expected) - 1, 10)
+            await selected(lambda: client.play_genre('Genre Ё', http=http), expected, 0, 8)
 
         for suffix in ('/A', '/A/Nested', '/B'):
             path = '/tmp/sdcard/' + FOLDER + suffix

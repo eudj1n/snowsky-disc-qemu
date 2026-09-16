@@ -193,7 +193,8 @@ The workflow first runs the firmware-free suite on the same commit, then:
    fresh-preflight rejection after deletion/renaming or with empty lists.
 10. Runs [remote settings/PEQ acceptance](REMOTE_SETTINGS.md) over TCP/WS, checking
     gain, DRE, filter, SPDIF, channel balance, user bands/master gain and SQLite
-    persistence, then restores settings. Balance also checks left/right DAC
+    persistence, then restores settings. Both gain values and all six filters
+    are exercised. Balance also checks left/right DAC
     attenuation mirrors at center, ±1 and ±20.
 11. Runs [modes/codecs/themes acceptance](REMOTE_MODES_THEMES.md): USB/local/AirPlay
     control transitions, five codec preferences, five stock lock screens, exact
@@ -274,12 +275,14 @@ own network scans.
 and stock scan. It checks genre/album filter isolation, nested/empty folders,
 guarded TCP/WS selection, direct/proxied bulk add, rejected grouped deletion and
 index-only track deletion/rescan recovery. Source hashes are preserved and the
+captured type-8 whole-genre Play all is compared with type 10 in modes 0/4. The
 three-track baseline is restored. The same check runs in `full` before formats.
 See [the library contract](LIBRARY_BROWSING.md); no long power tests are involved.
 `themes` is V2.57-only, starts after boot without a media scan, and calls
 `modes_themes_check.py --themes-only`. It covers five system slots, four custom
 styles with explicit time off/on, full-image and metadata preservation, unsafe
-empty-body/activation semantics and system-theme restoration over direct and
+empty-body/activation semantics, alias encoded-byte boundaries (including raw
+over-limit diagnostics) and system-theme restoration over direct and
 proxied HTTP. No TCP/WS mode/codec changes, interactive volume or long power
 checks are involved. The same style assertions run in ordinary `full` on V2.57.
 `discovery` is V2.57-only, starts after boot and does not need a media scan. It

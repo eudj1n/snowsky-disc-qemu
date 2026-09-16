@@ -8,6 +8,7 @@ import struct
 import sys
 import time
 import zlib
+from urllib.parse import quote, unquote_to_bytes
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / 'tools'))
 from fiio_link import Client
@@ -30,6 +31,34 @@ def png():
         return struct.pack('>I', len(data)) + kind + data + struct.pack('>I', zlib.crc32(kind + data) & 0xffffffff)
     return (b'\x89PNG\r\n\x1a\n' + chunk(b'IHDR', struct.pack('>IIBBBBB', 360, 360, 8, 2, 0, 0, 0)) +
             chunk(b'IDAT', zlib.compress((b'\0' + b'\x20\x40\x60' * 360) * 360)) + chunk(b'IEND', b''))
+
+
+def alias_boundaries(http, source, label):
+    # The stock header reader copies at most 63 encoded bytes BEFORE decoding.
+    # Raw over-limit requests are diagnostic probes only, on a disposable guest.
+    upload_lock_screen(http, source, alias='Alias baseline')
+    baseline = read_lock_screen(http)
+    headers = {k: baseline.headers[k] for k in FIELDS}
+    for alias in ('A' * 63, 'A' * 64, 'Ё' * 10 + 'ABC', 'Ё' * 11, 'Пользовательский'):
+        encoded = quote(alias, safe='')
+        try:
+            if len(encoded) <= 63:
+                upload_lock_screen(http, source, alias=alias)
+            else:
+                http.request('POST', ROUTE, body=source.read_bytes(),
+                             headers=dict(headers, alias=encoded))
+            with sqlite3.connect(f'file:{ROOT}/usr/data/fiio/db/theme.db?mode=ro', uri=True) as db:
+                db.text_factory = bytes
+                saved = db.execute('SELECT ALIAS FROM CUSTOM_THEME WHERE IS_SYSTEM=0').fetchone()[0]
+            assert saved == unquote_to_bytes(encoded[:63]), (encoded, saved)
+            reply = read_lock_screen(http)
+            assert reply.headers['alias'] == '' and reply.body == source.read_bytes()
+            print(f'{label}: alias encoded={len(encoded)} stored-bytes={len(saved)} '
+                  f'lossless={saved == alias.encode()}', flush=True)
+        finally:
+            # A chopped percent-encoded UTF-8 sequence can leave invalid text in
+            # SQLite. Restore through stock HTTP before ordinary row decoding.
+            upload_lock_screen(http, source, alias='Alias restored')
 
 
 async def modes(client, label):
@@ -101,6 +130,8 @@ def themes(host, label):
                         row['LOCK_ID3'], row['USE']) == (int(show_time), 0, 0, 0, 1)
                 assert (ROOT / row['PATH'].lstrip('/')).read_bytes() == source.read_bytes()
         print(f'{label}: four custom styles with time off/on, image and metadata preserved', flush=True)
+        alias_boundaries(http, source, label)
+        reply = read_lock_screen(http)
     # Pin the unsafe stock semantics so callers do not introduce metadata-only updates.
     select_system_lock_screen(http, active[0]['POS_ID'])
     headers = {k: reply.headers[k] for k in FIELDS}
