@@ -29,7 +29,8 @@ Active firmware: **V2.57**. Protocol research is tracked in
 - CUE/DSF/DFF metadata and track-selection checks; native DSD output and SACD ISO
   remain outside this coverage. [Formats](docs/FORMATS.md).
 - Sanitized physical-app fixtures, focused integration scenarios and optional
-  local failure logs. Long power tests run only when relevant. [Testing](docs/CI.md).
+  local failure logs, including captured genre browsing/album selection.
+  Long power tests run only when relevant. [Testing](docs/CI.md).
 - Daily OTA catalog monitoring with tracking issues; no automatic firmware
   download or promotion. Optional viewer Power-on script for custom startup.
 

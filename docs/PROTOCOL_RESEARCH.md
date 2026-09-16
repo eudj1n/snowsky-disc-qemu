@@ -83,10 +83,13 @@ appears; it is not a remaining acceptance gate for this checkpoint. Long-test
 selection is recorded in [CI.md](CI.md#test-selection-policy).
 
 Current checkpoint: genre/folder/bulk-add helpers and focused `library` acceptance
-are complete. The owner deferred physical TCP/HTTP capture to another session
-because FiiO Control could not connect (suspected Wi-Fi, not diagnosed). Do not
-require another capture now. Pending: exact app category/filter/selection sequence,
-folder-to-playlist workflow and Delete confirmation/source scope. Do not issue
+are complete. The previously deferred physical genre capture is now analyzed:
+`style` → `style/album` → `style/album/song` and type-8 scoped-album commands are
+confirmed. Whole-genre Play all instead uses **type 8 with empty album**, not our
+emulator-tested type 10: next validate that variant on disposable overlapping
+genre/album fixtures before exposing it. See [capture evidence](LIBRARY_BROWSING.md#physical-genre-flow-2026-09-16).
+Pending: app folder selection, root-category Play all, folder-to-playlist workflow
+and Delete confirmation/source scope. No repeat genre capture needed. Do not issue
 physical deletes to obtain evidence. PEQ remains separate issue #9.
 
 Other open work: remaining wallpaper questions and a screenshot-led audit of
@@ -235,7 +238,7 @@ explicitly instead of retrying them indefinitely.
   establish visible UI, not wire behavior or working hardware. Request additional
   captures only for concrete gaps; see [audit plan](FIIO_CONTROL_APP.md#screen-coverage-audit).
   Second batch (`IMG_6795`–`IMG_6806`) inventories library/PEQ/settings. Open gaps:
-  exact app genre/folder playback, root-category Play all semantics, batch action menus,
+  exact app folder playback, whole-genre selector parity, root-category Play all semantics, batch action menus,
   exact PEQ preset/Save flow and gain/filter label-to-wire mapping. Existing
   catalog/settings helpers are not proof of complete app parity. See
   [coverage matrix](FIIO_CONTROL_APP.md#library-peq-and-settings-screens-second-batch-2026-09-16).
@@ -244,8 +247,9 @@ explicitly instead of retrying them indefinitely.
   Device presets including separate BYPASS, Auto EQ and local/retrieval tabs.
   Genre/scoped-album/folder helpers and category batch-add expansion now have
   emulator acceptance in [LIBRARY_BROWSING.md](LIBRARY_BROWSING.md); exact app
-  sequences, remaining delete scope, BYPASS and PEQ save/cloud workflows are
-  not established. Physical capture is deferred as recorded above. See
+  folder/root-category sequences, remaining delete scope, BYPASS and PEQ save/cloud
+  workflows are not established. The genre capture now confirms HTTP filters and
+  scoped-album selection, with the whole-genre variant difference recorded above. See
   [third-batch audit](FIIO_CONTROL_APP.md#genre-hierarchy-batch-actions-and-peq-third-batch-2026-09-16).
   **PEQ is documentation-only here and deferred to issue #9** by owner decision;
   it is not a blocker for the current library/playback work or a request for

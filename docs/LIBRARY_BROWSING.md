@@ -1,10 +1,10 @@
 # Genres, folders and bulk selections (V2.57)
 
-This is stock-firmware emulator evidence, not a captured FiiO Control request
-sequence. The physical screenshots show the workflows, but on 2026-09-16 the
-owner deferred the requested TCP/HTTP capture because the phone could not connect
-to the player (suspected Wi-Fi problem, not diagnosed here). No physical device,
-interactive emulator, user media or LAN exposure is involved in these tests.
+The helpers below have stock V2.57 emulator evidence. A subsequent physical
+FiiO Control capture confirms genre browsing and scoped-album selection, but
+uses a different whole-genre selector; see [physical evidence](#physical-genre-flow-2026-09-16).
+Emulator tests use disposable generated media, not the interactive guest or user
+library. Raw physical captures remain private; no commands are replayed to the device.
 
 ## Browse and play
 
@@ -14,6 +14,9 @@ interactive emulator, user media or LAN exposure is involved in these tests.
 | Albums within a genre | `style/album`, header `style` | Browse/group selection only; drill down before selecting a track |
 | Tracks within a genre's album | `style/album/song`, headers `style`, `album` | `8` (`0008`), `{"style":"Genre", "album":"Album"}` |
 | Folder entries | `/localdir/tmp/sdcard/.../` | `4` (`0004`), raw absolute directory path |
+
+This table describes the tested helpers. The phone's whole-genre action instead
+uses type `8` with an empty album; it is not yet exposed by these helpers.
 
 `0100` carries four hexadecimal digits of zero-based position, then four of
 list type, then the argument. `0101` omits the position and starts the list.
@@ -110,6 +113,81 @@ The `delete_source: 1` branch contains `unlink`; it is not exposed or exercised
 here. Deletion of a currently playing item, favorite/custom-list side effects,
 CUE/shared-file identity and physical app confirmations remain unvalidated.
 The existing unsafe recursive `/file/` directory-batch path remains prohibited.
+
+## Physical genre flow (2026-09-16)
+
+Owner-provided `2026-09-16-185016.pcap` and `.har`, physical DISC; fresh `a501`
+reports firmware **257** and play mode **0**. The app version is not present.
+Source hashes, packet references and sanitized requests are preserved in
+[the fixture](../tools/fixtures/fiio_control_ios_genres.json). Names in the fixture
+are replacements, not the user's catalog. No artwork, IPs or full settings are committed.
+
+The HAR contains only **3** device HTTP exchanges; the PCAP contains **13**.
+Later browsing and control must be reconstructed from PCAP, not inferred absent
+from HAR. TCP stream 118 carries all control; payload sequence numbers are
+contiguous in each direction, including coalesced Link frames. Relevant TCP
+traffic has no reported retransmissions, lost segments or truncated packets.
+
+| PCAP time / frame | Observed action | Contract / result |
+| --- | --- | --- |
+| 17.990 / 7102 | List genres | HTTP `type: style`, empty artist/album/style, 17 rows |
+| 19.998 / 7709 | Open first genre | `style/album`, percent-encoded genre header; one album, 17 tracks |
+| 23.220 / 8078 | Whole genre | `0101`, type `0008`, `{"style":"…", "album":""}` |
+| 37.784 / 8376 | Open another genre | `style/album`, four albums with counts 18 + 16 + 1 + 19 = 54 |
+| 39.541 / 8483 | Whole genre | Same empty-album type-8 selector; reply uses `playerflag=8`, queue `7/54`, then playing state and advancing progress |
+| 66.055 / 9807; 73.974 / 10043 | Open its album | `style/album/song`, both name headers; 19 rows at positions 0–18 |
+| 76.349 / 10105 | Select position 15 | `0100` + `000f0008` + both names; selected row matches snapshot, queue `16/19` |
+| 79.567 / 10268; 81.683 / 10404 | Next twice | `0201/0001`, queues `17/19`, `18/19` |
+| 84.400 / 10636 | Toggle to pause | `0201/0000`, followed by state 1 |
+| 87.402 / 10812 | Whole scoped album | `0101` + type 8 + both names; queue `1/19`, then playing/progress |
+| 91.519 / 11257 | Toggle to pause | `0201/0000`, followed by state 1 |
+
+Scoped-album payload syntax matches `genre_command(..., album=...)`, including
+the space before `"album"`. Lowercase hexadecimal `000f` from the app and our
+uppercase `000F` encode the same position. HTTP uses percent-encoded headers;
+Link names are raw UTF-8. The app sends unused name headers as empty and requests
+100 rows; our client omits unused headers and defaults to 200 rows. Fixture tests
+compare the meaningful filters with an explicit 100-row request, not identical
+default HTTP bytes. Firmware-free validation passed 274 Python / 23 JavaScript
+tests, shell syntax and four shim builds. Runtime code is unchanged; no new
+firmware integration or long idle run was needed for capture/fixture documentation.
+
+**Whole-genre difference:** our existing `play_genre(genre)` sends type 10 with
+a plain genre name, validated in the emulator. The app sends type 8 with an
+empty album. The physical queue count spans the genre, but equivalence of ordering,
+start position and empty/unknown-name handling is not established. Do not silently
+replace the helper or loosen its empty-name guard; first test the captured variant
+against overlapping albums/genres in disposable `library` acceptance. The initial
+`7/54` is an observation, not evidence of random mode or a promised start position.
+
+**CUE caveat:** after the first genre selection, six full loading snapshots show
+`is_cue=true`, zero duration and positions `1/17` through `6/17`, all referencing
+one source path with different track numbers. Each is followed by `a60a/000D`.
+No playing-state/progress event occurs in that interval. This is not successful
+playback or natural EOF evidence; the exact status meaning and cause are not
+diagnosed by this capture. The second genre does reach playing state/progress.
+
+Only `/localdir/tmp/` browsing is present: no type-4 folder selection, folder
+track browsing, bulk POST/DELETE or root-category Play all is captured. Those
+remain separate gaps. No pause command appears between the second whole-genre
+selection and the later album-track selection; the requested action script is
+not a substitute for the observed timeline.
+
+Read-only reproduction (inspect locally; output may contain private metadata):
+
+```sh
+tshark -r /path/to/capture.pcap -Y 'tcp.port == 12100 && tcp.len > 0' \
+  -T fields -e frame.number -e frame.time_relative -e tcp.stream \
+  -e tcp.srcport -e tcp.seq -e tcp.payload
+tshark -r /path/to/capture.pcap -Y 'tcp.port == 12103 && http.request' \
+  -T fields -e frame.number -e tcp.stream -e http.request.uri -e http.request.line
+tshark -r /path/to/capture.pcap -q -z follow,tcp,raw,225
+```
+
+Stream 225 contains the first scoped-track HTTP response; 231 is the repeated
+read. Decode Link by the eight-byte ASCII-hex header's total byte length, not
+TCP packet boundaries. Reassemble each HTTP direction and honor transfer/content
+encoding before comparing category totals, positions and selected-row identity.
 
 ## Static evidence and reproduction
 

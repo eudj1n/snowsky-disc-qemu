@@ -1,9 +1,12 @@
+import json
 import unittest
+from pathlib import Path
 from unittest.mock import AsyncMock, Mock
 
 from fiio_library import genre_command, folder_command, verify_folder, verify_genre
 from fiio_link import Client, frame
 from fiio_ws import WSClient
+from fiio_http import HTTPClient, Reply
 
 
 def page(pos=0, name='01.flac', total=1, **fields):
@@ -13,6 +16,46 @@ def page(pos=0, name='01.flac', total=1, **fields):
 
 
 class LibraryTests(unittest.IsolatedAsyncioTestCase):
+    def capture(self):
+        return json.loads((Path(__file__).parent / 'fixtures' /
+                           'fiio_control_ios_genres.json').read_text())
+
+    def test_physical_scoped_album_commands(self):
+        fixture = self.capture()
+        for item in fixture['commands']:
+            if item['action'] not in ('album_track', 'album_all'):
+                continue
+            with self.subTest(action=item['action']):
+                tag, payload = genre_command(fixture['genre'], item.get('index'), fixture['album'])
+                self.assertEqual(tag, item['tag'])
+                # The app uses lowercase hexadecimal positions; integer meaning
+                # is identical. Do not case-fold the case-sensitive names.
+                size = 8 if item['action'] == 'album_track' else 4
+                self.assertEqual(payload[:size].lower(), item['payload'][:size].lower())
+                self.assertEqual(payload[size:], item['payload'][size:])
+                wire = frame(tag, payload)
+                self.assertEqual(int(wire[4:8], 16), len(wire))
+
+    def test_physical_genre_http_filters(self):
+        http = HTTPClient()
+        http.request = Mock(return_value=Reply(200, {'total-num': '0'}, b'[]'))
+        for request in self.capture()['http_requests']:
+            http.catalog(request['category'], limit=100, **request['filters'])
+            # App sends unused name headers as empty; helper omits them.
+            expected = {key: value for key, value in request['headers'].items() if value}
+            http.request.assert_called_with('GET', '/song_category_tree/',
+                                            headers=expected)
+
+    def test_captured_empty_album_variant_is_not_silently_substituted(self):
+        fixture = self.capture()
+        observed = [c for c in fixture['commands'] if c['action'] == 'genre_all']
+        self.assertTrue(all(c['payload'].startswith('0008') for c in observed))
+        # Existing type-10 implementation has emulator evidence. Type 8 with
+        # an empty album has physical evidence but needs its own runtime check.
+        self.assertEqual(genre_command(fixture['genre'])[1], '000A' + fixture['genre'])
+        with self.assertRaises(ValueError):
+            genre_command(fixture['genre'], album='')
+
     def clients(self, version=257):
         tcp = Client.__new__(Client)
         tcp.socket = Mock()

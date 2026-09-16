@@ -24,7 +24,7 @@ peripheral controls. See the [README](../README.md) for setup and the visual ove
 | **LAN discovery** | Exact UDP announcements observed on physical V2.57; emulator tests confirm suppression during TCP connection and resumption after disconnect. FiiO Control on iPhone discovered the emulator and opened its library through the opt-in, one-phone host TCP/HTTP bridge. Default ports stay localhost-only. | [Discovery and safe manual test](DISCOVERY.md) |
 | **Stock file/library API** | HTTP folders, streamed uploads/progress and single-path deletion; custom playlist create/rename/add/remove/delete. Network scanning indexes uploaded music. Current-cover JPEG retrieved on physical V2.57. | [HTTP API](HTTP_API.md) |
 | **Custom playlist playback** | V2.57 TCP/WS whole-list and track selection with fresh HTTP name/bounds checks. Tests distinguish list position from SQLite ID and cover rename/edit/position shifts. Physical app comparison remains separate. | [Playlist contract](PLAYLISTS.md) |
-| **Genres / folders / bulk selection** | V2.57 guarded genre/scoped-album/folder playback; folder positions include directory rows. Grouped bulk add preserves genre filters. Index-only track deletion and rescan recovery tested; grouped/source-file deletion is not exposed. Phone capture deferred. | [Library contract](LIBRARY_BROWSING.md) |
+| **Genres / folders / bulk selection** | V2.57 guarded playback and grouped bulk add; index-only deletion/rescan tested. Physical genre hierarchy/scoped-album commands confirmed. App whole-genre Play all uses a different selector, pending emulator checks; folder/bulk app flows remain unobserved. Source/group deletion is not exposed. | [Library contract](LIBRARY_BROWSING.md) |
 | **Natural track/list end** | V2.57 five-mode EOF behavior observed over TCP/WS on a short WAV/FLAC custom queue: stop, repeat-one, wrap and random continuation. Gapless/folder jump off. Final stop leaves the queue intact but `0202` silent; loading state 2 is not terminal stop. | [EOF contract and acceptance](TRACK_END.md) |
 | **CUE / DSD metadata** | Generated V2.57 CUE/WAV, DSF and DFF index and select over TCP/WS; CUE queue/favorites use positions. Stock IDs can collide, CUE track fields are lossy and HTTP can mark the wrong row. SACD ISO and native DSD output remain unvalidated. | [Formats and identity](FORMATS.md) |
 | **Scan cancellation** | V2.57 TCP/WS cooperative cancellation leaves a partial replacement index; finish event is shared with full scans. Fresh full scanning restores the complete catalog; source files are unchanged. | [Scan contract](LIBRARY_SCAN.md) |
@@ -55,6 +55,14 @@ only illustrate the UI. [Capture provenance](images/README.md).
 | ![V2.57 clock after USB-powered idle](images/18-usb-power-clock.png) | ![V2.57 menu after explicit local reboot](images/19-idle-reboot-menu.png) |
 
 ## Releases and verification
+
+- 2026-09-16 physical genre capture: HTTP hierarchy and scoped-album selection
+  match helpers; app whole-genre Play all differs (type 8 / empty album versus
+  tested type 10). Sanitized fixture and firmware-free regression checks added.
+  Firmware-free suite passed 274 Python / 23 JavaScript tests, shell syntax and
+  four shim builds. Capture also shows CUE loading/status anomalies, not successful EOF. No device
+  commands replayed, runtime/UI changes or new screenshots.
+  [Evidence and remaining gaps](LIBRARY_BROWSING.md#physical-genre-flow-2026-09-16).
 
 - 2026-09-16 library browsing: focused fresh V2.57 `library` acceptance passes
   TCP/WS playback and direct/proxied HTTP reads/bulk addition/index-only deletion.
@@ -159,7 +167,8 @@ exposed by the helper and tested on V2.57. Color-slider/alpha UI semantics, the
 long app alias and catalog remain gaps; theme parity is not complete. See
 [capture evidence](FIIO_CONTROL_APP.md#physical-custom-style-save-2026-09-16).
 The next 12 library/PEQ/settings screens are also inventoried. Existing helpers
-cover most base reads/settings, but genre/folder playback, batch UI actions,
+cover most base reads/settings; genre/scoped-album app commands now have physical
+evidence, while folder playback, batch UI actions,
 exact PEQ Save flow and named gain/filter mapping are not established. See
 [coverage matrix](FIIO_CONTROL_APP.md#library-peq-and-settings-screens-second-batch-2026-09-16).
 Nine further screenshots clarify genre → album → track nesting, Add to Playlist /

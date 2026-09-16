@@ -225,9 +225,9 @@ Follow-up emulator validation on 2026-09-16: guarded `play_genre` (including
 genre-scoped album), `play_folder` and `add_selection_to_playlist` now cover the
 genre/folder playback and bulk-add gaps above. Fresh V2.57 TCP/WS and direct/proxy
 tests are recorded in [LIBRARY_BROWSING.md](LIBRARY_BROWSING.md). This does not
-identify the app's exact commands from screenshots. The owner deferred the
-physical capture to another session due to connection/Wi-Fi trouble; the app's
-Delete workflow and folder-to-playlist expansion remain unvalidated.
+identify the app's exact commands from screenshots. The initially deferred
+physical genre capture has now arrived; see the follow-up below. The app's
+folder selection, Delete workflow and folder-to-playlist expansion remain unvalidated.
 
 The third batch below supplies genre/album batch toolbars and PEQ selection/save
 screens. Folder contents and individual-item menus remain unseen. Request
@@ -267,15 +267,38 @@ library or a diagnosed index defect; wire schemas/counts must resolve the units.
 Outlined checkmarks are also used on unselected batch rows. As with the theme
 screens, a tick outline alone is not reliable proof of an enabled setting.
 
-Priority next capture: TCP 12100 + HTTP 12103 for opening a genre, using its
-Play all and pausing, then opening an album within that genre, selecting a track
-and pausing. Note action order/times and allow each transition to settle. This
-resolves hierarchy filters and playback context before implementing new selectors.
-It changes playback/queue, so retain the initial track/position/mode if restoration
-matters. No deletion, media reset, cloud login or preset overwrite is needed.
+The requested genre capture is now analyzed below; no repeat is needed for
+the observed hierarchy and scoped-album commands. Folder selection and
+root-category Play all remain unobserved. No deletion, media reset, cloud login
+or preset overwrite is needed to investigate those selectors.
 Separate later library captures can cover adding a few rows to a disposable
 custom list. PEQ captures/changes belong to issue #9 when explicitly resumed;
 do not combine them into the current library trace.
+
+### Physical genre flow (2026-09-16)
+
+Inputs: `2026-09-16-185016.pcap` and `.har`, supplied for the previously requested
+physical genre workflow. Firmware 257 is confirmed by fresh settings; app version
+is not reconfirmed. [Sanitized fixture](../tools/fixtures/fiio_control_ios_genres.json)
+contains source hashes and frame references; raw captures/artwork stay outside Git.
+
+- PCAP has 13 device HTTP requests versus 3 in HAR. Browsing proceeds through
+  `style` → `style/album` → `style/album/song`; the last carries both genre/album.
+- Scoped-album indexed and whole-list playback match our type-8 helper. Position
+  15 selects the 16th of 19 tracks; two Next commands select 17/19 and 18/19.
+- Whole-genre Play all uses type **8 with an empty album**, not the helper's
+  emulator-tested type 10. This app variant needs focused emulator validation
+  before changing the public helper; physical readback shows a 54-track queue.
+- The first genre attempts six CUE entries with zero duration, loading state and
+  repeated `a60a/000D`, without playback progress. Do not call that successful EOF
+  or infer a decoder/file defect without further evidence. Ordinary tracks in the
+  second genre do reach playing state and progress.
+- No folder-track selection, bulk mutation or root-category Play all is present.
+  A root folder GET alone does not validate folder playback.
+
+See [timeline, client differences and reproduction](LIBRARY_BROWSING.md#physical-genre-flow-2026-09-16).
+Firmware-free tests cover matching HTTP filters/scoped selectors and preserve
+the boundary between the captured empty-album variant and the existing helper.
 
 ## Android 4.6.0 input (2026-09-15)
 

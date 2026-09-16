@@ -242,8 +242,11 @@ filters/ranges; genre album groups expand without leaking other genres. DELETE
 does not accept these group categories even though it returns HTTP 200. Focused
 `CI_SCENARIO=library` tests generated media, TCP/WS and direct/proxied HTTP,
 including index-only scoped track deletion and rescan recovery. No arbitrary
-source-delete helper. Physical app capture deferred by owner due to Wi-Fi trouble;
-see `docs/LIBRARY_BROWSING.md` before continuing the remaining bulk workflows.
+source-delete helper. Physical capture `2026-09-16-185016` confirms scoped-album
+commands and HTTP genre hierarchy, but app whole-genre Play all uses type 8 with
+empty album, unlike our tested type 10. Validate this variant in disposable CI
+before changing helpers. Folder playback/bulk actions are not in the capture;
+see `docs/LIBRARY_BROWSING.md` before continuing the remaining workflows.
 Avoid stock batch recursive deletion (it constructs shell commands). `0622/0000`
 starts a scan; watch `a60a` start/finish and `a622` counts. Gain/DRE/filter/SPDIF and
 PEQ helpers are shared by TCP/WS; filter and EQ network enums differ from SQLite.
