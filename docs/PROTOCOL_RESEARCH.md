@@ -183,8 +183,10 @@ explicitly instead of retrying them indefinitely.
 
 - [x] **Stock Gain/filter labels:** V2.57 UI/resource/callback tracing maps
   0 Low / 1 High and all six filter abbreviations. Every value has TCP/WS reads,
-  SQLite persistence and restoration coverage. Expanded iPhone filter labels
-  still need paired wire evidence; [verified table](REMOTE_SETTINGS.md#gain-and-filter-labels-v257).
+  SQLite persistence and restoration coverage. Subsequent physical iPhone
+  walkthrough now maps all six app rows and confirms restoration. English
+  screenshot labels 5/6 identically despite distinct codes; Russian endings remain
+  clipped. [Verified table](REMOTE_SETTINGS.md#gain-and-filter-labels-v257).
 - [x] **Channel balance:** mapped from stock UI and player handlers. Shared TCP/WS
   helper and tests cover -20, -1, 0, +1, +20, SQLite, per-channel DAC writes and
   restoration. Hardware analog effects remain a separate check.
@@ -253,7 +255,7 @@ explicitly instead of retrying them indefinitely.
   captures only for concrete gaps; see [audit plan](FIIO_CONTROL_APP.md#screen-coverage-audit).
   Second batch (`IMG_6795`–`IMG_6806`) inventories library/PEQ/settings. Open gaps:
   exact app folder playback, root-category Play all semantics, batch action menus,
-  exact PEQ preset/Save flow and expanded iPhone filter label-to-wire mapping. Existing
+  exact PEQ preset/Save flow. Filter row/code mapping is now physically confirmed. Existing
   catalog/settings helpers are not proof of complete app parity. See
   [coverage matrix](FIIO_CONTROL_APP.md#library-peq-and-settings-screens-second-batch-2026-09-16).
   Third batch (`IMG_6807`–`IMG_6815`) shows genre → albums → tracks, Add to Playlist
@@ -330,8 +332,25 @@ The initial raw indexed type-8/empty-album experiment failed to reach the expect
 playing snapshot. It is not included as a supported selector or generalized from
 Play all; final acceptance retains indexed type 10. Logs/decompilation stay in
 ignored `work/library-research/`. The alias probe establishes a firmware limit,
-not permission to lift the public guard. Expanded iPhone filter names remain
-distinct from the verified stock UI abbreviation map.
+not permission to lift the public guard. At that checkpoint expanded iPhone
+filter names were not yet paired; the subsequent capture below resolves the map.
+
+## Physical filter capture checkpoint (2026-09-16)
+
+`2026-09-16-192141.pcap` + `IMG_6816.PNG` and the owner's action order identify
+all six FiiO Control filter rows: 3→4→5→6→1→2 corresponds to wire
+11→12→13→14→9→10. All setters receive matching `a603`; a final fresh query
+returns original helper index 1 / wire 10. Firmware 257 is read from the session;
+app version is not reconfirmed. HAR is empty. Subsequent `IMG_6817.PNG` supplies
+English labels: rows 5/6 display the same name but have distinct codes. Russian
+endings remain clipped; no additional capture is needed for row/code mapping.
+See [physical evidence and fixture](REMOTE_SETTINGS.md#physical-fiio-control-filter-mapping-2026-09-16).
+
+Firmware-free acceptance passed 277 Python / 23 JavaScript tests, shell syntax
+and four shim builds. Only sanitized protocol evidence, regression tests and docs
+changed (plus the stale helper comment); no wire behavior or firmware changes,
+physical command replay, new emulator integration or long idle tests. The owner's
+unmodified English screenshot is curated in `docs/images/` with source provenance.
 
 ## Historical validation: channel-balance checkpoint
 

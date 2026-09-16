@@ -1,0 +1,35 @@
+{
+  "source": "2026-09-16-192141.pcap",
+  "source_sha256": "bcd91284c1c1d0fb06c74dea9e2bcf0283a64d3cc7103b386e99c23b5f007b3b",
+  "har": {"source": "2026-09-16-192141.har", "sha256": "a8dcaf162b02e32c6997ad2ae522cdad6f2cfcd0ab190986b391f4fa93e54047", "entries": 0},
+  "screenshot": "IMG_6816.PNG",
+  "screenshot_sha256": "ef23e012255b114fb4e5973e57e5e469b60c0287c2512a1e5ab4d43bdac4cc09",
+  "english_screenshot": "IMG_6817.PNG",
+  "english_screenshot_sha256": "f33856cc079202fb4a7cf178968c98adeb7106bb6a886fa0fdc75137a0adf2f1",
+  "english_labels_by_row": [
+    "Minimum phase fast roll-off",
+    "Minimum phase slow roll-off",
+    "Slow roll-off",
+    "Fast roll-off",
+    "Reference super slow roll-off",
+    "Reference super slow roll-off"
+  ],
+  "english_note": "Subsequent screenshot after the owner changed the app language; no new wire capture. Rows 5 and 6 visibly have identical labels, but the preceding walkthrough proves distinct codes. Preserve row/value identity; do not deduplicate by display name.",
+  "firmware": 257,
+  "firmware_frame": 948,
+  "tcp_stream": 89,
+  "note": "Sanitized filter-only evidence from physical DISC. User reports initially selected row 2, then rows 3,4,5,6,1,2. Labels are transcribed from the screenshot; final two remain visibly truncated. Relative times are seconds since capture start. App version was not reconfirmed. Other settings, identities, endpoints and unrelated traffic omitted. Request frames may contain additional coalesced commands; only complete relevant Link frames retained here.",
+  "reads": [
+    {"request_frame": 1010, "request": "0603000c0000", "reply_frames": [1016, 1018], "replies": ["a603000C0001", "a603000C000A"]},
+    {"request_frame": 1032, "request": "0603000c0000", "reply_frames": [1034, 1036], "replies": ["a603000C0001", "a603000C000A"]},
+    {"request_frame": 1095, "request": "0603000c0000", "reply_frames": [1103, 1105], "replies": ["a603000C0001", "a603000C000A"]}
+  ],
+  "transitions": [
+    {"row": 3, "value": 2, "stock_label": "SLOW_PC", "app_label": "Медленный линейный фильтр", "label_truncated": false, "request_frame": 1038, "request_time": 20.036167, "request": "0653000c000B", "reply_frame": 1040, "reply_time": 20.388043, "reply": "a603000C000B"},
+    {"row": 4, "value": 3, "stock_label": "FAST_PC", "app_label": "Быстрый линейный фильтр", "label_truncated": false, "request_frame": 1071, "request_time": 23.387061, "request": "0653000c000C", "reply_frame": 1073, "reply_time": 23.767272, "reply": "a603000C000C"},
+    {"row": 5, "value": 4, "stock_label": "NON_OS", "app_label": "Референсный фильтр с супер-медленны...", "label_truncated": true, "request_frame": 1075, "request_time": 25.453687, "request": "0653000c000D", "reply_frame": 1077, "reply_time": 25.816067, "reply": "a603000C000D"},
+    {"row": 6, "value": 5, "stock_label": "Wideband_FF", "app_label": "Референсный фильтр с короткой задерж...", "label_truncated": true, "request_frame": 1079, "request_time": 27.854563, "request": "0653000c000E", "reply_frame": 1081, "reply_time": 28.274045, "reply": "a603000C000E"},
+    {"row": 1, "value": 0, "stock_label": "FAST_LL", "app_label": "Быстрый фильтр минимальной фазы", "label_truncated": false, "request_frame": 1083, "request_time": 30.088339, "request": "0653000c0009", "reply_frame": 1085, "reply_time": 30.525797, "reply": "a603000C0009"},
+    {"row": 2, "value": 1, "stock_label": "SLOW_LL", "app_label": "Медленный фильтр минимальной фазы", "label_truncated": false, "request_frame": 1087, "request_time": 32.372104, "request": "0653000c000A", "reply_frame": 1089, "reply_time": 32.707402, "reply": "a603000C000A"}
+  ]
+}

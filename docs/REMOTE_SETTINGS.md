@@ -3,8 +3,8 @@
 These are stock FiiO Link commands, usable through `Client` and `WSClient`.
 The local disposable V2.40/V2.57 tests exercise network readback and persisted
 configuration. This establishes the control path, not physical DAC/DSP performance
-or USB/AirPlay/Bluetooth audio compatibility. No physical settings were changed in
-this investigation.
+or USB/AirPlay/Bluetooth audio compatibility. Owner-supplied physical captures
+are attributed separately below; no commands were replayed to a physical device.
 
 ## Tested settings
 
@@ -70,10 +70,10 @@ callback maps those rows to **1 and 0**, respectively.
 | NON_OS | 4 | `0653/000D` |
 | Wideband_FF | 5 | `0653/000E` |
 
-These are the stock firmware's actual labels, not expanded names guessed from
-the iPhone menu. The latter uses descriptive phase/roll-off names, including two
-truncated labels in `IMG_6806`; exact app label-to-wire correspondence still
-requires a paired capture. No physical gain/filter changes were made here.
+These are the stock firmware's actual labels. The subsequent physical iPhone
+capture maps all six app rows to these codes; see the table below. Do not expand
+abbreviations by intuition: the observed app calls `FAST_LL` / `SLOW_LL` minimum
+phase and `SLOW_PC` / `FAST_PC` linear. These are UI labels, not measured responses.
 
 Static V2.57 UI chain: gain page `460a1c` uses `others.json` labels 68/69;
 callback `4608ec` maps row 0 → 1, row 1 → 0 in `8e171a`; sender `460cc0`
@@ -89,7 +89,49 @@ Reproduce with `FindText.java`, `RefsTo.java` and `DecAt.java` in the
 Focused `settings` acceptance exercises **both gain values and all six filters**
 over TCP/WS, checks normalized network reads and SQLite, restores originals and
 checks unchanged volume. This establishes control/persistence, not analog/DSP
-effects or a live iPhone mapping.
+effects. Physical app evidence is recorded separately below.
+
+### Physical FiiO Control filter mapping (2026-09-16)
+
+The owner supplied `2026-09-16-192141.pcap`, an empty HAR and `IMG_6816.PNG`,
+reporting initially selected row **2**, then rows **3 → 4 → 5 → 6 → 1 → 2**.
+PCAP stream 89 confirms firmware 257 and every setter/reply, followed by a fresh
+read of the original value. App version is not reconfirmed. The owner subsequently
+changed the app language and supplied `IMG_6817.PNG`: the table uses its exact
+English labels, aligned by row with the captured walkthrough.
+
+| App row / visible label | Stock label | Helper index | `0653` payload |
+| --- | --- | --- | --- |
+| 1 — Minimum phase fast roll-off | FAST_LL | 0 | `0009` |
+| 2 — Minimum phase slow roll-off | SLOW_LL | 1 | `000A` |
+| 3 — Slow roll-off | SLOW_PC | 2 | `000B` |
+| 4 — Fast roll-off | FAST_PC | 3 | `000C` |
+| 5 — Reference super slow roll-off | NON_OS | 4 | `000D` |
+| 6 — Reference super slow roll-off | Wideband_FF | 5 | `000E` |
+
+**Duplicate display label, distinct selections:** English rows 5 and 6 have the
+same visible name. Their wire codes and stock labels differ; never key/deduplicate
+filters by display text. Russian row 6 starts with a different short-delay label,
+but its full text is clipped. Do not silently correct the English wording or
+invent an expanded name. This records the app's display, not a DSP equivalence.
+[Unmodified English screenshot](images/20-fiio-control-filters-en.png).
+
+Initial `0603/0000` reads at frames 1010/1032 receive both `a603/0001` and
+`a603/000A`. Setters at frames 1038, 1071, 1075, 1079, 1083 and 1087 send
+`000B`, `000C`, `000D`, `000E`, `0009`, `000A`, each followed by matching `a603`.
+Final fresh query at frame 1095 receives `0001` / `000A` at 1103/1105, confirming
+restoration independently of the last setter acknowledgement and checked row 2.
+HAR has zero entries; this operation is evidenced by TCP 12100, not HTTP.
+
+[Sanitized fixture](../tools/fixtures/fiio_control_ios_filters.json) retains source
+hashes, frame numbers, relative times, labels and only relevant Link messages.
+`test_all_filter_rows_match_physical_ios_capture_and_restore` checks all six TCP/WS
+setter encodings and normalization of both reply enums. Helpers needed no wire
+change. Firmware-free acceptance passed 277 Python / 23 JavaScript tests, shell
+checks and four shim builds; existing all-value emulator acceptance is unchanged.
+No device commands were replayed, and no additional firmware/idle run was needed.
+The full Russian text of the last two labels and physical DSP response remain unverified;
+no repeat filter walkthrough is needed for row/code mapping.
 
 ## Channel balance
 

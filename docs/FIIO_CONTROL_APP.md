@@ -206,7 +206,7 @@ tests, **not** a completed replacement frontend or validation of every app actio
 | Update / Reset music library | 6804 | `scan_library()`, cooperative cancel and dedicated `reset_library(confirm=True)` are tested. Actual app reset command sequence is unobserved; do not reset a personal library merely for this audit. |
 | Gain | 6804–6805 | High/Low choices, High checked. Follow-up stock UI tracing establishes **0 Low / 1 High**, both TCP/WS values and SQLite tested. The screenshot alone does not establish that mapping or measure dB. |
 | Bluetooth codec, SPDIF, balance, DRE | 6804 | Existing settings helpers/tested control paths; five source-codec choices already physically captured. SPDIF appears off and DRE on; balance/codec subpages are not included in this batch. No claim about physical audio/DSP output. |
-| Filter | 6806 | Six choices; slow minimum-phase checked. Client normalizes 0..5 and writes 9..14. Follow-up maps the six stock firmware abbreviations and tests every value. **Gap:** expanded iPhone label-to-wire mapping is not established by menu order. Last two app labels are truncated; do not invent their full names. [Verified stock table](REMOTE_SETTINGS.md#gain-and-filter-labels-v257). |
+| Filter | 6806, 6816, 6817 | Six choices; slow minimum-phase checked. Physical walkthrough maps all six app rows to helper 0..5 / wire 9..14 and confirms restoration. Subsequent English screenshot supplies full labels, but rows 5/6 both say “Reference super slow roll-off” despite different codes. Russian endings remain clipped. [Physical mapping](REMOTE_SETTINGS.md#physical-fiio-control-filter-mapping-2026-09-16). |
 | User Feedback | 6804 | Entry visible only. No implementation; classify as app/support functionality unless capture demonstrates a device operation. Destination and submitted data unknown. |
 
 PEQ screenshot: visible scale -24..+12 dB, master control, graph labels 31..16k,
@@ -233,8 +233,11 @@ folder selection, Delete workflow and folder-to-playlist expansion remain unvali
 The third batch below supplies genre/album batch toolbars and PEQ selection/save
 screens. Folder contents and individual-item menus remain unseen. Request
 targeted TCP/HTTP captures for concrete gaps, not repeat screenshots already supplied.
-Expanded iPhone filter label mapping can be captured separately while preserving settings;
-do not sweep unknown codes or change physical gain with active listening.
+The later `2026-09-16-192141` physical filter capture plus `IMG_6816.PNG` closes
+the six-row label/code mapping: reported actions 3→4→5→6→1→2 match setters and
+replies, followed by fresh restoration readback. HAR is empty; PCAP carries the
+evidence. [Timeline, fixture and limits](REMOTE_SETTINGS.md#physical-fiio-control-filter-mapping-2026-09-16).
+Do not sweep unknown codes or change physical gain with active listening.
 
 ### Genre hierarchy, batch actions and PEQ: third batch (2026-09-16)
 

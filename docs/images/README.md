@@ -33,3 +33,14 @@ guest-only supervisor stop, explicit local Power boot, a fresh WS handshake and
 a new deliberate album selection/play/pause check. The stock UI remains on its
 Browse files carousel entry. Both captures belong to this local idle/USB checkpoint,
 not the earlier `b4461a5` README capture session.
+
+## Physical FiiO Control filters, 2026-09-16
+
+`20-fiio-control-filters-en.png` is an unmodified copy of the owner's
+`IMG_6817.PNG` (1290×2796), SHA-256
+`f33856cc079202fb4a7cf178968c98adeb7106bb6a886fa0fdc75137a0adf2f1`.
+It shows FiiO Control after switching to English, connected in the physical DISC
+workflow, with row 2 selected. It is not an emulator render or a new packet trace.
+English rows 5 and 6 have identical visible labels; the earlier Russian-language
+walkthrough's TCP capture establishes their different codes. See
+[mapping and evidence](../REMOTE_SETTINGS.md#physical-fiio-control-filter-mapping-2026-09-16).

@@ -254,7 +254,12 @@ starts a scan; watch `a60a` start/finish and `a622` counts. Gain/DRE/filter/SPDI
 PEQ helpers are shared by TCP/WS; filter and EQ network enums differ from SQLite.
 V2.57 gain is 0 Low / 1 High, not menu row order. `GAIN_LABELS`/`FILTER_LABELS`
 map stock UI names; all two/six values have TCP/WS and SQLite acceptance. Expanded
-iPhone filter labels still need paired capture; do not infer them by menu order.
+iPhone filter rows are now paired by physical capture `2026-09-16-192141` and
+the owner's 3→4→5→6→1→2 walkthrough, with final fresh restoration readback.
+English screenshot IMG_6817 labels rows 5/6 identically (Reference super slow
+roll-off), but codes 000D/000E differ; never deduplicate by label. Russian names
+remain clipped. Do not infer analog response from label/code correspondence.
+Fixture tests pin all six; curated English app screenshot is in docs/images/.
 V2.57 `cancel_library_scan()` sends `0622/0001` once without draining events.
 Cancellation leaves a partial replacement index, not a rollback; `a60a/0005`
 also occurs after cancel. Do not query through the sequential client while

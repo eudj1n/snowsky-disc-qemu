@@ -19,7 +19,7 @@ Active firmware: **V2.57**. Protocol research is tracked in
   bulk playlist additions. [Library](docs/LIBRARY_BROWSING.md).
 - Library scan cancellation and dedicated index reset with recovery checks;
   reset preserves source files. [Scan](docs/LIBRARY_SCAN.md), [reset](docs/LIBRARY_RESET.md).
-- Remote audio settings with verified stock Gain/filter labels, channel balance
+- Remote audio settings with verified stock Gain and physical-app filter mapping, channel balance
   and basic PEQ helpers; read-only gapless,
   folder-jump and ReplayGain preferences. [Settings and limits](docs/REMOTE_SETTINGS.md).
 - Work-mode/codec preferences and custom wallpaper uploads, including four styles

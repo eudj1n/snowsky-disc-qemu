@@ -11,6 +11,42 @@ from fiio_settings import (SETTINGS, SETTING_FIELDS, GAIN_LABELS, FILTER_LABELS,
 
 
 class SettingTests(unittest.IsolatedAsyncioTestCase):
+    async def test_all_filter_rows_match_physical_ios_capture_and_restore(self):
+        observed = json.loads((Path(__file__).parent / 'fixtures' /
+                               'fiio_control_ios_filters.json').read_text())
+        self.assertEqual(observed['firmware'], 257)
+        transitions = observed['transitions']
+        self.assertEqual([t['row'] for t in transitions], [3, 4, 5, 6, 1, 2])
+        self.assertEqual({t['value'] for t in transitions}, set(FILTER_LABELS))
+        english = observed['english_labels_by_row']
+        self.assertEqual(len(english), 6)
+        self.assertEqual(english[1], 'Minimum phase slow roll-off')
+        self.assertEqual(english[4:], ['Reference super slow roll-off'] * 2)
+        self.assertEqual([t['value'] for t in transitions if english[t['row'] - 1] == english[4]], [4, 5])
+        tcp = Client.__new__(Client)
+        tcp.socket = Mock()
+        ws = WSClient()
+        ws.send = AsyncMock()
+        for transition in transitions:
+            value = transition['value']
+            self.assertEqual(transition['row'], value + 1)
+            self.assertEqual(transition['stock_label'], FILTER_LABELS[value])
+            self.assertEqual(transition['label_truncated'], transition['row'] in (5, 6))
+            tcp.set_device_setting('filter', value)
+            await ws.set_device_setting('filter', value)
+            expected = Frames().feed(transition['request'].encode())
+            self.assertEqual(Frames().feed(tcp.socket.sendall.call_args.args[0]), expected)
+            self.assertEqual(Frames().feed(frame(*ws.send.call_args.args)), expected)
+            [(tag, payload)] = Frames().feed(transition['reply'].encode())
+            self.assertEqual(tag, 'a603')
+            self.assertEqual(setting_value('filter', payload), value)
+        self.assertEqual(transitions[-1]['value'], 1)
+        for reading in observed['reads']:
+            self.assertEqual(Frames().feed(reading['request'].encode()), [('0603', b'0000')])
+            replies = Frames().feed(''.join(reading['replies']).encode())
+            self.assertEqual(replies, [('a603', b'0001'), ('a603', b'000A')])
+            self.assertEqual([setting_value('filter', payload) for _, payload in replies], [1, 1])
+
     def test_stock_gain_filter_label_values(self):
         self.assertEqual(GAIN_LABELS, {0: 'Low', 1: 'High'})
         self.assertEqual(list(FILTER_LABELS.values()),
