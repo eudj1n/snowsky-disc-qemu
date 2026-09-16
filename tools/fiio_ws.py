@@ -8,6 +8,7 @@ from aiohttp import ClientSession, ClientTimeout, WSMsgType
 from fiio_link import (Frames, frame, hex_value, list_payload, index_payload,
                        library_request, library_page, playback_snapshot, play_mode_value)
 from fiio_settings import setting_query, setting_command, setting_value, peq_payload, peq_value
+from fiio_playlist import playlist_command, verify_playlist
 
 
 class WSClient:
@@ -160,6 +161,15 @@ class WSClient:
 
     async def play_all(self, list_type=1, name=None):
         await self.send('0101', list_payload(list_type, name))
+
+    async def play_playlist(self, position, index=None, *, http, expected_name):
+        """Custom list/track selection with fresh HTTP preflight; never replay."""
+        command = playlist_command(position, index, expected_name)
+        version = (await self.settings()).get('soc_version')
+        if type(version) is not int or version != 257:
+            raise ValueError('custom playlist playback requires DISC V2.57')
+        await asyncio.to_thread(verify_playlist, http, position, index, expected_name)
+        await self.send(*command)
 
 
 async def main():

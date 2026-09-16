@@ -25,7 +25,7 @@ FIELDS = {'auto': (0x83a5d0, 4), 'sd': (0x83a720, 4),
           'modal': (0x8dee8e, 1), 'locked': (0x8e1735, 1)}
 
 
-def ui():
+def ui(fields=None):
     binary = ROOT / 'usr/bin/mq_ui'
     data = binary.read_bytes()
     assert hashlib.sha256(data).hexdigest() == load_profile('2.57')['binaries']['usr/bin/mq_ui']
@@ -37,7 +37,7 @@ def ui():
     base = guest_base(maps, load_segments(data), binary.stat())
     with (proc / 'mem').open('rb', buffering=0) as memory:
         return {name: int.from_bytes(read_memory(memory, maps, base, address, size), 'little')
-                for name, (address, size) in FIELDS.items()}
+                for name, (address, size) in (FIELDS if fields is None else fields).items()}
 
 
 def wait_for(predicate, description, timeout=15):

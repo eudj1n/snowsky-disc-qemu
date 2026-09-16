@@ -140,6 +140,10 @@ This explains why the missing TCP `0405` reply was not evidence that custom play
 were unavailable. These flags are useful capability hints; successful operation
 still requires validation for each product/firmware.
 
+Playback uses TCP `0100`/`0101` with list type 5 and JSON `{"id":<position>}`;
+the JSON ID is positional too. See [custom-playlist playback](PLAYLISTS.md) for
+the guarded TCP/WS helper, catalog refresh requirements and acceptance scope.
+
 ## Upload → index → play
 
 `Client.scan_library()` / `WSClient.scan_library()` send **`0622000C0000`** once.

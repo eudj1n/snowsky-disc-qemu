@@ -7,9 +7,9 @@ cd "$(dirname "${BASH_SOURCE[0]}")/.."
 export OTA_DIR="$(cd "${1:?path to OTA chunks}" && pwd)"
 export FW_VERSION="${FW_VERSION:-2.57}"
 CI_SCENARIO="${CI_SCENARIO:-full}"
-case "$CI_SCENARIO" in full|queue|queue-reads|settings|preferences) ;; *) echo 'CI_SCENARIO must be full, queue, queue-reads, settings or preferences' >&2; exit 2;; esac
-if [ "$CI_SCENARIO" = preferences ] && [ "$FW_VERSION" != 2.57 ]; then
-  echo 'Playback preference acceptance requires active firmware V2.57' >&2
+case "$CI_SCENARIO" in full|queue|queue-reads|settings|preferences|playlists) ;; *) echo 'CI_SCENARIO must be full, queue, queue-reads, settings, preferences or playlists' >&2; exit 2;; esac
+if [[ "$CI_SCENARIO" = preferences || "$CI_SCENARIO" = playlists ]] && [ "$FW_VERSION" != 2.57 ]; then
+  echo 'Preference/playlist acceptance requires active firmware V2.57' >&2
   exit 2
 fi
 CI_TMP="$(mktemp -d "${TMPDIR:-/tmp}/diskos-ci.XXXXXXXX")"
@@ -47,7 +47,13 @@ docker run --rm --network none -v "$PWD:/repo:ro" -v "$SD_DIR:/fixtures" \
 compose up -d --no-build --wait --wait-timeout 60
 compose exec -T emu bash /repo/scripts/00_extract_rootfs.sh /ota
 compose exec -T emu bash /repo/scripts/10_setup_env.sh
+if [ "$FW_VERSION" = 2.57 ]; then
+  compose exec -T emu python3 -B /repo/ci/awake_check.py --configure
+fi
 compose exec -T emu bash /repo/scripts/20_boot.sh
+if [ "$FW_VERSION" = 2.57 ]; then
+  compose exec -T emu python3 -B /repo/ci/awake_check.py
+fi
 if [ "$CI_SCENARIO" = queue-reads ]; then
   compose exec -T emu python3 -B /repo/ci/queue_reads_check.py --prepare
 else
@@ -74,6 +80,10 @@ if [ "$CI_SCENARIO" = preferences ]; then
   compose exec -T emu python3 -B /repo/ci/preferences_check.py
   exit 0
 fi
+if [ "$CI_SCENARIO" = playlists ]; then
+  compose exec -T emu python3 -B /repo/ci/playlists_check.py
+  exit 0
+fi
 compose exec -T emu python3 -B /repo/ci/viewer_peripherals.py
 compose exec -T wsbridge python3 -B /repo/tools/verify_websocket.py --tcp-host emu --control
 compose exec -T emu python3 -B /repo/ci/guest_check.py --audio
@@ -82,6 +92,9 @@ compose exec -T emu python3 -B /repo/ci/remote_control.py
 compose exec -T emu python3 -B /repo/ci/queue_check.py
 compose exec -T emu python3 -B /repo/ci/queue_reads_check.py
 compose exec -T emu python3 -B /repo/ci/http_check.py
+if [ "$FW_VERSION" = 2.57 ]; then
+  compose exec -T emu python3 -B /repo/ci/playlists_check.py
+fi
 compose exec -T emu python3 -B /repo/ci/settings_check.py
 compose exec -T emu python3 -B /repo/ci/modes_themes_check.py
 compose exec -T emu bash /repo/ci/confinement.sh

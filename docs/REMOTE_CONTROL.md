@@ -27,12 +27,16 @@ and counts **UTF-8 bytes**, not characters. Complete examples:
 | Play whole album | `010100140003CI Album` | List type 3, name; starts the first album entry |
 | Play all indexed songs | `0101000C0001` | List type 1 |
 | Select first favorite (V2.57) | `0100001000000006` | Position 0 in built-in favorites |
+| Select second custom-playlist track (V2.57) | `0100001800010005{"id":0}` | Track position 1, type 5, playlist position 0; [fresh HTTP preflight required](PLAYLISTS.md) |
+| Play custom playlist (V2.57) | `010100140005{"id":0}` | First track of playlist position 0, not SQLite ID |
 | Select internal favorite ID 3 (V2.40 diagnostic) | `0100001000030006` | Internal `MY_LOVE.ID`, **not reliably available from the favorites page** |
 
 For all tracks, artists and albums, `0100` takes a **position in the chosen list,
 not the `id` returned in a catalog record**. Favorites are version-specific (below).
 `0101` takes the list type first, without a position. The tested selection
-contexts are all tracks (1), artist (2), album (3) and, on V2.57, built-in favorites (6).
+contexts are all tracks (1), artist (2), album (3) and, on V2.57, custom playlists (5)
+and built-in favorites (6). Custom playlists use a [dedicated guarded helper](PLAYLISTS.md),
+not the generic named-list helpers.
 Artist and album play-all are also exercised over both transports in the emulator. Named artist/album helpers reject empty/NUL-containing names and
 limit them to 255 UTF-8 bytes. This is a client bound, not a measured firmware maximum.
 `unknown_album` / `unknown_artist` are stock special tokens; they are not the
@@ -300,7 +304,8 @@ A favorite entry's `songPath` was empty; do not promise paths for every catalog 
 emulator and the physical V2.57 DISC returned **no reply** in this investigation.
 This is not evidence that the connection failed or that all playlist functionality
 is unavailable. Built-in favorites are independently exercised through `0415` and
-list type 6. General custom playlists remain outside this tested contract.
+list type 6. General custom playlists were subsequently verified via HTTP catalog
+and TCP/WS type-5 selection; see [PLAYLISTS.md](PLAYLISTS.md).
 
 ### Now playing (`0202` → `a202`)
 
@@ -342,7 +347,7 @@ settings/PEQ are in [REMOTE_SETTINGS.md](REMOTE_SETTINGS.md).
 |---|---|
 | Wi-Fi transfer | Folder creation, FLAC upload/progress and single-file deletion verified on emulator and physical V2.57. PNG upload byte-verified in V2.57 emulator; folder import can compose these operations. |
 | Work mode | USB DAC/local/AirPlay control transitions and persisted enums tested; actual hardware audio remains separate. See [modes](REMOTE_MODES_THEMES.md). |
-| Local playback | Catalog/play-all and HTTP custom playlist lifecycle are tested. Playback selection within custom lists still needs separate coverage. |
+| Local playback | Catalog/play-all, HTTP custom playlist lifecycle and V2.57 TCP/WS custom-list selection are tested; see [playlist coverage](PLAYLISTS.md). |
 | PEQ | User-preset selection, frequency/gain/Q, master gain, readback and SQLite persistence tested in emulator. Actual DSP response remains unmeasured. |
 | Settings | Network indexing, gain, SPDIF, filter, DRE, channel balance and five Bluetooth source-codec preferences tested in emulator. Dedicated library reset, negotiated codec and physical audio effects remain unvalidated. |
 | Lock screen / cover | Physical V2.57 current-cover JPEG; emulator checks general PNG upload, five stock themes and custom lock-screen PNG/metadata. See [theme quirks](REMOTE_MODES_THEMES.md#lock-screen-http). |

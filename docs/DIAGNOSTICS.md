@@ -35,6 +35,11 @@ handles this overlap without confusing code and data.
 QEMU's host mapping of executable guest code can be `r--p` because instructions are
 translated. Multiple players, missing/unreadable ranges, null context pointers and
 short reads fail explicitly. Memory is opened only as `rb`; these tools never write it.
+If process discovery sees multiple matching PIDs, it rechecks up to ten times
+at 50 ms intervals before failing: a main-thread `popen` fork can temporarily
+inherit both `mq_player` comm and argv. It never chooses the first ambiguous PID.
+Only discovery is retried, before opening memory or sending a diagnostic event;
+guest mutations are not retried. An absent player still fails immediately.
 Snapshots span several reads and are not atomic; retry if the guest changes context
 or exits. They are manual diagnostics, not a high-rate viewer transport.
 

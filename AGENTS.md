@@ -125,6 +125,10 @@ count printed by `fb2png.py` is only a fallback heuristic, not evidence of recen
 - Full firmware-free suite: `docker run --rm --network none -v "$PWD:/repo:ro"
   diskos-qemu-ci bash /repo/ci/test.sh` after `docker build -t diskos-qemu-ci docker`.
   `ci/integration.sh` uses a fresh disposable Compose stack, never the interactive volume.
+  V2.57 CI alone presets `LIGTH_ON_TIME=7` (never) while stopped and verifies UI
+  index/timeout readback, avoiding screen-timeout interference in long network tests.
+  Do not copy this into interactive setup or treat it as a remote-wake fix; see
+  `docs/CI.md`. `POWER_SAVE` is unchanged.
 - Firmware and anything derived from it (rootfs, `.enc`, `.squashfs`, FiiO binaries, Ghidra
   project, captured `shots/`) are **git-ignored** — never commit firmware. Commit code,
   scripts, docs, and the curated screenshots in `docs/images/`.
@@ -186,6 +190,14 @@ Stock HTTP file/playlist operations and remote settings are documented in
 `/dir/`, raw-body `/audio/` uploads, `/progress/`, single-path `/file/` deletion and
 custom playlists. HTTP 200 is not success; progress can survive deletion. Playlist
 headers named `list_id`/`src_list_id`/`dst_list_id` use positions, not database IDs.
+Custom playlist playback on V2.57 uses list type 5 and JSON `{"id":<position>}`:
+`0100` takes a track position first; `0101` starts the list. This JSON ID also
+means list position, not SQLite LIST_ID. `play_playlist(position, index=None,
+http=..., expected_name=...)` checks fresh HTTP list/track rows and name before
+sending; the HTTP client must target the same device. Catalog ordering need not
+match insertion order. No atomic revision exists; serialize edits and never
+replay selections. See `docs/PLAYLISTS.md`; focused `CI_SCENARIO=playlists` checks
+TCP/WS with ID gaps, rename/add/remove and stale/empty-selector rejection.
 Avoid stock batch recursive deletion (it constructs shell commands). `0622/0000`
 starts a scan; watch `a60a` start/finish and `a622` counts. Gain/DRE/filter/SPDIF and
 PEQ helpers are shared by TCP/WS; filter and EQ network enums differ from SQLite.

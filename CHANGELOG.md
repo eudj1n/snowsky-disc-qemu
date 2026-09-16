@@ -9,6 +9,13 @@ emulator-only revisions use `v2.40-r1`, etc. See [the porting guide](docs/PORTIN
 
 ### Added
 
+- V2.57 disposable CI display-time fixture (`LIGTH_ON_TIME=7`) with fingerprinted
+  runtime readback, preventing the screen timeout from interfering with long
+  protocol scenarios. Interactive defaults and `POWER_SAVE` remain unchanged.
+- V2.57 custom-playlist playback over TCP/WS: list type 5, positional JSON ID,
+  whole-list or track selection with fresh HTTP name/bounds preflight. Add
+  disposable `CI_SCENARIO=playlists` coverage for ID gaps, catalog ordering,
+  rename/add/remove, position shifts and rejected stale/empty selections.
 - Read-only TCP/WS helpers for V2.57 gapless, folder jump and ReplayGain from
   fresh `0501` snapshots. Fingerprint-validated TCP command-allowlist inspection
   and focused `CI_SCENARIO=preferences` acceptance prove six local UI setters
@@ -62,6 +69,9 @@ emulator-only revisions use `v2.40-r1`, etc. See [the porting guide](docs/PORTIN
 
 ### Fixed
 
+- Read-only player discovery tolerates brief ambiguous PID snapshots by bounded
+  re-enumeration, while still refusing persistent multiple players. No arbitrary
+  PID selection, memory write or mutation retry.
 - Replace the three-version FIFO policy with one actively supported, validated
   firmware on `2.x`, plus historical release snapshots without promised backports.
   V2.57 is active; V2.40 runtime cleanup is tracked separately. New vendor

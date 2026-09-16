@@ -6,6 +6,7 @@ import select
 import socket
 import time
 from fiio_settings import setting_query, setting_command, setting_value, peq_payload, peq_value
+from fiio_playlist import playlist_command, verify_playlist
 
 
 def frame(tag, payload=b''):
@@ -245,6 +246,19 @@ class Client:
         if index >= self.library('queue')['total']:
             raise ValueError('position outside the current queue')
         self.socket.sendall(frame('0100', position + '0000'))
+
+    def play_playlist(self, position, index=None, *, http, expected_name):
+        """Play a custom list, or its zero-based track index, after fresh HTTP checks.
+
+        Requires V2.57 and an HTTPClient for this same device. expected_name is
+        the displayed list name, not a persistent identity. No automatic retry.
+        """
+        command = playlist_command(position, index, expected_name)
+        version = self.settings().get('soc_version')
+        if type(version) is not int or version != 257:
+            raise ValueError('custom playlist playback requires DISC V2.57')
+        verify_playlist(http, position, index, expected_name)
+        self.socket.sendall(frame(*command))
 
     def set_volume(self, value):
         if type(value) is not int or not 0 <= value <= 120:

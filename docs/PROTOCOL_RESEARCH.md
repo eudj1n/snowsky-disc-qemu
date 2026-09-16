@@ -23,7 +23,9 @@ checkpoint and any work left uncommitted. Do not publish this branch implicitly.
 
 - [x] Playback, metadata, seek, modes and favorites: [remote control](REMOTE_CONTROL.md).
 - [x] Stock file transfer, HTTP catalog, custom playlist CRUD and network indexing:
-  [HTTP API](HTTP_API.md). Playlist CRUD does not yet establish playlist playback.
+  [HTTP API](HTTP_API.md).
+- [x] V2.57 custom-playlist whole-list and indexed playback over TCP/WS,
+  guarded by fresh HTTP name/track reads: [playlist contract](PLAYLISTS.md).
 - [x] Gain, DRE, filter, SPDIF, PEQ read/write and persistence:
   [settings](REMOTE_SETTINGS.md). These checks do not measure DSP output.
 - [x] Channel-balance contract: `0712` read / `0713` write / `a712` reply,
@@ -41,17 +43,19 @@ checkpoint and any work left uncommitted. Do not publish this branch implicitly.
   `curlist/song` and `0202` instead. No additional phone capture is needed for
   these two commands.
 
-## Current checkpoint completion: playback preferences
+## Current checkpoint completion: custom-playlist playback
 
-- [x] Trace local callbacks AND the separate network receive gate.
-- [x] Add three read-only helpers and reject unsupported writes before I/O.
-- [x] Run firmware-free checks: 193 Python tests, 23 JavaScript tests, shell
+Preference checkpoint: `274bce4`; its validation/failure history remains below.
+
+- [x] Trace type-5 payloads, TCP admission and position-to-ID conversion.
+- [x] Add guarded TCP/WS selection and no-I/O validation/no-retry unit coverage.
+- [x] Run firmware-free checks: 206 Python tests, 23 JavaScript tests, shell
   checks and four shim builds.
-- [x] Run focused `preferences` acceptance on V2.57 via TCP and WS.
-- [x] Run **full** disposable integration on active V2.57 (retry passed; first
-  failure and focused reproduction recorded below).
-- [x] Review the complete diff, record validation and commit the checkpoint.
-  Local commits are authorized; pushing/publishing is not part of this step.
+- [x] Run focused `playlists` acceptance on V2.57 via TCP and WS.
+- [x] Run **full** disposable integration on active V2.57, including the extended
+  nonzero-list-position and post-removal stale-index checks.
+- [x] Review the complete diff and record validation in this local checkpoint
+  commit. Pushing/publishing is not part of this step.
 
 Earlier balance-checkpoint validation is retained below as historical evidence,
 not a new V2.40 integration requirement.
@@ -72,6 +76,7 @@ CI_SCENARIO=queue FW_VERSION=2.57 bash ci/integration.sh "$OTA_257"
 CI_SCENARIO=queue-reads FW_VERSION=2.57 bash ci/integration.sh "$OTA_257"
 CI_SCENARIO=settings FW_VERSION=2.57 bash ci/integration.sh "$OTA_257"
 CI_SCENARIO=preferences FW_VERSION=2.57 bash ci/integration.sh "$OTA_257"
+CI_SCENARIO=playlists FW_VERSION=2.57 bash ci/integration.sh "$OTA_257"
 ```
 
 Run firmware integration sequentially to limit resource pressure. Each run uses
@@ -113,8 +118,10 @@ explicitly instead of retrying them indefinitely.
 
 ### 2. Library and playback edge cases
 
-- [ ] **Custom playlist playback:** establish supported selection route and
-  identity after create/rename/add/remove; CRUD alone is already covered.
+- [x] **Custom playlist playback:** `0100`/`0101`, type 5 plus decimal JSON
+  `{"id":<list position>}`. Fresh HTTP preflight checks expected name and track
+  bounds; TCP/WS tests cover ID gaps, rename/add/remove, empty and stale positions.
+  Position/name checks are not atomic identity: serialize edits and never replay.
 - [ ] **Cancel indexing:** determine nonzero `0622` behavior, progress/events and
   the resulting partial index. Do not reinterpret this as library reset.
 - [ ] **Dedicated library reset:** identify the actual app command and scope.
@@ -137,6 +144,10 @@ explicitly instead of retrying them indefinitely.
 - [ ] **LAN discovery and official-app compatibility:** establish discovery
   packets/advertisements, then connect FiiO Control to the emulator. Existing
   localhost WS bridge is our adapter, not a native stock DISC WebSocket endpoint.
+- [ ] **Remote connection versus idle power:** observe screen-off, pause,
+  power counters, shutdown and safe wake/reconnect. The CI display-time fixture
+  isolates protocol tests; it does not implement stock standby or remote wake.
+  See [failure evidence](CI.md#idle-shutdown-versus-protocol-failure).
 
 The user can capture TCP 12100 and HTTP 12103 from FiiO Control/Surge on iPhone.
 Ask for a specific short action sequence only when it resolves a concrete unknown;
@@ -204,8 +215,11 @@ The first full run failed before preferences, in existing `queue_reads_check.py`
 after replacing the paused queue with play-all, `0202` reported state 2 instead
 of playing, then timed out. Fresh focused `queue-reads` subsequently passed TCP
 and WS, including that transition; no queue behavior was changed to mask it.
-The cause is not established. Full retry passed with opt-in `CI_LOGS` capture
-of guest logs before disposable cleanup; no queue fix is claimed. One intervening diagnostic run is invalid:
+That run had no retained guest logs, so its cause cannot be proved retrospectively.
+The playlist checkpoint below reproduced the same symptom with logs showing
+stock shutdown, not a malformed selector. Full retry passed with opt-in `CI_LOGS`
+capture of guest logs before disposable cleanup; no queue fix is claimed.
+One intervening diagnostic run is invalid:
 the running shell script was edited, disrupting its read position; never edit
 `ci/integration.sh` while it is executing.
 
@@ -217,10 +231,67 @@ and `queue-logs/`; full retry: `full-v257-retry.log` and `full-retry-logs/`.
 The interactive stack, its databases and firmware image were left untouched.
 No viewer UI changed, so existing curated screenshots remain current.
 
-**Next research item: custom playlist playback** in section 2, after the current
-checkpoint validation/commit. Check the worktree and latest commit first.
-Balance and preference protocol contracts are complete; actual DSP and local
-preference behavior remain unvalidated.
+## Custom-playlist investigation (2026-09-16)
+
+Type 5 is a stock branch of admitted `0100`/`0101`, not a new HTTP endpoint.
+Ghidra confirmed JSON `id` is translated by SQL OFFSET into `LIST_ID`. The
+initial focused test failed before playback because it assumed insertion order;
+adding catalog positions 2 then 0 returned the opposite order. Tests now verify
+membership separately and use fresh `custom/song` ordering. Playlist operations
+use no firmware patch, direct DB write or command sweep (the later CI display
+fixture is separate test setup, documented below).
+
+Focused helper acceptance passed on TCP and WS: playlist position 0 mapped to
+SQLite LIST_ID 1, both whole-list and index selection matched track metadata,
+queue order and mark. Rename/add/remove and deletion-induced position shifts
+worked; stale names/positions, empty lists and out-of-range tracks were rejected
+before playback. Generated lists were removed, original mode restored, playback
+left paused on a valid album and source media checked byte-for-byte.
+Final unit suite including CI-fixture and PID-discovery guards passed (206 Python, 23 JS,
+shell checks and four shim builds).
+Final full local integration passed, exit 0, including nonzero playlist position,
+an index made stale by track removal, all preceding protocol/audio/control checks,
+settings/modes/themes, confinement, SD rescanning and preference rejection tests.
+The disposable stack/volume were removed. These are local results, not hosted
+exact-commit release gates. No physical-device or natural-end claim is made.
+
+The first full playlist run failed **before** the playlist stage, at the previous
+queue-reads transition. Retained logs show screen-off, `release_local!`, network
+teardown and watchdog stop, followed by `g_fiio_local is null!` on selection.
+The subsequent test-fixture change keeps V2.57's display on (`LIGTH_ON_TIME=7`),
+with the guest stopped for the DB update and read-only fingerprinted UI validation
+after boot. It changes neither interactive defaults nor `POWER_SAVE`; all playlist
+mutations themselves still go through stock HTTP/Link. See the
+[idle-shutdown analysis](CI.md#idle-shutdown-versus-protocol-failure).
+Do not claim that all remote sleep/wake behavior is fixed by this CI isolation.
+
+With the display fixture, full integration passed both queue-read transports,
+all extended playlist cases, settings and modes/themes, but stopped in the SD
+delete-rescan setup: read-only `PlayerMemory` enumeration found two matching PIDs.
+It did not send the removal event to an ambiguous process. A main-thread `popen`
+fork can inherit both comm and argv; the retained logs alone do not prove which
+two processes were observed. Discovery now re-enumerates on ambiguity at most ten
+times (50 ms intervals), still fails closed if ambiguity persists and never
+retries a mutation. Synthetic tests cover transient/persistent/missing PIDs.
+The subsequent full validation passed as recorded above; no guest-state mutation
+was replayed to obtain that result. Interactive firmware/settings/media were not
+modified. All changes to the disposable fixture are encoded in CI scripts and
+the CI Compose overlay; no new image dependency or ad-hoc image edit was needed.
+
+Ignored evidence lives in `work/preferences/playlist-*.log` and corresponding
+`playlist-*-logs/`: static `playlist-select.log`, `playlist-identity.log`,
+`playlist-position.log`; failed initial `playlist-focused.log`; passed
+`playlist-helper.log`; final `playlist-unit-final.log`; full `playlist-full.log`.
+CI fixture follow-up: `playlist-awake-unit.log`, `playlist-awake.log` and
+`playlist-awake-logs/`; static power/display analysis: `power-*.log`.
+Final follow-up: `playlist-final-unit.log`, `playlist-final.log` and
+`playlist-final-logs/`.
+No viewer UI changes or screenshot refresh are needed for this protocol addition.
+
+**Next research item: cancel indexing** in section 2. Current playlist validation
+is complete. Do not substitute `0800` factory reset for library operations.
+Check the worktree and latest commit first. Balance/preference audio effects,
+physical custom-list behavior and natural end-of-list remain unvalidated.
 
 Detailed local logs for this checkpoint are ignored under `work/http-research/`:
 `balance-unit.log`, `balance-unit-rebuilt.log`, `balance-full-v257.log` and

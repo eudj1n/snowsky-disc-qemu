@@ -156,6 +156,9 @@ The workflow first runs the firmware-free suite on the same commit, then:
    upload with byte-exact file checks, directory operations, catalog paging, and
    custom playlist lifecycle with internal-ID gaps. TCP/WS scans add the uploaded
    fourth track and remove it from the index after file deletion. V2.57 also uploads PNG.
+   On V2.57, `ci/playlists_check.py` then verifies whole-list and track playback
+   over TCP/WS, HTTP queue order/mark, playlist ID gaps, rename/add/remove and
+   fresh-preflight rejection after deletion/renaming or with empty lists.
 10. Runs [remote settings/PEQ acceptance](REMOTE_SETTINGS.md) over TCP/WS, checking
     gain, DRE, filter, SPDIF, channel balance, user bands/master gain and SQLite
     persistence, then restores settings. Balance also checks left/right DAC
@@ -186,13 +189,25 @@ CI_SCENARIO=queue-reads FW_VERSION=2.57 bash ci/integration.sh /absolute/path/to
 CI_SCENARIO=settings FW_VERSION=2.57 bash ci/integration.sh /absolute/path/to/main_os/ota_v257
 # Three read-only preferences and six rejected local-only writes over TCP/WS.
 CI_SCENARIO=preferences FW_VERSION=2.57 bash ci/integration.sh /absolute/path/to/main_os/ota_v257
+# Custom playlist playback and fresh HTTP preflight over TCP and WS.
+CI_SCENARIO=playlists FW_VERSION=2.57 bash ci/integration.sh /absolute/path/to/main_os/ota_v257
 ```
 
-`CI_SCENARIO` accepts `full` (default), `queue`, `queue-reads`, `settings` or `preferences`. All use the same
+`CI_SCENARIO` accepts `full` (default), `queue`, `queue-reads`, `settings`,
+`preferences` or `playlists`. All use the same
 random-name isolated stack and cleanup. Focused runs execute only their selected
 checks after setup/scan/reboot, not unrelated integration scenarios.
+For V2.57, `ci/awake_check.py --configure` sets `LIGTH_ON_TIME=7` (never)
+in the **stopped disposable guest's** settings DB before boot, then checks the
+fingerprinted UI's index 7 / timeout 65535 readback. This is test-fixture setup,
+not a network capability or firmware patch. `CI_DISPOSABLE=1` is supplied only by
+`ci/compose.yml`; the normal Compose stack, setup scripts and interactive settings
+are unchanged. `POWER_SAVE` is not modified. Explicit screen sleep/wake and
+BusyBox reboot-shim binding checks still run.
 `preferences` is V2.57-only; it does not change settings or require additional
 restarts. Read-only SQLite/memory comparisons verify the rejected-write probes.
+`playlists` is also V2.57-only and uses only generated custom lists/media; it
+restores the play mode and leaves playback paused on a valid album before cleanup.
 Only focused queue runs assert the queue
 is empty before any track has been played; the full run reaches queue checks after
 other playback scenarios.
@@ -201,6 +216,29 @@ other playback scenarios.
 instead of navigating the settings UI. It checks the generated files byte-for-byte,
 requires an initially empty index, and verifies all three indexed names. The full
 scenario and `queue` retain the UI scan test in `ci/guest_check.py`.
+
+### Idle shutdown versus protocol failure
+
+A full V2.57 run failed in `queue_reads_check.py` before the playlist checks:
+after paused playback, selecting play-all produced state 2, then no `0202` reply.
+Guest logs showed screen-off, `release_local!`, network teardown and watchdog
+stop **before** that selection; `start_local` subsequently reported
+`g_fiio_local is null!`. This is not evidence of a bad playlist payload.
+
+V2.57 static evidence: UI `473548` maps display index 3 to 120 seconds and 7 to
+`0xffff`; timer `472ed8` skips display timeout at the latter value. Stock setter
+`4ee9a0` saves the index via `43db60`, config slot 6 (`LIGTH_ON_TIME`). The
+separate `echo_powerMG` loop `4f44d0` can call shutdown `4e6f0c`, which releases
+the local player through `466d00` → `458354` → `44ffd0` before closing networking
+and invoking confined `poweroff -f`. Its idle counter is not simply elapsed wall
+time: one marker-mismatch branch adds 60 and then 1 per iteration. Therefore a
+stored `POWER_SAVE=300` does not establish that shutdown needs five more minutes
+after the latest network command. Network playback is not a UI touch keepalive.
+
+The CI fixture keeps the screen timer out of long remote-protocol scenarios;
+it does not fix or claim physical sleep/remote-wake compatibility. Investigate
+that lifecycle separately, with power counters and both guest logs, before a
+remote frontend assumes a paused connection will remain usable indefinitely.
 
 The workflow does not upload/cache firmware, rootfs, guest logs, captures or derived
 images. The hosted runner is discarded afterwards. Secret masking is not a guarantee
