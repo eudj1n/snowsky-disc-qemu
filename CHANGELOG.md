@@ -44,6 +44,10 @@ emulator-only revisions use `v2.40-r1`, etc. See [the porting guide](docs/PORTIN
   album/queue tests, retaining byte-exact audio and storage regression checks.
 - Firmware transition and OTA issue checklist: promotion follows validation/release
   preparation; retirement preserves historical releases and research evidence.
+- Single-active-firmware policy and CI: manual integration runs only the reviewed
+  V2.57 profile and receives only its download secret. Tests guard active-profile/
+  secret consistency and trusted-branch execution. V2.40 runtime cleanup is separate.
+  OTA tracking issues use the same single-active-firmware transition checklist.
 - Daily stock OTA catalog monitoring with sanitized version outputs and one
   tracking issue per new main-OS/recovery pair; release preparation and issue
   closure remain manual, with no firmware download or automatic profile changes.
@@ -54,8 +58,11 @@ emulator-only revisions use `v2.40-r1`, etc. See [the porting guide](docs/PORTIN
 
 - Replace the three-version FIFO policy with one actively supported, validated
   firmware on `2.x`, plus historical release snapshots without promised backports.
-  V2.57 is active; V2.40 runtime/CI cleanup is tracked separately. New vendor
+  V2.57 is active; V2.40 runtime cleanup is tracked separately. New vendor
   announcements do not trigger promotion until emulator validation succeeds.
+- Retain `v2.57` as an immutable pre-release snapshot and `v2.40` as the latest
+  stable historical release. Future stable V2.57 work uses a new tag such as
+  `v2.57-r1`; no tag is moved or reused.
 - Remove the obsolete `main` branch and enable automatic deletion of merged PR
   branches; document `2.x` protection and local branch cleanup.
 - Refresh the README around the emulator and viewer, with current V2.57 captures;
@@ -65,6 +72,10 @@ emulator-only revisions use `v2.40-r1`, etc. See [the porting guide](docs/PORTIN
   repairs only that handler and leaves other architecture registrations intact.
 
 ## [2.57] — 2026-09-13
+
+Reclassified as a **pre-release snapshot** on 2026-09-16; its commit and tag are
+unchanged. The evidence below records the original publication, not the current
+development head or a future stable release.
 
 SNOWSKY DISC emulator source release; main OS **257**, recovery **18**.
 V2.57 is the default, with V2.40 regression coverage. Exact-commit CI links are

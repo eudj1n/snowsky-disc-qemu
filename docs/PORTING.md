@@ -58,8 +58,8 @@ not the only opportunity to publish. Historical releases normally remain intact;
 deleting any published release/tag requires explicit owner approval.
 
 **Current transition:** V2.57 is active. V2.40's historical `v2.40` release remains;
-its runtime/diagnostic profile and manual CI choice are still present until a
-separate cleanup task removes them. This policy change does not remove those files
+its runtime/diagnostic profile is still present until a separate cleanup task
+removes it. Hosted integration runs only V2.57. This change does not remove those files
 or rewrite past validation results. V2.40 is no longer an ongoing release gate.
 
 The OTA monitor does not promote or retire firmware automatically. See
@@ -183,6 +183,7 @@ Dependabot PRs retain SHA pins but still need review/tests. Do not move an old r
 
 Static comparison, guarded profiles and the first clean baseline are complete; see
 [2.57 report](firmware/2.57.md). Select `FW_VERSION=2.57` for a disposable integration
-run; V2.57 is the default and V2.40 remains available explicitly. Firmware workflow dispatch selects the matching
-secret/profile. Release gates validate emulator compatibility on the exact candidate
+run; V2.57 is the default and V2.40 remains available explicitly for local historical
+work until cleanup. Hosted firmware dispatch uses only the active profile/secret.
+Release gates validate emulator compatibility on the exact candidate
 commit; they do not certify every vendor feature or physical-device behavior.

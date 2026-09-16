@@ -37,8 +37,10 @@ they illustrate the interface rather than replacing protocol/audio assertions.
 
 ## Releases and verification
 
-- [v2.57 source release](https://github.com/eudj1n/snowsky-disc-qemu/releases/tag/v2.57):
-  release notes link the exact commit and hosted firmware-free/V2.40/V2.57 checks.
+- [v2.40 historical stable release](https://github.com/eudj1n/snowsky-disc-qemu/releases/tag/v2.40)
+  remains Latest. [v2.57](https://github.com/eudj1n/snowsky-disc-qemu/releases/tag/v2.57)
+  is retained as a Pre-release snapshot, with its original exact-commit test evidence.
+  The next stable V2.57 release will use a new name such as `v2.57-r1`.
 - [V2.57 report](firmware/2.57.md): input fingerprints, compatibility findings and
   validation scope. Vendor feature announcements are reference material, not
   claims that every hardware or stock-software feature was tested.

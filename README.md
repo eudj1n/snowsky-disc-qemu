@@ -166,6 +166,8 @@ An OTA announcement alone does not replace the working version.
 
 V2.40's runtime profile is still selectable during the transition; its removal
 from current code is a separate task. The historical `v2.40` release is retained.
+The existing `v2.57` is a Pre-release snapshot; the eventual stable V2.57 release
+will use a new name such as `v2.57-r1`. Hosted firmware CI runs only active V2.57.
 
 A daily [OTA monitor](docs/OTA.md) creates one tracking Issue for each newly detected
 main-OS/recovery pair. Firmware analysis, support PRs, release preparation and Issue

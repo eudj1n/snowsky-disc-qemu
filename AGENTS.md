@@ -106,7 +106,7 @@ count printed by `fb2png.py` is only a fallback heuristic, not evidence of recen
   Develop on `2.x`; preserve older versions as historical release snapshots, without
   promised backports or continuing integration gates. Promote only after validation,
   not on an OTA announcement. Preserve inventories and analysis; see `docs/PORTING.md`.
-  V2.40 runtime/diagnostic profiles and optional CI selection remain temporarily;
+  V2.40 runtime/diagnostic profiles remain temporarily, but hosted CI runs only V2.57;
   their removal is a separate implementation task, not part of this policy change.
 - `FW_VERSION` selects a reviewed runtime profile (default `2.57`, opt-in `2.40`).
   Setup/boot validate product/version and six binary fingerprints before execution.
@@ -120,6 +120,8 @@ count printed by `fb2png.py` is only a fallback heuristic, not evidence of recen
 - Default development branch: `2.x`; firmware-based release tags `v2.40`, then
   `v2.40-r1` for emulator fixes against the same firmware. See `docs/CI.md` for pinned
   CI, secret-backed downloads and release gates. Never log a direct firmware URL.
+  Existing `v2.57` is an immutable pre-release snapshot; keep it and use a new name
+  (next available: `v2.57-r1`) for the eventual stable V2.57 release.
 - Full firmware-free suite: `docker run --rm --network none -v "$PWD:/repo:ro"
   diskos-qemu-ci bash /repo/ci/test.sh` after `docker build -t diskos-qemu-ci docker`.
   `ci/integration.sh` uses a fresh disposable Compose stack, never the interactive volume.

@@ -2,8 +2,9 @@
 
 The firmware is **not** stored in this repository. Download it yourself from FiiO.
 
-GitHub integration downloads use per-version secrets (`FIRMWARE_V240_URL`,
-`FIRMWARE_V257_URL`), never a committed direct URL. Runtime profiles:
+GitHub integration downloads use only the active version's secret
+(`FIRMWARE_V257_URL`), never a committed direct URL. Legacy V2.40 local tooling
+still understands `FIRMWARE_V240_URL`, but hosted CI does not receive it. Runtime profiles:
 [v2.40.json](v2.40.json), [v2.57.json](v2.57.json). See [CI policy](../docs/CI.md).
 
 The daily [OTA monitor](../docs/OTA.md) opens a tracking Issue for a new vendor
