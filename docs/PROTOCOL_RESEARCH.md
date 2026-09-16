@@ -30,6 +30,9 @@ checkpoint and any work left uncommitted. Do not publish this branch implicitly.
   recovery over TCP/WS: [scan lifecycle](LIBRARY_SCAN.md).
 - [x] Dedicated V2.57 index/favorites reset, explicit confirmation, preserved
   source/settings/custom lists and recovery limits: [reset contract](LIBRARY_RESET.md).
+- [x] Natural EOF observed in all five V2.57 local modes over TCP/WS with
+  short WAV/FLAC tracks; final stop versus loading, repeat progress restart and
+  silent `0202` after stop: [EOF contract](TRACK_END.md).
 - [x] Gain, DRE, filter, SPDIF, PEQ read/write and persistence:
   [settings](REMOTE_SETTINGS.md). These checks do not measure DSP output.
 - [x] Channel-balance contract: `0712` read / `0713` write / `a712` reply,
@@ -47,18 +50,19 @@ checkpoint and any work left uncommitted. Do not publish this branch implicitly.
   `curlist/song` and `0202` instead. No additional phone capture is needed for
   these two commands.
 
-## Current checkpoint completion: dedicated library reset
+## Current checkpoint completion: natural end of track/list
 
-Scan-cancellation checkpoint: `53fb0eb`; playlist: `392c8bc`; preferences: `274bce4`.
+Library-reset checkpoint: `4da1de6`; scan cancellation: `53fb0eb`;
+playlist: `392c8bc`; preferences: `274bce4`.
 Their validation/failure history remains below.
 
-- [x] Trace admitted `0621` and distinguish its database scope from `0800`.
-- [x] Add explicit-confirmation TCP/WS helpers with no-I/O rejection/no retries.
-- [x] Run firmware-free checks: 213 Python tests, 23 JavaScript tests, shell
+- [x] Trace playlist worker, five-mode switch and final-stop notifications.
+- [x] Observe natural EOF on TCP/WS without seek/next/EOF injection.
+- [x] Run firmware-free checks: 224 Python tests, 23 JavaScript tests, shell
   checks and four shim builds.
-- [x] Run final focused `library-reset` acceptance via TCP/WS, including
-  recovery without reboot, explicit reboot and surviving custom-list playback.
-- [x] Run **full** disposable integration on active V2.57 with reset acceptance.
+- [x] Run final focused `track-end` acceptance via TCP/WS, with explicit
+  event/queue/runtime assertions and restored generated fixture.
+- [x] Run **full** disposable integration on active V2.57 with EOF acceptance.
 - [x] Review the complete diff, record validation and create the local checkpoint
   commit. Pushing/publishing is not part of this step.
 
@@ -84,6 +88,7 @@ CI_SCENARIO=preferences FW_VERSION=2.57 bash ci/integration.sh "$OTA_257"
 CI_SCENARIO=playlists FW_VERSION=2.57 bash ci/integration.sh "$OTA_257"
 CI_SCENARIO=scan-cancel FW_VERSION=2.57 bash ci/integration.sh "$OTA_257"
 CI_SCENARIO=library-reset FW_VERSION=2.57 bash ci/integration.sh "$OTA_257"
+CI_SCENARIO=track-end FW_VERSION=2.57 bash ci/integration.sh "$OTA_257"
 ```
 
 Run firmware integration sequentially to limit resource pressure. Each run uses
@@ -137,9 +142,10 @@ explicitly instead of retrying them indefinitely.
   index/favorites loss versus preserved files/settings/custom lists. Focused/full
   acceptance passed; see [reset contract](LIBRARY_RESET.md). Actual app
   sequence remains uncaptured; opening/cancelling confirmation reveals no payload.
-- [ ] **Natural end of track/list:** verify all five modes, automatic transitions,
-  final state, repeat-one/list, single-once and random behavior with short generated
-  tracks. Explicit next/previous tests do not establish end-of-track behavior.
+- [x] **Natural end of track/list:** all five modes observed over TCP/WS using
+  short generated WAV/FLAC tracks, gapless/folder jump off. Automatic transitions,
+  final stop, repeat-one/list and random continuation have explicit acceptance;
+  see [scope and limitations](TRACK_END.md). Physical timing remains unvalidated.
 - [ ] Secondary compatibility: CUE/SACD/DSD metadata and track identity on the
   active firmware. Historical V2.40 favorite-position playback remains guarded;
   its missing internal ID is not an active-development requirement.
@@ -372,10 +378,62 @@ Ignored evidence in `work/preferences/`: `reset-refs.log`, `reset-callers.log`,
 `reset-helper-logs/`; `reset-unit.log`, `reset-unit-final.log`; final
 `reset-final.log` / `reset-final-logs/`; `reset-full.log` / `reset-full-logs/`.
 
-**Next research item: natural end of track/list**. Reset validation is complete.
+The next item at the reset checkpoint was natural end of track/list (below).
 Do not substitute `0800` factory reset for library operations.
 Check the worktree and latest commit first. Balance/preference audio effects,
-physical custom-list behavior and natural end-of-list remain unvalidated.
+physical custom-list behavior and hardware EOF timing remain unvalidated.
+
+## Natural EOF investigation (2026-09-16)
+
+Traced the V2.57 playlist worker `4524a4`, switch table `6c13f8`, automatic
+control `4249fc` and final stop `458e1c`. The indirect switch is incomplete in
+Ghidra's decompilation; its table and branches establish dispatch. Runtime tests
+use the actual stock decoder and six-second WAV/FLAC files, no seek/next/EOF
+injection or speed modification. See [the contract](TRACK_END.md) for addresses,
+observed sequences, reproducible fixtures and client implications.
+
+The first focused exploratory run failed at its final `0202` query after mode 0.
+Guest logs showed both tracks had played to completion. The subsequent complete
+TCP/WS observation established that modes 0/4 send `a103=0` then metadata-free
+`a202 state=2`, internal state becomes 3, HTTP queue/mark survive and fresh mode
+reads succeed, but `0202` remains silent. This is not accepted from timeout alone.
+Follow-up static analysis explains the silence: `41fc70` → slot `83a3d8`
+(`4ed618`) → local `4252ac` requires `4537b0()==0`; stop `456200` sets the
+underlying context `+0x50` flag to 1. This is independent of status at `+0x48`.
+Modes 2/3 replay/wrap with new full metadata and restarted ticks; mode 1 keeps
+selecting from the queue beyond three completions without a fixed order claim.
+
+The acceptance oracle requires complete six-second cycles, matching queue
+identity/positions, expected per-mode order, terminal sequence or continuing
+playback, independent runtime and network readback. The observer now samples
+continuing tracks after their first tick, away from the next EOF race, and
+observes a two-second quiet tail after stop. Every wait has a bound. Generated
+media/list are removed, mode restored and the original three tracks reindexed.
+Firmware-free checks passed: 224 Python, 23 JS, shell syntax and four shim builds.
+Final focused acceptance passed all ten mode/transport combinations, source
+byte verification, restored mode/catalog and disposable-stack cleanup (exit 0).
+Full local V2.57 integration passed on its first attempt at this checkpoint
+(exit 0), including all ten EOF cases and the subsequent scan-cancel, reset,
+SD hotplug/Unicode and preference checks. The deadline failure path was tightened
+during review before this run reached EOF: deadline exhaustion now fails rather
+than allowing an incomplete quiet tail. The final firmware-free suite passed
+again (224 Python / 23 JS / shell checks / four shim builds). Its disposable
+stack, volume and generated host fixture were removed. This is local evidence,
+not a hosted exact-commit release gate. No branch push is part of the checkpoint.
+
+Ignored evidence under `work/preferences/`: `eof-worker.log`, `eof-navigation.log`,
+`eof-stop.log`, `eof-random.log`, `eof-query-refs.log`, `eof-query.log`,
+`eof-query-gates.log`, `eof-query-callback.log`; failed exploratory `eof-observe.log` /
+`eof-observe-logs/`; complete observation `eof-events.log` / `eof-events-logs/`;
+`eof-unit.log`, `eof-unit-final.log`; final acceptance `eof-final.log` / `eof-final-logs/`;
+full integration `eof-full.log` / `eof-full-logs/`.
+No viewer UI changed; the curated screenshots remain current. Interactive media
+and emulator were not touched. Tracked fixtures use existing image dependencies;
+no Dockerfile/normal Compose change or ad-hoc image edit is needed.
+
+**Next unchecked research item: secondary CUE/SACD/DSD metadata and identity**,
+not a claim of hardware/DSD audio support. Stop after this checkpoint; do not
+start that separate investigation implicitly.
 
 Historical balance-checkpoint logs are ignored under `work/http-research/`:
 `balance-unit.log`, `balance-unit-rebuilt.log`, `balance-full-v257.log` and

@@ -9,6 +9,11 @@ emulator-only revisions use `v2.40-r1`, etc. See [the porting guide](docs/PORTIN
 
 ### Added
 
+- V2.57 natural track/list completion acceptance for all five local play modes
+  over TCP/WS, with generated short WAV/FLAC media and no seek/next/EOF injection.
+  Document loading versus terminal state, repeated-track progress restart and
+  silent `0202` after final stop despite retained queue/responsive settings.
+  Add focused `CI_SCENARIO=track-end` and firmware-free trace-oracle tests.
 - Dedicated V2.57 TCP/WS library reset (`0621/0000`), requiring explicit
   `confirm=True` and never retrying or falling back to factory reset. Disposable
   acceptance covers index/favorites loss, preserved files/settings/custom lists,

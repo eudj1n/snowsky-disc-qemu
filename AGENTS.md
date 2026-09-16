@@ -254,6 +254,14 @@ and moved 3 → 11 → 3, so never infer queue position by increment/decrement a
 `0426` has no assigned handler in V2.40/V2.57; retained counter JSON strings do not prove
 support. Use `0406`, HTTP `curlist/song` and `0202` instead. The focused
 `CI_SCENARIO=queue-reads` verifies both read commands without relying on M21 semantics.
+Natural EOF on V2.57 is checked over TCP/WS for all five modes with six-second
+WAV/FLAC tracks, gapless/folder jump off. Modes 0/4 finally send `a103=0` then
+metadata-free `a202 state=2`; fresh `0202` is silent, but mode reads and the
+retained HTTP queue work. Internal stopped state is 3, not wire 2. Full loading
+snapshots also have state 2; duplicate state-0 deltas are not repeats. Observe
+events without queries during EOF and never infer stop from timeout alone.
+See `docs/TRACK_END.md` and disposable `CI_SCENARIO=track-end`; physical timing,
+gapless/folder-jump enabled and stopped-state resume remain unvalidated.
 `docs/M21_COMPARISON.md` is reference only: M21's FiiO Music uses UTF-16 length
 units, a different state enum and toggle semantics. DISC remains the priority;
 do not copy those Android rules into its client.

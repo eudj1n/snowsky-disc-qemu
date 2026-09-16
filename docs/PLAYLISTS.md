@@ -67,6 +67,8 @@ Playback still has the stock navigation timing gate: tests separate selections
 by 2.1 seconds. Observe matching track metadata/state rather than treating a
 completed socket write as success. Current playback and queue are available
 through `0202` and HTTP `curlist/song`; `playerflag` is 5 for this source.
+After natural final stop, `0202` can be silent while the queue remains readable;
+see the [EOF lifecycle](TRACK_END.md), not a timeout-based state inference.
 
 ## Static evidence and reproduction
 
@@ -99,4 +101,5 @@ CI_SCENARIO=playlists FW_VERSION=2.57 CI_LOGS="$PWD/work/playlist-check" \
 ```
 
 Validation is tracked in [PROTOCOL_RESEARCH.md](PROTOCOL_RESEARCH.md). Emulator
-evidence is not a physical FiiO Control capture or end-of-track behavior claim.
+evidence is not a physical FiiO Control capture. Natural five-mode EOF behavior
+has separate [short-track acceptance](TRACK_END.md).

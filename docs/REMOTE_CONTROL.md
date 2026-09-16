@@ -65,8 +65,10 @@ still raises an error; arbitrary cleared/invalid selection recovery is not estab
 The five local modes are **0 list once, 1 random, 2 repeat one, 3 repeat list,
 4 single once**. Their names come from the stock playlist worker's switch/log
 strings; acceptance verifies setting each value, its event, settings query and
-persisted `PLAY_MODE`. It does not statistically test randomness or every end-of-file
-transition. Values beyond 4 include other playback backends and are not exposed.
+persisted `PLAY_MODE`. V2.57 also has [natural EOF acceptance](TRACK_END.md) for
+all five modes on a short WAV/FLAC custom queue over TCP/WS, with gapless/folder
+jump off. It does not statistically test randomness or every source/queue type.
+Values beyond 4 include other playback backends and are not exposed.
 
 The user's iOS screenshots and `2026-09-15-235540.pcap` match the app's cycle:
 
@@ -107,11 +109,15 @@ track/list completion or characterize random selection.
   No absolute play/pause command is established. Read state first and observe the
   result; a reconnect must never replay an old toggle.
 - `a202` is both a response and an unsolicited notification. It can be only
-  `{"state":0}` or `{"state":1}`. Merge such deltas into known track metadata;
+  `{"state":0}`, `{"state":1}` or `{"state":2}`. Merge deltas into known metadata;
   don't replace a full track with an empty object. A full snapshot may initially
   show a stopped/loading state before the later playing event.
 - Wire state is **0 playing / 1 paused / 2 stopped**. Internal memory uses a
-  different enum (1 playing / 2 paused). They are not interchangeable.
+  different enum (1 playing / 2 paused / 3 stopped). They are not interchangeable.
+- Natural final stop sends zero `a103`, then state-only `a202` with state 2.
+  Fresh `0202` subsequently times out in the tested V2.57 modes 0/4, while mode
+  reads and the retained HTTP queue still work. A timeout alone is **not** a
+  stopped-state detector; see [EOF lifecycle and client implications](TRACK_END.md).
 - No request IDs exist. Use one reader, serialize queries, route incoming frames
   by tag, and allow asynchronous transitions. The diagnostic clients intentionally
   discard pending notifications before queries; use `event()` without a query to
@@ -349,7 +355,7 @@ settings/PEQ are in [REMOTE_SETTINGS.md](REMOTE_SETTINGS.md).
 | Work mode | USB DAC/local/AirPlay control transitions and persisted enums tested; actual hardware audio remains separate. See [modes](REMOTE_MODES_THEMES.md). |
 | Local playback | Catalog/play-all, HTTP custom playlist lifecycle and V2.57 TCP/WS custom-list selection are tested; see [playlist coverage](PLAYLISTS.md). |
 | PEQ | User-preset selection, frequency/gain/Q, master gain, readback and SQLite persistence tested in emulator. Actual DSP response remains unmeasured. |
-| Settings | Network indexing, gain, SPDIF, filter, DRE, channel balance and five Bluetooth source-codec preferences tested in emulator. Dedicated library reset, negotiated codec and physical audio effects remain unvalidated. |
+| Settings | Network indexing, gain, SPDIF, filter, DRE, channel balance and five Bluetooth source-codec preferences tested in emulator. Dedicated V2.57 [library reset](LIBRARY_RESET.md) is tested separately; negotiated codec and physical audio effects remain unvalidated. |
 | Lock screen / cover | Physical V2.57 current-cover JPEG; emulator checks general PNG upload, five stock themes and custom lock-screen PNG/metadata. See [theme quirks](REMOTE_MODES_THEMES.md#lock-screen-http). |
 
 Custom playlist operations use `GET/DELETE /song_category_tree/`,

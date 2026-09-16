@@ -167,7 +167,13 @@ The workflow first runs the firmware-free suite on the same commit, then:
     control transitions, five codec preferences, five stock lock screens, exact
     custom PNG and metadata, and empty-body/activation quirks. TCP/WS and direct/proxy
     HTTP are exercised.
-12. On V2.57, before SD hotplug acceptance, runs `ci/scan_cancel_check.py` with
+12. On V2.57, runs `ci/track_end_check.py`: three generated six-second WAV/FLAC
+    tracks, a custom queue and all five modes over TCP/WS. Event-only observation
+    proves natural completion/repeat/wrap/stop with gapless/folder jump off;
+    checks retained queue, fresh mode reads and stopped/playing runtime. Restores
+    mode, removes its fixtures/list and reindexes the original three tracks.
+    See [EOF contract](TRACK_END.md), including silent `0202` after final stop.
+    Before SD hotplug acceptance, runs `ci/scan_cancel_check.py` with
     1024 additional generated WAVs: idle/active cancellation over TCP/WS, partial
     index agreement, unchanged source bytes and full-scan recovery. Removes its
     fixtures and reindexes the original three before the SD scenario's reboot.
@@ -204,14 +210,20 @@ CI_SCENARIO=playlists FW_VERSION=2.57 bash ci/integration.sh /absolute/path/to/m
 CI_SCENARIO=scan-cancel FW_VERSION=2.57 bash ci/integration.sh /absolute/path/to/main_os/ota_v257
 # Destructive library reset, only on the disposable generated-media fixture.
 CI_SCENARIO=library-reset FW_VERSION=2.57 bash ci/integration.sh /absolute/path/to/main_os/ota_v257
+# Natural track/list completion for five modes; no seek/next/EOF injection.
+CI_SCENARIO=track-end FW_VERSION=2.57 bash ci/integration.sh /absolute/path/to/main_os/ota_v257
 ```
 
 `CI_SCENARIO` accepts `full` (default), `queue`, `queue-reads`, `settings`,
-`preferences`, `playlists`, `scan-cancel` or `library-reset`. All use the same
+`preferences`, `playlists`, `scan-cancel`, `library-reset` or `track-end`. All use the same
 random-name isolated stack and cleanup. Focused runs execute only their selected
 checks, not unrelated integration scenarios. Most use the shared setup/scan/reboot
-preparation; `scan-cancel` and `library-reset` start after boot and prepare their
+preparation; `scan-cancel`, `library-reset` and `track-end` start after boot and prepare their
 own network scans.
+`track-end` is V2.57-only, uses existing Python/SoX dependencies and adds no
+normal Compose setting, image mutation or firmware patch. Event observation is
+bounded at 35 seconds per mode and stops early after proven continuation or a
+terminal sequence plus a two-second quiet tail. Query timeouts alone never pass.
 For V2.57, `ci/awake_check.py --configure` sets `LIGTH_ON_TIME=7` (never)
 in the **stopped disposable guest's** settings DB before boot, then checks the
 fingerprinted UI's index 7 / timeout 65535 readback. This is test-fixture setup,
