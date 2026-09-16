@@ -4,6 +4,8 @@ Explicit indexing uses stock Link TCP 12100, or our WS-to-TCP bridge. It is not
 an HTTP upload operation or a library-reset command. The active V2.57 emulator
 contract below is independently checked against the network catalog and SQLite.
 SD-insertion auto-update has separate UI gates: see [MEDIA_LIBRARY.md](MEDIA_LIBRARY.md).
+Dedicated `0621` index/favorites reset has a separate destructive contract:
+[LIBRARY_RESET.md](LIBRARY_RESET.md). Do not confuse it with cancellation.
 
 ## Commands and events
 

@@ -171,6 +171,10 @@ The workflow first runs the firmware-free suite on the same commit, then:
     1024 additional generated WAVs: idle/active cancellation over TCP/WS, partial
     index agreement, unchanged source bytes and full-scan recovery. Removes its
     fixtures and reindexes the original three before the SD scenario's reboot.
+    Then `ci/library_reset_check.py` verifies dedicated `0621` on paused TCP/WS
+    fixtures: index/favorites loss, preserved source/settings/custom lists,
+    immediate inconsistent replies, scan-only recovery limits and explicit
+    guest-restart persistence/recovery. No direct DB writes or factory reset.
     Runs automatic SD scanning and Cyrillic add/rename/delete checks, then
     `ci/preferences_check.py`: fingerprinted TCP allowlist, three
     read-only playback preferences, and six rejected local-only setters over TCP/WS.
@@ -198,13 +202,16 @@ CI_SCENARIO=preferences FW_VERSION=2.57 bash ci/integration.sh /absolute/path/to
 CI_SCENARIO=playlists FW_VERSION=2.57 bash ci/integration.sh /absolute/path/to/main_os/ota_v257
 # Cooperative indexing cancellation, partial catalog and subsequent full scan.
 CI_SCENARIO=scan-cancel FW_VERSION=2.57 bash ci/integration.sh /absolute/path/to/main_os/ota_v257
+# Destructive library reset, only on the disposable generated-media fixture.
+CI_SCENARIO=library-reset FW_VERSION=2.57 bash ci/integration.sh /absolute/path/to/main_os/ota_v257
 ```
 
 `CI_SCENARIO` accepts `full` (default), `queue`, `queue-reads`, `settings`,
-`preferences`, `playlists` or `scan-cancel`. All use the same
+`preferences`, `playlists`, `scan-cancel` or `library-reset`. All use the same
 random-name isolated stack and cleanup. Focused runs execute only their selected
 checks, not unrelated integration scenarios. Most use the shared setup/scan/reboot
-preparation; `scan-cancel` starts after boot and prepares its own network scans.
+preparation; `scan-cancel` and `library-reset` start after boot and prepare their
+own network scans.
 For V2.57, `ci/awake_check.py --configure` sets `LIGTH_ON_TIME=7` (never)
 in the **stopped disposable guest's** settings DB before boot, then checks the
 fingerprinted UI's index 7 / timeout 65535 readback. This is test-fixture setup,
@@ -218,6 +225,10 @@ restarts. Read-only SQLite/memory comparisons verify the rejected-write probes.
 restores the play mode and leaves playback paused on a valid album before cleanup.
 `scan-cancel` is V2.57-only and prepares its own baseline through stock network
 scanning rather than the settings UI. See [the scan contract](LIBRARY_SCAN.md).
+`library-reset` is also V2.57-only; it seeds favorites/custom lists via stock
+APIs, checks exact removal/preservation and never touches the interactive volume.
+It explicitly restarts its own guest to separate persistent data from live caches;
+the client helper never reboots. See [the reset contract](LIBRARY_RESET.md).
 Only focused queue runs assert the queue
 is empty before any track has been played; the full run reaches queue checks after
 other playback scenarios.

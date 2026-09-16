@@ -31,8 +31,12 @@ identifies analysis targets, not a recovered call graph or validated command:
 | Newer local catalog | `fiio_v2/link_device_v2/service/local_play_http_service.dart`, `local_dir_http_service.dart` |
 | Theme contract strings | `/image/lock_screen/`, `back-groud`, `lock_screen/system`, `lock_screen/custom`, `lock_screen/custom/default` |
 
-The theme strings agree with already tested firmware endpoints. No new reset tag
-has been established from this APK, and no reset was sent to physical DISC.
+The theme strings agree with already tested firmware endpoints. No reset tag
+has been recovered from this APK, and no reset was sent to physical DISC.
+Separately, V2.57 firmware analysis and disposable tests established dedicated
+`0621/0000`: see [library reset](LIBRARY_RESET.md). The owner confirms the app
+offers library reset (2026-09-16), but its exact frame/follow-up sequence is still
+unobserved; firmware evidence is not an app capture.
 Generic Dart runtime proxy strings also occur; they do not prove that FiiO Control
 honors the phone's HTTP proxy configuration.
 

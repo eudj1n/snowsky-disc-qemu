@@ -218,6 +218,16 @@ class Client:
         """
         self.socket.sendall(frame('0622', '0001'))
 
+    def reset_library(self, *, confirm=False):
+        """Destructively reset the V2.57 index/favorites, not files or settings.
+
+        Caller must serialize against scans/edits and refresh stale catalogs and
+        queue state. No acknowledgement, retry, rescan or factory-reset fallback.
+        """
+        if confirm is not True:
+            raise ValueError('library reset discards index and favorites; confirm=True required')
+        self.socket.sendall(frame('0621', '0000'))
+
     def device_setting(self, name):
         return setting_value(name, self.request(setting_query(name)))
 

@@ -9,6 +9,11 @@ emulator-only revisions use `v2.40-r1`, etc. See [the porting guide](docs/PORTIN
 
 ### Added
 
+- Dedicated V2.57 TCP/WS library reset (`0621/0000`), requiring explicit
+  `confirm=True` and never retrying or falling back to factory reset. Disposable
+  acceptance covers index/favorites loss, preserved files/settings/custom lists,
+  stale immediate responses, reboot persistence and explicit rescan recovery.
+  Document the stock missing-favorites-table defect after reset/rescan.
 - V2.57 TCP/WS library-scan cancellation (`0622/0001`) with no event drain,
   acknowledgement assumption or mutation retry. Document partial replacement
   indexes and shared full/cancel finish events; add disposable scan-cancel

@@ -28,6 +28,8 @@ checkpoint and any work left uncommitted. Do not publish this branch implicitly.
   guarded by fresh HTTP name/track reads: [playlist contract](PLAYLISTS.md).
 - [x] V2.57 cooperative scan cancellation, partial replacement index and full-scan
   recovery over TCP/WS: [scan lifecycle](LIBRARY_SCAN.md).
+- [x] Dedicated V2.57 index/favorites reset, explicit confirmation, preserved
+  source/settings/custom lists and recovery limits: [reset contract](LIBRARY_RESET.md).
 - [x] Gain, DRE, filter, SPDIF, PEQ read/write and persistence:
   [settings](REMOTE_SETTINGS.md). These checks do not measure DSP output.
 - [x] Channel-balance contract: `0712` read / `0713` write / `a712` reply,
@@ -45,18 +47,18 @@ checkpoint and any work left uncommitted. Do not publish this branch implicitly.
   `curlist/song` and `0202` instead. No additional phone capture is needed for
   these two commands.
 
-## Current checkpoint completion: scan cancellation
+## Current checkpoint completion: dedicated library reset
 
-Playlist checkpoint: `392c8bc`; preference checkpoint: `274bce4`.
+Scan-cancellation checkpoint: `53fb0eb`; playlist: `392c8bc`; preferences: `274bce4`.
 Their validation/failure history remains below.
 
-- [x] Trace `0622`, stop/reset timing, buffered-row flush and finish events.
-- [x] Add one-shot cancellation preserving pending events and no-retry coverage.
-- [x] Run firmware-free checks: 209 Python tests, 23 JavaScript tests, shell
+- [x] Trace admitted `0621` and distinguish its database scope from `0800`.
+- [x] Add explicit-confirmation TCP/WS helpers with no-I/O rejection/no retries.
+- [x] Run firmware-free checks: 213 Python tests, 23 JavaScript tests, shell
   checks and four shim builds.
-- [x] Run focused `scan-cancel` acceptance via TCP/WS (initial 512-file fixture).
-- [x] Run **full** disposable integration on active V2.57, including the final
-  1024-file fixture and earlier cancellation trigger (first positive progress).
+- [x] Run final focused `library-reset` acceptance via TCP/WS, including
+  recovery without reboot, explicit reboot and surviving custom-list playback.
+- [x] Run **full** disposable integration on active V2.57 with reset acceptance.
 - [x] Review the complete diff, record validation and create the local checkpoint
   commit. Pushing/publishing is not part of this step.
 
@@ -81,6 +83,7 @@ CI_SCENARIO=settings FW_VERSION=2.57 bash ci/integration.sh "$OTA_257"
 CI_SCENARIO=preferences FW_VERSION=2.57 bash ci/integration.sh "$OTA_257"
 CI_SCENARIO=playlists FW_VERSION=2.57 bash ci/integration.sh "$OTA_257"
 CI_SCENARIO=scan-cancel FW_VERSION=2.57 bash ci/integration.sh "$OTA_257"
+CI_SCENARIO=library-reset FW_VERSION=2.57 bash ci/integration.sh "$OTA_257"
 ```
 
 Run firmware integration sequentially to limit resource pressure. Each run uses
@@ -130,10 +133,10 @@ explicitly instead of retrying them indefinitely.
   replacement index and emits the same `a60a/0005` as a full scan. Idle cancel
   does not clear the catalog; a new scan resets stop and rebuilds the full index.
   See [contract and tests](LIBRARY_SCAN.md). Not a library-reset command.
-- [ ] **Dedicated library reset:** identify the actual app command and scope.
-  Test reset only against disposable state. `0800` is a broader factory reset
-  and is not a substitute. Merely opening/cancelling confirmation reveals no
-  reset payload.
+- [x] **Dedicated library reset:** identified stock `0621/0000` and tested its
+  index/favorites loss versus preserved files/settings/custom lists. Focused/full
+  acceptance passed; see [reset contract](LIBRARY_RESET.md). Actual app
+  sequence remains uncaptured; opening/cancelling confirmation reveals no payload.
 - [ ] **Natural end of track/list:** verify all five modes, automatic transitions,
   final state, repeat-one/list, single-once and random behavior with short generated
   tracks. Explicit next/previous tests do not establish end-of-track behavior.
@@ -328,8 +331,49 @@ No viewer UI changed; existing curated screenshots remain current. The
 interactive stack/media remain untouched. Fixtures are part of tracked CI, not
 ad-hoc image edits; Dockerfile and normal Compose need no new dependency/option.
 
-**Next research item: dedicated library reset** in section 2. Cancellation
-validation is complete. Do not substitute `0800` factory reset for library operations.
+## Library-reset investigation (2026-09-16)
+
+Static analysis traced admitted `0621` through `414bc0` / slot `83a56c` to
+`4f0814`. It drops SONG/MY_LOVE and LIST_SONG_0/3, deletes PLAY_LIST rows 0/3,
+but not custom-playlist tables or source files. Broader `0800` was only inspected
+statically, never sent. The owner confirms FiiO Control exposes reset, but the
+app frame/sequence remains unobserved; it is not needed to establish this firmware
+handler. No reset was requested on a physical device.
+
+Initial focused diagnostic passed TCP/WS with paused album playback, one seeded
+favorite and a two-track custom list. Read-only SQLite confirmed dropped tables,
+preserved custom rows and SYSCONFIG; source bytes were unchanged. Immediate
+network catalogs are not all coherent: love/song has total -1, custom/song reports
+two tracks but no items, and a202 is empty. An explicit guest restart left tracks
+and favorites empty, recreated readable tables and exposed the saved custom list;
+subsequent scanning restored three tracks without restoring favorites.
+
+The extended helper run verified runtime still paused, unchanged Wi-Fi/theme
+files, scoped PLAY_LIST deletion and TCP scan-only recovery. Its assertion failed
+because it compared the entire custom page, including playback `mark` (-1 → 1),
+instead of membership: all two entries had already recovered. Final acceptance
+compares total/items separately. The same run proved MY_LOVE remains absent after
+rescan; negative totals are not suppressed. This is a stock limitation, not a
+reason to retry reset or write missing tables directly.
+
+Firmware-free checks passed twice: 213 Python, 23 JS, shell syntax and four shim builds.
+Final focused acceptance passed through both transports, including playback of
+the preserved custom list after recovery. Full local V2.57 integration passed,
+exit 0, on its first attempt in this checkpoint: all earlier scenarios, the new
+TCP/WS reset checks, then SD hotplug/Unicode and preference checks. Its disposable
+stack/volume were removed. This is local evidence, not a hosted exact-commit
+release gate. All changes use tracked CI setup, no new Docker dependency, image
+edits or interactive changes. Reviewed and included in the local checkpoint commit.
+No viewer UI changed; existing curated screenshots remain the visual reference.
+
+Ignored evidence in `work/preferences/`: `reset-refs.log`, `reset-callers.log`,
+`reset-handlers.log`, `reset-scope.log`, `reset-list-scope.log`; initial
+`reset-focused.log` / `reset-focused-logs/`; extended `reset-helper.log` /
+`reset-helper-logs/`; `reset-unit.log`, `reset-unit-final.log`; final
+`reset-final.log` / `reset-final-logs/`; `reset-full.log` / `reset-full-logs/`.
+
+**Next research item: natural end of track/list**. Reset validation is complete.
+Do not substitute `0800` factory reset for library operations.
 Check the worktree and latest commit first. Balance/preference audio effects,
 physical custom-list behavior and natural end-of-list remain unvalidated.
 

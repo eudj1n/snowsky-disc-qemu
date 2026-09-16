@@ -159,6 +159,11 @@ index**, not the old complete index. The stop flag is not a library reset, and
 `a60a/0005` does not distinguish cancelled from full completion. See the
 [scan lifecycle, evidence and tests](LIBRARY_SCAN.md) before implementing progress UI.
 
+Dedicated `reset_library(confirm=True)` is a separate TCP/WS operation (`0621`),
+not HTTP deletion. It discards index/favorites, preserving files and custom-list
+rows, but immediate HTTP responses can be inconsistent. A rescan does not recreate
+the missing favorites table. See [reset scope and recovery](LIBRARY_RESET.md).
+
 The acceptance test uploads a fourth track, indexes it through the network command,
 removes that test file, and reindexes back to the three original fixtures. No
 synthetic SD event or screen tap is needed for this explicit scan.

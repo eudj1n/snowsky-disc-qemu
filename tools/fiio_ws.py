@@ -130,6 +130,12 @@ class WSClient:
         """Request cancellation once; preserves queued scan events, no rollback."""
         await self.send('0622', '0001')
 
+    async def reset_library(self, *, confirm=False):
+        """V2.57 index/favorites reset; see Client.reset_library and LIBRARY_RESET.md."""
+        if confirm is not True:
+            raise ValueError('library reset discards index and favorites; confirm=True required')
+        await self.send('0621', '0000')
+
     async def device_setting(self, name):
         return setting_value(name, await self.request(setting_query(name)))
 

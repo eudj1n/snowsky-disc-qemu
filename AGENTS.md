@@ -206,6 +206,13 @@ Cancellation leaves a partial replacement index, not a rollback; `a60a/0005`
 also occurs after cancel. Do not query through the sequential client while
 collecting scan events or replay cancel after reconnect. See `docs/LIBRARY_SCAN.md`;
 `CI_SCENARIO=scan-cancel` checks TCP/WS and recovery on disposable generated media.
+V2.57 `reset_library(confirm=True)` sends dedicated `0621/0000` once, not `0800`.
+It drops SONG/MY_LOVE and queue tables; files/settings/custom-list rows survive.
+Immediate HTTP favorites have invalid total -1; custom songs can have count >0
+with no items, and empty `a202` does not mean stopped playback. Rescan rebuilds
+tracks/custom membership but not MY_LOVE; guest restart recreates empty favorites.
+Never reset during a scan, replay an uncertain reset, or silently reboot. See
+`docs/LIBRARY_RESET.md` and disposable `CI_SCENARIO=library-reset`.
 Channel balance uses getter `0712`, setter `0713`, reply `a712`: helper integers
 -20..20 mean L20..0..R20; wire high byte 0=left/1=right, low byte=magnitude.
 It is not signed 16-bit or percent. `BALANCE_VOL` stores the packed value;

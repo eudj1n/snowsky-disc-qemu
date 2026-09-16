@@ -23,6 +23,7 @@ peripheral controls. See the [README](../README.md) for setup and the visual ove
 | **Stock file/library API** | HTTP folders, streamed uploads/progress and single-path deletion; custom playlist create/rename/add/remove/delete. Network scanning indexes uploaded music. Current-cover JPEG retrieved on physical V2.57. | [HTTP API](HTTP_API.md) |
 | **Custom playlist playback** | V2.57 TCP/WS whole-list and track selection with fresh HTTP name/bounds checks. Tests distinguish list position from SQLite ID and cover rename/edit/position shifts. Physical app comparison and natural end-of-list remain separate. | [Playlist contract](PLAYLISTS.md) |
 | **Scan cancellation** | V2.57 TCP/WS cooperative cancellation leaves a partial replacement index; finish event is shared with full scans. Fresh full scanning restores the complete catalog; source files are unchanged. | [Scan contract](LIBRARY_SCAN.md) |
+| **Library reset** | Dedicated V2.57 `0621` discards index/favorites, not files/settings/custom-list rows. Requires explicit confirmation. Immediate replies can be inconsistent; rescan alone does not recreate favorites. | [Reset scope and recovery](LIBRARY_RESET.md) |
 | **Remote settings** | TCP/WS gain, DRE, filter, SPDIF, channel balance and user PEQ/master gain with readback and SQLite persistence checks. Balance L20..R20 also checks the opposite-channel DAC attenuation writes. Actual USB/AirPlay/BT and DSP response remain unvalidated. | [Settings protocol](REMOTE_SETTINGS.md) |
 | **Playback preferences** | V2.57 gapless, folder jump and ReplayGain are readable via fresh `0501` snapshots. Six local UI setter tags are rejected by the independent TCP allowlist, also through the WS bridge; no remote setters exposed. | [Evidence and limits](REMOTE_SETTINGS.md#playback-preferences-v257) |
 | **Modes and lock screen** | Stock USB/local/AirPlay control transitions, five Bluetooth source-codec preferences, five system themes and full custom PNG/overlay metadata. Physical audio and screen rendering need separate checks. | [Modes and themes](REMOTE_MODES_THEMES.md) |
@@ -37,11 +38,17 @@ peripheral controls. See the [README](../README.md) for setup and the visual ove
 Fresh captures from the actual V2.57 guest, 2026-09-15. The current browser skin
 and controls are shown in [VIEWER.md](VIEWER.md). These are screenshots, not mockups;
 they illustrate the interface rather than replacing protocol/audio assertions.
-The 2026-09-16 preference/playlist/scan investigations change protocol helpers/tests, not
+The 2026-09-16 preference/playlist/scan/reset investigations change protocol helpers/tests, not
 the viewer UI; these captures remain the current visual reference.
 
 ## Releases and verification
 
+- 2026-09-16 library-reset checkpoint: 213 Python and 23 JavaScript tests,
+  four shim builds, focused TCP/WS acceptance and full local V2.57 integration
+  passed. Tests verify destructive scope, unchanged source/settings/custom lists,
+  stale immediate responses, rescan/restart recovery and surviving-list playback.
+  Subsequent SD/preference checks also passed. This is not a hosted release gate.
+  [Validation and stock limitations](PROTOCOL_RESEARCH.md#library-reset-investigation-2026-09-16).
 - 2026-09-16 scan-cancellation checkpoint: 209 Python and 23 JavaScript tests,
   four shim builds, focused cancellation checks and full local V2.57 integration
   passed. TCP/WS cancellation leaves a partial replacement catalog; full rescans
