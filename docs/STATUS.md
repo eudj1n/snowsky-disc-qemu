@@ -132,6 +132,13 @@ The actionable DISC protocol backlog and session handoff are maintained in
 [PROTOCOL_RESEARCH.md](PROTOCOL_RESEARCH.md), including checkpoint validation,
 remaining settings/library investigations and future web-remote work.
 
+Current research: capture FiiO Control's custom-theme color/overlay-only save and
+audit its DISC screens against existing protocol helpers using user-provided
+screenshots; see [the audit plan](FIIO_CONTROL_APP.md#screen-coverage-audit).
+Physical iOS background/reconnect testing is deferred unless an error appears
+(owner decision, 2026-09-16), not a blocker for the completed idle/USB checkpoint.
+Long power tests remain opt-in under the [test selection policy](CI.md#test-selection-policy).
+
 - **Hardware/audio:** USB storage and USB DAC, Bluetooth audio, native DSD/DoP and MCU/UART
   behavior require separate validation. V2.57 viewer USB models power detection only;
   its headphone control enables browser audio, not stock headphone detection.

@@ -69,6 +69,15 @@ uses no phone/LAN exposure and no edits to the interactive guest.
 
 Details and current validation: [IDLE_POWER.md](IDLE_POWER.md).
 
+The emulator lifecycle checkpoint is complete in `b6af70b`. On 2026-09-16 the
+owner deferred physical iOS background/reconnect testing unless a concrete error
+appears; it is not a remaining acceptance gate for this checkpoint. Long-test
+selection is recorded in [CI.md](CI.md#test-selection-policy).
+
+Current work: custom-theme metadata-save capture, followed by a screenshot-led
+audit of the DISC screens in FiiO Control. No new capture/screenshots have been
+received for this audit yet. See [the audit plan](FIIO_CONTROL_APP.md#screen-coverage-audit).
+
 ## Previous checkpoint completion: LAN discovery
 
 CUE/DSF/DFF checkpoint: `70114b2`; natural EOF: `c3d15c2`;
@@ -191,6 +200,10 @@ explicitly instead of retrying them indefinitely.
   of only color/overlay settings. Preserve and restore the original custom slot.
   Our verified full-image API already works; empty-body custom POST clears the
   image path. See the [capture checklist](REMOTE_MODES_THEMES.md#fiio-control-capture-checklist).
+- [ ] **Screen coverage audit:** map user-provided DISC app screens and controls
+  to existing client helpers, protocol evidence and validation limits. Screenshots
+  establish visible UI, not wire behavior or working hardware. Request additional
+  captures only for concrete gaps; see [audit plan](FIIO_CONTROL_APP.md#screen-coverage-audit).
 - [x] **UDP LAN discovery contract:** exact physical payload observed; controlled
   emulator idle/connected/disconnected lifecycle passed. [Details](DISCOVERY.md).
 - [x] **Official-app connection to emulator:** iPhone FiiO Control discovered
@@ -202,10 +215,11 @@ explicitly instead of retrying them indefinitely.
   passed, including native USB-power emulation. This is not stock standby or
   remote wake. See [current investigation](IDLE_POWER.md)
   and [earlier failure evidence](CI.md#idle-shutdown-versus-protocol-failure).
-- [ ] **Physical iOS background/reconnect:** distinguish the host bridge's
-  per-direction timeout from firmware power-off on a real phone. Any renewed
-  one-phone LAN session needs fresh, bounded approval; do not reuse the expired
-  discovery-test permission or infer Wi-Fi suspend behavior from qemu tests.
+- **Deferred unless an error appears — physical iOS background/reconnect:**
+  owner decision, 2026-09-16; unvalidated, not a checkpoint blocker or a scheduled
+  manual task. If reopened, distinguish the host bridge's per-direction timeout
+  from firmware power-off. Any renewed one-phone LAN session needs fresh, bounded
+  approval; do not reuse expired permission or infer Wi-Fi suspend from qemu.
 
 The user can capture TCP 12100 and HTTP 12103 from FiiO Control/Surge on iPhone.
 Ask for a specific short action sequence only when it resolves a concrete unknown;

@@ -130,6 +130,14 @@ count printed by `fb2png.py` is only a fallback heuristic, not evidence of recen
   Do not copy this into interactive setup or treat it as a remote-wake fix; see
   `docs/CI.md`. `POWER_SAVE` is unchanged in ordinary CI; opt-in `idle`/`idle-usb`
   instead use reviewed 120-second screen and 0/300-second idle fixtures.
+- Select tests by impact; do not rerun long power acceptance for unrelated work.
+  Documentation-only changes need diff/link checks, not firmware execution.
+  Normal code changes use firmware-free checks plus the relevant focused scenario;
+  shared runtime changes additionally need `full`. Run `idle` and `idle-usb` for
+  power/USB/timer/shutdown/reconnect changes, a new firmware profile, and the exact
+  release candidate. They are explicit local gates, not part of `full` or the
+  current hosted workflow. Keep the real 310-second USB observation; do not shorten
+  firmware timers to make it pass faster. See `docs/CI.md#test-selection-policy`.
 - Firmware and anything derived from it (rootfs, `.enc`, `.squashfs`, FiiO binaries, Ghidra
   project, captured `shots/`) are **git-ignored** — never commit firmware. Commit code,
   scripts, docs, and the curated screenshots in `docs/images/`.

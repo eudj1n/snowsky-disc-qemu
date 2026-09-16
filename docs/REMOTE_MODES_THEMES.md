@@ -184,3 +184,39 @@ Use separate short captures, note app/firmware versions, and record action times
 Disconnect our Link inspector/client before FiiO Control: stock accepts one TCP
 control client. Captures can contain track names, paths and images; keep raw dumps
 in ignored `work/`, and document only the minimal protocol evidence.
+
+### Custom-theme metadata-save capture
+
+Active investigation, 2026-09-16; awaiting a new owner-provided capture. First
+inspect screenshots of theme selection and all custom editor panels to identify
+the actual controls and Save/Apply behavior; do not invent control names.
+Previously captured modes, codecs and stock-theme selections need not be repeated.
+
+Use a recoverable custom slot: retain the original image, all settings and the
+initially active theme. If the original cannot be restored, stop before replacing
+it. Use a non-personal test image if an initial upload is needed. Record app and
+firmware versions, then capture TCP 12100 and HTTP 12103 throughout this sequence:
+
+1. Open the theme editor and record the starting settings. If needed, upload and
+   save the test image once, recording that as the baseline upload.
+2. Change **only the text/front color**, leaving the image and overlays unchanged;
+   save if the UI requires it. Note the action time and chosen value.
+3. Leave and reopen the editor to trigger fresh reads and verify the image and
+   selected color survived. Record the actual result, including any missing image.
+4. Change **one overlay flag** only (for example date visibility, if offered),
+   save, leave and reopen again. Keep opacity/image/other fields unchanged.
+5. Restore the original custom image/settings and previously active theme, then
+   reopen to verify restoration before stopping the capture.
+
+Allow each operation to settle; do not combine color and overlay changes into
+one save. If leaving/reopening produces no network read, note that explicitly:
+cached app UI is not device readback. No direct helper writes to the physical
+player or new LAN bridge are needed for this phone-to-device capture.
+
+Provide the bidirectional PCAP/PCAPNG and, if available, HAR with complete bodies
+and headers, plus screenshots before/after and a short action/time list. Analysis
+must distinguish full-image retransmission, empty-body POST, a different HTTP
+route and TCP metadata commands. Compare image-body lengths/hashes and metadata
+between upload and later saves; retain only sanitized protocol fields in Git.
+Do not expose a metadata-only helper until the observed path has been reproduced
+on a disposable V2.57 guest with image preservation and fresh readback checks.

@@ -163,7 +163,10 @@ deadline, verify cleanup even with server notifications, then reconnect to the
 released control slot. The test exposed a cancellation race in nested `wait_for`
 tasks; directly awaited reads/drains inside `asyncio.timeout` now let cleanup
 finish reliably. No LAN interface is opened by the automated idle tests.
-Real phone background/reconnect behavior remains a separate manual validation.
+Real phone background/reconnect behavior remains unvalidated. By owner decision
+on 2026-09-16, revisit it only if a concrete error appears; it is not a pending
+manual gate for this emulator checkpoint. New LAN exposure still requires fresh,
+bounded approval.
 
 ## Controller rules
 

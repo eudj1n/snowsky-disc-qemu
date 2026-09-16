@@ -1,5 +1,37 @@
 # FiiO Control application evidence
 
+## Screen coverage audit
+
+Started 2026-09-16; awaiting the owner's screenshots. Scope: the DISC interface
+of FiiO Control, not every other supported product. Record the app version,
+platform and DISC firmware with each batch; do not assume an unchanged build.
+
+Start with theme selection and every custom-theme editor panel. Then inventory
+the other screens, including scrolled portions, nested settings, option dialogs,
+context menus and disabled controls where visible. Opening a destructive-action
+confirmation is enough to record its UI; do not reset/delete/update merely to
+complete screenshots. Redact personal names, network identifiers and paths.
+
+For each screen/control, record: screenshot reference and navigation path, visible
+action and choices, matching helper/endpoint, evidence/test link, coverage status
+and next evidence needed. Separate these statuses:
+
+- Implemented and validated in the emulator.
+- Observed in a physical-app capture (record separately from emulator coverage).
+- Read-only or rejected by the tested DISC network interface.
+- Visible but unverified / missing client implementation.
+- Hardware-only or outside the current emulator scope.
+
+Screenshot inventory completeness and protocol/hardware validation are separate;
+a visible control alone is not proof of a supported command. The future web
+remote frontend is not implemented just because a helper exists. Request focused
+traffic captures only where existing contracts do not resolve a specific gap.
+
+Raw screenshots/captures stay in ignored `shots/` or `work/`. Commit only minimal,
+sanitized evidence; approved curated screenshots belong in `docs/images/`, not
+links to ignored local files. The first concrete protocol question is the
+[custom-theme save sequence](REMOTE_MODES_THEMES.md#custom-theme-metadata-save-capture).
+
 ## Android 4.6.0 input (2026-09-15)
 
 User-provided `FiiOControl V4.6.0.apk`:

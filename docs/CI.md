@@ -29,8 +29,9 @@ if the repository setting is subsequently disabled. Use an unused `-rN` name;
 do not delete a published tag merely to republish different code under that name.
 See [GitHub's immutable-release rules](https://docs.github.com/en/code-security/concepts/supply-chain-security/immutable-releases).
 
-Before releasing, require firmware-free CI and full integration for **the firmware
-being released** to have succeeded **on the exact release commit**, review the
+Before releasing, require firmware-free CI, full integration and the explicit
+long `idle` / `idle-usb` scenarios for **the firmware being released** to have
+succeeded **on the exact release commit**, review the
 declared limitations in STATUS.md, and publish only
 source/release notes, never firmware. Tags/releases are not created automatically.
 For example, inspect `gh run list --branch 2.x --commit <full-sha>` before publishing.
@@ -38,6 +39,30 @@ Retired versions leave required integration coverage; remove their current workf
 choices and compatibility code in the corresponding cleanup task.
 Their immutable tags and analysis reports remain available as historical snapshots.
 The daily OTA metadata check does not replace these release gates.
+
+### Test selection policy
+
+Choose validation by the behavior affected, not by running every scenario after
+each edit. The following is the agreed policy as of 2026-09-16:
+
+| Change | Validation |
+| --- | --- |
+| Documentation only | Diff, links and consistency; no firmware run |
+| Normal implementation change | Firmware-free suite and relevant focused integration where applicable |
+| Shared runtime, setup, shim or transport changes | Firmware-free suite and `full`; add long scenarios if power/lifecycle behavior is affected |
+| USB detection, power, timers, shutdown or reconnect | Also run explicit `idle` and `idle-usb` |
+| New firmware profile or final release candidate | Firmware-free, `full`, `idle` and `idle-usb` on the candidate commit |
+
+`full` includes a short native USB cable-detection check, **not** the 310-second
+USB idle observation. Both long scenarios are already opt-in, including in local
+development; the current hosted workflow runs `full` only and has no long-test
+switch. Record explicit local long-test results and their commit for a release.
+No additional CLI flag or workflow change is needed to skip them during unrelated
+work. `idle` with its default `all` phase does not include `idle-usb`.
+
+Keep the real five-minute firmware threshold and 310-second USB observation.
+Shortened timers would test a different condition. Document any validation not
+run; earlier success is not evidence for a subsequently changed implementation.
 
 ### Branch policy after public publication
 
