@@ -42,10 +42,13 @@ inside the dark screen; connection errors and transitions while the screen is li
 appear below the device so they do not obscure the stock UI.
 
 The USB connector is centered on the bottom edge; the SD slot is to its right.
-USB toggles a cable with a green charging mark and the guest battery `status` stub
-(`Charging` / `Discharging`). Cable state survives viewer/guest restarts. This is
-charging simulation only: no USB storage/DAC mode, native battery-icon notification,
-or actual battery charging curve is implemented.
+USB toggles a cable with a green charging mark and guest battery status
+(`Charging` / `Discharging`). On V2.57 it also drives the stock USB-power detector
+through narrow sink-role/ADC emulation, so the firmware can inhibit idle power-off
+while plugged in. Cable state survives viewer/guest restarts. This is power-only
+simulation: no USB storage/DAC mode or actual battery charging curve. Native
+battery-icon rendering has not been separately validated. V2.40 retains only
+the older cable/sysfs stub. See [idle power and USB scope](IDLE_POWER.md).
 
 The SD control performs real guest card removal/insertion and sends a unicast stock
 hotplug event only to this fingerprinted player. Removal first unmounts both emulated

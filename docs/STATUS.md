@@ -18,6 +18,7 @@ peripheral controls. See the [README](../README.md) for setup and the visual ove
 | **Audio** | Stock decoder → tinyalsa → PCM capture; source-sample comparisons, WAV export and browser playback with DAC gain. Browser live mode joins the current capture rather than replaying its full history. | [Audio](AUDIO.md) |
 | **Viewer** | Current device skin, button hotspots, headphone sound switch, USB charging simulation, real guest SD hotplug, brightness, and collapsed Debug controls. | [Viewer](VIEWER.md) |
 | **Controls / power** | Assigned volume gestures, play/pause, sleep/wake and guest-only off/on. Stock libc reboot calls are confined and automatic poweroff requests handled by the viewer. | [Keys](KEYS.md) |
+| **USB power / idle** | V2.57 viewer cable drives stock sink-role/ADC detection and inhibits idle power-off; display timeout remains independent. TCP/WS screen-off reconnect, natural shutdown and explicit local boot/recovery tested. No USB data or hardware charging model. | [Power and reconnect](IDLE_POWER.md) |
 | **Frame transport** | Last-written buffer marker, lossless PNGs on visible changes, periodic idle refresh and device-state SSE. | [Viewer internals](VIEWER.md#how-it-works) |
 | **Local protocol** | TCP 12100 settings/catalog and remote playback: list-position selection, next/previous, seek, modes, albums and built-in favorites. Current-queue selection checks fresh bounds and needs no label, verified on V2.40/V2.57. Optional native WS→TCP bridge on host 12103; direct stock HTTP on 12113. Physical DISC V2.57 comparisons are recorded separately. | [Remote control](REMOTE_CONTROL.md), [WebSocket](WEBSOCKET.md) |
 | **LAN discovery** | Exact UDP announcements observed on physical V2.57; emulator tests confirm suppression during TCP connection and resumption after disconnect. FiiO Control on iPhone discovered the emulator and opened its library through the opt-in, one-phone host TCP/HTTP bridge. Default ports stay localhost-only. | [Discovery and safe manual test](DISCOVERY.md) |
@@ -44,8 +45,25 @@ they illustrate the interface rather than replacing protocol/audio assertions.
 The 2026-09-16 preference/playlist/scan/reset/EOF/formats/discovery investigations change protocol helpers/tests, not
 the viewer UI; these captures remain the current visual reference.
 
+Idle/USB checkpoint, 2026-09-16: raw stock frames on generated test media.
+Native flag/counter and protocol checks establish the behavior; these images
+only illustrate the UI. [Capture provenance](images/README.md).
+
+| After 310 seconds on USB power, locally woken | After idle shutdown, local Power boot and WS recovery |
+| --- | --- |
+| ![V2.57 clock after USB-powered idle](images/18-usb-power-clock.png) | ![V2.57 menu after explicit local reboot](images/19-idle-reboot-menu.png) |
+
 ## Releases and verification
 
+- 2026-09-16 idle/USB checkpoint: 257 Python and 23 JavaScript tests, four shim
+  builds, focused `idle` / `idle-usb` / `library-reset` and full local V2.57
+  integration passed. USB held the native idle counter at zero for 310 seconds
+  while paused; unplugging restored counting. TCP/WS survived 135 seconds of
+  silence with screen timeout and separately recovered after natural power-off
+  and explicit local Power boot. Fixed LAN timeout cancellation and two test
+  fixture races; all failures are retained in
+  [the investigation](PROTOCOL_RESEARCH.md#idle-reconnect-and-usb-power-investigation-2026-09-16).
+  This is not a hosted release gate or physical iOS-background/Wi-Fi validation.
 - 2026-09-16 LAN discovery checkpoint: 250 Python and 23 JavaScript tests, four
   shim builds, focused discovery and full local V2.57 integration passed. Physical
   iPhone FiiO Control discovered the emulator, connected, opened its library and
@@ -115,7 +133,7 @@ The actionable DISC protocol backlog and session handoff are maintained in
 remaining settings/library investigations and future web-remote work.
 
 - **Hardware/audio:** USB storage and USB DAC, Bluetooth audio, native DSD/DoP and MCU/UART
-  behavior require separate validation. Viewer USB is only a charging-state stub;
+  behavior require separate validation. V2.57 viewer USB models power detection only;
   its headphone control enables browser audio, not stock headphone detection.
 - **Networking:** Full FiiO Control phone-app compatibility, mDNS lifecycle,
   Wi-Fi association and cloud streaming remain unvalidated. UDP discovery evidence

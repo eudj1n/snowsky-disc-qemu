@@ -13,7 +13,16 @@ printf '0' > "$ROOTFS/emu/power-request"
 printf '\377' > "$ROOTFS/emu/dac-left"
 printf '\377' > "$ROOTFS/emu/dac-right"
 
-# USB is a viewer charging stub only; keep the cable state across guest restarts.
+# V2.57's native idle-power gate consumes ADC1 + AW35615 sink-role detection,
+# not the battery status string. fbshim implements only this reviewed power ABI.
+printf '0' > "$ROOTFS/emu/usb-power-supported"
+if [ "$FW_VERSION" = 2.57 ]; then
+  for d in jz_adc_aux_0 jz_adc_aux_1 jz_adc_aux_2 jz_adc_aux_3 aw35615 sgm41513; do
+    : > "$ROOTFS/dev/$d"
+  done
+  printf '1' > "$ROOTFS/emu/usb-power-supported"
+fi
+# Keep cable state across guest restarts; no USB gadget/role-switch events.
 B="$ROOTFS/sys/class/power_supply/cw221X-bat"
 if [ -d "$B" ]; then
   if [ "$(cat "$ROOTFS/emu/usb-connected" 2>/dev/null || true)" = 1 ]; then

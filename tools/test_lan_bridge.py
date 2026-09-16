@@ -106,6 +106,38 @@ class LanBridgeTests(unittest.IsolatedAsyncioTestCase):
         self.assertFalse(self.proxy.tasks)
         writer.close.assert_called_once()
 
+    async def test_quiet_client_times_out_even_with_server_notifications_then_reconnects(self):
+        closed = asyncio.Queue()
+        async def upstream(reader, writer):
+            try:
+                # Active upstream does not reset the OTHER pump's read deadline.
+                while not reader.at_eof():
+                    writer.write(b'tick')
+                    await writer.drain()
+                    await asyncio.sleep(.005)
+            except OSError:
+                pass
+            finally:
+                writer.close()
+                await writer.wait_closed()
+                closed.put_nowait(True)
+        port_upstream = await self.server(upstream)
+        self.proxy = Proxy('127.0.0.1', control_port=port_upstream)
+        port = await self.server(lambda r, w: self.proxy.handle(r, w, 'control'))
+        with patch('lan_bridge.READ_IDLE_TIMEOUT', .08):
+            for _ in range(2):
+                reader, _ = await self.connect(port)
+                received = await asyncio.wait_for(reader.read(), 2)
+                self.assertTrue(received and received.replace(b'tick', b'') == b'')
+                await asyncio.wait_for(closed.get(), 2)
+                # finally can finish just after the peer sees EOF.
+                for _ in range(100):
+                    if self.proxy.count['control'] == 0:
+                        break
+                    await asyncio.sleep(.005)
+                self.assertEqual(self.proxy.count['control'], 0)
+                self.assertFalse(self.proxy.tasks)
+
     async def test_connection_during_readiness_suppresses_announcement(self):
         proxy = Proxy('127.0.0.1')
         async def ready(port):

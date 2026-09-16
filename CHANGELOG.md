@@ -9,6 +9,11 @@ emulator-only revisions use `v2.40-r1`, etc. See [the porting guide](docs/PORTIN
 
 ### Added
 
+- V2.57 USB-power emulation behind the existing viewer cable switch: stock
+  sink-role/ADC detection controls the firmware's idle-power inhibit, without
+  changing POWER_SAVE or enabling USB DAC/storage. Add disposable long idle,
+  TCP/WS reconnect/shutdown and USB-powered idle scenarios, plus read-only power
+  counter observations and controller recovery rules.
 - Passive DISC UDP discovery helper, V2.57 announcement/connection lifecycle
   acceptance and an explicit host-side phone LAN bridge with selected interface,
   single-IP allowlist and bounded lifetime. Default Compose remains localhost-only;
@@ -91,6 +96,14 @@ emulator-only revisions use `v2.40-r1`, etc. See [the porting guide](docs/PORTIN
 
 ### Fixed
 
+- LAN bridge idle-timeout cleanup remains cancellable during continuous upstream
+  notifications, releasing the single control slot for a fresh connection.
+  The 120-second per-direction timeout and opt-in exposure policy are unchanged.
+- V2.57 peripheral CI waits for insertion-triggered auto-scan completion and
+  SD/SQLite/TCP agreement before comparing catalogs over TCP and WS. Strict
+  transport equality remains; the comparison no longer races SONG replacement.
+- Library-reset CI respects the stock selection-to-pause interval during fixture
+  setup and recovery, matching the other playback scenarios; no toggle retries.
 - EOF test oracle no longer requires a transient paused delta between automatic
   tracks: a V2.57 decoder-only transition omitted it while complete progress,
   next metadata and final stop were correct. Duration/order/terminal checks remain.

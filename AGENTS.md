@@ -128,7 +128,8 @@ count printed by `fb2png.py` is only a fallback heuristic, not evidence of recen
   V2.57 CI alone presets `LIGTH_ON_TIME=7` (never) while stopped and verifies UI
   index/timeout readback, avoiding screen-timeout interference in long network tests.
   Do not copy this into interactive setup or treat it as a remote-wake fix; see
-  `docs/CI.md`. `POWER_SAVE` is unchanged.
+  `docs/CI.md`. `POWER_SAVE` is unchanged in ordinary CI; opt-in `idle`/`idle-usb`
+  instead use reviewed 120-second screen and 0/300-second idle fixtures.
 - Firmware and anything derived from it (rootfs, `.enc`, `.squashfs`, FiiO binaries, Ghidra
   project, captured `shots/`) are **git-ignored** — never commit firmware. Commit code,
   scripts, docs, and the curated screenshots in `docs/images/`.
@@ -163,6 +164,17 @@ with actual guest `poweroff -f` after verifying its dynamic symbol binding to th
 `fbshim` observes framebuffer mmap/memcpy and records `emu/fb-live` so the viewer picks
 the actual last-written buffer instead of a stale frame when both buffers changed.
 
+V2.57 viewer USB now models power, not just a battery-status graphic: `15_controls.sh`
+enables narrow AW35615 sink-role/ADC1/charger stubs in `fbshim`. Stock detection
+sets `83a768`, inhibiting idle shutdown without changing POWER_SAVE. ADC0/2/3
+remain unavailable (ENODEV); USB data/storage/DAC are not implemented. V2.40
+retains its old charging-status-only behavior. Cable transitions can wake the
+display; Sleep and Screen off are separate from idle power-off. Opt-in disposable
+`CI_SCENARIO=idle` and `idle-usb` cover long lifecycle behavior; ordinary full CI
+checks native cable detection briefly. See `docs/IDLE_POWER.md`. Never defeat idle
+policy with fake touches or replay mutations after reconnect; a stopped guest
+requires explicit local Power before a new handshake and fresh state reads.
+
 Network services now bind 12100/12103: Compose names the real Docker interface `eth1`
 (Compose >=2.36), and `scripts/16_network.sh` re-announces its existing address after
 the stock netlink detector subscribes. No Wi-Fi DB overrides or network binary patches.
@@ -194,7 +206,8 @@ flag and bounded duration. Never autostart it or change default Compose localhos
 bindings. mDNS `_fiio._tcp` statically uses 12102, not a substitute control endpoint.
 Physical iPhone FiiO Control discovered the host adapter, connected, opened the
 emulator library and rediscovered it after confirmed disconnect. LAN listeners
-were then closed. This does not validate every app operation or idle wake/reconnect.
+were then closed. This does not validate every app operation or physical iOS
+background/reconnect; emulator idle/USB behavior is covered separately above.
 
 Stock HTTP file/playlist operations and remote settings are documented in
 `docs/HTTP_API.md` and `docs/REMOTE_SETTINGS.md`. Use `tools/fiio_http.py` for

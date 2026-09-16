@@ -28,12 +28,36 @@ static int device_is(int fd,const char*name){
   long len=sys3(__NR_readlink,(long)path,(long)target,127);
   if(len<0)return 0;target[len]=0;return eq(target,name);
 }
+static int marker_is_one(const char*path){
+  char value=0;long f=sys3(__NR_open,(long)path,0,0);
+  if(f>=0){sys3(__NR_read,f,(long)&value,1);sys3(__NR_close,f,0,0);}
+  return value=='1';
+}
+static int adc_device(int fd){
+  return device_is(fd,"/dev/jz_adc_aux_0")||device_is(fd,"/dev/jz_adc_aux_1")||
+         device_is(fd,"/dev/jz_adc_aux_2")||device_is(fd,"/dev/jz_adc_aux_3");
+}
 /* Real evdev blocks while idle; our append-only event0 file returns EOF instead.
    echo_loop_key retries immediately, burning one CPU core. Pace only empty key
    reads, never queued events, touch reads, audio or unrelated files. __read is
    the guest libc's exported alias: keep errno/cancellation semantics intact. */
 extern long __read(int,void*,unsigned long);
+extern int *__errno_location(void);
 long read(int fd,void*data,unsigned long count){
+  /* Reviewed V2.57 USB-power ABI, not USB data/OTG-host emulation. Stock reads
+     sink role as one byte, then ADC1 as a little-endian signed 32-bit sample.
+     Enable all ADC descriptors so stock initialization reaches channel 1;
+     other sensors remain explicitly unavailable, never EOF/uninitialized data. */
+  if(data&&((count==1&&device_is(fd,"/dev/aw35615"))||
+            (count==4&&adc_device(fd)))&&marker_is_one("/emu/usb-power-supported")){
+    if(count==1){*(unsigned char*)data=1;return 1;} /* sink role, even unplugged */
+    if(device_is(fd,"/dev/jz_adc_aux_1")){
+      wr32(data,0,marker_is_one("/emu/usb-connected")?600:0);
+      return 4; /* >500 connected, <100 disconnected; not calibrated millivolts */
+    }
+    *__errno_location()=19; /* ENODEV: jack/other ADC channels not modelled */
+    return -1;
+  }
   long result=__read(fd,data,count);
   if(result==0&&count&&device_is(fd,"/dev/input/event0")){
     long delay[2]={0,5000000}; /* at most one 5 ms polling interval for a new key */
@@ -76,6 +100,11 @@ void *memcpy(void*dest,const void*src,unsigned long len){
   return p;
 }
 int ioctl(int fd,unsigned long req,void*arg){
+  if(((req==0x2000410b&&adc_device(fd))||
+      (req==0x20004e26&&device_is(fd,"/dev/aw35615"))||
+      (req==0x20004d27&&device_is(fd,"/dev/sgm41513")))&&
+      marker_is_one("/emu/usb-power-supported"))return 0;
+  /* Unknown requests, including OTG source-role switching, still fail normally. */
   /* Only the two real volume GPIOs: active-low state maintained by the viewer.
      Unknown pins and requests retain their real failure semantics. */
   if(req==0x2000477a&&arg&&device_is(fd,"/dev/gpio")){

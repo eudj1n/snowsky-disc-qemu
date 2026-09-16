@@ -101,6 +101,12 @@ Forwarding bounds are three seconds for upstream connect, 120 seconds without
 bytes in either read direction, and 30 seconds for write backpressure. Those are
 adapter limits, not measured stock idle-power or reconnect semantics; a long
 paused session may end at the bridge's own timeout.
+Each direction has its own deadline: continuous player notifications do not
+keep a silent phone's read direction alive. A loopback regression checks timeout
+cleanup and immediate reuse of the control slot even under those notifications;
+the pumps use directly cancellable `asyncio.timeout` contexts. No timer or LAN
+exposure policy was relaxed. See [idle/reconnect](IDLE_POWER.md) for the separate
+stock TCP, WS heartbeat and firmware power timers.
 
 **Security:** stock APIs have no authentication and include file writes/deletion.
 An IP allowlist is not authentication and can be defeated on an untrusted LAN.

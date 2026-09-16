@@ -52,7 +52,24 @@ checkpoint and any work left uncommitted. Do not publish this branch implicitly.
   `curlist/song` and `0202` instead. No additional phone capture is needed for
   these two commands.
 
-## Current checkpoint completion: LAN discovery
+## Current checkpoint: idle, reconnect and USB power
+
+LAN discovery checkpoint: `da9e00d`. The remaining local lifecycle investigation
+uses no phone/LAN exposure and no edits to the interactive guest.
+
+- [x] Trace independent display, UI inactivity, idle-power and USB-detection paths.
+- [x] Observe TCP/WS quiet screen timeout and fresh handshake/readback after reconnect.
+- [x] Model V2.57 USB power through stock AW35615/ADC1 detection, not a direct
+  memory write or POWER_SAVE override; keep other ADC sensors unavailable.
+- [x] Add disposable long `idle` / `idle-usb` scenarios and a short native USB
+  check in ordinary full integration.
+- [x] Add LAN timeout/reconnect regression; fix cancellation under upstream traffic.
+- [x] Finish final focused lifecycle/USB and full V2.57 validation, review diff,
+  refresh documentation/screenshots and create the local checkpoint commit.
+
+Details and current validation: [IDLE_POWER.md](IDLE_POWER.md).
+
+## Previous checkpoint completion: LAN discovery
 
 CUE/DSF/DFF checkpoint: `70114b2`; natural EOF: `c3d15c2`;
 library reset: `4da1de6`; scan cancellation: `53fb0eb`;
@@ -99,6 +116,8 @@ CI_SCENARIO=library-reset FW_VERSION=2.57 bash ci/integration.sh "$OTA_257"
 CI_SCENARIO=track-end FW_VERSION=2.57 bash ci/integration.sh "$OTA_257"
 CI_SCENARIO=formats FW_VERSION=2.57 bash ci/integration.sh "$OTA_257"
 CI_SCENARIO=discovery FW_VERSION=2.57 bash ci/integration.sh "$OTA_257"
+CI_SCENARIO=idle FW_VERSION=2.57 bash ci/integration.sh "$OTA_257"
+CI_SCENARIO=idle-usb FW_VERSION=2.57 bash ci/integration.sh "$OTA_257"
 ```
 
 Run firmware integration sequentially to limit resource pressure. Each run uses
@@ -178,10 +197,15 @@ explicitly instead of retrying them indefinitely.
   the opt-in host LAN bridge, connected and opened the emulator library.
   Broader app compatibility and mDNS remain separate. Existing
   localhost WS bridge is our adapter, not a native stock DISC WebSocket endpoint.
-- [ ] **Remote connection versus idle power:** observe screen-off, pause,
-  power counters, shutdown and safe wake/reconnect. The CI display-time fixture
-  isolates protocol tests; it does not implement stock standby or remote wake.
-  See [failure evidence](CI.md#idle-shutdown-versus-protocol-failure).
+- [x] **Emulator remote connection versus idle power:** screen-off, pause,
+  power counters, natural shutdown, explicit local boot and TCP/WS reconnect
+  passed, including native USB-power emulation. This is not stock standby or
+  remote wake. See [current investigation](IDLE_POWER.md)
+  and [earlier failure evidence](CI.md#idle-shutdown-versus-protocol-failure).
+- [ ] **Physical iOS background/reconnect:** distinguish the host bridge's
+  per-direction timeout from firmware power-off on a real phone. Any renewed
+  one-phone LAN session needs fresh, bounded approval; do not reuse the expired
+  discovery-test permission or infer Wi-Fi suspend behavior from qemu tests.
 
 The user can capture TCP 12100 and HTTP 12103 from FiiO Control/Surge on iPhone.
 Ask for a specific short action sequence only when it resolves a concrete unknown;
@@ -596,3 +620,78 @@ Next: exact custom-theme metadata-only save in FiiO Control, or the separately
 listed remote connection/idle-power lifecycle. Discovery/library browsing does
 not validate every app command, Android, mDNS/AirPlay or sleep/wake behavior.
 Do not start an automatic LAN service or weaken default network exposure.
+
+## Idle, reconnect and USB-power investigation (2026-09-16)
+
+The owner's physical observation (5-minute Idle poweroff, Sleep off, 2-minute
+screen timeout, USB power prevents idle shutdown) prompted a native power model.
+The previous viewer cable/sysfs stub did not set the stock USB flag. Traced
+AW35615 sink role, sequential ADC initialization and ADC1 thresholds, then added
+narrow V2.57-only shim/setup support. The firmware itself now updates its power
+gate. Other ADC sensors fail explicitly; no fabricated jack state, USB data,
+direct runtime-memory writes, firmware patches or POWER_SAVE override.
+See [the complete contract and addresses](IDLE_POWER.md).
+
+Initial quiet TCP/WS experiments passed 135 seconds without application reads,
+natural display timeout, fresh handshake/settings/queue reads, remote playback
+with the display still off and local physical wake. Separate paused testing
+with idle limit 300 demonstrated counter growth despite read-only network polls;
+playing and USB power reset that counter. The first natural shutdown run reached
+counter 301 on both transports, then the confined power request and guest-scoped
+supervisor stop. TCP recovery included retained queue/current metadata; WS
+recovered settings/catalog/queue but did not restore current-track metadata.
+
+Failure history and oracle corrections:
+
+- The first strict manual screen-off assertion raced sysfs brightness against
+  the player's separately updated screen byte. The fixture now waits for both
+  before recording its playing interval; state/counter assertions remain.
+- The first USB run passed the entire 310-second plugged interval but failed
+  its unplug assertion. Stock removal wakes the display and resets UI activity;
+  a counter sampled across that wake is not monotonic. The test now observes
+  the transition, explicitly sleeps the display and checks resumed counting.
+- The initial power acceptance required full now-playing immediately after
+  every boot. The second reboot logged `get list song idx fail!` in stock
+  `comm_play_memory`, while catalog/queue reads worked. Recovery now independently
+  checks the known metadata-suppression flag on a timeout, fresh settings/mode
+  reads, and a **new explicit** selection/play/pause cycle. Queue persistence is
+  not a guarantee of resume-memory restoration, and timeout alone never passes.
+- A new LAN loopback regression caught nested `wait_for` cancellation hanging
+  cleanup under continuous upstream notifications. Direct awaits inside
+  `asyncio.timeout` fix it without changing the 120-second per-direction policy.
+  Twenty repeated runs of the LAN test file passed after the correction.
+- The first full regression reached the new native USB checks, then failed the
+  unchanged strict TCP/WS catalog comparison. Logs show TCP accept at 11:44:09.698,
+  auto-scan start at .702, TCP close at .766 and scan completion at .791; WS
+  connected at 11:44:10.993. SD insertion had queued a delayed auto-scan across
+  the two reads. The peripheral fixture now waits for a new scan, stopped worker,
+  visible result and exact SD/SQLite/TCP agreement, then dismisses the result.
+  It does not retry the comparison until green, change the transport clients,
+  disable Auto update or relax equality.
+- The second full run passed that comparison, PCM/buttons/settings/formats,
+  all ten EOF cases and scan cancellation, then failed library-reset fixture
+  cleanup: the newly selected album stayed playing after an immediate Pause.
+  That older fixture omitted the known 2.1-second selection-to-pause guard.
+  Added the same spacing at its three selection/pause sites, retaining the
+  paused-state assertion and sending each toggle only once. Dedicated reset
+  acceptance passed TCP/WS after this correction; the third full run passed too.
+
+Final focused `idle` (both phases, TCP/WS), `idle-usb`, dedicated `library-reset`
+and the third **full V2.57 integration** passed (exit 0). The full run covered
+discovery, peripheral native USB detection, PCM/buttons, TCP/WS queue/files/
+playlists/settings/themes, CUE/DSF/DFF, all ten EOF cases, cancellation/reset,
+Unicode SD scans and rejected preference setters. Final firmware-free checks:
+257 Python, 23 JavaScript, shell checks and four shim builds. This is local
+evidence, not a hosted exact-commit release gate.
+
+Evidence remains ignored under
+`work/idle/`, `shots/idle*` and local `/tmp/disc-idle-*.log`; do not upload guest
+logs or derived binaries. Reproduction is entirely in tracked setup/shim and
+`ci/idle_check.py`, selected by `CI_SCENARIO=idle|idle-usb`. Dockerfile dependencies
+already suffice, Compose remains localhost-only, and the interactive guest and
+physical player are untouched. Phone background/reconnect and hardware timing
+are not covered by these emulator tests.
+
+Next: the specific FiiO Control custom-theme metadata-only capture, or a separately
+approved physical iOS background/reconnect session. Neither is required to enable
+the implemented emulator USB-power model; do not silently open LAN listeners.

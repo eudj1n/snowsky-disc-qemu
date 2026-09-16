@@ -140,7 +140,11 @@ The workflow first runs the firmware-free suite on the same commit, then:
    Update media lib, taps Update now, and checks all three generated tracks are
    indexed (Unicode WAV and two FLACs with artist/album tags).
 5. Restarts before any track selection, verifies repeated viewer SD eject/insert,
-   busy-card rejection, media preservation and the USB charging stub.
+   busy-card rejection, media preservation and USB charging state; on V2.57 it
+   also verifies the native USB-power flag after cable insertion/removal. It
+   waits for insertion-triggered auto-scan completion, exact SD/SQLite/TCP
+   agreement and result dismissal before comparing the two transports; a mounted
+   card alone does not establish a stable catalog.
 6. Compares TCP/WS protocol/catalog/settings, checks volume restore, play/pause,
    exclusive connection and reconnect, then checks byte-exact periods of the
    generated waveform in the decoded 32-bit PCM (promoted from signed 16-bit WAV).
@@ -224,10 +228,15 @@ CI_SCENARIO=track-end FW_VERSION=2.57 bash ci/integration.sh /absolute/path/to/m
 CI_SCENARIO=formats FW_VERSION=2.57 bash ci/integration.sh /absolute/path/to/main_os/ota_v257
 # Stock UDP announcements before, during and after one control connection.
 CI_SCENARIO=discovery FW_VERSION=2.57 bash ci/integration.sh /absolute/path/to/main_os/ota_v257
+# Natural screen timeout, idle shutdown and explicit local boot/reconnect.
+CI_SCENARIO=idle FW_VERSION=2.57 bash ci/integration.sh /absolute/path/to/main_os/ota_v257
+# Native USB-power detection; paused for more than the five-minute idle limit.
+CI_SCENARIO=idle-usb FW_VERSION=2.57 bash ci/integration.sh /absolute/path/to/main_os/ota_v257
 ```
 
 `CI_SCENARIO` accepts `full` (default), `queue`, `queue-reads`, `settings`,
-`preferences`, `playlists`, `scan-cancel`, `library-reset`, `track-end`, `formats` or `discovery`. All use the same
+`preferences`, `playlists`, `scan-cancel`, `library-reset`, `track-end`, `formats`,
+`discovery`, `idle` or `idle-usb`. All use the same
 random-name isolated stack and cleanup. Focused runs execute only their selected
 checks, not unrelated integration scenarios. Most use the shared setup/scan/reboot
 preparation; `scan-cancel`, `library-reset`, `track-end` and `formats` start after boot and prepare their
@@ -235,6 +244,13 @@ own network scans.
 `discovery` is V2.57-only, starts after boot and does not need a media scan. It
 observes multicast inside the disposable namespace, not across the host/LAN
 boundary. The opt-in phone LAN bridge is never launched by CI or normal Compose.
+`idle` and `idle-usb` are V2.57-only and bypass the always-awake fixture below.
+They set display index 3 (120 seconds) and reviewed idle limits only while their
+disposable guest is stopped. `CI_IDLE_PHASE=quiet|power|all` selects the `idle`
+phases (`all` default); `usb` is also accepted, equivalent to `idle-usb`.
+USB acceptance is separate from `all`. These long scenarios are opt-in rather
+than additions to the 25-minute hosted full gate; `full` retains a short native
+USB-flag check. See [power/reconnect scope](IDLE_POWER.md).
 `formats` is V2.57-only and generates its original fixtures with Python's standard
 library. No FFprobe/container dependency is added; SACD ISO and native DSD output
 are not covered. See [scope and reproduction](FORMATS.md).
@@ -242,7 +258,7 @@ are not covered. See [scope and reproduction](FORMATS.md).
 normal Compose setting, image mutation or firmware patch. Event observation is
 bounded at 35 seconds per mode and stops early after proven continuation or a
 terminal sequence plus a two-second quiet tail. Query timeouts alone never pass.
-For V2.57, `ci/awake_check.py --configure` sets `LIGTH_ON_TIME=7` (never)
+For V2.57 scenarios other than `idle`/`idle-usb`, `ci/awake_check.py --configure` sets `LIGTH_ON_TIME=7` (never)
 in the **stopped disposable guest's** settings DB before boot, then checks the
 fingerprinted UI's index 7 / timeout 65535 readback. This is test-fixture setup,
 not a network capability or firmware patch. `CI_DISPOSABLE=1` is supplied only by
@@ -287,9 +303,9 @@ stored `POWER_SAVE=300` does not establish that shutdown needs five more minutes
 after the latest network command. Network playback is not a UI touch keepalive.
 
 The CI fixture keeps the screen timer out of long remote-protocol scenarios;
-it does not fix or claim physical sleep/remote-wake compatibility. Investigate
-that lifecycle separately, with power counters and both guest logs, before a
-remote frontend assumes a paused connection will remain usable indefinitely.
+it does not fix or claim physical sleep/remote-wake compatibility. Separate
+[idle/USB acceptance](IDLE_POWER.md) observes counters, natural shutdown and
+explicit local boot/reconnect without defeating the firmware's power policy.
 
 The workflow does not upload/cache firmware, rootfs, guest logs, captures or derived
 images. The hosted runner is discarded afterwards. Secret masking is not a guarantee

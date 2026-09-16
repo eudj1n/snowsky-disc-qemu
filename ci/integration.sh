@@ -7,9 +7,11 @@ cd "$(dirname "${BASH_SOURCE[0]}")/.."
 export OTA_DIR="$(cd "${1:?path to OTA chunks}" && pwd)"
 export FW_VERSION="${FW_VERSION:-2.57}"
 CI_SCENARIO="${CI_SCENARIO:-full}"
-case "$CI_SCENARIO" in full|queue|queue-reads|settings|preferences|playlists|scan-cancel|library-reset|track-end|formats|discovery) ;; *) echo 'Unknown CI_SCENARIO' >&2; exit 2;; esac
-if [[ "$CI_SCENARIO" = preferences || "$CI_SCENARIO" = playlists || "$CI_SCENARIO" = scan-cancel || "$CI_SCENARIO" = library-reset || "$CI_SCENARIO" = track-end || "$CI_SCENARIO" = formats || "$CI_SCENARIO" = discovery ]] && [ "$FW_VERSION" != 2.57 ]; then
-  echo 'Preference/playlist/scan-cancel/library-reset/track-end/formats/discovery acceptance requires active firmware V2.57' >&2
+CI_IDLE_PHASE="${CI_IDLE_PHASE:-all}"
+case "$CI_IDLE_PHASE" in all|quiet|power|usb) ;; *) echo 'Unknown CI_IDLE_PHASE' >&2; exit 2;; esac
+case "$CI_SCENARIO" in full|queue|queue-reads|settings|preferences|playlists|scan-cancel|library-reset|track-end|formats|discovery|idle|idle-usb) ;; *) echo 'Unknown CI_SCENARIO' >&2; exit 2;; esac
+if [[ "$CI_SCENARIO" = preferences || "$CI_SCENARIO" = playlists || "$CI_SCENARIO" = scan-cancel || "$CI_SCENARIO" = library-reset || "$CI_SCENARIO" = track-end || "$CI_SCENARIO" = formats || "$CI_SCENARIO" = discovery || "$CI_SCENARIO" = idle || "$CI_SCENARIO" = idle-usb ]] && [ "$FW_VERSION" != 2.57 ]; then
+  echo 'Preference/playlist/scan-cancel/library-reset/track-end/formats/discovery/idle acceptance requires active firmware V2.57' >&2
   exit 2
 fi
 CI_TMP="$(mktemp -d "${TMPDIR:-/tmp}/diskos-ci.XXXXXXXX")"
@@ -27,10 +29,16 @@ cleanup() {
     mkdir -p "$CI_LOGS"
     compose cp emu:/work/mq_player.log "$CI_LOGS/mq_player.log" || true
     compose cp emu:/work/mq_ui.log "$CI_LOGS/mq_ui.log" || true
+    if [[ "$CI_SCENARIO" = idle || "$CI_SCENARIO" = idle-usb ]]; then
+      compose cp emu:/work/idle-evidence "$CI_LOGS/idle-evidence" || true
+    fi
   fi
   if [ -n "${CI_SHOTS:-}" ]; then
     mkdir -p "$CI_SHOTS"
     compose cp emu:/work/shots/. "$CI_SHOTS" || true
+    if [[ "$CI_SCENARIO" = idle || "$CI_SCENARIO" = idle-usb ]]; then
+      compose cp emu:/work/idle-shots/. "$CI_SHOTS" || true
+    fi
   fi
   # Only this randomly named stack/volume; never diskos-work or the interactive stack.
   compose exec -T emu bash /repo/ci/cleanup.sh || true
@@ -47,6 +55,14 @@ docker run --rm --network none -v "$PWD:/repo:ro" -v "$SD_DIR:/fixtures" \
 compose up -d --no-build --wait --wait-timeout 60
 compose exec -T emu bash /repo/scripts/00_extract_rootfs.sh /ota
 compose exec -T emu bash /repo/scripts/10_setup_env.sh
+if [ "$CI_SCENARIO" = idle ]; then
+  compose exec -T emu python3 -B /repo/ci/idle_check.py --phase "$CI_IDLE_PHASE"
+  exit 0
+fi
+if [ "$CI_SCENARIO" = idle-usb ]; then
+  compose exec -T emu python3 -B /repo/ci/idle_check.py --phase usb
+  exit 0
+fi
 if [ "$FW_VERSION" = 2.57 ]; then
   compose exec -T emu python3 -B /repo/ci/awake_check.py --configure
 fi

@@ -12,6 +12,10 @@ import socket
 
 from fiio_discovery import GROUP, PORT, PAYLOAD, interface_address
 
+# A diagnostic adapter policy, not a stock firmware power timer. Each direction
+# is bounded independently, even if the opposite direction keeps sending data.
+READ_IDLE_TIMEOUT = 120
+
 
 async def http_ready(port=12113):
     """Check stock HTTP without occupying its single-client control channel."""
@@ -33,13 +37,17 @@ async def http_ready(port=12113):
 
 async def pump(reader, writer):
     while True:
-        data = await asyncio.wait_for(reader.read(65536), 120)
+        # Direct awaits preserve cancellation when the opposite pump times out
+        # while this one is receiving a steady stream (wait_for can race it).
+        async with asyncio.timeout(READ_IDLE_TIMEOUT):
+            data = await reader.read(65536)
         if not data:
             if writer.can_write_eof():
                 writer.write_eof()
             return
         writer.write(data)
-        await asyncio.wait_for(writer.drain(), 30)
+        async with asyncio.timeout(30):
+            await writer.drain()
 
 
 class Proxy:

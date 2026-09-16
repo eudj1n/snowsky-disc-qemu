@@ -148,7 +148,7 @@ Start it with `./run.sh view` after boot, then open **http://localhost:8080**.
 | **Play / pause** | Use the physical-button hotspot or the stock player screen. |
 | **Power / lock** | Click to sleep/wake; hold to stop the guest; click while off to boot again. |
 | **Headphone jack** | Click the lower-left jack to enable browser sound. Stock volume controls also adjust browser output gain. |
-| **USB connector** | Toggle the charging-state simulation. |
+| **USB connector** | Toggle simulated USB power (V2.57 idle-power inhibition). |
 | **SD slot** | Remove and reinsert the emulated card; insertion follows the stock auto-scan rules. |
 | **Debug** | Expand for gesture shortcuts, skin alignment and replaying the current audio capture. |
 
@@ -156,7 +156,9 @@ Screen brightness follows the stock shade slider. The stream sends lossless PNGs
 when pixels change, with occasional idle refreshes. Without a skin, the viewer
 falls back to a plain screen with labelled controls.
 
-The headphone control enables browser audio; USB simulates charging only. SD
+The headphone control enables browser audio; USB simulates power detection on
+V2.57, preventing idle power-off while connected (no USB data/DAC). See
+[power behavior](docs/IDLE_POWER.md). SD
 removal performs an actual guest unmount and refuses a busy card. These behaviors
 and setup options are covered in the **[viewer guide](docs/VIEWER.md)**.
 

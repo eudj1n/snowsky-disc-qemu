@@ -68,6 +68,7 @@ async def exercise(transport):
         await snapshot(client, lambda s: s['state'] == 0 and s['playerflag'] == 3)
         await send(client, '0104', '0001')
         await snapshot(client, lambda s: s.get('love') is True)
+        await asyncio.sleep(2.1)  # Selection-to-pause guard, not a toggle retry.
         await call(client.play_pause)
         await snapshot(client, lambda s: s['state'] == 1)
         await memory_state('2.57', 2)
@@ -140,12 +141,14 @@ async def exercise(transport):
             await result
         await snapshot(client, lambda s: s['state'] == 0 and s['playerflag'] == 5
                        and s['song']['song_name'] == custom_before['items'][0]['name'])
+        await asyncio.sleep(2.1)
         await call(client.play_pause)
         await snapshot(client, lambda s: s['state'] == 1)
         # Leave the custom queue before removing only our fixture.
         await asyncio.sleep(2.1)
         await call(client.play_all, 3, 'CI Album')
         await snapshot(client, lambda s: s['state'] == 0 and s['playerflag'] == 3)
+        await asyncio.sleep(2.1)
         await call(client.play_pause)
         await snapshot(client, lambda s: s['state'] == 1)
         http.delete_playlist(0)
