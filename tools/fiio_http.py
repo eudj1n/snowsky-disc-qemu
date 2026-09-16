@@ -196,6 +196,47 @@ class HTTPClient:
         headers['Content-Type'] = 'application/json'
         return self.request('POST', '/add_custom_list/', range_body(ranges), headers)
 
+    def add_selection_to_playlist(self, position, ranges, *, expected_name,
+                                  category='all/song', **filters):
+        """Bulk add with current destination name and source-bounds preflight.
+
+        Ranges belong to this exact category/filter, not song IDs. Group rows
+        expand to their songs. This is not atomic: serialize edits, refresh the
+        UI before calling, verify resulting contents and never retry a timeout.
+        The lower-level add_to_playlist() remains available for protocol work.
+        """
+        integer(position)
+        name_header(expected_name)
+        range_body(ranges)
+        required = {
+            'all/song': set(), 'style': set(), 'style/song': {'style'},
+            'style/album': {'style'}, 'style/album/song': {'style', 'album'},
+            'album': set(), 'album/song': {'album'},
+        }
+        if category not in required or set(filters) != required[category]:
+            raise ValueError('unsupported bulk source or missing/extraneous filters')
+        self._category(category, filters)
+
+        def row(category, wanted, **filters):
+            page = self.catalog(category, offset=wanted, limit=1, **filters)
+            total, items = page['total'], page['items']
+            if (type(total) is not int or not 0 <= wanted < total or len(items) != 1
+                    or type(items[0].get('pos')) is not int or items[0]['pos'] != wanted):
+                raise ValueError('position outside the current catalog')
+            return items[0]
+
+        def destination():
+            if row('custom', position).get('name') != expected_name:
+                raise ValueError('destination playlist changed; refresh position and name')
+
+        destination()
+        for first, last in ranges:
+            row(category, first, **filters)
+            if last != first:
+                row(category, last, **filters)
+        destination()
+        return self.add_to_playlist(position, ranges, category, **filters)
+
     def remove_from_playlist(self, position, ranges):
         return self.request('DELETE', '/song_category_tree/', range_body(ranges),
             {'type': 'custom/song', 'src_list_id': integer(position),

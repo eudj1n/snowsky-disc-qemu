@@ -26,6 +26,10 @@ checkpoint and any work left uncommitted. Do not publish this branch implicitly.
   [HTTP API](HTTP_API.md).
 - [x] V2.57 custom-playlist whole-list and indexed playback over TCP/WS,
   guarded by fresh HTTP name/track reads: [playlist contract](PLAYLISTS.md).
+- [x] V2.57 genre/scoped-album/folder playback with HTTP preflight, filtered
+  catalog pagination, grouped/disjoint bulk add and index-only track deletion
+  recovery: [library browsing](LIBRARY_BROWSING.md). Physical app sequence and
+  source/group deletion remain separate gaps, not implied by emulator acceptance.
 - [x] V2.57 cooperative scan cancellation, partial replacement index and full-scan
   recovery over TCP/WS: [scan lifecycle](LIBRARY_SCAN.md).
 - [x] Dedicated V2.57 index/favorites reset, explicit confirmation, preserved
@@ -74,7 +78,14 @@ owner deferred physical iOS background/reconnect testing unless a concrete error
 appears; it is not a remaining acceptance gate for this checkpoint. Long-test
 selection is recorded in [CI.md](CI.md#test-selection-policy).
 
-Current work: remaining wallpaper questions and a screenshot-led audit of
+Current checkpoint: genre/folder/bulk-add helpers and focused `library` acceptance
+are complete. The owner deferred physical TCP/HTTP capture to another session
+because FiiO Control could not connect (suspected Wi-Fi, not diagnosed). Do not
+require another capture now. Pending: exact app category/filter/selection sequence,
+folder-to-playlist workflow and Delete confirmation/source scope. Do not issue
+physical deletes to obtain evidence. PEQ remains separate issue #9.
+
+Other open work: remaining wallpaper questions and a screenshot-led audit of
 the DISC screens in FiiO Control. First wallpaper batch (`IMG_6789`–`IMG_6794`),
 confirmed by the owner to use a physical DISC, is inventoried. Its four custom
 styles are now exposed by the helper and tested in fresh V2.57 `themes` acceptance;
@@ -127,6 +138,7 @@ CI_SCENARIO=settings FW_VERSION=2.57 bash ci/integration.sh "$OTA_257"
 CI_SCENARIO=themes FW_VERSION=2.57 bash ci/integration.sh "$OTA_257"
 CI_SCENARIO=preferences FW_VERSION=2.57 bash ci/integration.sh "$OTA_257"
 CI_SCENARIO=playlists FW_VERSION=2.57 bash ci/integration.sh "$OTA_257"
+CI_SCENARIO=library FW_VERSION=2.57 bash ci/integration.sh "$OTA_257"
 CI_SCENARIO=scan-cancel FW_VERSION=2.57 bash ci/integration.sh "$OTA_257"
 CI_SCENARIO=library-reset FW_VERSION=2.57 bash ci/integration.sh "$OTA_257"
 CI_SCENARIO=track-end FW_VERSION=2.57 bash ci/integration.sh "$OTA_257"

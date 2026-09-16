@@ -230,6 +230,17 @@ sending; the HTTP client must target the same device. Catalog ordering need not
 match insertion order. No atomic revision exists; serialize edits and never
 replay selections. See `docs/PLAYLISTS.md`; focused `CI_SCENARIO=playlists` checks
 TCP/WS with ID gaps, rename/add/remove and stale/empty-selector rejection.
+V2.57 `play_genre` uses type 10, or type 8 for a genre-scoped album; type 8's
+argument is parsed by sscanf, not JSON (fixed keys/spacing, no quote/backslash
+escaping). `play_folder` uses type 4 and positions from fresh HTTP localdir,
+including directory rows; Play all skips directories, not recursive. Both check
+fresh bounds. `add_selection_to_playlist` checks destination name and source
+filters/ranges; genre album groups expand without leaking other genres. DELETE
+does not accept these group categories even though it returns HTTP 200. Focused
+`CI_SCENARIO=library` tests generated media, TCP/WS and direct/proxied HTTP,
+including index-only scoped track deletion and rescan recovery. No arbitrary
+source-delete helper. Physical app capture deferred by owner due to Wi-Fi trouble;
+see `docs/LIBRARY_BROWSING.md` before continuing the remaining bulk workflows.
 Avoid stock batch recursive deletion (it constructs shell commands). `0622/0000`
 starts a scan; watch `a60a` start/finish and `a622` counts. Gain/DRE/filter/SPDIF and
 PEQ helpers are shared by TCP/WS; filter and EQ network enums differ from SQLite.

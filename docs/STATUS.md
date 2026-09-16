@@ -24,6 +24,7 @@ peripheral controls. See the [README](../README.md) for setup and the visual ove
 | **LAN discovery** | Exact UDP announcements observed on physical V2.57; emulator tests confirm suppression during TCP connection and resumption after disconnect. FiiO Control on iPhone discovered the emulator and opened its library through the opt-in, one-phone host TCP/HTTP bridge. Default ports stay localhost-only. | [Discovery and safe manual test](DISCOVERY.md) |
 | **Stock file/library API** | HTTP folders, streamed uploads/progress and single-path deletion; custom playlist create/rename/add/remove/delete. Network scanning indexes uploaded music. Current-cover JPEG retrieved on physical V2.57. | [HTTP API](HTTP_API.md) |
 | **Custom playlist playback** | V2.57 TCP/WS whole-list and track selection with fresh HTTP name/bounds checks. Tests distinguish list position from SQLite ID and cover rename/edit/position shifts. Physical app comparison remains separate. | [Playlist contract](PLAYLISTS.md) |
+| **Genres / folders / bulk selection** | V2.57 guarded genre/scoped-album/folder playback; folder positions include directory rows. Grouped bulk add preserves genre filters. Index-only track deletion and rescan recovery tested; grouped/source-file deletion is not exposed. Phone capture deferred. | [Library contract](LIBRARY_BROWSING.md) |
 | **Natural track/list end** | V2.57 five-mode EOF behavior observed over TCP/WS on a short WAV/FLAC custom queue: stop, repeat-one, wrap and random continuation. Gapless/folder jump off. Final stop leaves the queue intact but `0202` silent; loading state 2 is not terminal stop. | [EOF contract and acceptance](TRACK_END.md) |
 | **CUE / DSD metadata** | Generated V2.57 CUE/WAV, DSF and DFF index and select over TCP/WS; CUE queue/favorites use positions. Stock IDs can collide, CUE track fields are lossy and HTTP can mark the wrong row. SACD ISO and native DSD output remain unvalidated. | [Formats and identity](FORMATS.md) |
 | **Scan cancellation** | V2.57 TCP/WS cooperative cancellation leaves a partial replacement index; finish event is shared with full scans. Fresh full scanning restores the complete catalog; source files are unchanged. | [Scan contract](LIBRARY_SCAN.md) |
@@ -55,6 +56,13 @@ only illustrate the UI. [Capture provenance](images/README.md).
 
 ## Releases and verification
 
+- 2026-09-16 library browsing: focused fresh V2.57 `library` acceptance passes
+  TCP/WS playback and direct/proxied HTTP reads/bulk addition/index-only deletion.
+  Generated overlapping tags, pagination, stale/empty selector rejection and
+  source hashes checked. Firmware-free suite: 271 Python / 23 JavaScript tests,
+  shell syntax checks and four shim builds. Interactive guest and physical player untouched; full
+  and long idle/USB scenarios not rerun. Viewer unchanged; existing screenshots
+  remain the visual reference. [Scope and gaps](LIBRARY_BROWSING.md).
 - 2026-09-16 custom styles: physical app POST/GET confirms all four values with
   unchanged PNG. Added style allowlist and focused `themes` integration; fresh
   V2.57 direct/proxy checks pass with explicit time off/on. Firmware-free checks:

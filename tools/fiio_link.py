@@ -7,6 +7,7 @@ import socket
 import time
 from fiio_settings import setting_query, setting_command, setting_value, peq_payload, peq_value
 from fiio_playlist import playlist_command, verify_playlist
+from fiio_library import genre_command, verify_genre, folder_command, verify_folder
 
 
 def frame(tag, payload=b''):
@@ -283,6 +284,24 @@ class Client:
             raise ValueError('volume outside 0..120')
         # 0502 -> 004e4744 -> callback 0088cc44 -> 004e0fdc (DAC + UI + DB).
         self.socket.sendall(frame('0502', f'{value:04X}'))
+
+    def play_genre(self, genre, index=None, *, album=None, http):
+        """Play genre tracks, optionally scoped to an album, on V2.57."""
+        command = genre_command(genre, index, album)
+        version = self.settings().get('soc_version')
+        if type(version) is not int or version != 257:
+            raise ValueError('genre playback requires DISC V2.57')
+        verify_genre(http, genre, index, album)
+        self.socket.sendall(frame(*command))
+
+    def play_folder(self, path, index=None, *, http, expected_name=None):
+        """Play a folder or its displayed position (including directory rows)."""
+        command = folder_command(path, index, expected_name)
+        version = self.settings().get('soc_version')
+        if type(version) is not int or version != 257:
+            raise ValueError('folder playback requires DISC V2.57')
+        verify_folder(http, path, index, expected_name)
+        self.socket.sendall(frame(*command))
 
     def play_all(self, list_type=1, name=None):
         # 0101 -> 004e4cb4 -> comm_play_all(list_type=1), indexed local library.

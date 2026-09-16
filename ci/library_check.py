@@ -1,0 +1,207 @@
+"""Genre/folder acceptance with generated media on disposable V2.57 only."""
+import asyncio
+import hashlib
+import os
+
+from queue_check import connection, http_client
+from remote_control import call, snapshot, ROOT
+from library_fixture import generate, TRACKS, FOLDER
+from scan_cancel_check import scan
+from player_memory import PlayerMemory
+from track_end_check import sources
+from fiio_http import range_body
+
+
+async def exercise(transport):
+    async with connection(transport) as client:
+        http = http_client(transport)
+        genres = await call(client.library, 'genres')
+        assert {x['name']: x['count'] for x in genres['items']} == {
+            'Genre Ё': 3, 'Genre Other': 2, 'Unknown genre': 3}
+        print(f'{transport}: genres={genres}', flush=True)
+        for category, filters in (
+            ('style', {}),
+            ('style/song', {'style': 'Genre Ё'}),
+            ('style/album', {'style': 'Genre Ё'}),
+            ('style/album/song', {'style': 'Genre Ё', 'album': 'Shared Album'}),
+            ('album/song', {'album': 'Shared Album'}),
+        ):
+            page = http.catalog(category, **filters)
+            print(f'{transport}: {category} {filters}: {page}', flush=True)
+            expected = {
+                'style': {'Genre Ё', 'Genre Other', 'Unknown genre'},
+                'style/song': {'Library Alpha', 'Library Beta', 'Library Delta'},
+                'style/album': {'Shared Album', 'Second Album'},
+                'style/album/song': {'Library Alpha', 'Library Beta'},
+                'album/song': {'Library Alpha', 'Library Beta', 'Library Gamma'},
+            }[category]
+            assert page['total'] == len(expected)
+            assert {x['name'] for x in page['items']} == expected
+            # Pagination positions are global within the filtered result.
+            for offset, row in enumerate(page['items']):
+                part = http.catalog(category, offset=offset, limit=1, **filters)
+                assert part['total'] == page['total'] and part['items'] == [row]
+                assert row['pos'] == offset
+        for suffix in ('', '/A', '/A/Nested', '/B', '/Empty'):
+            for local in (False, True):
+                page = http.directory('/tmp/sdcard/' + FOLDER + suffix, local=local)
+                print(f'{transport}: directory {suffix!r} local={local}: {page}', flush=True)
+                expected = {'': {'A', 'B', 'Empty'}, '/A': {'Nested', '01.flac', '02.flac'},
+                            '/A/Nested': {'04.flac'}, '/B': {'03.flac', '05.flac'},
+                            '/Empty': set()}[suffix]
+                assert {x['name'] for x in page['items']} == expected
+                assert page['total'] == (len(expected) if expected else None)
+        mode = await call(client.play_mode)
+        await call(client.set_play_mode, 4)
+
+        async def selected(action, expected, index, flag):
+            await asyncio.sleep(2.1)
+            await call(action)
+            state = await snapshot(client, lambda s: s['state'] == 0 and s['playerflag'] == flag
+                                   and s['song']['song_name'] == expected[index])
+            queue = http.catalog('curlist/song')
+            assert [x['name'] for x in queue['items']] == expected, queue
+            await asyncio.sleep(2.1)
+            await call(client.play_pause)
+            await snapshot(client, lambda s: s['state'] == 1)
+            print(f'{transport}: selection flag={flag}, index={index}, '
+                  f'path={state["song"]["song_file_path"]}, queue={expected}', flush=True)
+
+        for album in (None, 'Shared Album'):
+            filters = {'style': 'Genre Ё'}
+            if album is not None:
+                filters['album'] = album
+            expected = [x['name'] for x in http.catalog(
+                'style/song' if album is None else 'style/album/song', **filters)['items']]
+            for index in (None, len(expected) - 1):
+                await selected(lambda: client.play_genre('Genre Ё', index, album=album, http=http),
+                               expected, index or 0, 10 if album is None else 8)
+
+        for suffix in ('/A', '/A/Nested', '/B'):
+            path = '/tmp/sdcard/' + FOLDER + suffix
+            rows = http.directory(path, local=True)['items']
+            audio = [x for x in rows if not x['is_dir']]
+            titles = {relative.split('/')[-1]: title for relative, title, *_ in TRACKS}
+            expected = [titles[x['name']] for x in audio]
+            await selected(lambda: client.play_folder(path, http=http), expected, 0, 4)
+            row = audio[-1]
+            await selected(lambda: client.play_folder(path, row['pos'], http=http,
+                                                       expected_name=row['name']),
+                           expected, len(expected) - 1, 4)
+
+        # Invalid/stale sources are rejected without sending a playback mutation.
+        for action in (
+            lambda: client.play_genre('Missing genre', http=http),
+            lambda: client.play_genre('Genre Ё', 3, http=http),
+            lambda: client.play_genre('Genre Ё', 2, album='Shared Album', http=http),
+            lambda: client.play_folder('/tmp/sdcard/' + FOLDER + '/Empty', http=http),
+            lambda: client.play_folder('/tmp/sdcard/' + FOLDER, http=http),
+            lambda: client.play_folder('/tmp/sdcard/' + FOLDER + '/A', 0, http=http,
+                                      expected_name='Nested'),
+            lambda: client.play_folder('/tmp/sdcard/' + FOLDER + '/B', 0, http=http,
+                                      expected_name='stale.flac'),
+        ):
+            before = await snapshot(client)
+            try:
+                await call(action)
+            except ValueError:
+                pass
+            else:
+                raise AssertionError('invalid source was not rejected')
+            after = await snapshot(client)
+            assert after['song'] == before['song'] and after['state'] == before['state']
+
+        # Leave fixture context before index mutations and cleanup.
+        await asyncio.sleep(2.1)
+        await call(client.play_all, 3, 'CI Album')
+        await snapshot(client, lambda s: s['state'] == 0 and s['playerflag'] == 3)
+        await asyncio.sleep(2.1)
+        await call(client.play_pause)
+        await snapshot(client, lambda s: s['state'] == 1)
+        await call(client.set_play_mode, mode)
+        assert http.catalog('custom')['total'] == 0
+        cases = (
+            ('style/album', {'style': 'Genre Ё'}, [[1, 1]], {'Library Alpha', 'Library Beta'}),
+            ('style/album', {'style': 'Genre Ё'}, [[0, 1]],
+             {'Library Alpha', 'Library Beta', 'Library Delta'}),
+            ('style/album/song', {'style': 'Genre Ё', 'album': 'Shared Album'}, [[1, 1]],
+             {'Library Beta'}),
+            ('style/song', {'style': 'Genre Ё'}, [[0, 0], [2, 2]],
+             {'Library Alpha', 'Library Delta'}),
+            ('style', {}, [[0, 1]], {t[1] for t in TRACKS}),
+        )
+        for category, filters, ranges, expected in cases:
+            http.create_playlist('Library bulk ' + transport)
+            http.add_selection_to_playlist(0, ranges, expected_name='Library bulk ' + transport,
+                                            category=category, **filters)
+            actual = http.catalog('custom/song', src_list_id=0)
+            print(f'{transport}: add {category} {filters} {ranges} -> {actual}', flush=True)
+            assert {x['name'] for x in actual['items']} == expected
+            assert actual['total'] == len(expected)
+            for bad_ranges, bad_name in (([[100, 100]], 'Library bulk ' + transport),
+                                          (ranges, 'stale destination')):
+                try:
+                    http.add_selection_to_playlist(0, bad_ranges, expected_name=bad_name,
+                                                    category=category, **filters)
+                except ValueError:
+                    pass
+                else:
+                    raise AssertionError('invalid bulk selection was not rejected')
+                assert http.catalog('custom/song', src_list_id=0)['items'] == actual['items']
+            http.delete_playlist(0)
+            assert http.catalog('custom')['total'] == 0
+
+        before = http.catalog()
+        # Group rows are accepted for ADD but not DELETE by the stock allowlist.
+        # This negative probe and the index-only delete below touch only this
+        # disposable generated fixture; never use them on an owner library.
+        headers = http._category('style/album', {'style': 'Genre Ё'})
+        headers.update(delete_source='0', **{'Content-Type': 'application/json'})
+        reply = http.request('DELETE', '/song_category_tree/', range_body([[0, 1]]), headers)
+        assert reply.status == 200 and http.catalog() == before
+        headers = http._category('style/album/song', {'style': 'Genre Ё', 'album': 'Shared Album'})
+        headers.update(delete_source='0', **{'Content-Type': 'application/json'})
+        http.request('DELETE', '/song_category_tree/', range_body([[0, 1]]), headers)
+        remaining = http.catalog()
+        print(f'{transport}: index-only scoped delete -> {remaining}', flush=True)
+        assert remaining['total'] == before['total'] - 2
+        assert {x['name'] for x in remaining['items']} == (
+            {x['name'] for x in before['items']} - {'Library Alpha', 'Library Beta'})
+        assert http.catalog('style/album/song', style='Genre Ё', album='Shared Album')['total'] == 0
+        for relative, *_ in TRACKS:
+            assert (ROOT / 'tmp/sdcard' / FOLDER / relative).is_file()
+        with PlayerMemory(ROOT, '2.57') as memory:
+            await scan(client, memory)
+        assert http.catalog()['items'] == before['items']
+
+
+async def main():
+    if os.environ.get('CI_DISPOSABLE') != '1' or os.environ.get('FW_VERSION') != '2.57':
+        raise RuntimeError('library acceptance requires disposable V2.57')
+    with PlayerMemory(ROOT, '2.57'):
+        pass
+    sources()
+    folder = generate(ROOT / 'tmp/sdcard')
+    hashes = {folder / relative: hashlib.sha256((folder / relative).read_bytes()).hexdigest()
+              for relative, *_ in TRACKS}
+    async with connection('tcp') as client:
+        with PlayerMemory(ROOT, '2.57') as memory:
+            await scan(client, memory)
+    for transport in ('tcp', 'ws'):
+        await exercise(transport)
+    for path, digest in hashes.items():
+        assert hashlib.sha256(path.read_bytes()).hexdigest() == digest
+        path.unlink()
+    for relative in ('A/Nested', 'A', 'B', 'Empty'):
+        (folder / relative).rmdir()
+    folder.rmdir()
+    async with connection('tcp') as client:
+        with PlayerMemory(ROOT, '2.57') as memory:
+            await scan(client, memory)
+        assert (await call(client.tracks))['total'] == 3
+    sources()
+    print('LIBRARY CHECK PASS V2.57 TCP/WS; sources restored', flush=True)
+
+
+if __name__ == '__main__':
+    asyncio.run(main())

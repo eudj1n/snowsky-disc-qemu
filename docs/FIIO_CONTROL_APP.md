@@ -221,6 +221,14 @@ Preserve returned rows/positions and literal names; do not deduplicate, trim or
 split labels based on screenshots. Displayed similarity cannot establish whether
 underlying tags differ, nor prove an index defect.
 
+Follow-up emulator validation on 2026-09-16: guarded `play_genre` (including
+genre-scoped album), `play_folder` and `add_selection_to_playlist` now cover the
+genre/folder playback and bulk-add gaps above. Fresh V2.57 TCP/WS and direct/proxy
+tests are recorded in [LIBRARY_BROWSING.md](LIBRARY_BROWSING.md). This does not
+identify the app's exact commands from screenshots. The owner deferred the
+physical capture to another session due to connection/Wi-Fi trouble; the app's
+Delete workflow and folder-to-playlist expansion remain unvalidated.
+
 The third batch below supplies genre/album batch toolbars and PEQ selection/save
 screens. Folder contents and individual-item menus remain unseen. Request
 targeted TCP/HTTP captures for concrete gaps, not repeat screenshots already supplied.

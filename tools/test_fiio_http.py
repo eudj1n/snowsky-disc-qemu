@@ -4,12 +4,65 @@ from pathlib import Path
 import tempfile
 import threading
 import unittest
-from unittest.mock import patch
+from unittest.mock import patch, Mock, call
 
 from fiio_http import HTTPClient, Reply, name_header, range_body, sd_path
 
 
 class HTTPTests(unittest.TestCase):
+    def test_guarded_bulk_add_checks_destination_and_scoped_endpoints(self):
+        client = HTTPClient()
+        def catalog(category, offset=0, **filters):
+            return dict(total=4, items=[dict(pos=offset, name='Target' if category == 'custom' else 'Song')])
+        client.catalog = Mock(side_effect=catalog)
+        client.add_to_playlist = Mock()
+        client.add_selection_to_playlist(2, [[0, 1], [3, 3]], expected_name='Target',
+                                          category='style/album', style='Genre Ё')
+        self.assertEqual(client.catalog.call_args_list, [
+            call('custom', offset=2, limit=1),
+            call('style/album', offset=0, limit=1, style='Genre Ё'),
+            call('style/album', offset=1, limit=1, style='Genre Ё'),
+            call('style/album', offset=3, limit=1, style='Genre Ё'),
+            call('custom', offset=2, limit=1)])
+        client.add_to_playlist.assert_called_once_with(2, [[0, 1], [3, 3]],
+                                                       'style/album', style='Genre Ё')
+
+    def test_guarded_bulk_add_rejects_ambiguous_sources_before_io(self):
+        client = HTTPClient()
+        client.catalog = Mock()
+        client.add_to_playlist = Mock()
+        for category, filters in (('custom', {}), ('style/song', {}),
+                                  ('style/album/song', {'style': 'x'}),
+                                  ('style', {'album': 'unexpected'}), ('folder', {})):
+            with self.assertRaises(ValueError):
+                client.add_selection_to_playlist(0, [[0, 0]], expected_name='Target',
+                                                  category=category, **filters)
+        client.catalog.assert_not_called()
+        client.add_to_playlist.assert_not_called()
+
+    def test_guarded_bulk_add_rejects_stale_bounds_and_never_retries(self):
+        good = dict(total=1, items=[dict(pos=0, name='Target')])
+        bad = [dict(total=0, items=[]), dict(total=1, items=[]),
+               dict(total=True, items=[dict(pos=0, name='Target')]),
+               dict(total=1, items=[dict(pos=True, name='Target')]),
+               dict(total=1, items=[dict(pos=0, name='Renamed')])]
+        client = HTTPClient()
+        client.add_to_playlist = Mock()
+        for replies in ([b] for b in bad):
+            client.catalog = Mock(side_effect=replies)
+            with self.assertRaises(ValueError):
+                client.add_selection_to_playlist(0, [[0, 0]], expected_name='Target')
+        for replies in ([good, bad[0]], [good, good, bad[-1]]):
+            client.catalog = Mock(side_effect=replies)
+            with self.assertRaises(ValueError):
+                client.add_selection_to_playlist(0, [[0, 0]], expected_name='Target')
+        client.add_to_playlist.assert_not_called()
+        client.catalog = Mock(return_value=good)
+        client.add_to_playlist.side_effect = TimeoutError('uncertain write')
+        with self.assertRaises(TimeoutError):
+            client.add_selection_to_playlist(0, [[0, 0]], expected_name='Target')
+        client.add_to_playlist.assert_called_once()
+
     def test_unicode_and_path_boundaries(self):
         self.assertEqual(name_header('Ё +'), '%D0%81%20%2B')
         self.assertEqual(sd_path('/tmp/sdcard/Ё +.flac'), '/tmp/sdcard/Ё +.flac')

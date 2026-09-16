@@ -108,8 +108,10 @@ do not substitute TCP song IDs or SQLite IDs.
 Active category table: `all/song`, `artist`, `artist/song`, `artist/album`,
 `artist/album/song`, `album`, `album/song`, `style`, `style/song`, `style/album`,
 `style/album/song`, `love/song`, `curlist/song`, `custom`, `custom/song`.
-The acceptance scenario exercises all-song pages, named album songs and custom
-lists; existence of another category handler is not full behavioral validation.
+Baseline acceptance exercises all-song pages, named album songs and custom
+lists. V2.57's focused `library` scenario additionally checks genre/album filtering,
+pagination and grouped bulk expansion; see [genres and folders](LIBRARY_BROWSING.md).
+Existence of other category handlers is not full behavioral validation.
 
 Physical iOS capture on 2026-09-16 additionally confirms `curlist/song`: the app
 requests offset 0, limit 100, with empty `artist`/`album`/`style` headers. The reply
@@ -134,6 +136,12 @@ creates an internal ID gap before rename/add/delete to catch accidental ID use.
 List positions can shift after deletion; refresh them before the next operation.
 Deleting records with `delete_source: 0` preserves the audio files. Source-file
 deletion through the category route is not exposed in the client.
+For V2.57 genre/group bulk addition, prefer `add_selection_to_playlist()` with
+the displayed destination name; it checks filters and current range bounds.
+Group categories accepted by ADD are **not** accepted by DELETE: `style/album`
+returns empty 200 unchanged. Scoped song deletion with `delete_source: 0` is
+tested only on disposable data; no general deletion helper is added. See
+[bulk selection and deletion limits](LIBRARY_BROWSING.md#deletion-is-a-different-contract).
 
 V2.57's `0501` settings advertise `http_replace_link: 1` and `http_custom_list: 1`.
 This explains why the missing TCP `0405` reply was not evidence that custom playlists

@@ -9,6 +9,12 @@ emulator-only revisions use `v2.40-r1`, etc. See [the porting guide](docs/PORTIN
 
 ### Added
 
+- V2.57 guarded genre, genre-scoped album and folder playback helpers for TCP/WS,
+  plus HTTP bulk-add preflight for destination names, source filters and ranges.
+  Add generated overlapping-genre/nested-folder fixtures and focused `library`
+  acceptance. Document directory-versus-queue positions, grouped add expansion,
+  unsupported grouped deletion and index-only track deletion/rescan recovery.
+  Physical FiiO Control capture is deferred; no arbitrary source-delete API.
 - V2.57 custom lock-screen style allowlist (`default/0`, `default/1`,
   `default/2`, `clock/0`), backed by physical FiiO Control POST/GET captures.
   Add focused disposable `CI_SCENARIO=themes` for direct/proxied HTTP, image
