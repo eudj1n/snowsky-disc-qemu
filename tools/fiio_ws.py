@@ -4,7 +4,8 @@ import argparse
 import asyncio
 import contextlib
 import json
-from fiio_library import genre_command, verify_genre, folder_command, verify_folder
+from fiio_library import (genre_command, verify_genre, folder_command, verify_folder,
+                          artist_command, verify_artist)
 from aiohttp import ClientSession, ClientTimeout, WSMsgType
 from fiio_link import (Frames, frame, hex_value, list_payload, index_payload,
                        library_request, library_page, playback_snapshot, play_mode_value)
@@ -188,6 +189,15 @@ class WSClient:
         if type(version) is not int or version != 257:
             raise ValueError('genre playback requires DISC V2.57')
         await asyncio.to_thread(verify_genre, http, genre, index, album)
+        await self.send(*command)
+
+    async def play_artist(self, artist, index=None, *, album=None, http):
+        """Type-7 artist/scoped-album playback; same guards as the TCP client."""
+        command = artist_command(artist, index, album)
+        version = (await self.settings()).get('soc_version')
+        if type(version) is not int or version != 257:
+            raise ValueError('scoped artist playback requires DISC V2.57')
+        await asyncio.to_thread(verify_artist, http, artist, index, album)
         await self.send(*command)
 
     async def play_folder(self, path, index=None, *, http, expected_name=None):

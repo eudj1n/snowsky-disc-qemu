@@ -7,7 +7,8 @@ import socket
 import time
 from fiio_settings import setting_query, setting_command, setting_value, peq_payload, peq_value
 from fiio_playlist import playlist_command, verify_playlist
-from fiio_library import genre_command, verify_genre, folder_command, verify_folder
+from fiio_library import (genre_command, verify_genre, folder_command, verify_folder,
+                          artist_command, verify_artist)
 
 
 def frame(tag, payload=b''):
@@ -292,6 +293,19 @@ class Client:
         if type(version) is not int or version != 257:
             raise ValueError('genre playback requires DISC V2.57')
         verify_genre(http, genre, index, album)
+        self.socket.sendall(frame(*command))
+
+    def play_artist(self, artist, index=None, *, album=None, http):
+        """Play an artist, or an artist-scoped album/track, after fresh HTTP checks.
+
+        Indexed type-7 selection requires an album. HTTP must target this device;
+        serialize edits and never replay an uncertain selection.
+        """
+        command = artist_command(artist, index, album)
+        version = self.settings().get('soc_version')
+        if type(version) is not int or version != 257:
+            raise ValueError('scoped artist playback requires DISC V2.57')
+        verify_artist(http, artist, index, album)
         self.socket.sendall(frame(*command))
 
     def play_folder(self, path, index=None, *, http, expected_name=None):

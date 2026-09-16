@@ -1,4 +1,5 @@
 import asyncio
+import contextlib
 import socket
 import unittest
 from unittest.mock import AsyncMock, Mock, patch
@@ -119,7 +120,10 @@ class LanBridgeTests(unittest.IsolatedAsyncioTestCase):
                 pass
             finally:
                 writer.close()
-                await writer.wait_closed()
+                # The proxy timeout can reset this still-writing peer. Report
+                # closure even if wait_closed re-raises that expected reset.
+                with contextlib.suppress(ConnectionError):
+                    await writer.wait_closed()
                 closed.put_nowait(True)
         port_upstream = await self.server(upstream)
         self.proxy = Proxy('127.0.0.1', control_port=port_upstream)

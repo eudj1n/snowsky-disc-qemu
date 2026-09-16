@@ -2,9 +2,11 @@ import json
 import unittest
 from pathlib import Path
 from unittest.mock import AsyncMock, Mock
+from urllib.parse import unquote
 
-from fiio_library import genre_command, folder_command, verify_folder, verify_genre
-from fiio_link import Client, frame
+from fiio_library import (genre_command, folder_command, verify_folder, verify_genre,
+                          artist_command, verify_artist)
+from fiio_link import Client, Frames, frame, index_payload, list_payload, playback_snapshot
 from fiio_ws import WSClient
 from fiio_http import HTTPClient, Reply
 
@@ -16,6 +18,133 @@ def page(pos=0, name='01.flac', total=1, **fields):
 
 
 class LibraryTests(unittest.IsolatedAsyncioTestCase):
+    def root_capture(self):
+        return json.loads((Path(__file__).parent / 'fixtures' /
+                           'fiio_control_ios_root_play_all.json').read_text())
+
+    def test_root_capture_only_sends_named_genre_playback(self):
+        fixture = self.root_capture()
+        # Fragment a coalesced outgoing stream: queries must not be classified
+        # as playback, and only the later named-genre action is present.
+        wire = b''.join(frame(r['tag'], r['payload']) for r in fixture['outgoing_link'])
+        decoder = Frames()
+        decoded = []
+        for offset in range(0, len(wire), 7):
+            decoded.extend(decoder.feed(wire[offset:offset + 7]))
+        self.assertFalse(decoder.buffer)
+        playback = [(tag, payload.decode()) for tag, payload in decoded
+                    if tag in ('0100', '0101', '0201')]
+        self.assertEqual(playback, [genre_command(fixture['genre']), ('0201', '0000')])
+        states = [playback_snapshot(r['payload'].encode())
+                  for r in fixture['genre_events'] if r['tag'] == 'a202']
+        self.assertEqual([s['state'] for s in states], [2, 1, 0, 0, 1, 1])
+        self.assertEqual(states[0]['playerflag'], 8)
+        self.assertEqual(states[0]['playing_num'], '1/177')
+
+    def test_root_capture_http_tabs_have_no_implicit_name_filters(self):
+        http = HTTPClient()
+        http.request = Mock(return_value=Reply(200, {'total-num': '0'}, b'[]'))
+        requests = self.root_capture()['http_requests']
+        self.assertEqual([r['category'] for r in requests],
+                         ['all/song', 'artist', 'album', 'style', 'style/album'])
+        for request in requests:
+            http.catalog(request['category'], limit=100, **request['filters'])
+            http.request.assert_called_with('GET', '/song_category_tree/',
+                                            headers={k: v for k, v in request['headers'].items() if v})
+
+    def folder_artist_capture(self):
+        return json.loads((Path(__file__).parent / 'fixtures' /
+                           'fiio_control_ios_folders_artists.json').read_text())
+
+    def test_physical_folder_album_artist_selectors(self):
+        fixture = self.folder_artist_capture()
+        for session in fixture['sessions']:
+            for item in session['commands']:
+                action, index = item['action'], item.get('index')
+                if action == 'toggle':
+                    continue
+                if action.startswith('folder'):
+                    command = folder_command(fixture['folder'], index,
+                                             '02. Second.flac' if index is not None else None)
+                elif action.startswith('album'):
+                    command = (('0100', index_payload(index, 3, fixture['album']))
+                               if index is not None else ('0101', list_payload(3, fixture['album'])))
+                else:
+                    command = artist_command(fixture['solo_artist'] if action == 'artist_all'
+                                             else fixture['artist'], index,
+                                             None if action == 'artist_all' else fixture['artist_album'])
+                with self.subTest(action=action):
+                    self.assertEqual(command, (item['tag'], item['payload']))
+                    self.assertEqual(int(frame(*command)[4:8], 16), len(frame(*command)))
+
+    def test_physical_folder_position_and_artist_http_scoping(self):
+        fixture = self.folder_artist_capture()
+        http = HTTPClient()
+        http.request = Mock(return_value=Reply(200, {'total-num': '0'}, b'[]'))
+        for session in fixture['sessions']:
+            for request in session['http_requests']:
+                if 'category' in request:
+                    http.catalog(request['category'], limit=100, **request['filters'])
+                    expected = {k: v for k, v in request['headers'].items() if v}
+                    http.request.assert_called_with('GET', '/song_category_tree/', headers=expected)
+                else:
+                    http.directory(fixture['folder'], limit=100, local=True)
+                    self.assertEqual(unquote(http.request.call_args.args[1]), unquote(request['path']))
+                    rows = request['first_rows']
+                    http.directory = Mock(return_value=page(2, rows[2]['name'], request['total']))
+                    self.assertTrue(rows[0]['is_dir'])
+                    verify_folder(http, fixture['folder'], 2, rows[2]['name'])
+                    with self.assertRaises(ValueError):
+                        verify_folder(http, fixture['folder'], 1, rows[2]['name'])
+
+    def test_artist_scope_guards_and_utf8(self):
+        command = artist_command('Artist Ё', 1, 'Shared Album')
+        self.assertEqual(command, ('0100', '00010007{"artist":"Artist Ё", "album":"Shared Album"}'))
+        self.assertEqual(int(frame(*command)[4:8], 16), len(frame(*command)))
+        for artist, index, album in (('', None, None), ('unknown_artist', None, None),
+                                    ('x', None, 'unknown_album'), ('x', None, ''),
+                                    ('x', 0, None), ('x', True, 'a'), ('x', 65536, 'a'),
+                                    ('x', -1, 'a'), ('x"y', None, None), ('x', 0, 'a\\b'),
+                                    ('Ё' * 43, None, None), ('x\0y', None, None)):
+            with self.subTest(artist=artist, index=index, album=album), self.assertRaises(ValueError):
+                artist_command(artist, index, album)
+        http = Mock()
+        http.catalog.return_value = page(1, total=2)
+        verify_artist(http, 'Artist Ё', 1, 'Shared Album')
+        http.catalog.assert_called_once_with('artist/album/song', offset=1, limit=1,
+                                             artist='Artist Ё', album='Shared Album')
+        http.catalog.return_value = page()
+        verify_artist(http, 'Artist Ё')
+        http.catalog.assert_called_with('artist/song', offset=0, limit=1, artist='Artist Ё')
+
+    async def test_artist_clients_scope_rejection_and_no_retry(self):
+        for index, album in ((None, None), (None, 'Shared Album'), (1, 'Shared Album')):
+            tcp, ws = self.clients()
+            for client in (tcp, ws):
+                http = Mock()
+                http.catalog.return_value = page(index or 0, total=2)
+                result = client.play_artist('Artist Ё', index, album=album, http=http)
+                command = artist_command('Artist Ё', index, album)
+                if client is ws:
+                    await result
+                    ws.send.assert_awaited_once_with(*command)
+                else:
+                    tcp.socket.sendall.assert_called_once_with(frame(*command))
+                http.catalog.return_value = page(total=0)
+                with self.assertRaises(ValueError):
+                    result = client.play_artist('Artist Ё', index, album=album, http=http)
+                    if client is ws:
+                        await result
+                sender = ws.send if client is ws else tcp.socket.sendall
+                self.assertEqual(sender.call_count, 1)
+                http.catalog.return_value = page(index or 0, total=2)
+                sender.side_effect = TimeoutError('uncertain write')
+                with self.assertRaises(TimeoutError):
+                    result = client.play_artist('Artist Ё', index, album=album, http=http)
+                    if client is ws:
+                        await result
+                self.assertEqual(sender.call_count, 2)
+
     def capture(self):
         return json.loads((Path(__file__).parent / 'fixtures' /
                            'fiio_control_ios_genres.json').read_text())
@@ -155,6 +284,7 @@ class LibraryTests(unittest.IsolatedAsyncioTestCase):
             http.catalog.return_value = http.directory.return_value = page(total=0)
             for client in (tcp, ws):
                 for action in (lambda: client.play_genre('x', http=http),
+                               lambda: client.play_artist('x', http=http),
                                lambda: client.play_folder('/tmp/sdcard/A', http=http)):
                     with self.assertRaises(ValueError):
                         result = action()

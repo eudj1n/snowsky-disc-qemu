@@ -1,4 +1,4 @@
-"""V2.57 genre/folder selectors with fresh HTTP preflight, shared by TCP/WS.
+"""V2.57 artist/genre/folder selectors with fresh HTTP preflight, shared by TCP/WS.
 
 HTTP and Link must target the same device. Positions have no revision token;
 serialize browsing/edits and never retry a selection after an uncertain write.
@@ -40,6 +40,34 @@ def verify_genre(http, genre, index=None, album=None):
         filters['album'] = album
     wanted = 0 if index is None else index
     page = http.catalog('style/song' if album is None else 'style/album/song',
+                        offset=wanted, limit=1, **filters)
+    checked_row(page, wanted)
+
+
+def artist_command(artist, index=None, album=None):
+    """Captured type-7 selectors; empty album is reviewed for Play all only."""
+    prefix = position(index)
+    name_header(artist)
+    if album is None:
+        if index is not None:
+            raise ValueError('indexed type-7 playback requires an album')
+        album = ''
+    else:
+        name_header(album)
+    # Stock sscanf has the same strict syntax as type 8, not JSON unescaping.
+    if (artist == 'unknown_artist' or album == 'unknown_album'
+            or any(c in artist + album for c in ('"', '\\'))):
+        raise ValueError('type-7 names cannot contain quotes/backslashes or reserved tokens')
+    payload = '0007' + '{"artist":"' + artist + '", "album":"' + album + '"}'
+    return ('0101' if index is None else '0100', prefix + payload)
+
+
+def verify_artist(http, artist, index=None, album=None):
+    filters = {'artist': artist}
+    if album is not None:
+        filters['album'] = album
+    wanted = 0 if index is None else index
+    page = http.catalog('artist/song' if album is None else 'artist/album/song',
                         offset=wanted, limit=1, **filters)
     checked_row(page, wanted)
 

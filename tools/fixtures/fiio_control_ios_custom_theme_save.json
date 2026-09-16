@@ -1,9 +1,11 @@
 {
+  "app_version_evidence": "Owner confirmed on 2026-09-16 that all supplied iOS checks/captures used FiiO Control 4.6.0; not derived from network User-Agent.",
+  "app_version": "4.6.0",
   "source": {
     "har_sha256": "efb72d46707667ba93bf67b759695abd0bd9d2e766c930c6ee187fe1ea465283",
     "pcap_sha256": "94a482c29c968eae93648a640fade76abd7a7eb57ca24feab3aff0c79334b093",
     "date": "2026-09-16",
-    "device": "physical DISC; versions not newly confirmed",
+    "device": "physical DISC; firmware version not newly confirmed",
     "scope": "Sanitized HTTP metadata only; no image, address or unrelated traffic"
   },
   "image": {

@@ -1,5 +1,6 @@
 """Conservative stock DISC lock-screen requests; see docs/REMOTE_MODES_THEMES.md."""
 from pathlib import Path
+import re
 import struct
 from urllib.parse import quote
 
@@ -63,14 +64,72 @@ def upload_lock_screen(http, source, *, alias='', alpha=100,
     })
 
 
+def _system_snapshot(http, slot):
+    reply = read_lock_screen(http, slot, system=True)
+    if (reply.status != 200 or not reply.body or any(key not in reply.headers for key in FIELDS)
+            or reply.headers['file-source'] != 'lock_screen/system'
+            or reply.headers['x-fields-to-update'] != str(slot)
+            or any(not isinstance(reply.headers[k], str) or
+                   any(ord(c) < 32 for c in reply.headers[k]) for k in FIELDS)):
+        raise ValueError('incomplete or mismatched stock theme response')
+    return reply
+
+
 def select_system_lock_screen(http, slot=0):
     """Select a stock image, preserving the metadata returned for that slot."""
-    reply = read_lock_screen(http, slot, system=True)
-    if (not reply.body or any(key not in reply.headers for key in FIELDS)
-            or reply.headers['file-source'] != 'lock_screen/system'
-            or reply.headers['x-fields-to-update'] != str(slot)):
-        raise ValueError('incomplete or mismatched stock theme response')
+    reply = _system_snapshot(http, slot)
     headers = {key: reply.headers[key] for key in FIELDS}
     # Response aliases may be raw ASCII or percent-encoded. Preserve wire spelling.
     headers['flag-in-use'] = '1'
     return http.request('POST', ROUTE, body=b'', headers=headers)
+
+
+def update_system_lock_screen(http, slot=0, *, alpha=None, color=None, style=None,
+                              show_time=None, show_date=None, show_battery=None,
+                              show_id3=None):
+    """Edit AND activate a system slot; None leaves that field unchanged.
+
+    Read fresh metadata/original bytes, send an empty-body system POST, then
+    verify all metadata and original bytes. Return the verified GET reply.
+    Serialize with other writers: stock has no compare-and-swap. Never retry a
+    failed/uncertain write automatically. A verification error may follow an
+    applied update; reread state before deciding what to do. A locked physical
+    screen may need unlock/relock to repaint. Custom uploads use a separate API.
+    """
+    flags = (show_time, show_date, show_battery, show_id3)
+    if alpha is not None and (type(alpha) is not int or not 0 <= alpha <= 100):
+        raise ValueError('alpha must be an integer in 0..100')
+    if color is not None and (not isinstance(color, (tuple, list)) or len(color) != 3 or
+                             any(type(c) is not int or not 0 <= c <= 255 for c in color)):
+        raise ValueError('color must contain three integer bytes')
+    if style is not None and (not isinstance(style, str) or style not in CUSTOM_STYLES):
+        raise ValueError('unsupported DISC system lock-screen style')
+    if any(flag is not None and type(flag) is not bool for flag in flags):
+        raise ValueError('overlay flags must be booleans')
+    if all(value is None for value in (alpha, color, style, *flags)):
+        raise ValueError('at least one theme edit is required')
+    before = _system_snapshot(http, slot)
+    headers = {key: before.headers[key] for key in FIELDS}
+    if alpha is not None:
+        headers['back-groud'] = f'alpha={alpha}'
+    if color is not None:
+        headers['front-color'] = 'r=%d;g=%d;b=%d' % tuple(color)
+    if style is not None:
+        headers['msg-style'] = style
+    if any(flag is not None for flag in flags):
+        match = re.fullmatch(r'time=([01]);date=([01]);battery=([01]);id3=([01])',
+                             headers['lock-screen'])
+        if match is None:
+            raise ValueError('unrecognized stock overlay flags')
+        headers['lock-screen'] = ';'.join(
+            f'{name}={old if value is None else int(value)}'
+            for name, old, value in zip(('time', 'date', 'battery', 'id3'),
+                                        match.groups(), flags))
+    headers['flag-in-use'] = '1'
+    posted = http.request('POST', ROUTE, body=b'', headers=headers)
+    if posted.status != 200:
+        raise OSError('system theme update failed; state may have changed')
+    after = _system_snapshot(http, slot)
+    if after.body != before.body or any(after.headers[k] != v for k, v in headers.items()):
+        raise OSError('system theme readback differs; state may have changed')
+    return after

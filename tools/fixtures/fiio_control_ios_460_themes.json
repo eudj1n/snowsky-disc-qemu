@@ -64,5 +64,7 @@
       },
       "post_body_size": 0
     }
-  ]
+  ],
+  "app_version": "4.6.0",
+  "app_version_evidence": "Owner confirmed on 2026-09-16 that all supplied iOS checks/captures used FiiO Control 4.6.0; not derived from network User-Agent."
 }

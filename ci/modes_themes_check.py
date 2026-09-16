@@ -14,7 +14,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1] / 'tools'))
 from fiio_link import Client
 from fiio_ws import WSClient
 from fiio_http import HTTPClient
-from fiio_theme import read_lock_screen, upload_lock_screen, select_system_lock_screen, FIELDS, ROUTE, CUSTOM_STYLES
+from fiio_theme import read_lock_screen, upload_lock_screen, select_system_lock_screen, FIELDS, ROUTE, CUSTOM_STYLES, update_system_lock_screen
 from settings_check import call, set_and_read, wait_db
 
 ROOT = Path('/work/rootfs')
@@ -83,6 +83,48 @@ async def modes(client, label):
     print(f'{label}: USB/local/AirPlay control transitions and all five source codecs persisted; restored', flush=True)
 
 
+def system_edits(http, label):
+    before = theme_rows()
+    active = next(r for r in before if r['USE'])
+    slot = 1
+    saved = read_lock_screen(http, slot, system=True)
+    headers = saved.headers
+    original_flags = dict(item.split('=') for item in headers['lock-screen'].split(';'))
+    original_color = tuple(int(item.split('=')[1]) for item in headers['front-color'].split(';'))
+    changes = ([{'alpha': value} for value in (49, 0, 100)] +
+               [{'color': rgb} for rgb in ((253, 0, 255), (251, 255, 0),
+                                          (255, 255, 255), (255, 169, 169))] +
+               [{'style': style} for style in CUSTOM_STYLES] +
+               [{f'show_{name}': value} for name in ('time', 'date', 'battery', 'id3')
+                for value in (False, True)])
+    try:
+        for change in changes:
+            reply = update_system_lock_screen(http, slot, **change)
+            row = next(r for r in theme_rows() if r['IS_SYSTEM'] and r['POS_ID'] == slot)
+            flags = dict(item.split('=') for item in reply.headers['lock-screen'].split(';'))
+            rgb = tuple(int(item.split('=')[1]) for item in reply.headers['front-color'].split(';'))
+            assert row['ALPHA'] == int(reply.headers['back-groud'].split('=')[1])
+            assert row['FRONT_COLOR'] == (rgb[0] << 16 | rgb[1] << 8 | rgb[2])
+            assert tuple(row['LOCK_' + name.upper()] for name in flags) == tuple(int(v) for v in flags.values())
+            assert row['USE'] == 1
+            assert reply.body == saved.body == (ROOT / row['PATH'].lstrip('/')).read_bytes()
+            for other in theme_rows():
+                if other['IS_SYSTEM'] and other['POS_ID'] == slot:
+                    continue
+                original = next(r for r in before if r['ID'] == other['ID'])
+                assert other == dict(original, USE=0), (other, original)
+        print(f'{label}: system opacity/RGB/four styles/independent overlays verified in HTTP and DB', flush=True)
+    finally:
+        update_system_lock_screen(http, slot,
+            alpha=int(headers['back-groud'].split('=')[1]), color=original_color,
+            style=headers['msg-style'],
+            **{f'show_{name}': value == '1' for name, value in original_flags.items()})
+        select_system_lock_screen(http, active['POS_ID'])
+    assert theme_rows() == before, 'system editing did not restore original database state'
+    assert read_lock_screen(http, slot, system=True).body == saved.body
+    print(f'{label}: system metadata, original image and active selection restored', flush=True)
+
+
 def themes(host, label):
     http = HTTPClient(host, 12103, host_header='127.0.0.1:12103')
     initial = theme_rows()
@@ -96,6 +138,8 @@ def themes(host, label):
         assert reply.headers['flag-in-use'] == '1'
         assert reply.body == (ROOT / row['PATH'].lstrip('/')).read_bytes()
         assert [r['POS_ID'] for r in theme_rows() if r['IS_SYSTEM'] and r['USE']] == [slot]
+    if os.environ.get('FW_VERSION') == '2.57':
+        system_edits(http, label)
     source = Path('/work/theme-ci.png')
     source.write_bytes(png())
     upload_lock_screen(http, source, alias='Theme + Ё', alpha=70, color=(12, 34, 56))

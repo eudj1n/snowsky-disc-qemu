@@ -149,10 +149,61 @@ count printed by `fb2png.py` is only a fallback heuristic, not evidence of recen
 
 ## Likely next tasks (see docs/STATUS.md "Next")
 
-For continuing DISC protocol research, start with `docs/PROTOCOL_RESEARCH.md`:
+The agreed local DISC protocol checkpoint is finalized. Start with
+`docs/DISC_CAPABILITIES.md` for the controller contract and
+`docs/PROTOCOL_RESEARCH.md` for evidence/history:
 it records the checkpoint, remaining tasks in priority order and validation status.
 Update that document when completing a research item so another session can resume.
 Keep the high-level protocol tracker (GitHub issue #10) current as checkpoints complete.
+
+Physical opacity capture `230929` edits **system slot 1 / FIIO Sheep**, not custom:
+empty POST bodies, displayed 100 → 49 → 0 → 100 map directly to `back-groud: alpha`;
+fresh GET confirms 49/0/100 and unchanged preview images. Owner reports visible
+refresh requires unlock/relock when already locked. Do not confuse saved metadata
+with repaint, invert opacity, or reuse empty-body updates for custom themes.
+Color capture `231820` now confirms exact RGB saves/readback and hue/lightness-like
+slider roles. Final pink 255/169/169 differs from initial 191/139/66; do not claim
+restoration or infer a numerical slider conversion formula. Official wallpapers
+and FiiO account/cloud sync are deferred by owner decision to issue #11 (owner
+reports registration/sign-in is required); no new cloud capture/login now.
+`update_system_lock_screen` now edits/activates system metadata and verifies
+original-image/metadata readback; no automatic mutation retry. Direct/proxy
+V2.57 themes acceptance and 297 Python / 23 JS tests pass. Capability
+consolidation is complete; see `docs/DISC_CAPABILITIES.md`.
+
+Physical `211747` / `212141` captures confirm folder type 4 and ordinary album
+type 3; artist-scoped albums use type 7 with exact `{"artist":"…", "album":"…"}`
+syntax. Whole-artist Play all uses type 7 with empty album, not a root Artists
+action. Guarded `play_artist` checks fresh `artist/song` or `artist/album/song`;
+indexed type 7 requires a named album. `CI_SCENARIO=library` tests overlapping
+artist/album names on TCP/WS; do not flatten artist albums to generic type 3.
+All four root-tab Play all buttons are confirmed in iPhone FiiO Control, but
+the `213631` capture shows no playback request for reported ineffective root
+taps. Named-genre Play all then works on the same connection. This is an app-side
+dispatch gap in that state, not a firmware rejection or proof of a permanent
+missing feature. Root wire semantics remain unknown; do not repeat identical
+captures or invent empty selectors. See `docs/LIBRARY_BROWSING.md`.
+Physical `215831` confirms first/third album-track addition: one HTTP
+`POST /add_custom_list/`, `type: album/song`, `dst_list_id: 1`, decoded ranges
+`[[0,0],[2,2]]`; fresh count/membership verifies two tracks. HAR preserves HTTP
+chunk framing, which is not part of the JSON. Folder batch actions are absent
+per owner. `221421` then confirms one `style/album` POST for group positions
+0/2, expanding 16 + 89 tracks, and playlist rename via `custom_list_cmd`,
+`type: update`, `list_id: 2`. Fresh GET confirms renamed list/count 105;
+only the first 100 membership rows were requested. Do not claim full membership
+identity or repeat these add captures. `CI_SCENARIO=library-delete` now isolates
+seven category-delete cases on generated V2.57 media. Read `docs/LIBRARY_DELETE.md`:
+index-only general deletion loses favorites/custom membership; custom source
+deletion can affect other lists or leave stale entries. Public helpers keep flag
+zero. Physical `224332` confirms scoped-track DELETE with unchecked source box
+and `delete_source: 0`; album B becomes empty and A keeps two tracks. File
+inspection was skipped. Group Delete shows unsupported (`IMG_6820`, owner report;
+no PCAP), so do not repeat it. `225423` confirms flag one for A1 at position 1
+(actual order A2, A1); directory retains A2 and B1. Post-delete offset 1 gives
+empty items with total 1: refresh from zero, do not call the album empty.
+Track-level flag-zero/one capture work is complete. All supplied
+iOS checks used FiiO Control 4.6.0 per owner confirmation on 2026-09-16.
+Current-track/CUE deletion is outside the verified scope.
 
 Local audio works: `tinyshim` redirects `/proc/asound/cards` discovery to `/etc/asound.cards`
 (x2000), so stock firmware selects I2S3_OUT (6), hw:0,3. No audio binary patches.

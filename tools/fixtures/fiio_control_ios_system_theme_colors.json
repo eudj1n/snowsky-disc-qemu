@@ -1,0 +1,312 @@
+{
+  "app_version": "4.6.0",
+  "app_version_evidence": "Owner confirmed all supplied iOS checks used FiiO Control 4.6.0; not derived from User-Agent.",
+  "source": {
+    "date": "2026-09-16",
+    "capture": "2026-09-16-231820",
+    "device": "physical DISC",
+    "firmware_version": 257,
+    "firmware_evidence": "Link a501 settings at PCAP frame 1287: soc_version 257",
+    "har_sha256": "fb27b8961d123cf853adf4692e2b15b0f4dd0b8af956ca74eaad9ba80f572368",
+    "pcap_sha256": "8b19efe5f1e7c5832a6ebc59d251a26ae568c85c327b00e3375e2d51eb135e06",
+    "http_exchanges": 14,
+    "scope": "Sanitized metadata/hashes; no artwork, network addresses or unrelated device settings."
+  },
+  "route": "/image/lock_screen/",
+  "common_post_headers": {
+    "content-type": "image/png",
+    "x-fields-to-update": "1",
+    "back-groud": "alpha=100",
+    "msg-style": "default/2",
+    "flag-in-use": "1",
+    "subclass": "lock_screen/system/default",
+    "lock-screen": "time=1;date=1;battery=1;id3=1",
+    "alias": "FIIO%20Sheep",
+    "file-source": "lock_screen/system"
+  },
+  "initial": {
+    "request_frame": 1387,
+    "response_frame": 1393,
+    "seconds": 4.18684,
+    "request_headers": {
+      "x-fields-to-update": "1",
+      "file-source": "lock_screen/system"
+    },
+    "response_headers": {
+      "content-type": "image/png",
+      "alias": "FIIO%20Sheep",
+      "x-fields-to-update": "1",
+      "back-groud": "alpha=100",
+      "lock-screen": "time=1;date=1;battery=1;id3=1",
+      "msg-style": "default/2",
+      "front-color": "r=191;g=139;b=66",
+      "flag-in-use": "1",
+      "file-source": "lock_screen/system",
+      "subclass": "lock_screen/system/default"
+    },
+    "status": 200,
+    "body_size": 0,
+    "response_image": {
+      "size": 199846,
+      "sha256": "11d070bec3962cc573f390dbc3c3acdd873f8d2b780e1959217878557d7b31e2",
+      "dimensions": [
+        360,
+        360
+      ]
+    }
+  },
+  "updates": [
+    {
+      "post": {
+        "request_frame": 1926,
+        "response_frame": 1938,
+        "seconds": 30.667848,
+        "request_headers": {
+          "content-type": "image/png",
+          "x-fields-to-update": "1",
+          "back-groud": "alpha=100",
+          "msg-style": "default/2",
+          "front-color": "r=253;g=0;b=255",
+          "flag-in-use": "1",
+          "subclass": "lock_screen/system/default",
+          "lock-screen": "time=1;date=1;battery=1;id3=1",
+          "alias": "FIIO%20Sheep",
+          "file-source": "lock_screen/system"
+        },
+        "response_headers": {},
+        "status": 200,
+        "body_size": 0,
+        "response_image": {
+          "size": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "dimensions": null
+        }
+      },
+      "readback": {
+        "request_frame": 1945,
+        "response_frame": 1949,
+        "seconds": 30.72443,
+        "request_headers": {
+          "x-fields-to-update": "1",
+          "file-source": "lock_screen/system"
+        },
+        "response_headers": {
+          "content-type": "image/png",
+          "alias": "FIIO%20Sheep",
+          "x-fields-to-update": "1",
+          "back-groud": "alpha=100",
+          "lock-screen": "time=1;date=1;battery=1;id3=1",
+          "msg-style": "default/2",
+          "front-color": "r=253;g=0;b=255",
+          "flag-in-use": "1",
+          "file-source": "lock_screen/system",
+          "subclass": "lock_screen/system/default"
+        },
+        "status": 200,
+        "body_size": 0,
+        "response_image": {
+          "size": 199846,
+          "sha256": "11d070bec3962cc573f390dbc3c3acdd873f8d2b780e1959217878557d7b31e2",
+          "dimensions": [
+            360,
+            360
+          ]
+        }
+      }
+    },
+    {
+      "post": {
+        "request_frame": 2103,
+        "response_frame": 2105,
+        "seconds": 52.784326,
+        "request_headers": {
+          "content-type": "image/png",
+          "x-fields-to-update": "1",
+          "back-groud": "alpha=100",
+          "msg-style": "default/2",
+          "front-color": "r=251;g=255;b=0",
+          "flag-in-use": "1",
+          "subclass": "lock_screen/system/default",
+          "lock-screen": "time=1;date=1;battery=1;id3=1",
+          "alias": "FIIO%20Sheep",
+          "file-source": "lock_screen/system"
+        },
+        "response_headers": {},
+        "status": 200,
+        "body_size": 0,
+        "response_image": {
+          "size": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "dimensions": null
+        }
+      },
+      "readback": {
+        "request_frame": 2112,
+        "response_frame": 2116,
+        "seconds": 52.845047,
+        "request_headers": {
+          "x-fields-to-update": "1",
+          "file-source": "lock_screen/system"
+        },
+        "response_headers": {
+          "content-type": "image/png",
+          "alias": "FIIO%20Sheep",
+          "x-fields-to-update": "1",
+          "back-groud": "alpha=100",
+          "lock-screen": "time=1;date=1;battery=1;id3=1",
+          "msg-style": "default/2",
+          "front-color": "r=251;g=255;b=0",
+          "flag-in-use": "1",
+          "file-source": "lock_screen/system",
+          "subclass": "lock_screen/system/default"
+        },
+        "status": 200,
+        "body_size": 0,
+        "response_image": {
+          "size": 199846,
+          "sha256": "11d070bec3962cc573f390dbc3c3acdd873f8d2b780e1959217878557d7b31e2",
+          "dimensions": [
+            360,
+            360
+          ]
+        }
+      }
+    },
+    {
+      "post": {
+        "request_frame": 2342,
+        "response_frame": 2344,
+        "seconds": 72.225844,
+        "request_headers": {
+          "content-type": "image/png",
+          "x-fields-to-update": "1",
+          "back-groud": "alpha=100",
+          "msg-style": "default/2",
+          "front-color": "r=255;g=255;b=255",
+          "flag-in-use": "1",
+          "subclass": "lock_screen/system/default",
+          "lock-screen": "time=1;date=1;battery=1;id3=1",
+          "alias": "FIIO%20Sheep",
+          "file-source": "lock_screen/system"
+        },
+        "response_headers": {},
+        "status": 200,
+        "body_size": 0,
+        "response_image": {
+          "size": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "dimensions": null
+        }
+      },
+      "readback": {
+        "request_frame": 2351,
+        "response_frame": 2355,
+        "seconds": 72.276434,
+        "request_headers": {
+          "x-fields-to-update": "1",
+          "file-source": "lock_screen/system"
+        },
+        "response_headers": {
+          "content-type": "image/png",
+          "alias": "FIIO%20Sheep",
+          "x-fields-to-update": "1",
+          "back-groud": "alpha=100",
+          "lock-screen": "time=1;date=1;battery=1;id3=1",
+          "msg-style": "default/2",
+          "front-color": "r=255;g=255;b=255",
+          "flag-in-use": "1",
+          "file-source": "lock_screen/system",
+          "subclass": "lock_screen/system/default"
+        },
+        "status": 200,
+        "body_size": 0,
+        "response_image": {
+          "size": 199846,
+          "sha256": "11d070bec3962cc573f390dbc3c3acdd873f8d2b780e1959217878557d7b31e2",
+          "dimensions": [
+            360,
+            360
+          ]
+        }
+      }
+    },
+    {
+      "post": {
+        "request_frame": 2477,
+        "response_frame": 2479,
+        "seconds": 92.650956,
+        "request_headers": {
+          "content-type": "image/png",
+          "x-fields-to-update": "1",
+          "back-groud": "alpha=100",
+          "msg-style": "default/2",
+          "front-color": "r=255;g=169;b=169",
+          "flag-in-use": "1",
+          "subclass": "lock_screen/system/default",
+          "lock-screen": "time=1;date=1;battery=1;id3=1",
+          "alias": "FIIO%20Sheep",
+          "file-source": "lock_screen/system"
+        },
+        "response_headers": {},
+        "status": 200,
+        "body_size": 0,
+        "response_image": {
+          "size": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "dimensions": null
+        }
+      },
+      "readback": {
+        "request_frame": 2486,
+        "response_frame": 2490,
+        "seconds": 92.719463,
+        "request_headers": {
+          "x-fields-to-update": "1",
+          "file-source": "lock_screen/system"
+        },
+        "response_headers": {
+          "content-type": "image/png",
+          "alias": "FIIO%20Sheep",
+          "x-fields-to-update": "1",
+          "back-groud": "alpha=100",
+          "lock-screen": "time=1;date=1;battery=1;id3=1",
+          "msg-style": "default/2",
+          "front-color": "r=255;g=169;b=169",
+          "flag-in-use": "1",
+          "file-source": "lock_screen/system",
+          "subclass": "lock_screen/system/default"
+        },
+        "status": 200,
+        "body_size": 0,
+        "response_image": {
+          "size": 199846,
+          "sha256": "11d070bec3962cc573f390dbc3c3acdd873f8d2b780e1959217878557d7b31e2",
+          "dimensions": [
+            360,
+            360
+          ]
+        }
+      }
+    }
+  ],
+  "screenshots": {
+    "IMG_6822.PNG": "Initial golden/brown preview; upper near orange, lower near middle.",
+    "IMG_6823.PNG": "Magenta preview; upper near magenta, lower near middle.",
+    "IMG_6824.PNG": "White preview; upper near yellow, lower at left.",
+    "IMG_6825.PNG": "Pink preview; upper at red/left, lower between white/left and middle."
+  },
+  "interpretation": {
+    "upper": "Hue selection, supported by rainbow track, preview colors and RGB saves.",
+    "lower": "Lightness-like white -> selected hue -> black control; left white and intermediate pink are observed; right black is shown in gradient, not exercised by a saved endpoint.",
+    "limits": [
+      "Images are app previews, not photographs of the physical DISC display.",
+      "Screenshots have minute-resolution clocks; color correspondence is not an exact action timestamp.",
+      "No numerical slider positions, exact conversion formula, rounding or interpolation established.",
+      "Yellow-green save has no dedicated supplied screenshot.",
+      "After white, upper position appears at red/left in the next screenshot; do not infer a firmware hue reset from RGB white.",
+      "Final saved RGB 255/169/169 differs from initial 191/139/66: color was not restored in this capture.",
+      "GETs omit preview-flag: unchanged PNG hash applies to default-preview responses.",
+      "No custom-theme write or reboot-persistence test."
+    ]
+  }
+}

@@ -1,0 +1,148 @@
+{
+  "source": "2026-09-16-215831.pcap",
+  "source_sha256": "740a95db22e06fdbb515b13472b52af7e97207680a1e65d3b6e5dce47f70cbb8",
+  "har_sha256": "7f7f41721c5b6a858327a0f75cf79ecbbad59c9cc3815faf0cdf4623764d3591",
+  "firmware": 257,
+  "play_mode": 0,
+  "app_version": "4.6.0",
+  "http_exchanges": 8,
+  "note": "Physical iOS capture. Names replaced; only first three of 15 source rows retained. Existing target list, no create/delete/playback mutation. One post-add custom/song GET, not two. All response-body hashes match HAR; contiguous untruncated device TCP payloads. Chunk envelope preserved because it contains only selected numeric ranges, not media or personal data.",
+  "album": "Fixture Album",
+  "destination_name": "Fixture Target",
+  "destination_position": 1,
+  "source_page": {
+    "request_frame": 1167,
+    "seconds": 11.948785,
+    "category": "album/song",
+    "headers": {
+      "type": "album/song",
+      "album": "Fixture%20Album",
+      "artist": "",
+      "style": "",
+      "start-pos": "0",
+      "num-max": "100"
+    },
+    "total": 15,
+    "items": [
+      {
+        "pos": 0,
+        "name": "Track One",
+        "author": "Fixture Artist",
+        "count": 0
+      },
+      {
+        "pos": 1,
+        "name": "Track Two",
+        "author": "Fixture Artist",
+        "count": 0
+      },
+      {
+        "pos": 2,
+        "name": "Track Three",
+        "author": "Fixture Artist",
+        "count": 0
+      }
+    ]
+  },
+  "destination_before": {
+    "request_frame": 1184,
+    "seconds": 28.975494,
+    "total": 2,
+    "items": [
+      {
+        "pos": 0,
+        "name": "Fixture Empty",
+        "author": "",
+        "count": 0
+      },
+      {
+        "pos": 1,
+        "name": "Fixture Target",
+        "author": "",
+        "count": 0
+      }
+    ]
+  },
+  "add": {
+    "request_frame": 1190,
+    "seconds": 32.005585,
+    "method": "POST",
+    "path": "/add_custom_list/",
+    "headers": {
+      "type": "album/song",
+      "album": "Fixture%20Album",
+      "artist": "",
+      "style": "",
+      "dst_list_id": "1",
+      "content-type": "application/json",
+      "transfer-encoding": "chunked"
+    },
+    "chunked_body": "D\r\n[[0,0],[2,2]]\r\n0\r\n\r\n",
+    "decoded_body": "[[0,0],[2,2]]",
+    "ranges": [
+      [
+        0,
+        0
+      ],
+      [
+        2,
+        2
+      ]
+    ],
+    "response_frame": 1194,
+    "status": 200,
+    "response_headers": {
+      "type": "add",
+      "content-length": "0"
+    }
+  },
+  "destination_after": {
+    "request_frame": 1210,
+    "seconds": 43.667063,
+    "total": 2,
+    "items": [
+      {
+        "pos": 0,
+        "name": "Fixture Empty",
+        "author": "",
+        "count": 0
+      },
+      {
+        "pos": 1,
+        "name": "Fixture Target",
+        "author": "",
+        "count": 2
+      }
+    ]
+  },
+  "membership_after": {
+    "request_frame": 1219,
+    "seconds": 45.102397,
+    "category": "custom/song",
+    "headers": {
+      "type": "custom/song",
+      "src_list_id": "1",
+      "artist": "",
+      "album": "",
+      "style": "",
+      "start-pos": "0",
+      "num-max": "100"
+    },
+    "total": 2,
+    "items": [
+      {
+        "pos": 0,
+        "name": "Track One",
+        "author": "Fixture Artist",
+        "count": 0
+      },
+      {
+        "pos": 1,
+        "name": "Track Three",
+        "author": "Fixture Artist",
+        "count": 0
+      }
+    ]
+  },
+  "app_version_evidence": "Owner confirmed on 2026-09-16 that all supplied iOS checks/captures used FiiO Control 4.6.0; not derived from network User-Agent."
+}

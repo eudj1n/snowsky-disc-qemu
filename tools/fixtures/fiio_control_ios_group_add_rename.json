@@ -1,0 +1,256 @@
+{
+  "source": "2026-09-16-221421.pcap",
+  "source_sha256": "04b69dfa76107f15d5bbe81e47613de961ed7aa3b6e0bb5ba5c7f745e01dbc99",
+  "har_sha256": "bf9ed5f31bee84dd80b8d9e506cf94dbb7f8c80f0f20c567d904d56a217700e4",
+  "firmware": 257,
+  "app_version": "4.6.0",
+  "play_mode": 0,
+  "http_exchanges": 14,
+  "note": "Sanitized physical iOS capture: genre, playlist and album names replaced. Track contents omitted; membership only preserves observed pagination metadata. Full HTTP response hashes match HAR; device streams contiguous without reported loss/retransmission/truncation. Selected album counts sum to 105, but only the first 100 destination tracks were captured. No physical DELETE or playback mutation.",
+  "genre": "Fixture Genre",
+  "created_name": "Fixture Group",
+  "renamed_name": "Fixture Renamed",
+  "destination_position": 2,
+  "source_page": {
+    "frame": 1350,
+    "seconds": 30.988545,
+    "category": "style/album",
+    "headers": {
+      "type": "style/album",
+      "style": "Fixture%20Genre",
+      "artist": "",
+      "album": "",
+      "start-pos": "0",
+      "num-max": "100"
+    },
+    "total": 6,
+    "items": [
+      {
+        "pos": 0,
+        "name": "Fixture Album 0",
+        "author": "",
+        "count": 16
+      },
+      {
+        "pos": 1,
+        "name": "Fixture Album 1",
+        "author": "",
+        "count": 18
+      },
+      {
+        "pos": 2,
+        "name": "Fixture Album 2",
+        "author": "",
+        "count": 89
+      },
+      {
+        "pos": 3,
+        "name": "Fixture Album 3",
+        "author": "",
+        "count": 20
+      },
+      {
+        "pos": 4,
+        "name": "Fixture Album 4",
+        "author": "",
+        "count": 16
+      },
+      {
+        "pos": 5,
+        "name": "Fixture Album 5",
+        "author": "",
+        "count": 18
+      }
+    ]
+  },
+  "mutations": [
+    {
+      "frame": 1284,
+      "seconds": 15.568829,
+      "method": "POST",
+      "path": "/custom_list_cmd/",
+      "headers": {
+        "type": "create",
+        "list_name": "Fixture%20Group"
+      },
+      "decoded_body": "",
+      "response_frame": 1286,
+      "status": 200,
+      "response_headers": {
+        "type": "create",
+        "content-length": "0"
+      }
+    },
+    {
+      "frame": 1363,
+      "seconds": 41.374761,
+      "method": "POST",
+      "path": "/add_custom_list/",
+      "headers": {
+        "transfer-encoding": "chunked",
+        "style": "Fixture%20Genre",
+        "content-type": "application/json",
+        "artist": "",
+        "album": "",
+        "dst_list_id": "2",
+        "type": "style/album"
+      },
+      "decoded_body": "[[0,0],[2,2]]",
+      "response_frame": 1367,
+      "status": 200,
+      "response_headers": {
+        "type": "add",
+        "content-length": "0"
+      }
+    },
+    {
+      "frame": 1432,
+      "seconds": 59.053302,
+      "method": "POST",
+      "path": "/custom_list_cmd/",
+      "headers": {
+        "type": "update",
+        "list_id": "2",
+        "list_name": "Fixture%20Renamed"
+      },
+      "decoded_body": "",
+      "response_frame": 1434,
+      "status": 200,
+      "response_headers": {
+        "type": "update",
+        "content-length": "0"
+      }
+    }
+  ],
+  "custom_readbacks": [
+    {
+      "frame": 1096,
+      "seconds": 1.373368,
+      "total": 2,
+      "items": [
+        {
+          "pos": 0,
+          "name": "Fixture Empty",
+          "author": "",
+          "count": 0
+        },
+        {
+          "pos": 1,
+          "name": "Fixture Existing",
+          "author": "",
+          "count": 2
+        }
+      ]
+    },
+    {
+      "frame": 1232,
+      "seconds": 7.079868,
+      "total": 2,
+      "items": [
+        {
+          "pos": 0,
+          "name": "Fixture Empty",
+          "author": "",
+          "count": 0
+        },
+        {
+          "pos": 1,
+          "name": "Fixture Existing",
+          "author": "",
+          "count": 2
+        }
+      ]
+    },
+    {
+      "frame": 1288,
+      "seconds": 15.612493,
+      "total": 3,
+      "items": [
+        {
+          "pos": 0,
+          "name": "Fixture Empty",
+          "author": "",
+          "count": 0
+        },
+        {
+          "pos": 1,
+          "name": "Fixture Existing",
+          "author": "",
+          "count": 2
+        },
+        {
+          "pos": 2,
+          "name": "Fixture Group",
+          "author": "",
+          "count": 0
+        }
+      ]
+    },
+    {
+      "frame": 1384,
+      "seconds": 47.283904,
+      "total": 3,
+      "items": [
+        {
+          "pos": 0,
+          "name": "Fixture Empty",
+          "author": "",
+          "count": 0
+        },
+        {
+          "pos": 1,
+          "name": "Fixture Existing",
+          "author": "",
+          "count": 2
+        },
+        {
+          "pos": 2,
+          "name": "Fixture Group",
+          "author": "",
+          "count": 105
+        }
+      ]
+    },
+    {
+      "frame": 1436,
+      "seconds": 59.096708,
+      "total": 3,
+      "items": [
+        {
+          "pos": 0,
+          "name": "Fixture Empty",
+          "author": "",
+          "count": 0
+        },
+        {
+          "pos": 1,
+          "name": "Fixture Existing",
+          "author": "",
+          "count": 2
+        },
+        {
+          "pos": 2,
+          "name": "Fixture Renamed",
+          "author": "",
+          "count": 105
+        }
+      ]
+    }
+  ],
+  "membership_page": {
+    "frame": 1519,
+    "seconds": 64.056437,
+    "headers": {
+      "type": "custom/song",
+      "src_list_id": "2",
+      "start-pos": "0",
+      "num-max": "100"
+    },
+    "total": 105,
+    "returned": 100,
+    "first_position": 0,
+    "last_position": 99,
+    "next_page_observed": false
+  },
+  "app_version_evidence": "Owner confirmed on 2026-09-16 that all supplied iOS checks/captures used FiiO Control 4.6.0; not derived from network User-Agent."
+}

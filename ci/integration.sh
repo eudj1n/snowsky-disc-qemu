@@ -9,8 +9,8 @@ export FW_VERSION="${FW_VERSION:-2.57}"
 CI_SCENARIO="${CI_SCENARIO:-full}"
 CI_IDLE_PHASE="${CI_IDLE_PHASE:-all}"
 case "$CI_IDLE_PHASE" in all|quiet|power|usb) ;; *) echo 'Unknown CI_IDLE_PHASE' >&2; exit 2;; esac
-case "$CI_SCENARIO" in full|queue|queue-reads|settings|themes|preferences|playlists|library|scan-cancel|library-reset|track-end|formats|discovery|idle|idle-usb) ;; *) echo 'Unknown CI_SCENARIO' >&2; exit 2;; esac
-if [[ "$CI_SCENARIO" = library && "$FW_VERSION" != 2.57 ]]; then
+case "$CI_SCENARIO" in full|queue|queue-reads|settings|themes|preferences|playlists|library|library-delete|scan-cancel|library-reset|track-end|formats|discovery|idle|idle-usb) ;; *) echo 'Unknown CI_SCENARIO' >&2; exit 2;; esac
+if [[ ( "$CI_SCENARIO" = library || "$CI_SCENARIO" = library-delete ) && "$FW_VERSION" != 2.57 ]]; then
   echo 'Genre/folder acceptance requires active firmware V2.57' >&2
   exit 2
 fi
@@ -96,6 +96,10 @@ if [ "$CI_SCENARIO" = track-end ]; then
 fi
 if [ "$CI_SCENARIO" = formats ]; then
   compose exec -T emu python3 -B /repo/ci/formats_check.py
+  exit 0
+fi
+if [ "$CI_SCENARIO" = library-delete ]; then
+  compose exec -T emu python3 -B /repo/ci/library_delete_check.py
   exit 0
 fi
 if [ "$CI_SCENARIO" = library ]; then

@@ -134,8 +134,15 @@ Ranges are **inclusive zero-based positions**. Despite the `_id` names, custom-l
 headers refer to the playlist's position in `LIST_ID` order. Acceptance deliberately
 creates an internal ID gap before rename/add/delete to catch accidental ID use.
 List positions can shift after deletion; refresh them before the next operation.
-Deleting records with `delete_source: 0` preserves the audio files. Source-file
-deletion through the category route is not exposed in the client.
+Deleting records with `delete_source: 0` preserves audio files, but general-
+catalog deletion also removes matching favorites and playlist entries; scanning
+does not restore that membership. Source deletion can leave stale references
+or affect other playlists. See [verified deletion scopes](LIBRARY_DELETE.md).
+Physical FiiO Control 4.6.0 captures now confirm both source flags for scoped
+track deletion and subsequent file listing. An offset-one read after deleting
+one of two tracks returns `items: []` but `total-num: 1`; refresh from zero
+instead of treating the album as empty. Source-file deletion through the category
+route is not exposed in the client.
 For V2.57 genre/group bulk addition, prefer `add_selection_to_playlist()` with
 the displayed destination name; it checks filters and current range bounds.
 Group categories accepted by ADD are **not** accepted by DELETE: `style/album`

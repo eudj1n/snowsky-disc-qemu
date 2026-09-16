@@ -7,10 +7,135 @@ from unittest.mock import Mock
 from urllib.parse import quote
 
 from fiio_http import Reply
-from fiio_theme import read_lock_screen, upload_lock_screen, select_system_lock_screen, FIELDS, CUSTOM_STYLES
+from fiio_theme import read_lock_screen, upload_lock_screen, select_system_lock_screen, FIELDS, CUSTOM_STYLES, update_system_lock_screen
 
 
 class ThemeTests(unittest.TestCase):
+    def system_fixture(self):
+        return json.loads((Path(__file__).parent / 'fixtures' /
+                           'fiio_control_ios_system_theme_colors.json').read_text())
+
+    def test_system_edit_matches_captured_color_post_and_reads_original(self):
+        fixture = self.system_fixture()
+        for update in fixture['updates']:
+            before = Reply(200, fixture['initial']['response_headers'].copy(), b'image')
+            after = Reply(200, update['readback']['response_headers'].copy(), b'image')
+            rgb = tuple(int(v.split('=')[1]) for v in after.headers['front-color'].split(';'))
+            http = Mock()
+            http.request.side_effect = [before, Reply(200, {}, b''), after]
+            self.assertIs(update_system_lock_screen(http, 1, color=rgb), after)
+            self.assertEqual(http.request.call_args_list[1].kwargs,
+                             dict(body=b'', headers=update['post']['request_headers']))
+            for index in (0, 2):
+                self.assertEqual(http.request.call_args_list[index].args, ('GET', '/image/lock_screen/'))
+                self.assertEqual(http.request.call_args_list[index].kwargs['headers']['preview-flag'], '0')
+            self.assertEqual(before.headers, fixture['initial']['response_headers'])
+
+    def test_system_edit_merges_false_zero_and_style_without_coupling(self):
+        original = self.system_fixture()['initial']['response_headers']
+        for change, fields in (
+            ({'alpha': 0}, {'back-groud': 'alpha=0'}),
+            ({'show_date': False}, {'lock-screen': 'time=1;date=0;battery=1;id3=1'}),
+            ({'show_time': False, 'style': 'clock/0'},
+             {'msg-style': 'clock/0', 'lock-screen': 'time=0;date=1;battery=1;id3=1'}),
+            ({'style': 'default/0'}, {'msg-style': 'default/0'}),
+        ):
+            with self.subTest(change=change):
+                expected = dict(original, **fields)
+                http = Mock()
+                http.request.side_effect = [Reply(200, original.copy(), b'image'),
+                                            Reply(200, {}, b''), Reply(200, expected, b'image')]
+                update_system_lock_screen(http, 1, **change)
+                self.assertEqual(http.request.call_args_list[1].kwargs['headers'], expected)
+
+    def test_system_edit_rejects_invalid_input_before_io(self):
+        for change in ({}, {'alpha': True}, {'alpha': -1}, {'alpha': 101},
+                       {'color': (1, 2)}, {'color': (False, 0, 0)}, {'color': (0, 0, 256)},
+                       {'style': []}, {'style': 'default/3'}, {'show_time': 0}):
+            http = Mock()
+            with self.subTest(change=change), self.assertRaises(ValueError):
+                update_system_lock_screen(http, 1, **change)
+            http.request.assert_not_called()
+        for slot in (True, -1, 5, '1'):
+            http = Mock()
+            with self.assertRaises(ValueError):
+                update_system_lock_screen(http, slot, alpha=0)
+            http.request.assert_not_called()
+
+    def test_system_edit_refuses_bad_snapshot_or_flags_without_post(self):
+        headers = self.system_fixture()['initial']['response_headers']
+        for patch, body in (({'file-source': 'lock_screen/custom'}, b'image'),
+                            ({'x-fields-to-update': '2'}, b'image'),
+                            ({'lock-screen': 'time=1'}, b'image'),
+                            ({'alias': 'bad\r\nheader'}, b'image'), ({}, b'')):
+            http = Mock()
+            http.request.return_value = Reply(200, dict(headers, **patch), body)
+            with self.assertRaises(ValueError):
+                update_system_lock_screen(http, 1, show_date=False)
+            self.assertEqual(http.request.call_count, 1)
+
+    def test_system_edit_detects_ignored_write_image_change_and_other_field_loss(self):
+        original = self.system_fixture()['initial']['response_headers']
+        expected = dict(original, **{'back-groud': 'alpha=0'})
+        for headers, body in ((original, b'image'), (expected, b'changed'),
+                              (dict(expected, **{'msg-style': 'clock/0'}), b'image')):
+            http = Mock()
+            http.request.side_effect = [Reply(200, original, b'image'),
+                                        Reply(200, {}, b''), Reply(200, headers, body)]
+            with self.assertRaisesRegex(OSError, 'state may have changed'):
+                update_system_lock_screen(http, 1, alpha=0)
+            self.assertEqual(http.request.call_count, 3)  # no write replay or rollback
+
+    def test_system_edit_does_not_retry_uncertain_post(self):
+        http = Mock()
+        http.request.side_effect = [Reply(200, self.system_fixture()['initial']['response_headers'], b'image'),
+                                    TimeoutError('write response lost')]
+        with self.assertRaises(TimeoutError):
+            update_system_lock_screen(http, 1, alpha=49)
+        self.assertEqual(http.request.call_count, 2)
+
+    def test_system_selection_preserves_captured_rgb_without_quantization(self):
+        fixture = json.loads((Path(__file__).parent / 'fixtures' /
+                              'fiio_control_ios_system_theme_colors.json').read_text())
+        for update in fixture['updates']:
+            post, readback = update['post'], update['readback']
+            with self.subTest(color=post['request_headers']['front-color']):
+                headers = readback['response_headers'].copy()
+                self.assertEqual(headers['front-color'],
+                                 post['request_headers']['front-color'])
+                http = Mock()
+                http.request.return_value = Reply(readback['status'], headers,
+                                                  b'artwork omitted')
+                select_system_lock_screen(http, 1)
+                args, kwargs = http.request.call_args
+                self.assertEqual(args, ('POST', fixture['route']))
+                # Preserve near-primary RGB bytes (253/0/255, 251/255/0),
+                # white and pink exactly; selecting must not reconstruct hue.
+                self.assertEqual(kwargs['headers'], post['request_headers'])
+                self.assertEqual(kwargs['body'], b'')
+                self.assertEqual(headers, readback['response_headers'])
+
+    def test_system_selection_preserves_captured_opacity_including_zero(self):
+        fixture = json.loads((Path(__file__).parent / 'fixtures' /
+                              'fiio_control_ios_system_theme_opacity.json').read_text())
+        # Reselecting a system slot must preserve its saved opacity, including
+        # zero, without uploading artwork or double-encoding the stock alias.
+        for post, readback in zip(fixture['posts'][1:], fixture['readbacks']):
+            with self.subTest(opacity=post['displayed_percent']):
+                headers = readback['response_headers'].copy()
+                self.assertEqual(headers['back-groud'], post['back-groud'])
+                http = Mock()
+                http.request.return_value = Reply(readback['status'], headers,
+                                                  b'artwork omitted')
+                select_system_lock_screen(http, int(headers['x-fields-to-update']))
+                args, kwargs = http.request.call_args
+                self.assertEqual(args, ('POST', fixture['route']))
+                expected = dict(fixture['common_post_headers'],
+                                **{'back-groud': post['back-groud']})
+                self.assertEqual(kwargs['headers'], expected)
+                self.assertEqual(kwargs['body'], b'')
+                self.assertEqual(headers, readback['response_headers'])
+
     def test_alias_limit_counts_encoded_bytes_before_decoding(self):
         data = (b'\x89PNG\r\n\x1a\n' + struct.pack('>I', 13) + b'IHDR' +
                 struct.pack('>II', 360, 360) + b'\0' * 9)

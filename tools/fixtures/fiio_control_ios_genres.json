@@ -1,9 +1,10 @@
 {
+  "app_version_evidence": "Owner confirmed on 2026-09-16 that all supplied iOS checks/captures used FiiO Control 4.6.0; not derived from network User-Agent.",
   "source": "2026-09-16-185016.pcap",
   "source_sha256": "37a1d51d875fd3cf68a9d1f4c378cb7827ecdb72f3eea9cdb90ec3b112090977",
   "har_sha256": "d2f1dadab4a32aef7dd2f45e4b149674fc89d05aa0e85e7018331c7ce42c2571",
   "firmware": 257,
-  "app_version": null,
+  "app_version": "4.6.0",
   "note": "Sanitized physical iOS trace. Genre/album names replaced consistently; payloads are not byte-identical originals and frame lengths must be recomputed. IPs, track identities, artwork, unrelated traffic and full settings omitted. Times are PCAP-relative seconds. HAR has only the first 3 of 13 device HTTP exchanges; later evidence comes from PCAP.",
   "genre": "Fixture Genre",
   "album": "Fixture Album",

@@ -156,5 +156,7 @@
       "wire": "a202023A{\"song\":\"{\\\"id\\\":123,\\\"pos_id\\\":1,\\\"song_name\\\":\\\"Тестовый трек\\\",\\\"song_duration_time\\\":180000,\\\"song_file_path\\\":\\\"/tmp/sdcard/Fixture/Track.flac\\\",\\\"song_sample_rate\\\":44100,\\\"song_encoding_rate\\\":16,\\\"song_bit_rate\\\":1411,\\\"song_artist_name\\\":\\\"Fixture Artist\\\",\\\"song_album_name\\\":\\\"Fixture Album\\\",\\\"song_style_name\\\":\\\"Fixture Genre\\\",\\\"song_track\\\":1,\\\"song_channel\\\":2,\\\"is_sacd\\\":false,\\\"is_cue\\\":false,\\\"is_dsd\\\":false,\\\"is_m3u\\\":false,\\\"m3u_file_path\\\":\\\"\\\"}\",\"love\":false,\"playerflag\":1,\"state\":1,\"playing_num\":\"1/3\",\"work_mode\":\"LOCAL\"}",
       "sanitized": true
     }
-  ]
+  ],
+  "app_version": "4.6.0",
+  "app_version_evidence": "Owner confirmed on 2026-09-16 that all supplied iOS checks/captures used FiiO Control 4.6.0; not derived from network User-Agent."
 }

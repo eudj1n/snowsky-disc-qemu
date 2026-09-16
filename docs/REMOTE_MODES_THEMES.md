@@ -88,7 +88,7 @@ GET headers:
 The response body is the image, with metadata in headers. The acceptance test uses
 `preview-flag: 0` and compares the entire response with the stored file.
 
-POST sends the raw image body and all of these headers:
+Custom POST sends the raw image body and all of these headers:
 
 | Header | Tested example |
 |---|---|
@@ -108,6 +108,46 @@ bytes), alpha 0..100, four overlay flags and RGB color. It always uploads the fu
 file and activates the result. Byte preservation, headers, decoded alias and
 `CUSTOM_THEME` fields are checked independently. This does not measure overlay
 layout, opacity or colors on a physical screen. GIF remains unvalidated.
+
+Physical `230929` confirms **system** opacity edits with empty POST bodies,
+`file-source: lock_screen/system`, slot 1 and the other system metadata intact.
+Displayed 100/49/0 map directly to `back-groud: alpha=100/49/0`; the final GET
+confirms 100. The owner observes 0 hiding the image and changes appearing after
+unlock/relock. This is opacity, not inverse transparency. System selection
+preserves metadata; `update_system_lock_screen` now supplies verified edits.
+Do not transfer this empty-body workflow to custom uploads.
+[Capture and evidence limits](FIIO_CONTROL_APP.md#physical-system-theme-opacity-2026-09-16).
+
+### System-theme editing
+
+`update_system_lock_screen(http, slot, ...)` edits **and activates** one of
+system slots 0..4. Optional `alpha`, `color`, `style`, `show_time`, `show_date`,
+`show_battery`, `show_id3` change only those fields; omitted/None fields preserve
+fresh device metadata. At least one edit is required. Alpha is integer 0..100,
+RGB is three integer bytes, flags are booleans, styles are `default/0`,
+`default/1`, `default/2`, `clock/0`. Style does not implicitly change overlays.
+
+```python
+from fiio_theme import update_system_lock_screen
+
+saved = update_system_lock_screen(http, 1, alpha=49, color=(255, 169, 169))
+saved = update_system_lock_screen(http, 1, show_date=False)
+```
+
+The helper reads original image/metadata (`preview-flag: 0`), preserves the
+encoded stock alias and all untouched fields, sends an **empty-body** POST with
+active flag 1, then reads again. It returns the verified GET reply only when all
+sent metadata and original image bytes match. It does not rename system themes,
+replace their artwork or modify custom slot 0. Existing selection still returns
+a raw POST reply; custom upload retains its full-PNG contract.
+
+Serialize writers: there is no compare-and-swap. A timeout/readback error may
+follow a successful update; refresh state before deciding what to do. No
+automatic retry, rollback or unlock/relock is performed. Saved readback does not
+prove an already visible lock screen repainted; the owner observed refresh after
+unlock/relock. Focused `themes` acceptance tests direct/proxy opacity/RGB, all
+four styles and independent overlays, original image/SQLite state and restoration
+of the initial system metadata and active selection. No physical replay.
 
 ### Alias limit (V2.57)
 
@@ -255,7 +295,11 @@ The second capture confirms all four custom `msg-style` values with fresh GET
 readback; the helper now exposes the allowlist documented above.
 The sequence below is retained for reproduction, not a request to repeat the
 completed color/Date or style captures. Remaining questions include the two
-color sliders' individual semantics, alpha's UI mapping and the official catalog.
+the official catalog and exact slider conversion formula. Later `231820`
+identifies hue/lightness-like UI roles and exact RGB save/readback, without
+recovering the numerical conversion. The later system
+opacity capture resolves its percentage mapping; custom opacity rendering is not
+established by it.
 The long localized alias is resolved by the boundary tests above. Do not request another full walkthrough merely
 to repeat already captured style values.
 Previously captured modes, codecs and stock-theme selections need not be repeated.
@@ -290,3 +334,96 @@ route and TCP metadata commands. Compare image-body lengths/hashes and metadata
 between upload and later saves; retain only sanitized protocol fields in Git.
 Do not expose a metadata-only helper until the observed path has been reproduced
 on a disposable V2.57 guest with image preservation and fresh readback checks.
+
+
+### Next capture: background transparency
+
+Prepared 2026-09-16 after completing the library Delete captures. Target:
+**FiiO Control 4.6.0 on iPhone → physical DISC**. Existing captures held alpha
+at 100; they do not establish percentage conversion or the visible direction.
+Historical requested scenario: the supplied `230929` capture instead edits
+system slot 1, with values 100 → 49 → 0 → 100. Its
+[analysis](FIIO_CONTROL_APP.md#physical-system-theme-opacity-2026-09-16) closes
+the stock-theme percentage mapping and observed rendering direction. Do not
+repeat this scenario merely to obtain 50 instead of 49. Custom-slot opacity
+rendering is not established by that system-slot trace.
+
+Use the existing recoverable custom image; keep its image, style, color and all
+four overlay flags unchanged. Start Surge capture before opening its editor.
+
+1. Record the initial displayed transparency and active theme. Open the custom
+   editor to capture the starting read; do not upload a replacement image.
+2. Set displayed transparency to **0%**, Apply now, leave and reopen the editor.
+3. Repeat for **50%** and then **100%**, saving/reopening each time. If the slider
+   cannot reach an exact percentage, record the actual displayed value.
+4. Restore the original percentage and initially active theme; reopen to check.
+   Stop capture and provide PCAP plus HAR, with any deviations from this order.
+
+At each value, view the DISC lock screen and note whether the background picture
+is visible/dimmed/absent. A photograph is useful if the difference is ambiguous.
+The phone preview alone cannot establish physical rendering. If the custom image
+cannot be restored, stop before changing it and report the limitation.
+
+Analysis: pair displayed values with `back-groud: alpha=…`, compare unchanged
+PNG hashes and other headers, distinguish save from fresh GET, and record the
+restoration readback. Separate persisted metadata from physical appearance.
+Do not infer color-slider mapping from this alpha-only trace.
+
+The subsequent `231820` trace covers color changes; no repeat walkthrough is
+needed. Official catalog research is now deferred to issue #11. If resumed,
+retain relevant non-DISC traffic too: local-port-only filtering could
+miss a catalog request. The Android snapshot contains cloud-service identifiers
+and `get-theme-list?deviceId=`, but this is only a static search lead, not a
+verified endpoint or evidence of any iOS request. No catalog host is assumed.
+
+
+### Next capture: individual color sliders
+
+Historical requested scenario, now followed by `231820` and screenshots
+6822–6825. [Analysis](FIIO_CONTROL_APP.md#physical-system-theme-colors-2026-09-16)
+records hue/lightness-like roles, four RGB saves and final pink color (not
+restoration). Exact thumb conversion remains unknown; no repeat requested.
+
+After `230929`, keep **FIIO Sheep / system slot 1**, opacity 100, image, style
+and overlay flags fixed. The observed starting color was RGB 191/139/66; record
+actual starting slider positions because the app may now have a different state.
+
+1. Start capture before opening the color panel. Record the initial positions.
+2. Change only the **upper** color slider noticeably, Apply now, leave/reopen.
+   Record its position and the visible text/clock color after unlock/relock.
+3. Restore the upper slider and save/reopen. Then change only the **lower**
+   slider, save/reopen and record its position and the physical color.
+4. Restore both original positions and save/reopen before stopping capture.
+
+Provide PCAP/HAR and before/after screenshots of the sliders; describe actual
+order if it differs. If exact restoration is not possible, report that rather
+than claiming the original color returned. Never assume a hue/brightness or
+RGB/HSV mapping from appearance alone. Compare `front-color` with all other
+headers and fresh reads; log coupled changes if the UI moves the other slider.
+Two isolated examples can establish each slider's effect, but may not recover
+its full conversion formula. Official catalog loading is deferred to issue #11.
+
+
+### Deferred: Official wallpapers and cloud synchronization
+
+**Owner decision, 2026-09-16:** excluded from the current local DISC task and
+tracked separately in [issue #11](https://github.com/eudj1n/snowsky-disc-qemu/issues/11). The owner reports
+cloud synchronization is available after FiiO registration/sign-in; account
+requirements/endpoints have not been validated here. No capture, registration
+or login is currently requested. The earlier proposed scenario below is kept
+only as historical context for the follow-up, not an active instruction.
+
+After the opacity/color checkpoints, investigate the previously empty Official
+page independently. Start Surge capture before opening **Wallpapers → Official**;
+wait about 15–20 seconds, then refresh if an actual refresh control/gesture is
+available. Otherwise leave and reopen once. Record whether the page remains
+empty, shows an error or loads items; stop capture and supply PCAP/HAR.
+
+Keep relevant non-DISC traffic: a capture filtered only to device ports 12100/
+12103 may miss catalog loading. Do not install a theme, log in, or change settings
+for this read-only scenario. An empty HAR or encrypted connection alone cannot
+establish absence of a catalog request. Match endpoints/results if visible;
+otherwise identify only supported connection/DNS/TLS evidence and its limits.
+The Android `get-theme-list?deviceId=` string remains a candidate until observed
+or linked by static control-flow analysis. Do not infer the host or query it from
+an unverified combination of snapshot strings.

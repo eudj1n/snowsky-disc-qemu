@@ -1,4 +1,6 @@
 {
+  "app_version_evidence": "Owner confirmed on 2026-09-16 that all supplied iOS checks/captures used FiiO Control 4.6.0; not derived from network User-Agent.",
+  "app_version": "4.6.0",
   "source": "2026-09-16-192141.pcap",
   "source_sha256": "bcd91284c1c1d0fb06c74dea9e2bcf0283a64d3cc7103b386e99c23b5f007b3b",
   "har": {"source": "2026-09-16-192141.har", "sha256": "a8dcaf162b02e32c6997ad2ae522cdad6f2cfcd0ab190986b391f4fa93e54047", "entries": 0},
@@ -18,7 +20,7 @@
   "firmware": 257,
   "firmware_frame": 948,
   "tcp_stream": 89,
-  "note": "Sanitized filter-only evidence from physical DISC. User reports initially selected row 2, then rows 3,4,5,6,1,2. Labels are transcribed from the screenshot; final two remain visibly truncated. Relative times are seconds since capture start. App version was not reconfirmed. Other settings, identities, endpoints and unrelated traffic omitted. Request frames may contain additional coalesced commands; only complete relevant Link frames retained here.",
+  "note": "Sanitized filter-only evidence from physical DISC. User reports initially selected row 2, then rows 3,4,5,6,1,2. Labels are transcribed from the screenshot; final two remain visibly truncated. Relative times are seconds since capture start. Other settings, identities, endpoints and unrelated traffic omitted. Request frames may contain additional coalesced commands; only complete relevant Link frames retained here.",
   "reads": [
     {"request_frame": 1010, "request": "0603000c0000", "reply_frames": [1016, 1018], "replies": ["a603000C0001", "a603000C000A"]},
     {"request_frame": 1032, "request": "0603000c0000", "reply_frames": [1034, 1036], "replies": ["a603000C0001", "a603000C000A"]},

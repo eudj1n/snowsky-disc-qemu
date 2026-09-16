@@ -25,6 +25,10 @@ The [M21 comparison](M21_COMPARISON.md) records the related Android BLinker dial
 its UTF-16 length units, opposite playback-state enum, mode/favorite toggle
 semantics and separate HTTP API must not be applied to DISC.
 
+Current V2.57 implementation entry point: [DISC capability summary](DISC_CAPABILITIES.md).
+The agreed local research checkpoint is finalized; historical probes below
+retain their original firmware/evidence scope.
+
 ## Frame format (FiiO Link)
 
 ASCII-hex header + payload:

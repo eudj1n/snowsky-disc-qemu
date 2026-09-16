@@ -248,6 +248,8 @@ CI_SCENARIO=preferences FW_VERSION=2.57 bash ci/integration.sh /absolute/path/to
 CI_SCENARIO=playlists FW_VERSION=2.57 bash ci/integration.sh /absolute/path/to/main_os/ota_v257
 # Genre/scoped-album/folder selection, bulk-add expansion and index-only deletion.
 CI_SCENARIO=library FW_VERSION=2.57 bash ci/integration.sh /absolute/path/to/main_os/ota_v257
+# Seven destructive category-delete cases on disposable generated media only.
+CI_SCENARIO=library-delete FW_VERSION=2.57 bash ci/integration.sh /absolute/path/to/main_os/ota_v257
 # Cooperative indexing cancellation, partial catalog and subsequent full scan.
 CI_SCENARIO=scan-cancel FW_VERSION=2.57 bash ci/integration.sh /absolute/path/to/main_os/ota_v257
 # Destructive library reset, only on the disposable generated-media fixture.
@@ -265,7 +267,7 @@ CI_SCENARIO=idle-usb FW_VERSION=2.57 bash ci/integration.sh /absolute/path/to/ma
 ```
 
 `CI_SCENARIO` accepts `full` (default), `queue`, `queue-reads`, `settings`, `themes`,
-`preferences`, `playlists`, `library`, `scan-cancel`, `library-reset`, `track-end`, `formats`,
+`preferences`, `playlists`, `library`, `library-delete`, `scan-cancel`, `library-reset`, `track-end`, `formats`,
 `discovery`, `idle` or `idle-usb`. All use the same
 random-name isolated stack and cleanup. Focused runs execute only their selected
 checks, not unrelated integration scenarios. Most use the shared setup/scan/reboot
@@ -278,8 +280,14 @@ index-only track deletion/rescan recovery. Source hashes are preserved and the
 captured type-8 whole-genre Play all is compared with type 10 in modes 0/4. The
 three-track baseline is restored. The same check runs in `full` before formats.
 See [the library contract](LIBRARY_BROWSING.md); no long power tests are involved.
+`library-delete` is a focused-only V2.57 research scenario (not part of `full`).
+It starts after boot, generates its own additional media and compares index,
+favorites, two overlapping playlists and source files for seven DELETE cases,
+then verifies scan recovery and restores the three-track baseline. It checks
+direct/proxied HTTP with TCP/WS state control. See [deletion scope](LIBRARY_DELETE.md).
 `themes` is V2.57-only, starts after boot without a media scan, and calls
-`modes_themes_check.py --themes-only`. It covers five system slots, four custom
+`modes_themes_check.py --themes-only`. It covers five system slots, read/merge/write/verify system edits (opacity, RGB,
+four styles and independent overlays, original image/SQLite checks and restoration), four custom
 styles with explicit time off/on, full-image and metadata preservation, unsafe
 empty-body/activation semantics, alias encoded-byte boundaries (including raw
 over-limit diagnostics) and system-theme restoration over direct and

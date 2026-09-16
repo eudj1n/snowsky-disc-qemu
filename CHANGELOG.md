@@ -7,23 +7,27 @@ See [release and support policy](docs/PORTING.md).
 
 ## [Unreleased]
 
-Active firmware: **V2.57**. Protocol research is tracked in
-[issue #10](https://github.com/eudj1n/snowsky-disc-qemu/issues/10).
+Active firmware: **V2.57**. Local protocol research is finalized in
+[issue #10](https://github.com/eudj1n/snowsky-disc-qemu/issues/10); see the
+[controller capability summary](docs/DISC_CAPABILITIES.md).
 
 ### Added
 
 - Remote playback, seeking, play modes, favorites and guarded queue selection,
   with natural end-of-track/list checks. [Playback](docs/REMOTE_CONTROL.md).
 - HTTP file transfer, library browsing and custom playlist management/playback;
-  genre/folder selection (including captured FiiO Control Play all) and guarded
+  artist-scoped album, genre and folder selection (including captured FiiO Control Play all) and guarded
   bulk playlist additions. [Library](docs/LIBRARY_BROWSING.md).
+- Disposable category-deletion checks documenting membership loss, file removal
+  and stale references. [Deletion limits](docs/LIBRARY_DELETE.md).
 - Library scan cancellation and dedicated index reset with recovery checks;
   reset preserves source files. [Scan](docs/LIBRARY_SCAN.md), [reset](docs/LIBRARY_RESET.md).
 - Remote audio settings with verified stock Gain and physical-app filter mapping, channel balance
   and basic PEQ helpers; read-only gapless,
   folder-jump and ReplayGain preferences. [Settings and limits](docs/REMOTE_SETTINGS.md).
 - Work-mode/codec preferences and custom wallpaper uploads, including four styles
-  and captured color/Date save behavior, with verified safe name limits.
+  and captured color/Date save behavior, with verified safe name limits. System
+  themes now support verified opacity, color, style and overlay edits.
   [Modes and themes](docs/REMOTE_MODES_THEMES.md).
 - Passive LAN discovery and an opt-in, time-limited bridge for one phone;
   initial FiiO Control connection verified. [Discovery](docs/DISCOVERY.md).

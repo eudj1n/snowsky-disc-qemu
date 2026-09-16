@@ -1,4 +1,4 @@
-"""Genre/folder acceptance with generated media on disposable V2.57 only."""
+"""Artist/genre/folder acceptance with generated media on disposable V2.57 only."""
 import asyncio
 import hashlib
 import os
@@ -26,6 +26,9 @@ async def exercise(transport):
             ('style/album', {'style': 'Genre Ё'}),
             ('style/album/song', {'style': 'Genre Ё', 'album': 'Shared Album'}),
             ('album/song', {'album': 'Shared Album'}),
+            ('artist/song', {'artist': 'Artist Ё'}),
+            ('artist/album', {'artist': 'Artist Ё'}),
+            ('artist/album/song', {'artist': 'Artist Ё', 'album': 'Shared Album'}),
         ):
             page = http.catalog(category, **filters)
             print(f'{transport}: {category} {filters}: {page}', flush=True)
@@ -35,6 +38,9 @@ async def exercise(transport):
                 'style/album': {'Shared Album', 'Second Album'},
                 'style/album/song': {'Library Alpha', 'Library Beta'},
                 'album/song': {'Library Alpha', 'Library Beta', 'Library Gamma'},
+                'artist/song': {'Library Alpha', 'Library Beta', 'Library Delta'},
+                'artist/album': {'Shared Album', 'Second Album'},
+                'artist/album/song': {'Library Alpha', 'Library Beta'},
             }[category]
             assert page['total'] == len(expected)
             assert {x['name'] for x in page['items']} == expected
@@ -90,6 +96,22 @@ async def exercise(transport):
                            expected, len(expected) - 1, 10)
             await selected(lambda: client.play_genre('Genre Ё', http=http), expected, 0, 8)
 
+        # Type 7 preserves the artist restriction when album names overlap.
+        # Test an artist spanning two albums; the physical Play-all trace had one.
+        for play_mode in (0, 4):
+            await call(client.set_play_mode, play_mode)
+            expected = [x['name'] for x in http.catalog('artist/song', artist='Artist Ё')['items']]
+            await selected(lambda: client.play_all(2, 'Artist Ё'), expected, 0, 2)
+            await selected(lambda: client.play_index(len(expected) - 1, 2, 'Artist Ё'),
+                           expected, len(expected) - 1, 2)
+            await selected(lambda: client.play_artist('Artist Ё', http=http), expected, 0, 7)
+            scoped = [x['name'] for x in http.catalog(
+                'artist/album/song', artist='Artist Ё', album='Shared Album')['items']]
+            await selected(lambda: client.play_artist('Artist Ё', len(scoped) - 1,
+                           album='Shared Album', http=http), scoped, len(scoped) - 1, 7)
+            await selected(lambda: client.play_artist('Artist Ё', album='Shared Album', http=http),
+                           scoped, 0, 7)
+
         for suffix in ('/A', '/A/Nested', '/B'):
             path = '/tmp/sdcard/' + FOLDER + suffix
             rows = http.directory(path, local=True)['items']
@@ -107,6 +129,9 @@ async def exercise(transport):
             lambda: client.play_genre('Missing genre', http=http),
             lambda: client.play_genre('Genre Ё', 3, http=http),
             lambda: client.play_genre('Genre Ё', 2, album='Shared Album', http=http),
+            lambda: client.play_artist('Missing artist', http=http),
+            lambda: client.play_artist('Artist Ё', album='Third Album', http=http),
+            lambda: client.play_artist('Artist Ё', 2, album='Shared Album', http=http),
             lambda: client.play_folder('/tmp/sdcard/' + FOLDER + '/Empty', http=http),
             lambda: client.play_folder('/tmp/sdcard/' + FOLDER, http=http),
             lambda: client.play_folder('/tmp/sdcard/' + FOLDER + '/A', 0, http=http,
@@ -134,6 +159,9 @@ async def exercise(transport):
         await call(client.set_play_mode, mode)
         assert http.catalog('custom')['total'] == 0
         cases = (
+            # Physical iOS album-track selection: first and third rows, one POST.
+            ('album/song', {'album': 'Shared Album'}, [[0, 0], [2, 2]],
+             {'Library Alpha', 'Library Gamma'}),
             ('style/album', {'style': 'Genre Ё'}, [[1, 1]], {'Library Alpha', 'Library Beta'}),
             ('style/album', {'style': 'Genre Ё'}, [[0, 1]],
              {'Library Alpha', 'Library Beta', 'Library Delta'}),

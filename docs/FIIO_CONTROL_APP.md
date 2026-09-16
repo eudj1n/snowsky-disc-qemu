@@ -1,8 +1,17 @@
 # FiiO Control application evidence
 
+**Version provenance (owner confirmation, 2026-09-16):** all supplied iPhone
+checks, screenshots and captures in this investigation used **FiiO Control
+4.6.0**. This retrospective confirmation applies to the earlier batches too;
+Dart's HTTP User-Agent does not itself establish the app version. DISC firmware
+versions retain their individual wire/device evidence and are not inferred from
+this confirmation. Sanitized iOS fixtures record `app_version` and its source.
+
 ## Screen coverage audit
 
-Started 2026-09-16; first wallpaper screenshots received and inventoried below.
+Supplied-screen audit finalized 2026-09-16 within the agreed local DISC scope.
+[Current capability summary](DISC_CAPABILITIES.md) consolidates the observations
+below, implemented helpers, unsupported actions and deferred work.
 Scope: the DISC interface of FiiO Control, not every other supported product.
 Record the app version, platform and DISC firmware with each batch; do not
 assume an unchanged build.
@@ -30,8 +39,10 @@ traffic captures only where existing contracts do not resolve a specific gap.
 
 Raw screenshots/captures stay in ignored `shots/` or `work/`. Commit only minimal,
 sanitized evidence; approved curated screenshots belong in `docs/images/`, not
-links to ignored local files. The first concrete protocol question is the
-[custom-theme save sequence](REMOTE_MODES_THEMES.md#custom-theme-metadata-save-capture).
+links to ignored local files. Custom-theme saves and library batch actions now
+have capture evidence below. Opacity and color-slider captures are now analyzed
+below. Official catalog/account synchronization is deferred by owner decision
+to [issue #11](https://github.com/eudj1n/snowsky-disc-qemu/issues/11); no capture is currently requested.
 
 ### Wallpaper screens: first batch (2026-09-16)
 
@@ -47,12 +58,12 @@ into Git; filenames identify the supplied evidence, not repository links.
 | --- | --- | --- |
 | Wallpapers → My wallpapers carousel / All | 6789, 6791 | One custom and five system tiles match the tested slot counts. `read_lock_screen()` reads each slot. No separate list/catalog helper or remote frontend. |
 | Apply / Applied | 6789, 6791 | Clock is marked applied in the app. `select_system_lock_screen()` covers system selection; custom upload also activates. Screenshot alone does not prove device readback or a standalone custom-activation request. |
-| Official wallpapers | 6790 | Shows “No wallpapers”. No catalog helper; source/endpoint and reason for the empty list unknown. Do not infer a cloud source, unsupported API or zero available wallpapers globally. |
-| Custom → tap image to change / Apply now | 6792–6794 | Full 360×360 PNG replacement/activation implemented. Image picker, crop and conversion flow are not shown or implemented by the helper. Existing-image reapply sequence awaits capture. |
-| Background transparency, displayed 100% | 6792 | Helper exposes `alpha=0..100` via `back-groud`; emulator checks persistence. UI percentage-to-wire mapping and opacity direction on the physical display remain unverified. |
-| Time, Date, Battery, Track information | 6793 | All four appear checked. Helper exposes `time/date/battery/id3`; metadata is emulator-tested. Exact iOS save sequence and physical rendering still require evidence. |
+| Official wallpapers | 6790 | Shows “No wallpapers”. No catalog helper; endpoint and cause of empty state unknown. Owner reports cloud synchronization requires FiiO registration/sign-in. Deferred to [issue #11](https://github.com/eudj1n/snowsky-disc-qemu/issues/11); do not infer an authentication failure or unsupported device API from this empty page. |
+| Custom → tap image to change / Apply now | 6792–6794 | Full 360×360 PNG replacement/activation implemented. Image picker, crop and conversion flow are not shown or implemented by the helper. Existing-image reapply resends the full PNG, confirmed by `173912` and `174708`; crop/conversion remains app-side and unobserved. |
+| Background opacity (owner-confirmed label) | 6792; follow-up `230929` | System slot 1 maps displayed 100 → 49 → 0 → 100 directly to `alpha`; GET confirms 49/0/100. Owner observes a dimmed background at 49, no picture at 0, and refresh only after unlock/relock. Custom-slot opacity rendering is not tested by this capture. [Evidence](#physical-system-theme-opacity-2026-09-16). |
+| Time, Date, Battery, Track information | 6793 | All four appear checked. Helper exposes `time/date/battery/id3`; metadata is emulator-tested. Date/time changes and full-image saves are physically captured below; physical rendering of all overlays remains unverified. |
 | Style selection, four thumbnails | 6794 | Three digital layouts and one analog clock are visible; the first thumbnail is selected. Initially a fixed-style helper gap; now four wire values are captured and emulator-tested (see style-save evidence below). Thumbnail ordering is inferred from the requested walkthrough, not encoded in packets. |
-| Two unlabeled color-gradient sliders | 6794 | Helper accepts RGB via `front-color`. Exact slider semantics, color conversion, endpoints and save sequence unknown; do not label them RGB/HSV components from appearance alone. |
+| Two color-gradient sliders | 6794, 6822–6825 | `231820` confirms system metadata saves of exact RGB values. Upper selects hue; lower visually runs white → selected hue → black, with saved white/pink examples. Exact numerical conversion and black endpoint remain untested. [Evidence](#physical-system-theme-colors-2026-09-16). Custom saves still use a full PNG. |
 
 The two tiles labelled FIIO Sheep have different artwork; names are not unique
 theme identities. Clock is the selected wallpaper in the list, while the first
@@ -64,7 +75,116 @@ The subsequent [physical capture](#physical-custom-theme-save-2026-09-16) resolv
 the color/Date save sequence: the app resends the complete image. The second
 [style capture](#physical-custom-style-save-2026-09-16) confirms four custom
 style values and unchanged subclass, with a time-flag change in the request.
-Official-catalog loading and image-picker/cropping remain separate gaps.
+Official-catalog loading is deferred to issue #11; image-picker/cropping remains
+a separate app-side gap.
+
+### Physical system-theme colors (2026-09-16)
+
+Inputs: `2026-09-16-231820.pcap` / `.har` and `IMG_6822.PNG`–`IMG_6825.PNG`.
+FiiO Control 4.6.0 is owner-confirmed; fresh Link `a501` at frame 1287 reports
+`soc_version: 257`. TCP reassembly shows the handshake and initial read commands
+`0501`, `0607`, `0627`, `0639`, `0202`, `0629`, `0628`; no color-setting Link
+command is observed. [Sanitized fixture](../tools/fixtures/fiio_control_ios_system_theme_colors.json).
+
+All **14 HTTP exchanges** match HAR by paired request method, semantic headers,
+status and request/response body hashes. Relevant TCP bytes are contiguous and
+untruncated, with no retransmissions/lost segments; HTTP lengths agree. The app
+first reads custom slot 0 and system slots 0..4, then makes four POST/GET pairs
+for active **FIIO Sheep / system slot 1**. All return HTTP 200.
+
+| Request seconds / frame | RGB (`front-color`) | Fresh GET frame | Screenshot correspondence |
+| --- | --- | --- | --- |
+| 4.187 / 1387, initial GET | 191,139,66 | 1387 is the GET request | 6822: golden/brown preview |
+| 30.668 / 1926, POST | 253,0,255 | 1945 | 6823: magenta preview |
+| 52.784 / 2103, POST | 251,255,0 | 2112 | No dedicated supplied image of this yellow-green save |
+| 72.226 / 2342, POST | 255,255,255 | 2351 | 6824: white preview, lower slider at left |
+| 92.651 / 2477, POST | 255,169,169 | 2486 | 6825: pink preview, upper at red/left |
+
+Every POST has an empty body. Apart from `front-color`, semantic headers are
+unchanged: opacity 100, style `default/2`, all four overlay flags 1, active flag
+1, stock slot/source/subclass and percent-encoded alias. Each following GET
+confirms the exact RGB bytes. The initial and four subsequent slot-1 image
+responses are identical 360×360 PNGs, 199846 bytes, matching the prior opacity
+capture's image hash. GET omits `preview-flag`: these are default-preview bytes,
+not an independently read original file. No custom-slot POST occurs; its initial
+alpha 60/red/inactive metadata is merely a read, not a new custom-opacity test.
+
+**Slider interpretation from screenshots plus traffic:** the upper rainbow
+slider selects hue. The lower track runs white → selected hue → black; the
+observed white endpoint and intermediate pink fit a lightness control, rather
+than three independent RGB sliders. Moving upper from the initial orange area
+to magenta produces near-full magenta while the lower thumb stays visually near
+the middle; the initially desaturated golden color is not proof of a fixed
+saturation parameter. Preserve RGB directly in a controller. No numeric thumb
+values, precise RGB/HSL/HSV conversion, rounding or interpolation formula were
+recovered, and the lower black endpoint was not saved in this trace.
+
+After the white preview (upper near yellow), the pink screenshot has the upper
+thumb at the red/left end. This does not establish whether reopening reconstructed
+an undefined hue from white or another user movement occurred; the wire carries
+only RGB, not a retained hue coordinate. Screenshot clocks have minute precision,
+so the table pairs visible colors, not exact screenshot/action timestamps.
+These are phone previews, not photographs or a new physical-display observation.
+
+**Restoration:** final readback is pink 255/169/169, not initial 191/139/66.
+The same theme remains active with unchanged noncolor metadata, but original
+color restoration is not claimed. Do not automatically replay a restore command.
+Existing system selection preserves exact saved RGB (including near-primary
+values); a new regression compares its requests with this fixture. Dedicated
+system editing is now implemented with verified readback; see
+[the helper contract](REMOTE_MODES_THEMES.md#system-theme-editing). No repeat color capture is needed
+to establish the observed RGB save/readback contract; exact UI-formula cloning
+is outside this checkpoint. Official catalog work is deferred to issue #11;
+local helper/capability consolidation is complete in the final summary.
+
+### Physical system-theme opacity (2026-09-16)
+
+Owner supplied `2026-09-16-230929.pcap` and `.har`, labelled **Background
+opacity**, with the actual order **100 → 49 → 0 → 100**. This differs from the
+requested custom-image walkthrough: all requests target **system slot 1,
+FIIO Sheep**, not the custom slot. App 4.6.0 is owner-confirmed; no fresh firmware
+version is present. [Sanitized fixture](../tools/fixtures/fiio_control_ios_system_theme_opacity.json).
+
+All seven HTTP exchanges match HAR (methods, semantic request headers, request
+and response body hashes). Relevant TCP payloads are contiguous, untruncated,
+without retransmissions; HTTP body lengths agree. No TCP 12100 packets occur.
+PCAP relative times below identify request starts; all responses are HTTP 200.
+
+| Seconds / request frame | Action | Result |
+| --- | --- | --- |
+| 6.275 / 1267 | POST system slot 1, `alpha=100` | Empty response; no immediate GET |
+| 27.310 / 1313 | POST `alpha=49` | GET at 27.383 / 1322 returns 49, active slot 1 |
+| 38.504 / 1450 | POST `alpha=0` | GET at 38.564 / 1459 returns 0, active slot 1 |
+| 60.750 / 1615 | POST `alpha=100` | GET at 60.801 / 1624 returns 100, active slot 1 |
+
+Every POST goes to `/image/lock_screen/` with **zero body bytes**. Other semantic
+headers stay constant: slot 1, `file-source: lock_screen/system`,
+`subclass: lock_screen/system/default`, `alias: FIIO%20Sheep`,
+`msg-style: default/2`, `front-color: r=191;g=139;b=66`, all four overlay flags 1,
+and `flag-in-use: 1`. Readbacks match. All three returned PNGs are identical,
+360×360 / 199846 bytes; SHA-256 is in the fixture. GET omits `preview-flag`, so
+this is equality of default-preview responses, not proof about original bytes
+on disk. No initial GET establishes the previously active theme; final readback
+confirms alpha 100 and system slot 1 active, not full restoration of unseen state.
+
+**Physical observations, reported by the owner:** at 49 the background becomes
+partly visible/dimmed; at 0 the picture disappears against a dark background.
+The control represents opacity, not inverse transparency. These three observed
+values map directly to the wire; no precise linear brightness curve is claimed.
+While already locked, the effect required unlocking and locking again. This
+establishes a visible refresh limitation in this session, not a missing save:
+GET already reports the saved value. Packets do not identify the local lock
+transition or prove which internal component delays repainting. No reboot test.
+
+Controller implications: present an opacity percentage (0 hides the background,
+100 is full opacity); verify saved metadata separately from rendering and explain
+that unlock/relock may be needed. Do not automatically unlock the device or
+repeat writes just because the current lock screen looks unchanged. Keep system
+metadata-only POSTs distinct from custom saves, which require the full PNG.
+The system-selection helper preserves returned metadata;
+`update_system_lock_screen` now adds verified system metadata editing. Regression tests cover preservation of
+captured 49/0/100 values and the empty-body system request, not a new editor or
+emulated physical repaint. Custom-slot opacity rendering remains unobserved.
 
 ### Physical custom-theme save (2026-09-16)
 
@@ -195,10 +315,10 @@ tests, **not** a completed replacement frontend or validation of every app actio
 | Screen/control | Screenshot | Existing coverage / gap |
 | --- | --- | --- |
 | All songs | 6795 | TCP `library('tracks')`, HTTP `catalog('all/song')`, positional selection and all-song playback exist. App's batch-selection actions are not shown. |
-| Artists | 6796 | TCP artist/artist-track reads and named artist selection/play-all are tested; HTTP artist/sub-album categories exist, but not every nested category has behavioral acceptance. Header-level “Play all” must not be assumed equivalent to playing a named artist. |
-| Albums | 6797 | Catalog, named album tracks and positional/whole-album playback are tested. Root-page “Play all” and batch actions need their own app evidence. |
-| Genres | 6798 | TCP genre listing and HTTP `style`, `style/song`, `style/album` categories are exposed. **Gap:** no validated genre selection/play-all helper; generic playback rejects that context. Reads do not prove playback. |
-| Folder → sdcard | 6799 | `/localdir/` browsing exists (root `/localdir/tmp/` observed in earlier app HAR; helper starts at `/tmp/sdcard`). **Gap:** no guarded folder/file playback helper. Native touchscreen file playback is a different path. |
+| Artists | 6796 | Physical captures now confirm `artist` → `artist/album` → `artist/album/song`, type-7 scoped-album selection and whole-artist Play all. Guarded `play_artist` adds fresh source checks. Root-page Play all produced no playback command in `213631`; its cause/selector semantics remain deferred. [Evidence](LIBRARY_BROWSING.md#physical-folder-album-and-artist-flow-2026-09-16). |
+| Albums | 6797 | Catalog, named album tracks and positional/whole-album playback are tested. Root Play all was ineffective with no playback dispatch in `213631`. Track batch addition is captured in `215831`; see the later batch evidence. |
+| Genres | 6798 | Guarded `play_genre` covers whole-genre, indexed tracks and genre-scoped albums with emulator acceptance. Physical capture confirms the hierarchy, whole-genre Play all and scoped-album selectors; indexed whole-genre selection remains emulator-only. [Contract](LIBRARY_BROWSING.md). |
+| Folder → sdcard | 6799 | `/localdir/` browsing and guarded `play_folder` have emulator acceptance for ordinary audio, including directory rows in positional indices and nonrecursive Play all. Physical capture now confirms type-4 indexed/whole-folder selection and directory-inclusive positions. The capture does not establish nested-folder contents. |
 | Favorites | 6800 | Empty state shown. Explicit current-track favorite on/off and V2.57 favorite-index selection/readback are tested. No general batch favorite-by-ID helper or favorite play-all helper. Empty screenshot does not establish those operations. |
 | Custom Playlist and New Playlist dialog | 6801–6802 | Empty state, plus button and name/confirm/cancel dialog shown. HTTP create/rename/add/remove/delete and guarded whole-list/index playback are tested; this image does not prove creation succeeded or show populated-list menus. |
 | Mini-player | 6795–6801 | Track/artist metadata, play/pause and next have physical captures and emulator tests. Placeholder artwork alone does not prove cover retrieval failed. Opening the full player is frontend navigation, not a new protocol command. |
@@ -228,7 +348,10 @@ genre/folder playback and bulk-add gaps above. Fresh V2.57 TCP/WS and direct/pro
 tests are recorded in [LIBRARY_BROWSING.md](LIBRARY_BROWSING.md). This does not
 identify the app's exact commands from screenshots. The initially deferred
 physical genre capture has now arrived; see the follow-up below. The app's
-folder selection, Delete workflow and folder-to-playlist expansion remain unvalidated.
+folder selection is now physically confirmed by the later `211747` capture;
+Both scoped-track Delete flags are now captured; album-group Delete is UI-unsupported (see the later Delete evidence). The later owner correction with IMG_6818
+establishes that sdcard browsing offers no batch actions; folder-to-playlist is
+not an app-parity capture task in this UI.
 
 The third batch below supplies genre/album batch toolbars and PEQ selection/save
 screens. Folder contents and individual-item menus remain unseen. Request
@@ -253,11 +376,11 @@ as part of the current library audit. Existing PEQ helpers/tests remain intact.
 
 | Screen/control | Screenshot | Coverage and interpretation |
 | --- | --- | --- |
-| Genre detail → album rows | 6807 | Six visible album-like rows, each with its own track count. Matches the shape expected for `style/album`, but only traffic can establish the actual request/filter. Genre-to-album-to-track browsing must not be flattened into a genre song list. |
-| Album detail → tracks, Play all | 6808 | Matches existing named-album playback concept. A genre-scoped album selection may need both genre and album; do not assume the generic album-name helper preserves the genre restriction, especially for repeated names. |
+| Genre detail → album rows | 6807 | Six visible album-like rows, each with its own track count. The later `185016` capture confirms `style/album` with the named genre filter. Genre-to-album-to-track browsing must not be flattened into a genre song list. |
+| Album detail → tracks, Play all | 6808 | Physical `185016` confirms type 8 with both genre and album. Guarded `play_genre` preserves that scope; generic type-3 album selection is not interchangeable. |
 | Select all / Cancel / per-row selection | 6809–6810 | Two red selected rows, others outlined. No command is inferred merely from selection marks. The same visual toolbar appears at album-group and track levels. |
-| Add to Playlist | 6809–6810 | Existing `add_to_playlist()` accepts category/filter/ranges, but integration covers all-song ranges, **not** expansion of selected genre-album groups or genre-scoped track ranges. Destination-list picker and resulting contents are not shown. Capture exact category, filters and positional range semantics before claiming parity. |
-| Delete | 6809–6810 | Visible at both levels; confirmation and source-file scope unknown. Client deliberately does not expose arbitrary category/source batch deletion. Do not substitute custom-playlist removal (`delete_source: 0`) or issue physical deletes just to obtain evidence. |
+| Add to Playlist | 6809–6810, 6818 | Guarded `add_selection_to_playlist()` has emulator acceptance for genre-group expansion, scoped tracks and disjoint ranges. Physical `215831` confirms track addition; `221421` confirms one `style/album` POST expanding first/third album groups, total 105 and a 100-row destination page. Owner reports no batch actions in sdcard browsing. [Validated sources and limits](LIBRARY_BROWSING.md#bulk-addition). |
+| Delete | 6809–6810 | Scoped track deletion is captured with `delete_source` 0 (`224332`) and 1 (`225423`); directory readback distinguishes index removal from file removal. Album-group action shows unsupported (`IMG_6820`), without a supplied trace. Public source-delete helper remains absent. [Contract and limits](LIBRARY_DELETE.md). |
 | Save this PEQ → device / local data | 6811 | Separate destinations are now visible; device option is red. Backend has device band/master setters, but the app's Save transaction and target-preset choice remain unknown. Local preset storage/import/export/sync is not implemented; neither option's actual writes are established by this dialog. |
 | EQ Device presets | 6812 | Off, ten named factory tiles, User 1..10 and **BYPASS** are visible. Helper has numeric `eq_type` values and user slots, but no validated full label mapping. **BYPASS is a separate visible choice, not proven equivalent to Off or any guessed enum.** First-user/off acceptance is not coverage of every preset. |
 | Auto EQ | 6813 | Headphone measurement and target-curve selectors, Random / Save as / Reset, response graph and frequency/gain/Q rows. No curve catalog, matching algorithm, generation/save or device-application helper. Existing `set_peq()` can send validated bands, but does not implement Auto EQ. The graph's ±18 scale is not proof of accepted device gain limits. |
@@ -272,18 +395,17 @@ Outlined checkmarks are also used on unselected batch rows. As with the theme
 screens, a tick outline alone is not reliable proof of an enabled setting.
 
 The requested genre capture is now analyzed below; no repeat is needed for
-the observed hierarchy and scoped-album commands. Folder selection and
-root-category Play all remain unobserved. No deletion, media reset, cloud login
-or preset overwrite is needed to investigate those selectors.
-Separate later library captures can cover adding a few rows to a disposable
-custom list. PEQ captures/changes belong to issue #9 when explicitly resumed;
+the observed hierarchy and scoped-album commands. Subsequent folder selection
+is captured; `213631` records ineffective root-category Play all with no playback
+dispatch. Subsequent `215831`/`221421` cover track/group additions and rename;
+`224332`/`225423` cover scoped-track Delete. These captures need no repeat.
+No media reset, cloud login or preset overwrite is needed for this audit. PEQ captures/changes belong to issue #9 when explicitly resumed;
 do not combine them into the current library trace.
 
 ### Physical genre flow (2026-09-16)
 
 Inputs: `2026-09-16-185016.pcap` and `.har`, supplied for the previously requested
-physical genre workflow. Firmware 257 is confirmed by fresh settings; app version
-is not reconfirmed. [Sanitized fixture](../tools/fixtures/fiio_control_ios_genres.json)
+physical genre workflow. Firmware 257 is confirmed by fresh settings; app version 4.6.0 is confirmed retrospectively by the owner. [Sanitized fixture](../tools/fixtures/fiio_control_ios_genres.json)
 contains source hashes and frame references; raw captures/artwork stay outside Git.
 
 - PCAP has 13 device HTTP requests versus 3 in HAR. Browsing proceeds through
@@ -304,6 +426,65 @@ contains source hashes and frame references; raw captures/artwork stay outside G
 See [timeline, client differences and reproduction](LIBRARY_BROWSING.md#physical-genre-flow-2026-09-16).
 Firmware-free tests cover matching HTTP filters/scoped selectors and the captured
 Play-all form, keeping indexed genre selection on its independently tested path.
+
+### Physical folder and artist follow-up (2026-09-16)
+
+`2026-09-16-211747` and `2026-09-16-212141` PCAP/HAR pairs resolve folder
+selection, ordinary named-album selection and the artist hierarchy. The app
+uses type 7 with artist + album for scoped tracks/Play all, and an empty album
+for Play all inside an artist. It does not reuse the ordinary type-3 album
+selector. Folder type 4 matches the existing helper, including its positional
+directory row. Timeline, sanitized fixture and limits are recorded in
+[library browsing](LIBRARY_BROWSING.md#physical-folder-album-and-artist-flow-2026-09-16).
+No root-category playback or batch mutations occur in these captures.
+
+The owner subsequently confirms that **FiiO Control on iPhone** has Play all on
+all four root tabs: All songs, Artists, Albums and Genres. Button presence is now
+established by owner report. The subsequent `2026-09-16-213631` PCAP/HAR
+records navigation through all four roots, but **no playback command** for the
+reported ineffective taps. The final named-genre action sends type 8 and reaches
+playing state/nonzero progress on the same connection. Classify the root buttons
+as visible but ineffective in this captured app state, not rejected by DISC or
+proven permanently unsupported. Exact root-selector/order semantics stay unknown;
+reopen only with changed behavior or concrete app-code evidence. See
+[timeline and limits](LIBRARY_BROWSING.md#root-tab-play-all-produces-no-playback-request-2026-09-16).
+
+### Batch-action availability correction: IMG_6818 (2026-09-16)
+
+The owner reports batch actions on the same detail screens where Play all works,
+except sdcard browsing. On the individual-track player, the available library
+action is favorite on/off; there is no Add to Playlist. These availability claims
+come from the owner's walkthrough, not extrapolation from the single image.
+
+IMG_6818 itself shows an album track list (15 songs), Select all / Cancel and a
+toolbar with Add to Playlist / Delete. It does not show a destination picker,
+successful addition, Delete confirmation or source-file checkbox. Outlined
+checkmarks do not establish the selected set. Raw image and personal track names
+are not copied into the repository. The proposed folder capture is withdrawn;
+the [corrected scenario](LIBRARY_BROWSING.md#pass-b-album-track-batch-addition-corrected-after-img_6818)
+uses two nonadjacent album tracks and an empty test playlist. The subsequent
+`215831` PCAP/HAR confirms this action using an existing empty destination:
+one chunked HTTP POST, source ranges 0/0 and 2/2, destination position 1, then
+count 2 and the expected two tracks on a fresh GET. The existing helper matches
+the decoded request; chunk framing in HAR is not part of the JSON contract.
+Only one post-add membership read is present in `215831`.
+[Timeline and limits](LIBRARY_BROWSING.md#physical-album-track-addition-2026-09-16).
+
+Subsequent `221421` PCAP/HAR confirms creation, genre-album group addition and
+rename: one `style/album` POST for group positions 0 and 2, then `custom_list_cmd`
+with `type: update` and `list_id: 2`. Fresh GET reports the new name with count
+105 unchanged. Only the first 100 membership rows are captured; no full-identity
+or cross-rename membership comparison is claimed. Existing helpers match these
+requests. The firmware Delete scope now has [disposable acceptance](LIBRARY_DELETE.md),
+including cross-list loss and stale references. Physical `224332` now confirms
+the unchecked source-file checkbox maps to `delete_source: 0` for scoped track
+deletion; album B disappears from the genre catalog while A retains two tracks.
+`IMG_6820` and the owner report album-group Delete shows “This function is not
+yet supported”; no packets were supplied for that pass, so its wire dispatch is
+unknown. `225423` then confirms track-level flag one with current row `[[1,1]]`
+for A1; the directory retains only A2 and previously index-deleted B1. Its empty
+post-delete track page has offset one and total one, not an empty album. Both
+track-level variants are complete; no repeat group capture is needed. [Delete evidence](LIBRARY_DELETE.md#physical-ios-track-deletion-and-unsupported-group-action-2026-09-16). [Evidence](LIBRARY_BROWSING.md#physical-genre-album-groups-and-playlist-rename-2026-09-16).
 
 ## Android 4.6.0 input (2026-09-15)
 
@@ -334,7 +515,26 @@ identifies analysis targets, not a recovered call graph or validated command:
 | File transfer | `linkmodule/linked_device/service/wifi_music_http_service.dart` |
 | Themes | `linkmodule/linked_device/service/wallpaper_http_service.dart` |
 | Newer local catalog | `fiio_v2/link_device_v2/service/local_play_http_service.dart`, `local_dir_http_service.dart` |
+| Folder UI/controller | `fiio_v2/link_device_v2/ui/local_dir_browser_page_v2.dart`, `controller/local_dir_browser_controller.dart` |
+| Playback/batch search targets | `playAll`, `playAllAlbum`, `playAllAlbumSong`, `add_songs_to_playlist_dialog.dart`, `delete_source`, `delete_source_file` |
 | Theme contract strings | `/image/lock_screen/`, `back-groud`, `lock_screen/system`, `lock_screen/custom`, `lock_screen/custom/default` |
+
+The folder/batch leads were rechecked locally after synchronizing to `28c5008`;
+the ARM64 library still matches the SHA-256 above. These are independently
+present snapshot strings, not attributed call sites. In particular,
+`playAllAlbum` does not establish a root Albums command, and `delete_source_file`
+does not establish a visible checkbox, its default or the transmitted value.
+No Dart AOT control-flow reconstruction or new device test is claimed.
+
+Wallpaper leads rechecked on 2026-09-16 against the same full ARM64 hash:
+`WallpaperThemeCloudService`, `WallpaperCloudTheme.fromJson`,
+`WallpaperItem.fromCloudTheme`, `fetchThemeList`, `get-theme-list?deviceId=`,
+`/wallpapers`, `_buildFontColorSlider`, `_updateFontColor`, `computeFontColor`
+and `wallpaper_bg_opacity`. These identify candidates for the remaining catalog
+and slider investigation. Strings alone do **not** connect the URL fragments to
+a service, identify its host/device ID, recover color/alpha conversion or prove
+that iOS calls it. No endpoint was guessed or queried. Further catalog investigation belongs to deferred issue #11, with no active
+capture request; do not classify the empty Official page as unsupported.
 
 The theme strings agree with already tested firmware endpoints. No reset tag
 has been recovered from this APK, and no reset was sent to physical DISC.

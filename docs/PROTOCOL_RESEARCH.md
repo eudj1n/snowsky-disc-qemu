@@ -8,6 +8,38 @@ Umbrella tracker: [issue #10 — DISC protocol and FiiO Control coverage](https:
 Keep the issue's high-level checklist current alongside this detailed handoff;
 keep release-facing summaries in `CHANGELOG.md` short rather than duplicating research logs.
 
+## Finalized local-protocol checkpoint
+
+Completed 2026-09-16 within the agreed local DISC scope. Start with the
+[capability summary](DISC_CAPABILITIES.md): supported client operations, physical
+versus emulator evidence, unsupported controls, controller state/connection rules
+and explicitly deferred work. Historical checkpoints below remain an evidence
+log, not a request to repeat their earlier capture scenarios.
+
+Final addition: `update_system_lock_screen` reads fresh original image/metadata,
+merges requested opacity/RGB/style/overlay edits, activates via empty system POST
+and verifies all metadata and image bytes by GET. No automatic replay/rollback;
+custom themes retain full-PNG uploads. Dedicated source-file category deletion
+remains outside the public helpers with its seven-case diagnostic matrix intact.
+
+Final validation: **297 Python / 23 JavaScript tests**, shell syntax and four
+shim builds passed (`work/library-captures/final-unit.log`). Fresh disposable
+V2.57 `themes` passed direct and proxied HTTP: 19 independent system edits per
+path (3 alpha, 4 RGB, 4 styles, 8 overlay toggles), original image, SQLite and
+unrelated-theme checks, restoration of system metadata/active selection, plus
+existing custom-style/upload/alias/empty-body tests. Stack and volume cleaned up;
+logs: `work/library-captures/final-themes.log` and `final-themes-logs/` (ignored).
+No physical replay or interactive guest modification. Earlier scoped library
+and deletion acceptance remain valid evidence; no full/power release run is
+claimed for this helper-only change. This is not a stable firmware release or
+completion of the future backend/frontend product.
+
+PEQ #9, SACD ISO #8, cloud/account #11 and repository structure #7 are separate.
+Secondary deletion edges, exact slider-formula cloning, physical rendering and
+hardware audio limits remain explicit in the summary, not completion blockers
+or promises of unsupported functionality. No further phone capture is required
+for this checkpoint. Proceed to subsequent product work as a new scope.
+
 ## Scope and current checkpoint
 
 Priority: stock SNOWSKY DISC functionality for a future locally hosted web remote
@@ -33,7 +65,9 @@ checkpoint and any work left uncommitted. Do not publish this branch implicitly.
 - [x] V2.57 genre/scoped-album/folder playback with HTTP preflight, filtered
   catalog pagination, grouped/disjoint bulk add and index-only track deletion
   recovery: [library browsing](LIBRARY_BROWSING.md). Physical app sequence and
-  source/group deletion remain separate gaps, not implied by emulator acceptance.
+  physical-app evidence is tracked separately from emulator acceptance.
+- [x] Seven V2.57 category-deletion scopes on generated media, with favorite/
+  custom-list loss, stale references and scan recovery: [deletion contract](LIBRARY_DELETE.md).
 - [x] V2.57 cooperative scan cancellation, partial replacement index and full-scan
   recovery over TCP/WS: [scan lifecycle](LIBRARY_SCAN.md).
 - [x] Dedicated V2.57 index/favorites reset, explicit confirmation, preserved
@@ -59,6 +93,121 @@ checkpoint and any work left uncommitted. Do not publish this branch implicitly.
   requests time out without breaking subsequent reads. Use TCP `0406`, HTTP
   `curlist/song` and `0202` instead. No additional phone capture is needed for
   these two commands.
+
+## Latest physical checkpoint: system wallpaper colors
+
+`231820` and `IMG_6822`–`IMG_6825` identify the upper slider as hue and the lower
+as a white → selected hue → black, lightness-like control. Four empty-body system
+slot-1 POSTs save RGB **253/0/255 → 251/255/0 → 255/255/255 → 255/169/169**;
+each has matching GET readback. Initial 191/139/66 was not restored: final color
+is pink. Opacity/style/overlays remain unchanged; all five slot-1 preview images
+match. Fourteen paired HAR/PCAP HTTP exchanges agree; fresh Link settings identify
+V2.57. Exact slider conversion and physical display rendering are not established
+by these phone previews. [Evidence](FIIO_CONTROL_APP.md#physical-system-theme-colors-2026-09-16).
+
+Owner scope decision, 2026-09-16: Official wallpapers and account/cloud
+synchronization are deferred to [issue #11](https://github.com/eudj1n/snowsky-disc-qemu/issues/11).
+The owner reports registration/sign-in is required for cloud synchronization;
+this is owner evidence, not an authenticated capture. No catalog capture or login
+is requested in this task. System-theme editing and capability consolidation are now complete; see the
+finalized checkpoint above.
+No repeat slider trace is needed for the RGB contract. Dedicated system-theme
+editing is now implemented and tested; exact UI-formula cloning is not required
+for a controller that preserves and submits RGB directly.
+
+Validation: **291 Python / 23 JavaScript tests**, shell syntax and four shim
+builds passed (`work/library-captures/colors-unit.log`, ignored). Capture fixture,
+selection-preservation regression and documentation only; no production changes,
+firmware rerun, physical replay or interactive guest modification.
+
+## Previous physical checkpoint: system wallpaper opacity
+
+`230929` matches seven HTTP exchanges in HAR/PCAP and has no Link 12100
+traffic. FiiO Control 4.6.0 edits **system slot 1 / FIIO Sheep**, using empty
+POST bodies with displayed 100 → 49 → 0 → 100 mapped directly to `alpha`.
+Fresh GETs confirm 49/0/100 and unchanged preview PNGs/other metadata. Owner
+observes the background disappear at 0 and the effect appear only after
+unlock/relock; saved readback and visible refresh must be treated separately.
+No fresh firmware version, initial active-theme read, custom opacity edit or
+reboot persistence claim. [Evidence and regression fixture](FIIO_CONTROL_APP.md#physical-system-theme-opacity-2026-09-16).
+
+The subsequent color trace is analyzed above. Official catalog loading is now
+deferred to issue #11 and is not a current checkpoint gate.
+No repeat opacity capture is required for the observed system workflow. The system-metadata editor is now implemented and tested. Custom opacity
+rendering remains separate; system selection preserves saved metadata.
+
+Validation: **290 Python / 23 JavaScript tests**, shell syntax and four shim
+builds pass (`work/library-captures/opacity-unit.log`, ignored). This checkpoint
+adds capture evidence, a preservation regression and docs only; no production
+code change, firmware rerun or device replay.
+
+## Previous physical checkpoint: source deletion and file readback
+
+`225423` / `IMG_6821` complete the track-level Delete capture work in FiiO
+Control 4.6.0. Fresh Link settings confirm firmware 257; all 11 HTTP exchanges
+match HAR. Scoped album A deletion sends `delete_source: 1`, `[[1,1]]` for A1
+in the observed order A2, A1. The directory then contains exactly A2 and B1,
+confirming A1 removal and supplying the B1 file-preservation observation missing
+from `224332`. No upload or scan occurs in this trace. No content hashes or
+reboot/favorite/custom-list side effects are claimed.
+
+The app's post-delete track read starts at offset one: `[]` with total one.
+A controller must preserve the total and refresh the first page, not mistake this
+for an empty album. Two new regressions cover this and directory path/contents.
+[Evidence, frames and limits](LIBRARY_DELETE.md#physical-source-file-deletion-and-retained-b1-2026-09-16).
+
+Validation: **289 Python / 23 JavaScript tests**, shell syntax and four shim builds
+passed (`work/library-captures/delete2-unit.log`, ignored). No production/runtime
+changes, firmware rerun, device replay or interactive guest modification.
+The earlier 14-case emulator deletion acceptance remains separate evidence.
+Both track-level flags are now captured; group Delete is UI-unsupported. No
+further owner capture is needed for those cases. Next core work is the remaining
+screen/capability audit and wallpaper gaps; secondary deletion edges stay scoped
+below, PEQ/ISO remain separate issues. Changes are still local/uncommitted.
+
+## Previous physical checkpoint: Delete, FiiO Control 4.6.0
+
+Owner confirmed on 2026-09-16 that **all supplied iPhone checks/captures used
+FiiO Control 4.6.0**, including earlier batches. All sanitized iOS fixtures now
+record that version with owner-report provenance; firmware evidence is unchanged.
+`224332` contains seven matching HAR/PCAP HTTP exchanges: scoped album B Delete
+with source unchecked sends `delete_source: 0`, `style/album/song`, `[[0,0]]`.
+Fresh reads show B empty, only A remaining with two tracks, genre count 3 → 2.
+No directory inspection, upload, scan or Link payload/settings reply was captured.
+File survival on the physical card is therefore not independently verified.
+
+For pass two, the owner reports group Delete unsupported; `IMG_6820` shows the
+selected album A (two tracks) and the unsupported toast. No packets supplied:
+do not infer whether a command was sent. Mark this app operation unsupported in
+the tested state and do not request a repeat group capture. The follow-up `225423` now closes the track-level source deletion and directory
+inspection; see the latest checkpoint above.
+[Evidence and limits](LIBRARY_DELETE.md#physical-ios-track-deletion-and-unsupported-group-action-2026-09-16).
+
+Validation: 287 Python / 23 JavaScript tests, shell syntax and four shim builds
+passed (`work/library-captures/delete1-unit-final.log`, ignored). Capture parsing
+and compatibility coverage changed; production helpers/runtime did not. No
+firmware integration rerun or device replay; prior 14-case deletion acceptance
+remains the separate emulator checkpoint below.
+
+## Previous checkpoint: category DELETE scopes
+
+`ci/library_delete_check.py` and `CI_SCENARIO=library-delete` now reproduce
+seven deletion cases through each HTTP route on a fresh V2.57 disposable stack.
+All 14 cases, scan recovery, exact remaining files, SQLite membership and final
+baseline/stack cleanup passed. Firmware-free checks: 286 Python / 23 JavaScript,
+shell syntax and four shim builds. No public source-delete helper, shared runtime
+change, physical-device replay or interactive-guest modification. Full and long
+power scenarios were not repeated under the test-selection policy.
+
+The [contract](LIBRARY_DELETE.md) records membership loss despite preserved
+files, cross-list source deletion and stale references that scanning does not
+clean. Initial probes also exposed an album-position mismatch after file
+recreation/rescan and a folder-favorite title-to-filename fallback; final setup
+selects by verified folder path and checks favorite identity separately from its
+label. The exact album-order cause remains open. Physical `224332` now confirms unchecked/flag-zero track deletion;
+`IMG_6820` reports group Delete unsupported. Follow-up `225423` closes track-level flag one and physical file inspection. Current-track/shared-path deletion
+and failure/reboot edges are explicit secondary extensions, not completed work.
+Changes remain local/uncommitted on the current research branch; see git status.
 
 ## Completed checkpoint: idle, reconnect and USB power
 
@@ -89,20 +238,62 @@ confirmed. Whole-genre Play all now uses the captured **type 8 with empty album*
 compared with type 10 on disposable overlapping genre/album fixtures over TCP/WS
 in modes 0/4. Indexed genre tracks retain type 10; the empty-album indexed probe
 did not produce the expected playing state. See [capture evidence](LIBRARY_BROWSING.md#physical-genre-flow-2026-09-16).
-Pending: app folder selection, root-category Play all, folder-to-playlist workflow
-and Delete confirmation/source scope. No repeat genre capture needed. Do not issue
+Subsequent `211747` / `212141` captures confirm app folder and named-album selection,
+artist → albums → tracks, type-7 scoped-album selection and whole-artist Play all.
+The new guarded `play_artist` helper preserves both name filters; see
+[physical evidence and limits](LIBRARY_BROWSING.md#physical-folder-album-and-artist-flow-2026-09-16).
+Track-level flag-one deletion and physical file inspection are complete in
+`225423`: A1 is absent from the directory, while A2 and earlier index-deleted B1
+remain. No repeat deletion capture is needed for these cases.
+Unchecked/flag-zero scoped deletion is captured in `224332`; group Delete is
+reported unsupported with `IMG_6820` (no packets; dispatch unknown).
+Seven firmware deletion cases now have isolated acceptance; see
+[scope and stale-reference limits](LIBRARY_DELETE.md). Whole genre-album group addition and
+playlist rename are now captured (`221421`), see
+[evidence and pagination limit](LIBRARY_BROWSING.md#physical-genre-album-groups-and-playlist-rename-2026-09-16).
+No repeat genre capture needed. Do not issue
 physical deletes to obtain evidence. PEQ remains separate issue #9.
+
+Owner correction with `IMG_6818`: batch actions exist on detail screens where
+Play all works, except sdcard browsing; the single-track player offers only
+favorite on/off for these library actions. Folder-to-playlist capture is
+withdrawn as unavailable in the inspected app UI. The corrected ordinary-album
+first/third-track capture is now analyzed (`215831`): a single HTTP POST with
+`type: album/song`, ranges `[[0,0],[2,2]]`, destination position 1, then fresh
+count/membership confirms the two tracks. The owner reused an existing empty
+test list; no create/delete occurs in that earlier capture. The next `221421`
+recording creates a list, adds first/third genre-album groups in one POST and
+renames it; 16 + 89 gives total 105, while only the first 100 tracks are read.
+The app's flag-zero scoped Delete is now captured (`224332`); group Delete is
+reported unsupported (`IMG_6820`). The firmware's separate seven-case
+matrix is in [LIBRARY_DELETE.md](LIBRARY_DELETE.md). See [physical addition](LIBRARY_BROWSING.md#physical-album-track-addition-2026-09-16).
+See [the corrected scenario](LIBRARY_BROWSING.md#pass-b-album-track-batch-addition-corrected-after-img_6818).
+
+Continuation after pulling `28c5008`: the requested folder capture has arrived
+and been analyzed. The owner's Albums/Artists navigation was within named groups,
+so it does not close root-page Play all. The [durable action and analysis checklist](LIBRARY_BROWSING.md#next-app-capture-folders-and-root-play-all)
+records that distinction and separates later batch-menu/source-scope work.
+The owner confirms root Play all buttons in iPhone FiiO Control on All songs,
+Artists, Albums and Genres. The subsequent `213631` capture is analyzed:
+reported root taps produce no playback command; the final named-genre action
+works on the same connection. Root selector/order semantics remain unknown,
+but no repeat capture is requested. Reopen only if app state/version/behavior
+changes or concrete code evidence appears; do not infer firmware rejection.
+The screen matrix now reflects existing genre/folder/bulk-add acceptance instead
+of its earlier missing-helper status. Local Android AOT strings were rechecked,
+but neither method names nor the shared Delete label establish the iOS commands.
 
 Other open work: remaining wallpaper questions and a screenshot-led audit of
 the DISC screens in FiiO Control. First wallpaper batch (`IMG_6789`–`IMG_6794`),
 confirmed by the owner to use a physical DISC, is inventoried. Its four custom
 styles are now exposed by the helper and tested in fresh V2.57 `themes` acceptance;
-official-catalog and color-slider semantics remain unknown.
+official-catalog loading remains unknown and is deferred to issue #11; later `231820` establishes color-slider
+roles and RGB save/readback, with exact conversion formula still unestablished.
 Color/Date saves are now confirmed by physical HAR/PCAP: the app resends the full
 unchanged PNG and GET returns updated metadata. The four style saves/readbacks
 are also captured. Long aliases are now resolved: stock truncates at 63 encoded
 bytes before decoding, potentially saving invalid UTF-8; keep the helper guard.
-The official catalog remains a gap. See
+The official catalog is a separate issue #11 gap, not a current acceptance gate. See
 [capture evidence](FIIO_CONTROL_APP.md#physical-custom-theme-save-2026-09-16).
 
 ## Previous checkpoint completion: LAN discovery
@@ -203,6 +394,27 @@ explicitly instead of retrying them indefinitely.
 
 ### 2. Library and playback edge cases
 
+- [x] **Category DELETE scope on disposable V2.57:** list-member removal, favorite
+  removal, whole-list removal, general index-only deletion, and three source-file
+  deletion variants. General index deletion also loses favorites/custom membership;
+  custom source deletion can leave stale catalog/favorite/other-list references.
+  `CI_SCENARIO=library-delete` checks direct/proxied HTTP and scan recovery.
+  [Seven-case matrix and limits](LIBRARY_DELETE.md).
+- [x] **iOS Delete with source unchecked:** `224332` confirms `style/album/song`,
+  flag zero and range `[[0,0]]`; B becomes empty, A retains two tracks, genre count
+  changes 3 to 2. Source-file inspection was skipped.
+- [x] **iOS album-group Delete:** owner report/`IMG_6820` shows unsupported; no
+  packets supplied, so dispatch is unknown. Consistent with firmware allowlist;
+  no repeat group capture needed.
+- [x] **iOS track Delete with source checked:** `225423` sends flag one and
+  range `[[1,1]]` for A1 (actual order A2, A1). Directory readback shows only A2
+  and B1; this also supplies the earlier missing B1 file-preservation observation.
+  Post-delete offset one returns an empty page with total one; preserve that
+  total and refresh from zero. [Evidence](LIBRARY_DELETE.md).
+- [ ] **Secondary deletion edges:** current-track/list behavior, CUE/shared-path
+  identity, source deletion via favorites/current queue, failures/concurrency and
+  reboot persistence are outside the seven-case checkpoint.
+
 - [x] **Captured whole-genre Play all:** type 8 / empty album now exposed after
   TCP/WS queue/order/restart comparison with type 10 on generated overlapping
   fixtures. Indexed whole-genre selection stays type 10; named scoped albums
@@ -246,30 +458,28 @@ explicitly instead of retrying them indefinitely.
 - [x] **Long localized alias:** static buffer tracing and disposable direct/proxy
   boundary tests confirm truncation before decoding. Keep the 63-byte encoded
   guard; blank GET alias and HTTP 200 do not prove lossless persistence.
-- [ ] **Remaining wallpaper coverage:** color-slider/alpha semantics and
-  official-catalog source. Do not expand accepted values
-  from screenshots or system-theme metadata alone.
-- [ ] **Screen coverage audit:** map user-provided DISC app screens and controls
-  to existing client helpers, protocol evidence and validation limits. Screenshots
-  establish visible UI, not wire behavior or working hardware. Request additional
-  captures only for concrete gaps; see [audit plan](FIIO_CONTROL_APP.md#screen-coverage-audit).
-  Second batch (`IMG_6795`–`IMG_6806`) inventories library/PEQ/settings. Open gaps:
-  exact app folder playback, root-category Play all semantics, batch action menus,
-  exact PEQ preset/Save flow. Filter row/code mapping is now physically confirmed. Existing
-  catalog/settings helpers are not proof of complete app parity. See
-  [coverage matrix](FIIO_CONTROL_APP.md#library-peq-and-settings-screens-second-batch-2026-09-16).
-  Third batch (`IMG_6807`–`IMG_6815`) shows genre → albums → tracks, Add to Playlist
-  and Delete at both selection levels, device/local PEQ save destinations,
-  Device presets including separate BYPASS, Auto EQ and local/retrieval tabs.
-  Genre/scoped-album/folder helpers and category batch-add expansion now have
-  emulator acceptance in [LIBRARY_BROWSING.md](LIBRARY_BROWSING.md); exact app
-  folder/root-category sequences, remaining delete scope, BYPASS and PEQ save/cloud
-  workflows are not established. The genre capture now confirms HTTP filters and
-  scoped-album selection; whole-genre Play all parity is now tested as above. See
-  [third-batch audit](FIIO_CONTROL_APP.md#genre-hierarchy-batch-actions-and-peq-third-batch-2026-09-16).
-  **PEQ is documentation-only here and deferred to issue #9** by owner decision;
-  it is not a blocker for the current library/playback work or a request for
-  additional PEQ captures now.
+- [x] **System wallpaper opacity:** physical `230929` confirms direct 100/49/0
+  percentage mapping, empty-body metadata saves and fresh readback. Owner confirms
+  0 hides the image and locked-screen changes need unlock/relock in this session.
+  System selection preserves metadata; custom-slot rendering is not inferred.
+- [x] **System color-slider capture:** `231820` confirms four exact RGB saves
+  and readbacks, with unchanged other metadata and image. Screenshots establish
+  hue/lightness-like roles, not a full conversion formula or physical rendering.
+  Final pink differs from initial golden color; restoration is not claimed.
+- [x] **Cloud/catalog scope decision:** owner deferred Official wallpapers and
+  FiiO account/cloud synchronization to [issue #11](https://github.com/eudj1n/snowsky-disc-qemu/issues/11).
+  No further catalog capture, registration or login requested for this task.
+  This is a scope resolution, not completed protocol validation.
+- [x] **System wallpaper editor:** `update_system_lock_screen` validates edits,
+  reads/merges original metadata, activates the system slot and verifies all
+  metadata/image bytes. Direct/proxy V2.57 acceptance covers opacity/RGB/four
+  styles/independent overlays and restoration. No unsafe custom empty-body path.
+- [x] **Screen/capability audit:** supplied screenshots and subsequent captures
+  are mapped to helpers, evidence and limits in [the app inventory](FIIO_CONTROL_APP.md)
+  and [final controller contract](DISC_CAPABILITIES.md). Root Play all no-dispatch,
+  group Delete unsupported, absent sdcard batch/single-player Add, read-only
+  preferences, deferred PEQ/cloud and hardware-only checks are explicit.
+  No repeat capture, personal-library reset or cloud login is required.
 - [x] **UDP LAN discovery contract:** exact physical payload observed; controlled
   emulator idle/connected/disconnected lifecycle passed. [Details](DISCOVERY.md).
 - [x] **Official-app connection to emulator:** iPhone FiiO Control discovered
@@ -296,6 +506,11 @@ no capture is currently needed for those preferences.
 
 ## Separate subsequent work
 
+- [ ] FiiO account/cloud synchronization and Official wallpapers: [issue #11](https://github.com/eudj1n/snowsky-disc-qemu/issues/11).
+  Deferred by owner decision; cloud synchronization reportedly requires account
+  registration/sign-in. No account operations or new catalog capture now.
+  Coordinate PEQ cloud/preset overlap with issue #9.
+
 - [ ] PEQ preset/BYPASS mapping, device/local Save flow, Auto EQ and app/catalog
   scope: [issue #9](https://github.com/eudj1n/snowsky-disc-qemu/issues/9).
   Owner explicitly split this larger task from the current screen/library audit;
@@ -314,6 +529,67 @@ no capture is currently needed for those preferences.
   stock single-client TCP connection, centralized event routing, partial-state
   merging, reconnection without replaying mutations, pending paused-seek state,
   refreshed queue identities and firmware-specific capabilities.
+
+## Validation: physical genre-album groups and rename (2026-09-16)
+
+`221421` PCAP/HAR agrees on 14 HTTP exchanges. Create adds empty playlist
+position 2; a single genre-scoped `style/album` POST selects group positions
+0 and 2 (16 + 89 tracks); fresh readback reports 105. Rename uses
+`custom_list_cmd`, `type: update`, `list_id: 2`; fresh readback confirms the new
+name with count unchanged. Only membership positions 0–99 are captured, so
+complete 105-track identity and cross-rename membership equality are not claimed.
+Sanitized fixture and existing-client regression checks added; no production
+behavior change. **286 Python / 23 JavaScript tests**, shell syntax and four
+shim builds passed. Previous fresh V2.57 `library` acceptance covers group
+expansion; no firmware rerun or physical replay at that capture-only checkpoint.
+The subsequent deletion checkpoint is documented in [LIBRARY_DELETE.md](LIBRARY_DELETE.md).
+See [contract and limits](LIBRARY_BROWSING.md#physical-genre-album-groups-and-playlist-rename-2026-09-16).
+
+## Validation: physical album-track batch addition (2026-09-16)
+
+`215831` PCAP/HAR contains one `album/song` add request and subsequent destination
+count/membership readback. Existing empty destination position 1 receives source
+positions 0 and 2. Eight HTTP response bodies agree across capture formats; the
+POST uses chunked transfer and its decoded body matches the existing client.
+Sanitized fixture/regression coverage added. Fresh disposable V2.57 `library`
+passes with an explicit album-track disjoint-add case through direct/proxied HTTP;
+source hashes and baseline restoration pass. Firmware-free checks pass **284
+Python / 23 JavaScript tests**, shell syntax and four shim builds. No production
+client change or physical replay. Subsequent `221421` closes the group-add
+capture gap; Delete remains separate. No repeat track-add capture is requested.
+
+## Validation: physical folder/artist captures and type 7 (2026-09-16)
+
+Both `211747` / `212141` PCAP/HAR pairs are analyzed; sanitized request fixtures
+pin folder, ordinary album, artist-scoped album and whole-artist selectors.
+Type 7 now has a guarded shared builder and TCP/WS `play_artist` helpers. Fresh
+V2.57 `library` acceptance passed on overlapping artist/album fixtures in modes
+0/4, with full-artist type-2 comparison, fresh preflight, queue/order/restart and
+source preservation. Firmware-free acceptance passed **281 Python / 23 JavaScript
+tests**, shell syntax and four shim builds. No shared runtime change, full/idle
+rerun, physical replay or interactive guest modification. See [contract and limits](LIBRARY_BROWSING.md#physical-folder-album-and-artist-flow-2026-09-16).
+The later root Play all capture is now analyzed below. Batch menus and wallpapers
+remain next gaps.
+
+## Validation: root-tab no-op capture (2026-09-16)
+
+`213631` PCAP/HAR agree on eight HTTP GET exchanges. All four root lists are
+read, but reported ineffective Play all taps send no playback command. Final
+named-genre type 8 succeeds on the same connection, followed by explicit pause;
+late TCP resets occur after those events. This scopes the observed failure to
+app-side dispatch in that state, not unsupported firmware commands. The exact
+UI cause and root ordering remain unestablished, deferred unless new evidence
+appears. [Evidence](LIBRARY_BROWSING.md#root-tab-play-all-produces-no-playback-request-2026-09-16).
+No client behavior is changed from the preceding type-7 checkpoint. A sanitized
+fixture and regression checks cover outgoing frame decoding, root HTTP filters
+and the named-genre control action; no physical replay or emulator rerun is needed.
+Final firmware-free acceptance passed **283 Python / 23 JavaScript tests**, shell
+syntax and four shim builds. The initial run exposed an unrelated LAN-test
+cleanup race: `wait_closed()` raised `ConnectionResetError` before the test peer
+reported closure, causing its waiter to time out. An isolated rerun passed;
+the test now tolerates that expected reset during cleanup, retaining the actual
+idle deadline, EOF, slot-release and reconnect assertions. Production bridge
+code is unchanged. The full firmware-free rerun passed after this test-only fix.
 
 ## Validation: genre variant, settings labels and alias boundary (2026-09-16)
 
@@ -341,7 +617,7 @@ filter names were not yet paired; the subsequent capture below resolves the map.
 all six FiiO Control filter rows: 3→4→5→6→1→2 corresponds to wire
 11→12→13→14→9→10. All setters receive matching `a603`; a final fresh query
 returns original helper index 1 / wire 10. Firmware 257 is read from the session;
-app version is not reconfirmed. HAR is empty. Subsequent `IMG_6817.PNG` supplies
+app 4.6.0 is retrospectively owner-confirmed. HAR is empty. Subsequent `IMG_6817.PNG` supplies
 English labels: rows 5/6 display the same name but have distinct codes. Russian
 endings remain clipped; no additional capture is needed for row/code mapping.
 See [physical evidence and fixture](REMOTE_SETTINGS.md#physical-fiio-control-filter-mapping-2026-09-16).

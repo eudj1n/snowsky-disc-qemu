@@ -1,0 +1,214 @@
+{
+  "source": "2026-09-16-213631.pcap",
+  "source_sha256": "ae179d11329d080ed3e0886ef0f1dda60f855f019a8c76dc4c9025d36f8818a3",
+  "har_sha256": "31bc1fa58b376ca617622a0abc6559fd30464d3e267baa8ab338da0a1770496b",
+  "firmware": 257,
+  "play_mode": 0,
+  "app_version": "4.6.0",
+  "http_exchanges": 8,
+  "note": "Owner reports root Play all taps had no effect; last action was Play all inside a genre. Taps are not timestamped by PCAP. All app-to-DISC Link frames retained with only genre name replaced; no root playback request occurs. Device HTTP consists of eight GET exchanges; HAR body hashes match. Source names, IPs, catalogs, artwork and full settings omitted. Recompute frame lengths after sanitization.",
+  "genre": "Fixture Genre",
+  "http_requests": [
+    {
+      "frame": 1125,
+      "seconds": 6.434479,
+      "category": "all/song",
+      "headers": {
+        "style": "",
+        "artist": "",
+        "album": "",
+        "start-pos": "0",
+        "type": "all/song",
+        "num-max": "100"
+      },
+      "filters": {},
+      "total": 791,
+      "returned": 100
+    },
+    {
+      "frame": 1153,
+      "seconds": 18.551334,
+      "category": "artist",
+      "headers": {
+        "style": "",
+        "artist": "",
+        "album": "",
+        "start-pos": "0",
+        "type": "artist",
+        "num-max": "100"
+      },
+      "filters": {},
+      "total": 38,
+      "returned": 38
+    },
+    {
+      "frame": 1170,
+      "seconds": 22.167827,
+      "category": "album",
+      "headers": {
+        "style": "",
+        "artist": "",
+        "album": "",
+        "start-pos": "0",
+        "type": "album",
+        "num-max": "100"
+      },
+      "filters": {},
+      "total": 53,
+      "returned": 53
+    },
+    {
+      "frame": 1187,
+      "seconds": 24.635325,
+      "category": "style",
+      "headers": {
+        "style": "",
+        "artist": "",
+        "album": "",
+        "start-pos": "0",
+        "type": "style",
+        "num-max": "100"
+      },
+      "filters": {},
+      "total": 15,
+      "returned": 15
+    },
+    {
+      "frame": 1196,
+      "seconds": 26.771163,
+      "category": "style/album",
+      "headers": {
+        "style": "Fixture%20Genre",
+        "artist": "",
+        "album": "",
+        "start-pos": "0",
+        "type": "style/album",
+        "num-max": "100"
+      },
+      "filters": {
+        "style": "Fixture Genre"
+      },
+      "total": 6,
+      "returned": 6
+    }
+  ],
+  "outgoing_link": [
+    {
+      "frame": 985,
+      "seconds": 3.166241,
+      "tag": "0599",
+      "payload": "0000"
+    },
+    {
+      "frame": 989,
+      "seconds": 3.193374,
+      "tag": "0501",
+      "payload": ""
+    },
+    {
+      "frame": 991,
+      "seconds": 3.198146,
+      "tag": "0607",
+      "payload": "0000"
+    },
+    {
+      "frame": 993,
+      "seconds": 3.198633,
+      "tag": "0627",
+      "payload": "0000A0A9"
+    },
+    {
+      "frame": 993,
+      "seconds": 3.198633,
+      "tag": "0639",
+      "payload": "0000"
+    },
+    {
+      "frame": 1001,
+      "seconds": 3.215847,
+      "tag": "0202",
+      "payload": ""
+    },
+    {
+      "frame": 1005,
+      "seconds": 3.235874,
+      "tag": "0629",
+      "payload": "0000"
+    },
+    {
+      "frame": 1007,
+      "seconds": 3.236161,
+      "tag": "0628",
+      "payload": "00000009"
+    },
+    {
+      "frame": 1202,
+      "seconds": 28.211895,
+      "tag": "0101",
+      "payload": "0008{\"style\":\"Fixture Genre\", \"album\":\"\"}"
+    },
+    {
+      "frame": 1300,
+      "seconds": 31.812495,
+      "tag": "0201",
+      "payload": "0000"
+    }
+  ],
+  "genre_events": [
+    {
+      "frame": 1204,
+      "seconds": 28.489938,
+      "tag": "a202",
+      "payload": "{\"love\":false,\"playerflag\":8,\"state\":2,\"playing_num\":\"1/177\",\"work_mode\":\"LOCAL\"}"
+    },
+    {
+      "frame": 1206,
+      "seconds": 28.494026,
+      "tag": "a202",
+      "payload": "{\"state\":1}"
+    },
+    {
+      "frame": 1294,
+      "seconds": 30.433466,
+      "tag": "a202",
+      "payload": "{\"state\":0}"
+    },
+    {
+      "frame": 1296,
+      "seconds": 30.438401,
+      "tag": "a202",
+      "payload": "{\"state\":0}"
+    },
+    {
+      "frame": 1298,
+      "seconds": 31.36009,
+      "tag": "a103",
+      "payload": "000003E8"
+    },
+    {
+      "frame": 1302,
+      "seconds": 31.86307,
+      "tag": "a202",
+      "payload": "{\"state\":1}"
+    },
+    {
+      "frame": 1304,
+      "seconds": 31.902924,
+      "tag": "a202",
+      "payload": "{\"state\":1}"
+    }
+  ],
+  "ending_resets": [
+    {
+      "frame": 1334,
+      "seconds": 47.270083,
+      "port": 12103
+    },
+    {
+      "frame": 1336,
+      "seconds": 47.27988,
+      "port": 12100
+    }
+  ],
+  "app_version_evidence": "Owner confirmed on 2026-09-16 that all supplied iOS checks/captures used FiiO Control 4.6.0; not derived from network User-Agent."
+}
