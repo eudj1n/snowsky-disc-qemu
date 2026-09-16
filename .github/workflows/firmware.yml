@@ -1,26 +1,21 @@
 name: Firmware integration
 on:
   workflow_dispatch:
-    inputs:
-      version:
-        description: Exact firmware profile
-        type: choice
-        options: ['2.57', '2.40']
-        default: '2.57'
-        required: true
 permissions:
   contents: read
 concurrency:
-  group: firmware-${{ inputs.version }}
+  group: firmware-active
   cancel-in-progress: false
 jobs:
   integration:
-    name: Fresh V${{ inputs.version }} integration
+    name: Fresh active firmware integration
     if: github.ref == 'refs/heads/2.x'
     runs-on: ubuntu-24.04
     timeout-minutes: 25
     env:
-      FW_VERSION: ${{ inputs.version }}
+      # Keep in sync with firmware_profile.DEFAULT_VERSION and its URL secret.
+      # Promotion is a reviewed change, never an automatic OTA update.
+      FW_VERSION: '2.57'
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -40,7 +35,6 @@ jobs:
           docker run --rm --network none --volume "$PWD:/repo:ro" diskos-qemu-ci bash /repo/ci/test.sh
       - name: Download private firmware input
         env:
-          FIRMWARE_V240_URL: ${{ secrets.FIRMWARE_V240_URL }}
           FIRMWARE_V257_URL: ${{ secrets.FIRMWARE_V257_URL }}
         run: |
           mkdir "$RUNNER_TEMP/diskos-ota"

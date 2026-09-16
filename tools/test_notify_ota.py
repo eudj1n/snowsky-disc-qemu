@@ -24,6 +24,11 @@ class OTANotificationTests(unittest.TestCase):
         self.assertIn('<!-- snowsky-disc-ota:258:19 -->', body['body'])
         self.assertIn('Close this issue manually', body['body'])
         self.assertIn('Refs #<issue>', body['body'])
+        self.assertIn('single-active-firmware policy', body['body'])
+        self.assertIn('final validated release before promoting', body['body'])
+        self.assertIn('OTA detection alone does not replace', body['body'])
+        self.assertNotIn('FIFO', body['body'])
+        self.assertNotIn('fourth supported', body['body'])
         self.assertNotIn('patch_url', body['body'])
 
     def test_open_and_closed_issues_on_later_pages_prevent_duplicates(self):

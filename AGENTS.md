@@ -101,10 +101,12 @@ count printed by `fb2png.py` is only a fallback heuristic, not evidence of recen
   report first. `firmware/inventory/` contains observed inputs, not runtime enablement
   profiles. Keep vendor-reported changes separate from verified emulator features;
   update `CHANGELOG.md` for emulator changes. Never replace V2.40 hashes/addresses blindly.
-- Support at most three validated firmware versions (FIFO). Promote only after
-  validation and release preparation; a fourth retires the oldest from current
-  runtime support and CI. OTA detection alone does not move the window. Preserve
-  historical tags, inventories and analysis; see `docs/PORTING.md` for the checklist.
+- Actively support one firmware: the latest validated version (currently V2.57).
+  Develop on `2.x`; preserve older versions as historical release snapshots, without
+  promised backports or continuing integration gates. Promote only after validation,
+  not on an OTA announcement. Preserve inventories and analysis; see `docs/PORTING.md`.
+  V2.40 runtime/diagnostic profiles remain temporarily, but hosted CI runs only V2.57;
+  their removal is a separate implementation task, not part of this policy change.
 - `FW_VERSION` selects a reviewed runtime profile (default `2.57`, opt-in `2.40`).
   Setup/boot validate product/version and six binary fingerprints before execution.
   Key patch validation normalizes only the permitted instruction, then checks the full
@@ -117,6 +119,8 @@ count printed by `fb2png.py` is only a fallback heuristic, not evidence of recen
 - Default development branch: `2.x`; firmware-based release tags `v2.40`, then
   `v2.40-r1` for emulator fixes against the same firmware. See `docs/CI.md` for pinned
   CI, secret-backed downloads and release gates. Never log a direct firmware URL.
+  Existing `v2.57` is an immutable pre-release snapshot; keep it and use a new name
+  (next available: `v2.57-r1`) for the eventual stable V2.57 release.
 - Full firmware-free suite: `docker run --rm --network none -v "$PWD:/repo:ro"
   diskos-qemu-ci bash /repo/ci/test.sh` after `docker build -t diskos-qemu-ci docker`.
   `ci/integration.sh` uses a fresh disposable Compose stack, never the interactive volume.

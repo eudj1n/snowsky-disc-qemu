@@ -5,6 +5,11 @@ The owner approved publishing this repository and the `v2.57` source release on
 The audit snapshot below records the state before publication. Future history
 rewrites or changes to immutable releases require separate authorization.
 
+On 2026-09-16 the owner chose to keep `v2.57` as a **Pre-release** snapshot and
+`v2.40` as the latest stable historical release. Both tags/commits remain intact;
+the next stable V2.57 release needs a new name such as `v2.57-r1`. Active support
+and hosted firmware CI now target only V2.57; release immutability remains enabled.
+
 ## Prepared
 
 - MIT license chosen by the owner for project code/documentation.
