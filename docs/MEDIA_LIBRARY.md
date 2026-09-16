@@ -10,6 +10,8 @@ on disposable V2.40 and V2.57 guests through TCP and WS. It does not require an 
 insertion event or screen tap. See [HTTP_API.md](HTTP_API.md#upload--index--play)
 for completion events and the upload/reindex acceptance scenario. The automatic
 insertion workflow below is a separate trigger.
+V2.57 remote cancellation is now checked too: it leaves a partial index and uses
+the same finish event as a full scan. See [LIBRARY_SCAN.md](LIBRARY_SCAN.md).
 
 ## Conditions for an automatic scan
 

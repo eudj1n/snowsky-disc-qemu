@@ -9,6 +9,10 @@ emulator-only revisions use `v2.40-r1`, etc. See [the porting guide](docs/PORTIN
 
 ### Added
 
+- V2.57 TCP/WS library-scan cancellation (`0622/0001`) with no event drain,
+  acknowledgement assumption or mutation retry. Document partial replacement
+  indexes and shared full/cancel finish events; add disposable scan-cancel
+  acceptance for idle cancel, partial progress/catalogs and full-scan recovery.
 - V2.57 disposable CI display-time fixture (`LIGTH_ON_TIME=7`) with fingerprinted
   runtime readback, preventing the screen timeout from interfering with long
   protocol scenarios. Interactive defaults and `POWER_SAVE` remain unchanged.

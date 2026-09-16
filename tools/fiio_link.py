@@ -210,6 +210,14 @@ class Client:
         """Start stock indexing; observe a60a status and a622 count events."""
         self.socket.sendall(frame('0622', '0000'))
 
+    def cancel_library_scan(self):
+        """Request cooperative cancellation (verified V2.57); no ack or rollback.
+
+        Send once on the connection observing the scan. Do not query/drain here:
+        queued a60a/a622 events must remain available to the scan observer.
+        """
+        self.socket.sendall(frame('0622', '0001'))
+
     def device_setting(self, name):
         return setting_value(name, self.request(setting_query(name)))
 

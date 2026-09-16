@@ -126,6 +126,10 @@ class WSClient:
     async def scan_library(self):
         await self.send('0622', '0000')
 
+    async def cancel_library_scan(self):
+        """Request cancellation once; preserves queued scan events, no rollback."""
+        await self.send('0622', '0001')
+
     async def device_setting(self, name):
         return setting_value(name, await self.request(setting_query(name)))
 

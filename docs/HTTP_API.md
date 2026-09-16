@@ -148,13 +148,16 @@ the guarded TCP/WS helper, catalog refresh requirements and acceptance scope.
 
 `Client.scan_library()` / `WSClient.scan_library()` send **`0622000C0000`** once.
 Observed events are `a60a/000F` (start), `a622/<count>` (hex count), then
-`a60a/0005` (finished). Busy/rejected/failed scans need separate handling; `a622`
-alone is not completion. After completion, query the catalog and require the new
-track to appear. Upload alone did **not** add a track to the index in the test.
+`a60a/0005` (ended, also emitted after cancellation). Busy/rejected/failed scans
+need separate handling; `a622` alone is not completion. After completion, query
+the catalog and require the new track to appear. Upload alone did **not** add a
+track to the index in the test.
 
-Static V2.57 analysis identifies nonzero `0622` payloads as setting the scanner's
-stop flag (`469178` → `85fbdc`, checked by `469184`/`468698`). This is a cancellation
-lead, not a library-reset command; timing and partial-index effects remain untested.
+V2.57 cancellation is verified through `cancel_library_scan()` on TCP/WS:
+`0622000C0001` cooperatively stops the scanner and leaves a **partial replacement
+index**, not the old complete index. The stop flag is not a library reset, and
+`a60a/0005` does not distinguish cancelled from full completion. See the
+[scan lifecycle, evidence and tests](LIBRARY_SCAN.md) before implementing progress UI.
 
 The acceptance test uploads a fourth track, indexes it through the network command,
 removes that test file, and reindexes back to the three original fixtures. No

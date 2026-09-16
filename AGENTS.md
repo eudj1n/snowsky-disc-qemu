@@ -201,6 +201,11 @@ TCP/WS with ID gaps, rename/add/remove and stale/empty-selector rejection.
 Avoid stock batch recursive deletion (it constructs shell commands). `0622/0000`
 starts a scan; watch `a60a` start/finish and `a622` counts. Gain/DRE/filter/SPDIF and
 PEQ helpers are shared by TCP/WS; filter and EQ network enums differ from SQLite.
+V2.57 `cancel_library_scan()` sends `0622/0001` once without draining events.
+Cancellation leaves a partial replacement index, not a rollback; `a60a/0005`
+also occurs after cancel. Do not query through the sequential client while
+collecting scan events or replay cancel after reconnect. See `docs/LIBRARY_SCAN.md`;
+`CI_SCENARIO=scan-cancel` checks TCP/WS and recovery on disposable generated media.
 Channel balance uses getter `0712`, setter `0713`, reply `a712`: helper integers
 -20..20 mean L20..0..R20; wire high byte 0=left/1=right, low byte=magnitude.
 It is not signed 16-bit or percent. `BALANCE_VOL` stores the packed value;

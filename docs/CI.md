@@ -166,8 +166,13 @@ The workflow first runs the firmware-free suite on the same commit, then:
 11. Runs [modes/codecs/themes acceptance](REMOTE_MODES_THEMES.md): USB/local/AirPlay
     control transitions, five codec preferences, five stock lock screens, exact
     custom PNG and metadata, and empty-body/activation quirks. TCP/WS and direct/proxy
-    HTTP are exercised. On V2.57, also checks automatic SD scanning and Cyrillic add/rename/delete.
-12. On V2.57, runs `ci/preferences_check.py`: fingerprinted TCP allowlist, three
+    HTTP are exercised.
+12. On V2.57, before SD hotplug acceptance, runs `ci/scan_cancel_check.py` with
+    1024 additional generated WAVs: idle/active cancellation over TCP/WS, partial
+    index agreement, unchanged source bytes and full-scan recovery. Removes its
+    fixtures and reindexes the original three before the SD scenario's reboot.
+    Runs automatic SD scanning and Cyrillic add/rename/delete checks, then
+    `ci/preferences_check.py`: fingerprinted TCP allowlist, three
     read-only playback preferences, and six rejected local-only setters over TCP/WS.
     Confirms unchanged SQLite/config/runtime and continued fresh network reads.
 13. Stops its guest, unmounts/detaches its SD loop, removes only its own stack/work
@@ -191,12 +196,15 @@ CI_SCENARIO=settings FW_VERSION=2.57 bash ci/integration.sh /absolute/path/to/ma
 CI_SCENARIO=preferences FW_VERSION=2.57 bash ci/integration.sh /absolute/path/to/main_os/ota_v257
 # Custom playlist playback and fresh HTTP preflight over TCP and WS.
 CI_SCENARIO=playlists FW_VERSION=2.57 bash ci/integration.sh /absolute/path/to/main_os/ota_v257
+# Cooperative indexing cancellation, partial catalog and subsequent full scan.
+CI_SCENARIO=scan-cancel FW_VERSION=2.57 bash ci/integration.sh /absolute/path/to/main_os/ota_v257
 ```
 
 `CI_SCENARIO` accepts `full` (default), `queue`, `queue-reads`, `settings`,
-`preferences` or `playlists`. All use the same
+`preferences`, `playlists` or `scan-cancel`. All use the same
 random-name isolated stack and cleanup. Focused runs execute only their selected
-checks after setup/scan/reboot, not unrelated integration scenarios.
+checks, not unrelated integration scenarios. Most use the shared setup/scan/reboot
+preparation; `scan-cancel` starts after boot and prepares its own network scans.
 For V2.57, `ci/awake_check.py --configure` sets `LIGTH_ON_TIME=7` (never)
 in the **stopped disposable guest's** settings DB before boot, then checks the
 fingerprinted UI's index 7 / timeout 65535 readback. This is test-fixture setup,
@@ -208,6 +216,8 @@ BusyBox reboot-shim binding checks still run.
 restarts. Read-only SQLite/memory comparisons verify the rejected-write probes.
 `playlists` is also V2.57-only and uses only generated custom lists/media; it
 restores the play mode and leaves playback paused on a valid album before cleanup.
+`scan-cancel` is V2.57-only and prepares its own baseline through stock network
+scanning rather than the settings UI. See [the scan contract](LIBRARY_SCAN.md).
 Only focused queue runs assert the queue
 is empty before any track has been played; the full run reaches queue checks after
 other playback scenarios.

@@ -26,6 +26,8 @@ checkpoint and any work left uncommitted. Do not publish this branch implicitly.
   [HTTP API](HTTP_API.md).
 - [x] V2.57 custom-playlist whole-list and indexed playback over TCP/WS,
   guarded by fresh HTTP name/track reads: [playlist contract](PLAYLISTS.md).
+- [x] V2.57 cooperative scan cancellation, partial replacement index and full-scan
+  recovery over TCP/WS: [scan lifecycle](LIBRARY_SCAN.md).
 - [x] Gain, DRE, filter, SPDIF, PEQ read/write and persistence:
   [settings](REMOTE_SETTINGS.md). These checks do not measure DSP output.
 - [x] Channel-balance contract: `0712` read / `0713` write / `a712` reply,
@@ -43,18 +45,19 @@ checkpoint and any work left uncommitted. Do not publish this branch implicitly.
   `curlist/song` and `0202` instead. No additional phone capture is needed for
   these two commands.
 
-## Current checkpoint completion: custom-playlist playback
+## Current checkpoint completion: scan cancellation
 
-Preference checkpoint: `274bce4`; its validation/failure history remains below.
+Playlist checkpoint: `392c8bc`; preference checkpoint: `274bce4`.
+Their validation/failure history remains below.
 
-- [x] Trace type-5 payloads, TCP admission and position-to-ID conversion.
-- [x] Add guarded TCP/WS selection and no-I/O validation/no-retry unit coverage.
-- [x] Run firmware-free checks: 206 Python tests, 23 JavaScript tests, shell
+- [x] Trace `0622`, stop/reset timing, buffered-row flush and finish events.
+- [x] Add one-shot cancellation preserving pending events and no-retry coverage.
+- [x] Run firmware-free checks: 209 Python tests, 23 JavaScript tests, shell
   checks and four shim builds.
-- [x] Run focused `playlists` acceptance on V2.57 via TCP and WS.
-- [x] Run **full** disposable integration on active V2.57, including the extended
-  nonzero-list-position and post-removal stale-index checks.
-- [x] Review the complete diff and record validation in this local checkpoint
+- [x] Run focused `scan-cancel` acceptance via TCP/WS (initial 512-file fixture).
+- [x] Run **full** disposable integration on active V2.57, including the final
+  1024-file fixture and earlier cancellation trigger (first positive progress).
+- [x] Review the complete diff, record validation and create the local checkpoint
   commit. Pushing/publishing is not part of this step.
 
 Earlier balance-checkpoint validation is retained below as historical evidence,
@@ -77,6 +80,7 @@ CI_SCENARIO=queue-reads FW_VERSION=2.57 bash ci/integration.sh "$OTA_257"
 CI_SCENARIO=settings FW_VERSION=2.57 bash ci/integration.sh "$OTA_257"
 CI_SCENARIO=preferences FW_VERSION=2.57 bash ci/integration.sh "$OTA_257"
 CI_SCENARIO=playlists FW_VERSION=2.57 bash ci/integration.sh "$OTA_257"
+CI_SCENARIO=scan-cancel FW_VERSION=2.57 bash ci/integration.sh "$OTA_257"
 ```
 
 Run firmware integration sequentially to limit resource pressure. Each run uses
@@ -122,8 +126,10 @@ explicitly instead of retrying them indefinitely.
   `{"id":<list position>}`. Fresh HTTP preflight checks expected name and track
   bounds; TCP/WS tests cover ID gaps, rename/add/remove, empty and stale positions.
   Position/name checks are not atomic identity: serialize edits and never replay.
-- [ ] **Cancel indexing:** determine nonzero `0622` behavior, progress/events and
-  the resulting partial index. Do not reinterpret this as library reset.
+- [x] **Cancel indexing:** `0622/0001` stops cooperatively, leaves a partial
+  replacement index and emits the same `a60a/0005` as a full scan. Idle cancel
+  does not clear the catalog; a new scan resets stop and rebuilds the full index.
+  See [contract and tests](LIBRARY_SCAN.md). Not a library-reset command.
 - [ ] **Dedicated library reset:** identify the actual app command and scope.
   Test reset only against disposable state. `0800` is a broader factory reset
   and is not a substitute. Merely opening/cancelling confirmation reveals no
@@ -288,12 +294,46 @@ Final follow-up: `playlist-final-unit.log`, `playlist-final.log` and
 `playlist-final-logs/`.
 No viewer UI changes or screenshot refresh are needed for this protocol addition.
 
-**Next research item: cancel indexing** in section 2. Current playlist validation
-is complete. Do not substitute `0800` factory reset for library operations.
+## Scan-cancellation investigation (2026-09-16)
+
+Static V2.57 analysis identified admitted `0622` → `4f0550` → `42e18c` and the
+cooperative stop flag `85fbdc`, reset at scan start/end. Network worker `42c050`
+sends start before the reset; cancelling on a first positive progress event avoids
+that known ordering window. The parser flushes pending rows on stop. SONG is
+dropped/rebuilt at scan start, so cancellation is not rollback.
+
+Initial focused acceptance passed on both transports with 512 added WAVs and
+three original tracks. TCP cancellation at count 455 ended with 508 rows, WS at
+314 ended with 397, both with normal `a60a/0005`. TCP, HTTP and SQLite agreed on
+the partial catalog. Idle cancel changed no catalog and produced no scan events;
+the stop flag cleared on the subsequent scan. Each full recovery restored 515
+rows, source bytes were unchanged, and removing generated files/reindexing restored
+the original three. No direct DB/memory writes or firmware patches were used.
+
+The first fixture left only seven tracks unprocessed on TCP, an unnecessarily
+tight timing margin. Final acceptance uses 1024 generated WAVs and sends cancel
+on the first positive count (not after count >=8). It still requires a running
+worker and a genuinely partial result; it never retries a scan/cancel to obtain
+one. Full local V2.57 integration passed with the final fixture: both cancellation
+requests followed count 1, TCP ended with 167/1027 rows and WS with 31/1027.
+Each subsequent full scan restored 1027; fixture cleanup restored the original
+three. Later SD hotplug/Unicode and preference scenarios also passed, and the
+disposable stack/volume were removed. This is local evidence, not a hosted release
+gate. Firmware-free suite passed: 209 Python, 23 JS, shell checks and four shim builds.
+
+Ignored evidence: `work/preferences/cancel-static.log`, `cancel-handler.log`,
+`cancel-worker.log`; `cancel-focused.log` and `cancel-focused-logs/`;
+`cancel-unit.log`; `cancel-full.log` and `cancel-full-logs/`.
+No viewer UI changed; existing curated screenshots remain current. The
+interactive stack/media remain untouched. Fixtures are part of tracked CI, not
+ad-hoc image edits; Dockerfile and normal Compose need no new dependency/option.
+
+**Next research item: dedicated library reset** in section 2. Cancellation
+validation is complete. Do not substitute `0800` factory reset for library operations.
 Check the worktree and latest commit first. Balance/preference audio effects,
 physical custom-list behavior and natural end-of-list remain unvalidated.
 
-Detailed local logs for this checkpoint are ignored under `work/http-research/`:
+Historical balance-checkpoint logs are ignored under `work/http-research/`:
 `balance-unit.log`, `balance-unit-rebuilt.log`, `balance-full-v257.log` and
 `balance-full-v240.log`.
 The prior checkpoint ran on another computer; its local files are not required.
