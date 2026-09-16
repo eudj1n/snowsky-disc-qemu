@@ -195,6 +195,15 @@ It is not signed 16-bit or percent. `BALANCE_VOL` stores the packed value;
 the opposite DAC channel receives 0..20 attenuation steps. `ci/settings_check.py`
 checks TCP/WS, SQLite and DAC mirrors and restores state; focused scenario
 `CI_SCENARIO=settings` is available. Physical analog output remains unvalidated.
+V2.57 has a separate TCP receive allowlist (111 tags at `6d84e0`): local UI
+callbacks do not prove remote support. `tools/inspect_link_commands.py` inspects
+it by full binary fingerprint. Gapless/folder jump/ReplayGain are read-only via
+`0501` JSON; `0647/0687/0718/0648/064d/064e` are rejected over TCP and WS even
+with populated callbacks. `ci/preferences_check.py` verifies no state change and
+fresh reads after each negative probe. `0820/0821/0822` and `064b/064c` are also
+absent (static evidence). Invalid tags clear the current TCP receive buffer,
+including coalesced later frames; do not pipeline a negative probe with a query.
+Admission alone is insufficient too: `0426` is admitted but has no handler.
 The new CI scenarios use only disposable generated media. Never substitute the
 broad `0800` factory-reset command for the app's library-reset action.
 

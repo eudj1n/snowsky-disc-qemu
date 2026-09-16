@@ -5,7 +5,7 @@ import json
 import select
 import socket
 import time
-from fiio_settings import spec, setting_command, setting_value, peq_payload, peq_value
+from fiio_settings import setting_query, setting_command, setting_value, peq_payload, peq_value
 
 
 def frame(tag, payload=b''):
@@ -210,7 +210,7 @@ class Client:
         self.socket.sendall(frame('0622', '0000'))
 
     def device_setting(self, name):
-        return setting_value(name, self.request(spec(name)[0]))
+        return setting_value(name, self.request(setting_query(name)))
 
     def set_device_setting(self, name, value):
         command = setting_command(name, value)

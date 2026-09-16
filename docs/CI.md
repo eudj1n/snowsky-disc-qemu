@@ -164,7 +164,10 @@ The workflow first runs the firmware-free suite on the same commit, then:
     control transitions, five codec preferences, five stock lock screens, exact
     custom PNG and metadata, and empty-body/activation quirks. TCP/WS and direct/proxy
     HTTP are exercised. On V2.57, also checks automatic SD scanning and Cyrillic add/rename/delete.
-12. Stops its guest, unmounts/detaches its SD loop, removes only its own stack/work
+12. On V2.57, runs `ci/preferences_check.py`: fingerprinted TCP allowlist, three
+    read-only playback preferences, and six rejected local-only setters over TCP/WS.
+    Confirms unchanged SQLite/config/runtime and continued fresh network reads.
+13. Stops its guest, unmounts/detaches its SD loop, removes only its own stack/work
    volume and generated media. The interactive `diskos-work`/`sdcard` remain untouched.
 
 Local equivalent using already extracted chunks:
@@ -173,17 +176,23 @@ Local equivalent using already extracted chunks:
 bash ci/integration.sh /absolute/path/to/main_os/ota_v257
 # Optional local diagnostic PNGs; never uploaded by Actions:
 FW_VERSION=2.57 CI_SHOTS="$PWD/shots/v257" bash ci/integration.sh /absolute/path/to/main_os/ota_v257
+# Optional local guest logs, copied before disposable-volume cleanup (success or failure):
+FW_VERSION=2.57 CI_LOGS="$PWD/work/ci-v257" bash ci/integration.sh /absolute/path/to/main_os/ota_v257
 # Focused queue run: fresh setup/scan/reboot, fresh-empty checks, then TCP/WS queue checks.
 CI_SCENARIO=queue FW_VERSION=2.57 bash ci/integration.sh /absolute/path/to/main_os/ota_v257
 # Focused 0105/0426 reads, including an initially empty queue on TCP and WS.
 CI_SCENARIO=queue-reads FW_VERSION=2.57 bash ci/integration.sh /absolute/path/to/main_os/ota_v257
 # Focused settings/PEQ and channel-balance checks over TCP and WS.
 CI_SCENARIO=settings FW_VERSION=2.57 bash ci/integration.sh /absolute/path/to/main_os/ota_v257
+# Three read-only preferences and six rejected local-only writes over TCP/WS.
+CI_SCENARIO=preferences FW_VERSION=2.57 bash ci/integration.sh /absolute/path/to/main_os/ota_v257
 ```
 
-`CI_SCENARIO` accepts `full` (default), `queue`, `queue-reads` or `settings`. All use the same
+`CI_SCENARIO` accepts `full` (default), `queue`, `queue-reads`, `settings` or `preferences`. All use the same
 random-name isolated stack and cleanup. Focused runs execute only their selected
 checks after setup/scan/reboot, not unrelated integration scenarios.
+`preferences` is V2.57-only; it does not change settings or require additional
+restarts. Read-only SQLite/memory comparisons verify the rejected-write probes.
 Only focused queue runs assert the queue
 is empty before any track has been played; the full run reaches queue checks after
 other playback scenarios.
@@ -195,6 +204,9 @@ scenario and `queue` retain the UI scan test in `ci/guest_check.py`.
 
 The workflow does not upload/cache firmware, rootfs, guest logs, captures or derived
 images. The hosted runner is discarded afterwards. Secret masking is not a guarantee
+against private guest data in local logs: keep `CI_LOGS` under ignored `work/`,
+inspect/redact before sharing, and never enable it as an Actions artifact.
+Secret masking is also not a guarantee
 against careless logging; never add `set -x`, verbose download output, or raw network
 exceptions. A secret also does not preserve an expired/disappeared upstream file.
 

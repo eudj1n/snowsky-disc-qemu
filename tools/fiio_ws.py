@@ -7,7 +7,7 @@ import json
 from aiohttp import ClientSession, ClientTimeout, WSMsgType
 from fiio_link import (Frames, frame, hex_value, list_payload, index_payload,
                        library_request, library_page, playback_snapshot, play_mode_value)
-from fiio_settings import spec, setting_command, setting_value, peq_payload, peq_value
+from fiio_settings import setting_query, setting_command, setting_value, peq_payload, peq_value
 
 
 class WSClient:
@@ -126,7 +126,7 @@ class WSClient:
         await self.send('0622', '0000')
 
     async def device_setting(self, name):
-        return setting_value(name, await self.request(spec(name)[0]))
+        return setting_value(name, await self.request(setting_query(name)))
 
     async def set_device_setting(self, name, value):
         command = setting_command(name, value)

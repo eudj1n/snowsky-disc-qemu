@@ -14,10 +14,10 @@ requirement. See [the support policy](PORTING.md#support-policy--one-active-firm
 Android FiiO Music/M21 is reference material only; it is a different
 implementation from FiiO Control and must not define DISC semantics.
 
-Working branch: `codex/disc-protocol-research`. Research checkpoint before channel
-balance: `09951b8`. Use `git log -5 --oneline` and `git status --short` to identify the
-latest checkpoint and any work left uncommitted; do not assume the earlier hash
-contains the later balance helper.
+Working branch: `codex/disc-protocol-research`. Channel balance was committed in
+`d823d67`; `08e6098` merges the updated single-active-firmware GitHub/CI policy.
+Use `git log -5 --oneline` and `git status --short` to identify the latest
+checkpoint and any work left uncommitted. Do not publish this branch implicitly.
 
 ### Completed
 
@@ -41,35 +41,37 @@ contains the later balance helper.
   `curlist/song` and `0202` instead. No additional phone capture is needed for
   these two commands.
 
-## Checkpoint completion
+## Current checkpoint completion: playback preferences
 
-- [x] Run the firmware-free suite on the final changes.
-- [x] Run **full** disposable integration on V2.57, including channel balance.
-- [x] Run **full** disposable integration on V2.40.
-- [x] Review the complete diff, record validation and remaining limitations here,
-  then commit the checkpoint. A local commit is authorized; pushing/publishing is
-  not part of this step.
+- [x] Trace local callbacks AND the separate network receive gate.
+- [x] Add three read-only helpers and reject unsupported writes before I/O.
+- [x] Run firmware-free checks: 193 Python tests, 23 JavaScript tests, shell
+  checks and four shim builds.
+- [x] Run focused `preferences` acceptance on V2.57 via TCP and WS.
+- [x] Run **full** disposable integration on active V2.57 (retry passed; first
+  failure and focused reproduction recorded below).
+- [x] Review the complete diff, record validation and commit the checkpoint.
+  Local commits are authorized; pushing/publishing is not part of this step.
 
-Channel-balance firmware-free checks passed: 180 Python tests, 23 JavaScript tests,
-shell checks and four shim builds. Focused `settings` passed on V2.57 via TCP and WS.
-These focused results alone are not full integration or release-gate results.
+Earlier balance-checkpoint validation is retained below as historical evidence,
+not a new V2.40 integration requirement.
 
 ### Reproduction
 
 Read `AGENTS.md`, [EMULATION.md](EMULATION.md) and [CI.md](CI.md) first. Resolve
-`OTA_257` and `OTA_240` below to existing extracted `main_os/ota_v257` and
-`main_os/ota_v240` directories on the current machine. Do not download or execute
+`OTA_257` below to an existing extracted `main_os/ota_v257` directory on the
+current machine. Do not download or execute
 an unreviewed firmware profile as a substitute.
 
 ```sh
 docker build -t diskos-qemu-ci docker
 docker run --rm --network none -v "$PWD:/repo:ro" diskos-qemu-ci bash /repo/ci/test.sh
 CI_SCENARIO=full FW_VERSION=2.57 bash ci/integration.sh "$OTA_257"
-CI_SCENARIO=full FW_VERSION=2.40 bash ci/integration.sh "$OTA_240"
-# Focused diagnostics, not substitutes for the full runs above:
+# Focused diagnostics, not substitutes for the full run above:
 CI_SCENARIO=queue FW_VERSION=2.57 bash ci/integration.sh "$OTA_257"
 CI_SCENARIO=queue-reads FW_VERSION=2.57 bash ci/integration.sh "$OTA_257"
 CI_SCENARIO=settings FW_VERSION=2.57 bash ci/integration.sh "$OTA_257"
+CI_SCENARIO=preferences FW_VERSION=2.57 bash ci/integration.sh "$OTA_257"
 ```
 
 Run firmware integration sequentially to limit resource pressure. Each run uses
@@ -98,14 +100,16 @@ explicitly instead of retrying them indefinitely.
 - [x] **Channel balance:** mapped from stock UI and player handlers. Shared TCP/WS
   helper and tests cover -20, -1, 0, +1, +20, SQLite, per-channel DAC writes and
   restoration. Hardware analog effects remain a separate check.
-- [ ] **Playback preferences:** investigate gapless (`0647`), ReplayGain (`0718`),
-  folder jump (`0687`), artist grouping (`0648`), CD/track display (`064d`) and list
-  interaction (`064e`). These are leads, not validated remote setters.
-- [ ] **Physical-button assignments:** `0820`, `0821`, `0822` remote control of
-  single/double/hold assignments; verify against the already tested physical
-  controls and restore original assignments.
-- [ ] Cover/lyrics preferences (`064b`, `064c`): establish local read/write
-  semantics separately from any online retrieval.
+- [x] **Playback preferences:** gapless/folder jump/ReplayGain have read-only
+  `0501` fields. Their local setter tags `0647/0687/0718`, plus artist grouping
+  `0648`, CD display `064d` and list mode `064e`, are absent from the V2.57 TCP
+  allowlist and rejected over TCP/WS. No public setters; other three reads remain
+  unsupported. See [contract and static addresses](REMOTE_SETTINGS.md#playback-preferences-v257).
+- [x] **Admission of physical-button and cover/lyrics tags:** `0820/0821/0822`
+  and `064b/064c` are also absent from the V2.57 TCP allowlist (static evidence
+  only, not five additional runtime tests). Do not implement these as remote
+  setters. Local physical assignment behavior is already covered separately.
+  Reopen alternate-route research only with concrete app/handler evidence.
 
 ### 2. Library and playback edge cases
 
@@ -120,9 +124,9 @@ explicitly instead of retrying them indefinitely.
 - [ ] **Natural end of track/list:** verify all five modes, automatic transitions,
   final state, repeat-one/list, single-once and random behavior with short generated
   tracks. Explicit next/previous tests do not establish end-of-track behavior.
-- [ ] Secondary compatibility: CUE/SACD/DSD metadata and track identity, and a usable
-  V2.40 favorites selection path (generic favorite-position playback is currently
-  guarded because V2.40 expects an internal ID absent from the page).
+- [ ] Secondary compatibility: CUE/SACD/DSD metadata and track identity on the
+  active firmware. Historical V2.40 favorite-position playback remains guarded;
+  its missing internal ID is not an active-development requirement.
 
 ### 3. Exact app behavior and discovery
 
@@ -138,11 +142,16 @@ The user can capture TCP 12100 and HTTP 12103 from FiiO Control/Surge on iPhone.
 Ask for a specific short action sequence only when it resolves a concrete unknown;
 avoid repeating already established mode/codec captures. Existing capture evidence
 is indexed in [FIIO_CONTROL_APP.md](FIIO_CONTROL_APP.md).
+The owner did not find Gapless/ReplayGain options in FiiO Control (2026-09-16);
+no capture is currently needed for those preferences.
 
 ## Separate subsequent work
 
-- [ ] Retire the legacy V2.40 runtime/diagnostic profile, manual workflow choice
-  and obsolete compatibility branches in a dedicated cleanup. Preserve `v2.40`
+- [ ] Reorganize into emulator/viewer/controller plus shared firmware/research:
+  [issue #7](https://github.com/eudj1n/snowsky-disc-qemu/issues/7). The agreed
+  migration is separate from this protocol checkpoint; files have not moved.
+- [ ] Retire the legacy V2.40 runtime/diagnostic profile and obsolete compatibility
+  branches in a dedicated cleanup. The hosted workflow choice is already removed. Preserve `v2.40`
   and the research records; choose a final `-rN` snapshot only if later changes
   should be retained. Do not fold this cleanup into protocol research.
 - [ ] Hardware validation: real USB DAC/AirPlay/Bluetooth audio, negotiated codec,
@@ -153,7 +162,7 @@ is indexed in [FIIO_CONTROL_APP.md](FIIO_CONTROL_APP.md).
   merging, reconnection without replaying mutations, pending paused-seek state,
   refreshed queue identities and firmware-specific capabilities.
 
-## Validation log for this checkpoint
+## Historical validation: channel-balance checkpoint
 
 | Check | Result |
 | --- | --- |
@@ -173,8 +182,45 @@ except for the previously absent `strace`; V2.40 ran in the rebuilt image.
 These are local integration results, not hosted release gates; no physical analog
 output claim or publication is implied.
 
-**Resume with playback preferences** in section 1. Check the worktree and latest
-commit first. Balance is complete; its physical analog effects remain unvalidated.
+## Playback-preference investigation (2026-09-16)
+
+The first candidate-write run failed: requesting gapless 1 left SQLite/config/
+runtime at 0. Writing the existing default 0 had been a false positive. A second
+diagnostic run verified populated callbacks but reproduced the failure. Tracing
+TCP reception, rather than patching those callbacks, found the independent
+111-tag allowlist at `6d84e0`. Candidate setters were removed.
+
+Final focused acceptance passed on fresh disposable V2.57: three read-only values
+match SQLite/config/runtime; six individually identified tags, each requesting a
+different valid value, leave all six preferences and volume unchanged over both
+TCP and WS. Fresh reads still work after every rejection. Unit tests cover all
+allowed read values, malformed/missing JSON and no-I/O rejection of unsupported
+operations. Final firmware-free checks passed again: 193 Python tests, 23
+JavaScript tests, shell syntax and four shim builds. Full V2.57 integration
+passed on retry, exit 0, including the new TCP/WS preference checks after SD
+rescanning. These are local results, not hosted exact-commit release gates.
+
+The first full run failed before preferences, in existing `queue_reads_check.py`:
+after replacing the paused queue with play-all, `0202` reported state 2 instead
+of playing, then timed out. Fresh focused `queue-reads` subsequently passed TCP
+and WS, including that transition; no queue behavior was changed to mask it.
+The cause is not established. Full retry passed with opt-in `CI_LOGS` capture
+of guest logs before disposable cleanup; no queue fix is claimed. One intervening diagnostic run is invalid:
+the running shell script was edited, disrupting its read position; never edit
+`ci/integration.sh` while it is executing.
+
+Logs for this investigation are ignored under `work/preferences/`:
+`focused.log` and `focused-diagnostic.log` (failed candidate-write hypotheses),
+`unit-allowlist.log`, `focused-allowlist.log` and `full-v257.log`.
+Final unit log: `unit-final.log`. Queue reproduction: `queue-reads-v257-retry.log`
+and `queue-logs/`; full retry: `full-v257-retry.log` and `full-retry-logs/`.
+The interactive stack, its databases and firmware image were left untouched.
+No viewer UI changed, so existing curated screenshots remain current.
+
+**Next research item: custom playlist playback** in section 2, after the current
+checkpoint validation/commit. Check the worktree and latest commit first.
+Balance and preference protocol contracts are complete; actual DSP and local
+preference behavior remain unvalidated.
 
 Detailed local logs for this checkpoint are ignored under `work/http-research/`:
 `balance-unit.log`, `balance-unit-rebuilt.log`, `balance-full-v257.log` and

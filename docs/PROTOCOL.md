@@ -63,6 +63,21 @@ family concerns the library, `0[15]xx`/`a[15]xx` control+state. A prefix is not 
 read-only guarantee: `04xx` includes mutations and unimplemented handlers. Probe
 only individually identified commands; setters change playback or library state.
 
+### TCP admission is separate from local IPC
+
+V2.57 TCP receiver `4dabc4` checks an independent 111-tag allowlist at `6d84e0`
+before dispatch. A local UI command/callback is therefore not necessarily reachable
+over the network. The six playback-preference setters `0647/0687/0718/0648/064d/064e`
+are absent and were rejected in disposable TCP/WS tests. Three current preference
+values are still readable through `0501`; see [the exact contract](REMOTE_SETTINGS.md#playback-preferences-v257).
+Button-assignment `0820/0821/0822` and cover/lyrics `064b/064c` tags are also absent
+(static evidence). Conversely, admitted `0426` has no assigned handler.
+
+An invalid tag clears the current receive buffer, potentially dropping coalesced
+valid frames too. Do not batch negative probes with reads. The WS bridge does not
+add stock commands. Reproduce the list offline with fingerprint-validating
+`tools/inspect_link_commands.py`; see [diagnostics](DIAGNOSTICS.md).
+
 ## Verified live against the physical V2.40 device
 
 Confirmed on the real player over **auth-free TCP 12100**. Library-list requests use

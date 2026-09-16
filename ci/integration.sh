@@ -7,7 +7,11 @@ cd "$(dirname "${BASH_SOURCE[0]}")/.."
 export OTA_DIR="$(cd "${1:?path to OTA chunks}" && pwd)"
 export FW_VERSION="${FW_VERSION:-2.57}"
 CI_SCENARIO="${CI_SCENARIO:-full}"
-case "$CI_SCENARIO" in full|queue|queue-reads|settings) ;; *) echo 'CI_SCENARIO must be full, queue, queue-reads or settings' >&2; exit 2;; esac
+case "$CI_SCENARIO" in full|queue|queue-reads|settings|preferences) ;; *) echo 'CI_SCENARIO must be full, queue, queue-reads, settings or preferences' >&2; exit 2;; esac
+if [ "$CI_SCENARIO" = preferences ] && [ "$FW_VERSION" != 2.57 ]; then
+  echo 'Playback preference acceptance requires active firmware V2.57' >&2
+  exit 2
+fi
 CI_TMP="$(mktemp -d "${TMPDIR:-/tmp}/diskos-ci.XXXXXXXX")"
 CI_ID="diskos-ci-$(basename "$CI_TMP" | tr '[:upper:].' '[:lower:]-')"
 export EMU_IMAGE="${EMU_IMAGE:-diskos-qemu-ci}"
@@ -17,6 +21,13 @@ export SD_DIR="$CI_TMP/sdcard"
 mkdir "$SD_DIR"
 compose() { docker compose --env-file /dev/null --profile wsbridge -p "$CI_ID" -f compose.yaml -f ci/compose.yml "$@"; }
 cleanup() {
+  # Opt-in local diagnostics before the disposable volume is removed. Never
+  # enabled/uploaded by hosted Actions; guest logs may contain private data.
+  if [ -n "${CI_LOGS:-}" ]; then
+    mkdir -p "$CI_LOGS"
+    compose cp emu:/work/mq_player.log "$CI_LOGS/mq_player.log" || true
+    compose cp emu:/work/mq_ui.log "$CI_LOGS/mq_ui.log" || true
+  fi
   if [ -n "${CI_SHOTS:-}" ]; then
     mkdir -p "$CI_SHOTS"
     compose cp emu:/work/shots/. "$CI_SHOTS" || true
@@ -59,6 +70,10 @@ if [ "$CI_SCENARIO" = settings ]; then
   compose exec -T emu python3 -B /repo/ci/settings_check.py
   exit 0
 fi
+if [ "$CI_SCENARIO" = preferences ]; then
+  compose exec -T emu python3 -B /repo/ci/preferences_check.py
+  exit 0
+fi
 compose exec -T emu python3 -B /repo/ci/viewer_peripherals.py
 compose exec -T wsbridge python3 -B /repo/tools/verify_websocket.py --tcp-host emu --control
 compose exec -T emu python3 -B /repo/ci/guest_check.py --audio
@@ -72,4 +87,5 @@ compose exec -T emu python3 -B /repo/ci/modes_themes_check.py
 compose exec -T emu bash /repo/ci/confinement.sh
 if [ "$FW_VERSION" = 2.57 ]; then
   compose exec -T emu python3 -B /repo/ci/storage_check.py --disposable
+  compose exec -T emu python3 -B /repo/ci/preferences_check.py
 fi

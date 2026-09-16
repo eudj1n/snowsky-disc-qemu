@@ -6,10 +6,70 @@ from unittest.mock import Mock, AsyncMock
 
 from fiio_link import Client, Frames, frame
 from fiio_ws import WSClient
-from fiio_settings import setting_command, setting_value, peq_payload, peq_value
+from fiio_settings import SETTINGS, SETTING_FIELDS, setting_command, setting_value, peq_payload, peq_value
 
 
 class SettingTests(unittest.IsolatedAsyncioTestCase):
+    async def test_read_only_and_local_only_preferences_never_send_setters(self):
+        tcp = Client.__new__(Client)
+        tcp.socket = Mock()
+        ws = WSClient()
+        ws.send = AsyncMock()
+        for name in ('gapless', 'folder_jump', 'replay_gain', 'artist_class_type',
+                     'track_display', 'list_oper_mode'):
+            for value in (-1, 0, 1, 2, True, 1.0, '1', None):
+                with self.assertRaises(ValueError):
+                    tcp.set_device_setting(name, value)
+                with self.assertRaises(ValueError):
+                    await ws.set_device_setting(name, value)
+        tcp.socket.sendall.assert_not_called()
+        ws.send.assert_not_called()
+
+    async def test_preferences_read_common_snapshot_tcp_ws(self):
+        tcp = Client.__new__(Client)
+        tcp.request = Mock()
+        ws = WSClient()
+        ws.request = AsyncMock()
+        for name, field in SETTING_FIELDS.items():
+            for value in SETTINGS[name][2]:
+                snapshot = {field: value if name == 'replay_gain' else bool(value)}
+                tcp.request.return_value = ws.request.return_value = json.dumps(snapshot).encode()
+                self.assertEqual(tcp.device_setting(name), value)
+                self.assertEqual(await ws.device_setting(name), value)
+                tcp.request.assert_called_with('0501')
+                ws.request.assert_awaited_with('0501')
+
+    def test_preference_snapshot_validation(self):
+        for name, field in SETTING_FIELDS.items():
+            for payload in (b'{}', b'[]', b'null', b'0001', b'{',
+                            json.dumps({field: '1'}).encode(),
+                            json.dumps({field: 1.0}).encode(),
+                            json.dumps({field: None}).encode(),
+                            json.dumps({field: -1}).encode(),
+                            json.dumps({field: 3}).encode()):
+                with self.subTest(name=name, payload=payload), self.assertRaises(ValueError):
+                    setting_value(name, payload)
+        with self.assertRaises(ValueError):
+            setting_value('replay_gain', b'{"replayGain":true}')
+        for name in ('gapless', 'folder_jump'):
+            for value in (0, 1):
+                self.assertEqual(setting_value(name, json.dumps({SETTING_FIELDS[name]: value}).encode()), value)
+
+    async def test_local_only_preferences_never_send_a_getter(self):
+        tcp = Client.__new__(Client)
+        tcp.request = Mock()
+        ws = WSClient()
+        ws.request = AsyncMock()
+        for name in ('artist_class_type', 'track_display', 'list_oper_mode'):
+            with self.assertRaisesRegex(ValueError, 'unsupported device setting'):
+                tcp.device_setting(name)
+            with self.assertRaisesRegex(ValueError, 'unsupported device setting'):
+                await ws.device_setting(name)
+            with self.assertRaises(ValueError):
+                setting_value(name, b'0000')
+        tcp.request.assert_not_called()
+        ws.request.assert_not_called()
+
     def observed_modes(self):
         return json.loads((Path(__file__).parent / 'fixtures' /
                            'fiio_control_ios_460_modes.json').read_text())

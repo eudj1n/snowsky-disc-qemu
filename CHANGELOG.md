@@ -9,6 +9,12 @@ emulator-only revisions use `v2.40-r1`, etc. See [the porting guide](docs/PORTIN
 
 ### Added
 
+- Read-only TCP/WS helpers for V2.57 gapless, folder jump and ReplayGain from
+  fresh `0501` snapshots. Fingerprint-validated TCP command-allowlist inspection
+  and focused `CI_SCENARIO=preferences` acceptance prove six local UI setters
+  are rejected before network dispatch; no unsupported setters or firmware patches.
+- Opt-in local `CI_LOGS` capture of guest logs before disposable integration
+  cleanup, for failure diagnosis; ignored locally and never uploaded by Actions.
 - TCP/WS channel-balance helper: stock L20..0..R20 range, packed direction/magnitude
   encoding, readback and SQLite persistence. Disposable tests check center, ±1,
   ±20 and opposite-channel DAC attenuation; add `CI_SCENARIO=settings` for focused

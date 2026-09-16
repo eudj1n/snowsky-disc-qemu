@@ -155,17 +155,128 @@ representable Q 1.5 and checks frequency 1000 Hz, -1 dB band/master gain, networ
 readback and the `STYLE_PRESET=11` row. It restores the captured user bands/master
 and original EQ mode through stock commands.
 
+## Playback preferences (V2.57)
+
+Our validated remote API supports only **reading** gapless, folder jump and ReplayGain.
+The six setter tags below belong to the shared local UI/player protocol, but
+**none is admitted by the stock TCP receive allowlist**. A registered callback is
+not proof of network reachability. The WS bridge forwards TCP and cannot bypass
+this restriction. No write-only setters are exposed by our client.
+
+Local UI payloads use four ASCII hex digits. Binary switches use **0 = off,
+1 = on**, independent of their row positions in the device menu.
+
+| Setting | Local-only set tag | Local UI values | Remote readback | SQLite column |
+| --- | --- | --- | --- | --- |
+| `gapless` | `0647` | 0 / 1 | `0501` → `a501.gaplessPlay` (JSON boolean) | `PLAY_GAP` |
+| `folder_jump` | `0687` | 0 / 1 | `0501` → `a501.folderJump` (JSON boolean) | `FOLDER_JUMP` |
+| `replay_gain` | `0718` | 0 off, **1 album, 2 track** | `0501` → `a501.replayGain` (JSON number) | `SYS_REPLAY_GAIN` |
+| `artist_class_type` | `0648` | 0 track artist, 1 album artist | No validated getter | `ARTIST_CLASS_TYPE` |
+| `track_display` | `064d` | 0 / 1: album CD-number display | No validated getter | `TRACK_DISPLAY` |
+| `list_oper_mode` | `064e` | 0 long-press index / swipe-left batch; 1 long-press batch / swipe-left index | No validated getter | `LIST_OPER_MODE` |
+
+`device_setting()` reads the first three from a **fresh common snapshot**, returning
+integers (switches normalized to 0/1). It rejects reads of the other three before
+any network I/O. Do not send an empty payload to a setter to try to read it: that
+could change the setting. Missing/unknown JSON values are errors, not defaults.
+`artist_sub_album: 1` in `0501` is a fixed capability advertisement, **not** the
+current artist-grouping choice. List operation mode has **two paired choices**,
+not four independent gesture modes; its first menu row writes 1, not 0.
+
+These local callbacks can update player configuration/SQLite, but TCP rejects
+their tags **before dispatch**, even with callbacks populated in the running guest.
+Our client rejects all six attempted setters before network I/O. Do not infer a
+getter from a neighboring tag or echo the last sent value as an acknowledgement.
+
+On 2026-09-16 the owner reported not seeing the requested Gapless/ReplayGain
+options in FiiO Control. No additional phone capture was requested for this item;
+that observation is consistent with, but not the proof of, the TCP restriction.
+
+Examples (same methods are async on `WSClient`):
+
+```python
+client.device_setting('gapless')       # fresh 0501 snapshot; returns 0 or 1
+client.device_setting('folder_jump')   # fresh 0501 snapshot; returns 0 or 1
+client.device_setting('replay_gain')   # 0 off, 1 album, 2 track
+# set_device_setting('gapless', 1) raises ValueError: read-only.
+# device_setting('list_oper_mode') raises ValueError: unsupported setting.
+```
+
+### Static evidence
+
+TCP receiver `4db020` calls `4dabc4`, which checks tag strings against the
+111-entry pointer table at **`6d84e0`**, terminated by NULL at `6d869c`,
+before parsing/enqueueing the command. The six tags below are absent. An invalid
+tag clears the current receive buffer, so coalesced later valid frames can be
+discarded too. Do not pipeline negative probes with read requests.
+Admission is necessary, not sufficient: admitted `0426` still has a NULL handler.
+
+Reproduce the allowlist without running firmware:
+`python3 tools/inspect_link_commands.py /path/to/mq_player --version 2.57`.
+The tool validates the full binary fingerprint (normalizing only the permitted
+key patch), PT_LOAD mappings, count, strings and NULL terminator; it sends nothing.
+
+Exact-build V2.57 `mq_player` **shared local dispatch** mapping:
+
+| Tag | Dispatch table entry | Wrapper / callback slot | Callback |
+| --- | --- | --- | --- |
+| `0647` | `838cf8` | `4153e0` / `83a684` | `4f1e2c` |
+| `0687` | `838c78` | `4151e0` / `83a62c` | `4f1c58` |
+| `0718` | `838d10` | `415440` / `83a690` | `4f1f74` |
+| `0648` | `838d00` | `415400` / `83a688` | `4f1ed0` |
+| `064d` | `838c88` | `415220` / `83a634` | `4f1cf8` |
+| `064e` | `838c90` | `415240` / `83a638` | `4f1d98` |
+
+Callbacks store the low byte of the parsed argument at offset `+0x10`; they do
+not validate the UI enum. These callbacks are not reachable via the six TCP tags.
+Persistence goes through `43db60` with fields 25/24/58/56/61/67 respectively. `4eca24` restores runtime
+configuration on boot. `424e8c` constructs the `0501` snapshot; `4d82b4` serializes
+its boolean/numeric fields. Neither the latter's fixed `artist_sub_album` field
+nor the neighboring local-UI `0604` path establishes a getter for the other three.
+
+V2.57 `mq_ui` menus: `4581bc` (gapless), `46d1bc` (folder jump), `465620`
+(ReplayGain), `460f54` (artist grouping), `467ecc` (CD-number display), `45e2ac`
+(list mode). Selection callbacks `465540` and `45e1e0` establish the ReplayGain
+enum and reversed list-row mapping. The UI command senders start at `4580ac`,
+`46d0ac`, `4654fc`, `460e3c`, `467d60`, `45e140`: include the two instructions
+**before** their stack prologue, which load the selected byte.
+
+Reuse `ghidra/DecAt.java` on these entries after analysis; see `ghidra/README.md`.
+Binary copies, projects and raw decompilation stay under ignored `work/`, not Git.
+Do not reuse these addresses for another firmware.
+
+### Validation scope
+
+`ci/preferences_check.py` first checks the fingerprinted TCP allowlist. It reads
+the three available settings through TCP and WS, independently comparing SQLite,
+player configuration and runtime. For each of the six local-only tags it then
+sends an individually identified negative probe requesting a **different** valid
+value, confirms no configuration change and checks that fresh reads still work.
+It verifies populated callback slots to rule out missing initialization. Volume
+is unchanged. No database, guest-memory or firmware writes are used.
+
+The initial candidate-setter test failed when changing gapless from 0 to 1:
+the unchanged default had made writing 0 look successful. Following the receive
+path established the separate allowlist; candidate public setters were removed.
+This negative result is retained as regression coverage, not bypassed with patches.
+
+Unit tests cover all accepted read values and reject missing/malformed fields,
+unsupported getters and all six setters before I/O. Runtime coverage establishes
+the three current-value reads and six rejected network writes, **not** local UI
+persistence, gapless continuity, ReplayGain amplitude, folder transitions, catalog
+grouping or actual list gestures. Only active V2.57 was tested for this addition.
+
 ## Remaining hardware checks and other stock commands
 
-Static V2.57 callback registration gives further concrete leads:
+Static V2.57 callback registration must be checked against TCP admission:
 
 | Area | Tags / current evidence |
 |---|---|
 | Work-mode audio | Three app-visible control transitions now have [acceptance coverage](REMOTE_MODES_THEMES.md); actual USB/AirPlay audio remains unvalidated |
 | Bluetooth connection | All five source preferences now have [readback/persistence coverage](REMOTE_MODES_THEMES.md); negotiation and transmitted audio remain unvalidated |
-| Physical button assignments | `0820`, `0821`, `0822`; single/double/hold. Existing physical-control tests cover assignments through the device configuration, not these remote setters |
-| Playback preferences | `0687` folder jump, `0647` gapless, `0718` replay gain, `0648` artist grouping, `064d` CD/track display, `064e` list interaction mode |
-| Cover/lyrics preferences | `064b`, `064c`; remote setters found, online retrieval not tested |
+| Physical button assignments | `0820`, `0821`, `0822` are absent from the TCP allowlist (static evidence). Existing physical-control tests cover local assignments, not remote setters |
+| Playback preference effects | See the [validated control contract and limits](#playback-preferences-v257); actual audio/transitions/grouping/gestures are separate behavioral checks |
+| Cover/lyrics preferences | `064b`, `064c` are local callbacks but absent from the TCP allowlist (static evidence); online retrieval not tested |
 | Reset library | App UI exists; a dedicated safe library-reset command is not yet established. **0800 performs a broader factory reset**, including Wi-Fi and theme/song databases; it is not an appropriate substitute |
 
 Getter-looking tags can be no-ops or send only local UI events; `0604`, for example,
@@ -179,6 +290,8 @@ changes/restores balance, gain, DRE, filter, SPDIF and user PEQ, and reads SQLit
 Balance additionally checks both channel-attenuation mirrors at center, ±1 and ±20.
 Use `CI_SCENARIO=settings` with `ci/integration.sh` for an isolated focused run;
 the full integration scenario includes the same checks.
+`CI_SCENARIO=preferences FW_VERSION=2.57` runs read-only preference and rejected-write
+checks separately; full V2.57 integration includes them too.
 `tools/test_fiio_settings.py` pins wire examples, signed gain, binary PEQ structure,
 validation and the user-preset guard.
 

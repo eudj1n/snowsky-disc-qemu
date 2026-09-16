@@ -15,7 +15,15 @@ SETTINGS = {
     # Only modes present in DISC's FiiO Control UI are exposed.
     'work_mode': ('0607', '0657', (1, 8, 10)),
     'bt_source_codec': ('06d4', '06d3', tuple(range(5))),
+    # These three are fields of the common a501 JSON, not individual replies.
+    # The local UI setters are NOT admitted by the stock TCP allowlist.
+    'gapless': ('0501', None, (0, 1)),
+    'folder_jump': ('0501', None, (0, 1)),
+    'replay_gain': ('0501', None, (0, 1, 2)),  # off / album / track
 }
+
+SETTING_FIELDS = {'gapless': 'gaplessPlay', 'folder_jump': 'folderJump',
+                  'replay_gain': 'replayGain'}
 
 
 def spec(name):
@@ -28,6 +36,13 @@ def number(value, low, high):
     if type(value) not in (int, float) or not math.isfinite(value) or not low <= value <= high:
         raise ValueError(f'expected finite number in {low}..{high}')
     return value
+
+
+def setting_query(name):
+    tag = spec(name)[0]
+    if tag is None:
+        raise ValueError(f'{name} has no validated remote getter')
+    return tag
 
 
 def setting_command(name, value):
@@ -53,7 +68,19 @@ def setting_command(name, value):
 
 
 def setting_value(name, payload):
-    spec(name)
+    setting_query(name)
+    if name in SETTING_FIELDS:
+        snapshot = json.loads(payload)
+        field = SETTING_FIELDS[name]
+        if not isinstance(snapshot, dict) or field not in snapshot:
+            raise ValueError(f'missing setting field {field}')
+        value = snapshot[field]
+        # Stock cJSON uses booleans for switches and a number for ReplayGain.
+        if name != 'replay_gain' and type(value) is bool:
+            value = int(value)
+        if type(value) is not int or value not in spec(name)[2]:
+            raise ValueError(f'unknown {field} value')
+        return value
     if len(payload) != 4:
         raise ValueError('expected four hexadecimal setting digits')
     value = int(payload, 16)

@@ -22,6 +22,7 @@ peripheral controls. See the [README](../README.md) for setup and the visual ove
 | **Local protocol** | TCP 12100 settings/catalog and remote playback: list-position selection, next/previous, seek, modes, albums and built-in favorites. Current-queue selection checks fresh bounds and needs no label, verified on V2.40/V2.57. Optional native WS→TCP bridge on host 12103; direct stock HTTP on 12113. Physical DISC V2.57 comparisons are recorded separately. | [Remote control](REMOTE_CONTROL.md), [WebSocket](WEBSOCKET.md) |
 | **Stock file/library API** | HTTP folders, streamed uploads/progress and single-path deletion; custom playlist create/rename/add/remove/delete. Network scanning indexes uploaded music. Current-cover JPEG retrieved on physical V2.57. | [HTTP API](HTTP_API.md) |
 | **Remote settings** | TCP/WS gain, DRE, filter, SPDIF, channel balance and user PEQ/master gain with readback and SQLite persistence checks. Balance L20..R20 also checks the opposite-channel DAC attenuation writes. Actual USB/AirPlay/BT and DSP response remain unvalidated. | [Settings protocol](REMOTE_SETTINGS.md) |
+| **Playback preferences** | V2.57 gapless, folder jump and ReplayGain are readable via fresh `0501` snapshots. Six local UI setter tags are rejected by the independent TCP allowlist, also through the WS bridge; no remote setters exposed. | [Evidence and limits](REMOTE_SETTINGS.md#playback-preferences-v257) |
 | **Modes and lock screen** | Stock USB/local/AirPlay control transitions, five Bluetooth source-codec preferences, five system themes and full custom PNG/overlay metadata. Physical audio and screen rendering need separate checks. | [Modes and themes](REMOTE_MODES_THEMES.md) |
 | **OTA monitoring** | Daily catalog check and one tracking Issue per new main-OS/recovery pair. First GitHub-hosted run passed. Package metadata/signature and one chunk were checked separately; guest installation remains untested. | [OTA](OTA.md) |
 
@@ -34,9 +35,16 @@ peripheral controls. See the [README](../README.md) for setup and the visual ove
 Fresh captures from the actual V2.57 guest, 2026-09-15. The current browser skin
 and controls are shown in [VIEWER.md](VIEWER.md). These are screenshots, not mockups;
 they illustrate the interface rather than replacing protocol/audio assertions.
+The 2026-09-16 preference investigation changes protocol helpers/tests only, not
+the viewer UI; these captures remain the current visual reference.
 
 ## Releases and verification
 
+- 2026-09-16 preference checkpoint: 193 Python and 23 JavaScript tests, four shim
+  builds, focused TCP/WS preference checks and full local V2.57 integration passed.
+  Full integration passed on retry after an unexplained queue-state failure;
+  isolated queue reads passed too. [Validation details](PROTOCOL_RESEARCH.md#playback-preference-investigation-2026-09-16)
+  preserve the failure and limitations. This is not a hosted release gate.
 - [v2.40 historical stable release](https://github.com/eudj1n/snowsky-disc-qemu/releases/tag/v2.40)
   remains Latest. [v2.57](https://github.com/eudj1n/snowsky-disc-qemu/releases/tag/v2.57)
   is retained as a Pre-release snapshot, with its original exact-commit test evidence.
