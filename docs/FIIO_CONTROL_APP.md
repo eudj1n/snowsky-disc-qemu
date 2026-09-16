@@ -221,12 +221,53 @@ Preserve returned rows/positions and literal names; do not deduplicate, trim or
 split labels based on screenshots. Displayed similarity cannot establish whether
 underlying tags differ, nor prove an index defect.
 
-Next evidence: open one genre and a folder containing tracks, show their item
-menus and the batch-selection toolbar (without confirming deletion), then show
-the PEQ preset selector, if available, and the rest of its editor. First inventory
-the controls; request targeted TCP/HTTP captures for concrete gaps afterwards.
+The third batch below supplies genre/album batch toolbars and PEQ selection/save
+screens. Folder contents and individual-item menus remain unseen. Request
+targeted TCP/HTTP captures for concrete gaps, not repeat screenshots already supplied.
 Gain/filter label mapping can be captured separately while preserving settings;
 do not sweep unknown codes or change physical gain with active listening.
+
+### Genre hierarchy, batch actions and PEQ: third batch (2026-09-16)
+
+Owner-supplied `IMG_6807.PNG`–`IMG_6815.PNG`, 18:12–18:15, continuation of the
+physical DISC audit. These are screenshots, not evidence that any shown action
+was submitted or persisted. Versions are not displayed. No raw screenshots or
+personal library contents are committed.
+
+Owner decision, 2026-09-16: **PEQ is a separate workstream**, tracked in
+[issue #9](https://github.com/eudj1n/snowsky-disc-qemu/issues/9). Record its screens
+here, but do not request further PEQ captures or implement its missing workflows
+as part of the current library audit. Existing PEQ helpers/tests remain intact.
+
+| Screen/control | Screenshot | Coverage and interpretation |
+| --- | --- | --- |
+| Genre detail → album rows | 6807 | Six visible album-like rows, each with its own track count. Matches the shape expected for `style/album`, but only traffic can establish the actual request/filter. Genre-to-album-to-track browsing must not be flattened into a genre song list. |
+| Album detail → tracks, Play all | 6808 | Matches existing named-album playback concept. A genre-scoped album selection may need both genre and album; do not assume the generic album-name helper preserves the genre restriction, especially for repeated names. |
+| Select all / Cancel / per-row selection | 6809–6810 | Two red selected rows, others outlined. No command is inferred merely from selection marks. The same visual toolbar appears at album-group and track levels. |
+| Add to Playlist | 6809–6810 | Existing `add_to_playlist()` accepts category/filter/ranges, but integration covers all-song ranges, **not** expansion of selected genre-album groups or genre-scoped track ranges. Destination-list picker and resulting contents are not shown. Capture exact category, filters and positional range semantics before claiming parity. |
+| Delete | 6809–6810 | Visible at both levels; confirmation and source-file scope unknown. Client deliberately does not expose arbitrary category/source batch deletion. Do not substitute custom-playlist removal (`delete_source: 0`) or issue physical deletes just to obtain evidence. |
+| Save this PEQ → device / local data | 6811 | Separate destinations are now visible; device option is red. Backend has device band/master setters, but the app's Save transaction and target-preset choice remain unknown. Local preset storage/import/export/sync is not implemented; neither option's actual writes are established by this dialog. |
+| EQ Device presets | 6812 | Off, ten named factory tiles, User 1..10 and **BYPASS** are visible. Helper has numeric `eq_type` values and user slots, but no validated full label mapping. **BYPASS is a separate visible choice, not proven equivalent to Off or any guessed enum.** First-user/off acceptance is not coverage of every preset. |
+| Auto EQ | 6813 | Headphone measurement and target-curve selectors, Random / Save as / Reset, response graph and frequency/gain/Q rows. No curve catalog, matching algorithm, generation/save or device-application helper. Existing `set_peq()` can send validated bands, but does not implement Auto EQ. The graph's ±18 scale is not proof of accepted device gain limits. |
+| Local | 6814 | Sign-in-for-sync text, My settings and Download sections; no entries shown. Storage and synchronization behavior unverified; do not assume this tab is the player's ten user slots. No account login or external sync requested. |
+| Selected | 6815 | Empty view with a truncated password/retrieval prompt. Meaning and endpoint unknown; this is not evidence of TCP 12100 authentication, an unlock password or a firmware secret. |
+| Official | 6814–6815 | Tab label only; its contents are not provided. Do not treat the blank Selected screen as the official catalog. |
+
+The genre heading says “total songs: 6” while the six rows look like albums
+with larger individual counts. Record the nesting, not an inferred six-track
+library or a diagnosed index defect; wire schemas/counts must resolve the units.
+Outlined checkmarks are also used on unselected batch rows. As with the theme
+screens, a tick outline alone is not reliable proof of an enabled setting.
+
+Priority next capture: TCP 12100 + HTTP 12103 for opening a genre, using its
+Play all and pausing, then opening an album within that genre, selecting a track
+and pausing. Note action order/times and allow each transition to settle. This
+resolves hierarchy filters and playback context before implementing new selectors.
+It changes playback/queue, so retain the initial track/position/mode if restoration
+matters. No deletion, media reset, cloud login or preset overwrite is needed.
+Separate later library captures can cover adding a few rows to a disposable
+custom list. PEQ captures/changes belong to issue #9 when explicitly resumed;
+do not combine them into the current library trace.
 
 ## Android 4.6.0 input (2026-09-15)
 

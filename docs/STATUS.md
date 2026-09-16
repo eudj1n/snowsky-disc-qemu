@@ -154,6 +154,13 @@ The next 12 library/PEQ/settings screens are also inventoried. Existing helpers
 cover most base reads/settings, but genre/folder playback, batch UI actions,
 exact PEQ Save flow and named gain/filter mapping are not established. See
 [coverage matrix](FIIO_CONTROL_APP.md#library-peq-and-settings-screens-second-batch-2026-09-16).
+Nine further screenshots clarify genre → album → track nesting, Add to Playlist /
+Delete at two levels, device/local PEQ saving and separate BYPASS/Auto EQ/local
+catalog screens. These are audited UI gaps, not new validated commands; see
+[third batch](FIIO_CONTROL_APP.md#genre-hierarchy-batch-actions-and-peq-third-batch-2026-09-16).
+PEQ is documented but explicitly deferred to
+[issue #9](https://github.com/eudj1n/snowsky-disc-qemu/issues/9), not part of the
+current library/playback implementation scope.
 Physical iOS background/reconnect testing is deferred unless an error appears
 (owner decision, 2026-09-16), not a blocker for the completed idle/USB checkpoint.
 Long power tests remain opt-in under the [test selection policy](CI.md#test-selection-policy).

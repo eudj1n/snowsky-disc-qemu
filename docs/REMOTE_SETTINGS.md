@@ -44,6 +44,15 @@ to database `EQ_TYPE` **11..20**. Other observed mappings (network → database)
 `0→1, 1→5, 2→2, 3→6, 4→3, 5→7, 6→4, 8→8, 9→9, 10→10`.
 Acceptance exercises off/current restoration and first user preset, not every preset.
 
+The owner's physical-app screenshots additionally show **BYPASS** as a separate
+tile from Off, device versus local PEQ Save destinations, Auto EQ and local/
+retrieval/catalog tabs. Their wire mappings/workflows are not established; do not
+alias BYPASS to 255 or claim Auto EQ from the existing band setter. See the
+[screen audit](FIIO_CONTROL_APP.md#genre-hierarchy-batch-actions-and-peq-third-batch-2026-09-16).
+The owner deferred this larger PEQ investigation to
+[issue #9](https://github.com/eudj1n/snowsky-disc-qemu/issues/9); no new PEQ capture
+or implementation is required by the current library audit.
+
 ## Channel balance
 
 `client.set_device_setting('balance', value)` accepts integer **-20..20**:

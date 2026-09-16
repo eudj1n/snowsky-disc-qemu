@@ -223,6 +223,15 @@ explicitly instead of retrying them indefinitely.
   exact PEQ preset/Save flow and gain/filter label-to-wire mapping. Existing
   catalog/settings helpers are not proof of complete app parity. See
   [coverage matrix](FIIO_CONTROL_APP.md#library-peq-and-settings-screens-second-batch-2026-09-16).
+  Third batch (`IMG_6807`–`IMG_6815`) shows genre → albums → tracks, Add to Playlist
+  and Delete at both selection levels, device/local PEQ save destinations,
+  Device presets including separate BYPASS, Auto EQ and local/retrieval tabs.
+  Next targeted evidence is genre hierarchy/playback; category batch expansion,
+  delete scope, BYPASS and PEQ save/cloud workflows are not established. See
+  [third-batch audit](FIIO_CONTROL_APP.md#genre-hierarchy-batch-actions-and-peq-third-batch-2026-09-16).
+  **PEQ is documentation-only here and deferred to issue #9** by owner decision;
+  it is not a blocker for the current library/playback work or a request for
+  additional PEQ captures now.
 - [x] **UDP LAN discovery contract:** exact physical payload observed; controlled
   emulator idle/connected/disconnected lifecycle passed. [Details](DISCOVERY.md).
 - [x] **Official-app connection to emulator:** iPhone FiiO Control discovered
@@ -249,6 +258,10 @@ no capture is currently needed for those preferences.
 
 ## Separate subsequent work
 
+- [ ] PEQ preset/BYPASS mapping, device/local Save flow, Auto EQ and app/catalog
+  scope: [issue #9](https://github.com/eudj1n/snowsky-disc-qemu/issues/9).
+  Owner explicitly split this larger task from the current screen/library audit;
+  preserve existing helpers, document visible gaps and resume separately.
 - [ ] Reorganize into emulator/viewer/controller plus shared firmware/research:
   [issue #7](https://github.com/eudj1n/snowsky-disc-qemu/issues/7). The agreed
   migration is separate from this protocol checkpoint; files have not moved.
