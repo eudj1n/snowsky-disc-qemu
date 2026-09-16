@@ -102,6 +102,8 @@ count printed by `fb2png.py` is only a fallback heuristic, not evidence of recen
   report first. `firmware/inventory/` contains observed inputs, not runtime enablement
   profiles. Keep vendor-reported changes separate from verified emulator features;
   update `CHANGELOG.md` for emulator changes. Never replace V2.40 hashes/addresses blindly.
+- Keep `CHANGELOG.md` human-readable: short, grouped user-facing outcomes with
+  links to domain docs, not packet layouts, test transcripts or experiment logs.
 - Actively support one firmware: the latest validated version (currently V2.57).
   Develop on `2.x`; preserve older versions as historical release snapshots, without
   promised backports or continuing integration gates. Promote only after validation,
@@ -150,6 +152,7 @@ count printed by `fb2png.py` is only a fallback heuristic, not evidence of recen
 For continuing DISC protocol research, start with `docs/PROTOCOL_RESEARCH.md`:
 it records the checkpoint, remaining tasks in priority order and validation status.
 Update that document when completing a research item so another session can resume.
+Keep the high-level protocol tracker (GitHub issue #10) current as checkpoints complete.
 
 Local audio works: `tinyshim` redirects `/proc/asound/cards` discovery to `/etc/asound.cards`
 (x2000), so stock firmware selects I2S3_OUT (6), hw:0,3. No audio binary patches.

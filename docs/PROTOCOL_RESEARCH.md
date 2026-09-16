@@ -4,6 +4,10 @@ Updated 2026-09-16. This is the handoff checklist for continuing the research in
 another session. Keep its status current when finishing a work item; detailed
 contracts and evidence remain in the linked documents.
 
+Umbrella tracker: [issue #10 — DISC protocol and FiiO Control coverage](https://github.com/eudj1n/snowsky-disc-qemu/issues/10).
+Keep the issue's high-level checklist current alongside this detailed handoff;
+keep release-facing summaries in `CHANGELOG.md` short rather than duplicating research logs.
+
 ## Scope and current checkpoint
 
 Priority: stock SNOWSKY DISC functionality for a future locally hosted web remote
@@ -56,7 +60,7 @@ checkpoint and any work left uncommitted. Do not publish this branch implicitly.
   `curlist/song` and `0202` instead. No additional phone capture is needed for
   these two commands.
 
-## Current checkpoint: idle, reconnect and USB power
+## Completed checkpoint: idle, reconnect and USB power
 
 LAN discovery checkpoint: `da9e00d`. The remaining local lifecycle investigation
 uses no phone/LAN exposure and no edits to the interactive guest.
@@ -231,15 +235,17 @@ explicitly instead of retrying them indefinitely.
   establish visible UI, not wire behavior or working hardware. Request additional
   captures only for concrete gaps; see [audit plan](FIIO_CONTROL_APP.md#screen-coverage-audit).
   Second batch (`IMG_6795`–`IMG_6806`) inventories library/PEQ/settings. Open gaps:
-  genre/folder playback, root-category Play all semantics, batch action menus,
+  exact app genre/folder playback, root-category Play all semantics, batch action menus,
   exact PEQ preset/Save flow and gain/filter label-to-wire mapping. Existing
   catalog/settings helpers are not proof of complete app parity. See
   [coverage matrix](FIIO_CONTROL_APP.md#library-peq-and-settings-screens-second-batch-2026-09-16).
   Third batch (`IMG_6807`–`IMG_6815`) shows genre → albums → tracks, Add to Playlist
   and Delete at both selection levels, device/local PEQ save destinations,
   Device presets including separate BYPASS, Auto EQ and local/retrieval tabs.
-  Next targeted evidence is genre hierarchy/playback; category batch expansion,
-  delete scope, BYPASS and PEQ save/cloud workflows are not established. See
+  Genre/scoped-album/folder helpers and category batch-add expansion now have
+  emulator acceptance in [LIBRARY_BROWSING.md](LIBRARY_BROWSING.md); exact app
+  sequences, remaining delete scope, BYPASS and PEQ save/cloud workflows are
+  not established. Physical capture is deferred as recorded above. See
   [third-batch audit](FIIO_CONTROL_APP.md#genre-hierarchy-batch-actions-and-peq-third-batch-2026-09-16).
   **PEQ is documentation-only here and deferred to issue #9** by owner decision;
   it is not a blocker for the current library/playback work or a request for
