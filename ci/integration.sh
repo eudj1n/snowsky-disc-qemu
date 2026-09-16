@@ -7,9 +7,9 @@ cd "$(dirname "${BASH_SOURCE[0]}")/.."
 export OTA_DIR="$(cd "${1:?path to OTA chunks}" && pwd)"
 export FW_VERSION="${FW_VERSION:-2.57}"
 CI_SCENARIO="${CI_SCENARIO:-full}"
-case "$CI_SCENARIO" in full|queue|queue-reads|settings|preferences|playlists|scan-cancel|library-reset|track-end) ;; *) echo 'Unknown CI_SCENARIO' >&2; exit 2;; esac
-if [[ "$CI_SCENARIO" = preferences || "$CI_SCENARIO" = playlists || "$CI_SCENARIO" = scan-cancel || "$CI_SCENARIO" = library-reset || "$CI_SCENARIO" = track-end ]] && [ "$FW_VERSION" != 2.57 ]; then
-  echo 'Preference/playlist/scan-cancel/library-reset/track-end acceptance requires active firmware V2.57' >&2
+case "$CI_SCENARIO" in full|queue|queue-reads|settings|preferences|playlists|scan-cancel|library-reset|track-end|formats) ;; *) echo 'Unknown CI_SCENARIO' >&2; exit 2;; esac
+if [[ "$CI_SCENARIO" = preferences || "$CI_SCENARIO" = playlists || "$CI_SCENARIO" = scan-cancel || "$CI_SCENARIO" = library-reset || "$CI_SCENARIO" = track-end || "$CI_SCENARIO" = formats ]] && [ "$FW_VERSION" != 2.57 ]; then
+  echo 'Preference/playlist/scan-cancel/library-reset/track-end/formats acceptance requires active firmware V2.57' >&2
   exit 2
 fi
 CI_TMP="$(mktemp -d "${TMPDIR:-/tmp}/diskos-ci.XXXXXXXX")"
@@ -66,6 +66,10 @@ if [ "$CI_SCENARIO" = track-end ]; then
   compose exec -T emu python3 -B /repo/ci/track_end_check.py
   exit 0
 fi
+if [ "$CI_SCENARIO" = formats ]; then
+  compose exec -T emu python3 -B /repo/ci/formats_check.py
+  exit 0
+fi
 if [ "$CI_SCENARIO" = queue-reads ]; then
   compose exec -T emu python3 -B /repo/ci/queue_reads_check.py --prepare
 else
@@ -111,6 +115,7 @@ compose exec -T emu python3 -B /repo/ci/settings_check.py
 compose exec -T emu python3 -B /repo/ci/modes_themes_check.py
 compose exec -T emu bash /repo/ci/confinement.sh
 if [ "$FW_VERSION" = 2.57 ]; then
+  compose exec -T emu python3 -B /repo/ci/formats_check.py
   compose exec -T emu python3 -B /repo/ci/track_end_check.py
   compose exec -T emu python3 -B /repo/ci/scan_cancel_check.py
   compose exec -T emu python3 -B /repo/ci/library_reset_check.py

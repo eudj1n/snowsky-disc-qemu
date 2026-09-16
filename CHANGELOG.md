@@ -9,6 +9,10 @@ emulator-only revisions use `v2.40-r1`, etc. See [the porting guide](docs/PORTIN
 
 ### Added
 
+- Generated V2.57 CUE/DSF/DFF metadata/selection fixtures and `CI_SCENARIO=formats`.
+  Document shared CUE paths, zero wire track numbers, lossy favorites flags,
+  colliding queue IDs and misleading HTTP marks. Keep SACD ISO and native DSD
+  output explicitly separate from protocol metadata acceptance.
 - V2.57 natural track/list completion acceptance for all five local play modes
   over TCP/WS, with generated short WAV/FLAC media and no seek/next/EOF injection.
   Document loading versus terminal state, repeated-track progress restart and

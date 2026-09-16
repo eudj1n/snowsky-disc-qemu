@@ -23,6 +23,7 @@ peripheral controls. See the [README](../README.md) for setup and the visual ove
 | **Stock file/library API** | HTTP folders, streamed uploads/progress and single-path deletion; custom playlist create/rename/add/remove/delete. Network scanning indexes uploaded music. Current-cover JPEG retrieved on physical V2.57. | [HTTP API](HTTP_API.md) |
 | **Custom playlist playback** | V2.57 TCP/WS whole-list and track selection with fresh HTTP name/bounds checks. Tests distinguish list position from SQLite ID and cover rename/edit/position shifts. Physical app comparison remains separate. | [Playlist contract](PLAYLISTS.md) |
 | **Natural track/list end** | V2.57 five-mode EOF behavior observed over TCP/WS on a short WAV/FLAC custom queue: stop, repeat-one, wrap and random continuation. Gapless/folder jump off. Final stop leaves the queue intact but `0202` silent; loading state 2 is not terminal stop. | [EOF contract and acceptance](TRACK_END.md) |
+| **CUE / DSD metadata** | Generated V2.57 CUE/WAV, DSF and DFF index and select over TCP/WS; CUE queue/favorites use positions. Stock IDs can collide, CUE track fields are lossy and HTTP can mark the wrong row. SACD ISO and native DSD output remain unvalidated. | [Formats and identity](FORMATS.md) |
 | **Scan cancellation** | V2.57 TCP/WS cooperative cancellation leaves a partial replacement index; finish event is shared with full scans. Fresh full scanning restores the complete catalog; source files are unchanged. | [Scan contract](LIBRARY_SCAN.md) |
 | **Library reset** | Dedicated V2.57 `0621` discards index/favorites, not files/settings/custom-list rows. Requires explicit confirmation. Immediate replies can be inconsistent; rescan alone does not recreate favorites. | [Reset scope and recovery](LIBRARY_RESET.md) |
 | **Remote settings** | TCP/WS gain, DRE, filter, SPDIF, channel balance and user PEQ/master gain with readback and SQLite persistence checks. Balance L20..R20 also checks the opposite-channel DAC attenuation writes. Actual USB/AirPlay/BT and DSP response remain unvalidated. | [Settings protocol](REMOTE_SETTINGS.md) |
@@ -39,11 +40,18 @@ peripheral controls. See the [README](../README.md) for setup and the visual ove
 Fresh captures from the actual V2.57 guest, 2026-09-15. The current browser skin
 and controls are shown in [VIEWER.md](VIEWER.md). These are screenshots, not mockups;
 they illustrate the interface rather than replacing protocol/audio assertions.
-The 2026-09-16 preference/playlist/scan/reset/EOF investigations change protocol helpers/tests, not
+The 2026-09-16 preference/playlist/scan/reset/EOF/formats investigations change protocol helpers/tests, not
 the viewer UI; these captures remain the current visual reference.
 
 ## Releases and verification
 
+- 2026-09-16 CUE/DSF/DFF checkpoint: 232 Python and 23 JavaScript tests, four
+  shim builds, focused TCP/WS acceptance and full local V2.57 integration passed.
+  Generated sources verify metadata and positional selection, including two CUE
+  favorites; tests preserve duplicate IDs and document misleading HTTP marks.
+  Subsequent EOF/scan/reset/SD/preference checks passed. SACD ISO, native DSD/DoP
+  and hardware audio remain unvalidated; this is not a hosted release gate.
+  [Validation and limits](PROTOCOL_RESEARCH.md#cue-dsd-investigation-2026-09-16).
 - 2026-09-16 natural-EOF checkpoint: 224 Python and 23 JavaScript tests, four
   shim builds, focused TCP/WS acceptance and full local V2.57 integration passed.
   All five modes are checked with real short-file completion, event/queue/runtime
@@ -96,7 +104,7 @@ The actionable DISC protocol backlog and session handoff are maintained in
 [PROTOCOL_RESEARCH.md](PROTOCOL_RESEARCH.md), including checkpoint validation,
 remaining settings/library investigations and future web-remote work.
 
-- **Hardware/audio:** USB storage and USB DAC, Bluetooth audio, DSD and MCU/UART
+- **Hardware/audio:** USB storage and USB DAC, Bluetooth audio, native DSD/DoP and MCU/UART
   behavior require separate validation. Viewer USB is only a charging-state stub;
   its headphone control enables browser audio, not stock headphone detection.
 - **Networking:** LAN multicast discovery, FiiO Control phone-app compatibility,

@@ -283,6 +283,10 @@ final test respects the 2.1-second interval before selection and subsequent paus
 For the remote, use `0406` for queue entries/count, HTTP `curlist/song` for its
 zero-based `mark-pos`, and `0202` for current-track metadata and one-based
 `pos_id`/`playing_num`. These are separate snapshots; refresh after source changes.
+**Mixed CUE queues are an exception to trusting the mark:** duplicate wire IDs
+can make HTTP highlight the wrong row. CUE `song_track` and favorites flags are
+also lossy; see [format identity findings](FORMATS.md). Keep ordered rows, not an
+ID-keyed map, and never deduplicate a queue by `songId`.
 Do not keep polling an unsupported `0426` or interpret its timeout as an empty
 queue. The diagnostic clients discard old notifications before a query; a future
 production backend still needs one event reader, since unsolicited `a102` and the
@@ -325,6 +329,10 @@ already decode. Observed fields:
   insufficient evidence of the file's compressed bitrate. Do not label it that way.
 - `song_artist_name`, `song_album_name`, `song_style_name`, `song_track`.
 - `is_sacd`, `is_cue`, `is_dsd`, `is_m3u`, `m3u_file_path`.
+
+V2.57 [CUE/DSF/DFF tests](FORMATS.md) verify source metadata and positional
+selection. Two CUE tracks can share both path and `song_track: 0`; DSF/DFF report
+DSD source rate/bit depth, not proof of native DSD output. SACD ISO is unvalidated.
 
 Outer fields include `state`, `love`, `playerflag`, `playing_num` (e.g. `2/3`) and
 `work_mode` (`LOCAL`). Some missing string values are the literal `"(null)"`.

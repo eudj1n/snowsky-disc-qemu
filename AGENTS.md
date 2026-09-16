@@ -262,6 +262,13 @@ snapshots also have state 2; duplicate state-0 deltas are not repeats. Observe
 events without queries during EOF and never infer stop from timeout alone.
 See `docs/TRACK_END.md` and disposable `CI_SCENARIO=track-end`; physical timing,
 gapless/folder-jump enabled and stopped-state resume remain unvalidated.
+CUE/DSF/DFF metadata and positional selection are covered by disposable V2.57
+`CI_SCENARIO=formats`. Both CUE entries can share path and `song_track=0`;
+queue IDs can collide with ordinary tracks, and HTTP `mark` can select the wrong
+row. Keep snapshot/position identity, never deduplicate by ID. CUE favorites
+responses lose path/track/isCue even though distinct database tracks survive and
+positional playback works. Generated DSF/DFF establish source metadata, not native
+DSD/DoP or hardware output; SACD ISO remains unvalidated. See `docs/FORMATS.md`.
 `docs/M21_COMPARISON.md` is reference only: M21's FiiO Music uses UTF-16 length
 units, a different state enum and toggle semantics. DISC remains the priority;
 do not copy those Android rules into its client.

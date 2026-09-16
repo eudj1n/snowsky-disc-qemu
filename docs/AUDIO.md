@@ -76,7 +76,9 @@ The firmware's format enum differs from the initial assumption: playback uses **
 
 Writes sleep for their audio duration, approximating a blocking DAC. Without pacing,
 firmware-generated silence can grow the capture rapidly. Input is not implemented.
-`asndshim.c` remains the separate USB/BT interposer; those routes and DSD are unvalidated.
+`asndshim.c` remains the separate USB/BT interposer; those routes and native
+DSD/DoP output are unvalidated. DSD source metadata/selection is covered separately
+in [FORMATS.md](FORMATS.md).
 
 The shim uses `-nostdlib`, raw MIPS syscalls and the nan2008 ELF flag. Its only unresolved
 dependency is `fopen64`, supplied by firmware libc. Do not link against the newer toolchain
@@ -124,9 +126,10 @@ sox -n -b 24 -r 96000 -c 2 "03 - HiRes 1kHz 24b96k.wav" synth 2 sine 1000 gain -
 ```
 
 **Remaining caveats (not done; scoped honestly):**
-- **DSD** — a separate route (`set_pcm_config` cases branch on DSD rates `0x2b110/0x56220/0xac440`
-  and `is_dsd`). Needs a real `.dsf/.dff` test file and validation of whether it emits native DSD
-  or DoP; the route is identified but unexercised. Medium effort.
+- **DSD output** — a separate route (`set_pcm_config` branches on DSD rates
+  `0x2b110/0x56220/0xac440` and `is_dsd`). Generated DSD64 `.dsf/.dff` files now
+  exercise indexing, source metadata and selection/pause; see [FORMATS.md](FORMATS.md).
+  This does not validate native DSD/DoP, bit-exact conversion or hardware audio.
 - **USB-DAC (device as USB audio sink)** — out of scope under qemu-user: there is no USB host to
   send audio to the emulated gadget. `asndshim.c` covers the libasound (USB/BT) *playback* path if
   those routes are ever driven, but the USB-input direction can't be emulated here.

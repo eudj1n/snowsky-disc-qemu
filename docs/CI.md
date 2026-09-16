@@ -167,7 +167,12 @@ The workflow first runs the firmware-free suite on the same commit, then:
     control transitions, five codec preferences, five stock lock screens, exact
     custom PNG and metadata, and empty-body/activation quirks. TCP/WS and direct/proxy
     HTTP are exercised.
-12. On V2.57, runs `ci/track_end_check.py`: three generated six-second WAV/FLAC
+12. On V2.57, runs `ci/formats_check.py`: generated two-track CUE/WAV, DSF and DFF,
+    stock scanning, TCP/HTTP catalog agreement, metadata and positional selection
+    over TCP/WS, including CUE queue/favorites. Checks source preservation and
+    restores the original three-track index. Records stock ID collisions and
+    lossy favorites without rewriting them; see [formats and identity](FORMATS.md).
+    Then runs `ci/track_end_check.py`: three generated six-second WAV/FLAC
     tracks, a custom queue and all five modes over TCP/WS. Event-only observation
     proves natural completion/repeat/wrap/stop with gapless/folder jump off;
     checks retained queue, fresh mode reads and stopped/playing runtime. Restores
@@ -212,14 +217,19 @@ CI_SCENARIO=scan-cancel FW_VERSION=2.57 bash ci/integration.sh /absolute/path/to
 CI_SCENARIO=library-reset FW_VERSION=2.57 bash ci/integration.sh /absolute/path/to/main_os/ota_v257
 # Natural track/list completion for five modes; no seek/next/EOF injection.
 CI_SCENARIO=track-end FW_VERSION=2.57 bash ci/integration.sh /absolute/path/to/main_os/ota_v257
+# CUE/DSF/DFF metadata, ambiguous identities and positional selection.
+CI_SCENARIO=formats FW_VERSION=2.57 bash ci/integration.sh /absolute/path/to/main_os/ota_v257
 ```
 
 `CI_SCENARIO` accepts `full` (default), `queue`, `queue-reads`, `settings`,
-`preferences`, `playlists`, `scan-cancel`, `library-reset` or `track-end`. All use the same
+`preferences`, `playlists`, `scan-cancel`, `library-reset`, `track-end` or `formats`. All use the same
 random-name isolated stack and cleanup. Focused runs execute only their selected
 checks, not unrelated integration scenarios. Most use the shared setup/scan/reboot
-preparation; `scan-cancel`, `library-reset` and `track-end` start after boot and prepare their
+preparation; `scan-cancel`, `library-reset`, `track-end` and `formats` start after boot and prepare their
 own network scans.
+`formats` is V2.57-only and generates its original fixtures with Python's standard
+library. No FFprobe/container dependency is added; SACD ISO and native DSD output
+are not covered. See [scope and reproduction](FORMATS.md).
 `track-end` is V2.57-only, uses existing Python/SoX dependencies and adds no
 normal Compose setting, image mutation or firmware patch. Event observation is
 bounded at 35 seconds per mode and stops early after proven continuation or a

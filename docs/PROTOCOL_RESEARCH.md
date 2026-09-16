@@ -33,6 +33,8 @@ checkpoint and any work left uncommitted. Do not publish this branch implicitly.
 - [x] Natural EOF observed in all five V2.57 local modes over TCP/WS with
   short WAV/FLAC tracks; final stop versus loading, repeat progress restart and
   silent `0202` after stop: [EOF contract](TRACK_END.md).
+- [x] Generated CUE/WAV, DSF and DFF metadata and positional queue/favorite
+  selection over TCP/WS; stock identity collisions/losses: [formats](FORMATS.md).
 - [x] Gain, DRE, filter, SPDIF, PEQ read/write and persistence:
   [settings](REMOTE_SETTINGS.md). These checks do not measure DSP output.
 - [x] Channel-balance contract: `0712` read / `0713` write / `a712` reply,
@@ -50,19 +52,20 @@ checkpoint and any work left uncommitted. Do not publish this branch implicitly.
   `curlist/song` and `0202` instead. No additional phone capture is needed for
   these two commands.
 
-## Current checkpoint completion: natural end of track/list
+## Current checkpoint completion: CUE/DSF/DFF metadata and identity
 
-Library-reset checkpoint: `4da1de6`; scan cancellation: `53fb0eb`;
+Natural-EOF checkpoint: `c3d15c2`; library reset: `4da1de6`; scan cancellation: `53fb0eb`;
 playlist: `392c8bc`; preferences: `274bce4`.
 Their validation/failure history remains below.
 
-- [x] Trace playlist worker, five-mode switch and final-stop notifications.
-- [x] Observe natural EOF on TCP/WS without seek/next/EOF injection.
-- [x] Run firmware-free checks: 224 Python tests, 23 JavaScript tests, shell
+- [x] Trace CUE expansion, queue construction and source-ID fallback.
+- [x] Generate original CUE/WAV, DSF and DFF; verify metadata and positional
+  selection on TCP/WS, including two distinct CUE favorites.
+- [x] Run firmware-free checks: 232 Python tests, 23 JavaScript tests, shell
   checks and four shim builds.
-- [x] Run final focused `track-end` acceptance via TCP/WS, with explicit
-  event/queue/runtime assertions and restored generated fixture.
-- [x] Run **full** disposable integration on active V2.57 with EOF acceptance.
+- [x] Run final focused `formats` acceptance via TCP/WS, with catalog/database/
+  selected-metadata assertions and restored generated fixture.
+- [x] Run **full** disposable integration on active V2.57 with formats acceptance.
 - [x] Review the complete diff, record validation and create the local checkpoint
   commit. Pushing/publishing is not part of this step.
 
@@ -89,6 +92,7 @@ CI_SCENARIO=playlists FW_VERSION=2.57 bash ci/integration.sh "$OTA_257"
 CI_SCENARIO=scan-cancel FW_VERSION=2.57 bash ci/integration.sh "$OTA_257"
 CI_SCENARIO=library-reset FW_VERSION=2.57 bash ci/integration.sh "$OTA_257"
 CI_SCENARIO=track-end FW_VERSION=2.57 bash ci/integration.sh "$OTA_257"
+CI_SCENARIO=formats FW_VERSION=2.57 bash ci/integration.sh "$OTA_257"
 ```
 
 Run firmware integration sequentially to limit resource pressure. Each run uses
@@ -146,8 +150,13 @@ explicitly instead of retrying them indefinitely.
   short generated WAV/FLAC tracks, gapless/folder jump off. Automatic transitions,
   final stop, repeat-one/list and random continuation have explicit acceptance;
   see [scope and limitations](TRACK_END.md). Physical timing remains unvalidated.
-- [ ] Secondary compatibility: CUE/SACD/DSD metadata and track identity on the
-  active firmware. Historical V2.40 favorite-position playback remains guarded;
+- [x] **CUE/DSF/DFF metadata and identity:** generated external UTF-8 CUE and
+  stereo DSD64 fixtures, queue/favorite positions, shared path/zero track and
+  ID/HTTP-mark ambiguity. See [scope and limitations](FORMATS.md).
+- [ ] **SACD ISO:** requires a suitable multi-track test sample; DSF/DFF do not
+  establish ISO support. Embedded/multi-file CUE and higher DSD rates remain
+  secondary extensions, not covered by the current fixtures.
+  Historical V2.40 favorite-position playback remains guarded;
   its missing internal ID is not an active-development requirement.
 
 ### 3. Exact app behavior and discovery
@@ -431,9 +440,8 @@ No viewer UI changed; the curated screenshots remain current. Interactive media
 and emulator were not touched. Tracked fixtures use existing image dependencies;
 no Dockerfile/normal Compose change or ad-hoc image edit is needed.
 
-**Next unchecked research item: secondary CUE/SACD/DSD metadata and identity**,
-not a claim of hardware/DSD audio support. Stop after this checkpoint; do not
-start that separate investigation implicitly.
+The next item at the EOF checkpoint was CUE/SACD/DSD metadata and identity
+(CUE/DSF/DFF investigation below), not a claim of hardware/DSD audio support.
 
 Historical balance-checkpoint logs are ignored under `work/http-research/`:
 `balance-unit.log`, `balance-unit-rebuilt.log`, `balance-full-v257.log` and
@@ -442,3 +450,54 @@ The prior checkpoint ran on another computer; its local files are not required.
 The summary here must remain sufficient to resume even
 when those machine-local logs are unavailable. Update results, failure explanations
 and the next unchecked item before handing off the session.
+
+## CUE DSD investigation (2026-09-16)
+
+Generated original two-track UTF-8 CUE/WAV, tagged DSF and uncompressed DFF
+fixtures rather than using private music. Independent host FFprobe recognizes
+the two DSD layouts/tags; it is not a CI dependency. Stock scans yield seven
+tracks (the original three, two CUE entries and two DSD files). TCP/HTTP catalog
+order agrees; selected CUE metadata distinguishes titles/durations but not path
+or wire track number. DSF/DFF report source DSD64/stereo/one-bit metadata, not
+proof of native DSD/DoP output. [FORMATS.md](FORMATS.md) is the detailed contract.
+
+Static analysis traced CUE insertion `443160`, queue construction `4388a0`,
+source-ID lookup `44538c` and now-playing fallback `421c78`. CUE rows have
+`IS_M3U=NULL`, which cannot match the lookup's integer equality; its fallback
+mixes queue and catalog IDs. Runtime independently proves duplicate `0406` IDs
+and a wrong HTTP current-row mark. `MY_LOVE` retains two CUE track ordinals,
+but `0415` loses path/track/isCue. Both favorite positions still select the
+correct title. No client normalization, DB repair or firmware patch was added.
+
+The initial TCP observation passed. An extended identity run completed the TCP
+format/favorite reads but failed while immediately pausing its restored album,
+before reaching WS. It violated the known navigation interval; final acceptance
+waits 2.1 seconds before both selection and pause, requires matching playing and
+paused metadata, and never retries mutation commands. Final focused acceptance
+passed both TCP/WS, including current-queue and favorite selection, favorite
+removal, restored mode, unchanged fixture hashes and original three-track rescan.
+Firmware-free checks passed twice: 232 Python tests, 23 JS tests, shell checks
+and four shim builds. Final checks also assert DSF zero padding and CUE NULL flags.
+Full local V2.57 integration passed on its first attempt at this checkpoint
+(exit 0), including the new format scenario after earlier playback/settings/theme
+checks and the subsequent EOF, scan cancellation, library reset, SD/Unicode and
+preference checks. The final acceptance additionally asserts CUE `IS_M3U=NULL`;
+it passed on both transports in the full run. Disposable stack, volume and host
+fixture were removed. This is local validation, not a hosted exact-commit release
+gate. Reviewed and included in the local checkpoint commit; no push is implied.
+
+Ignored evidence under `work/preferences/`: `formats-refs.log`,
+`formats-static.log`, `formats-identity-static.log`, `formats-id-lookup.log`;
+initial `formats-observe.log` / `formats-observe-logs/`; failed extended
+`formats-identity.log` / `formats-identity-logs/`; focused `formats-final.log` /
+`formats-final-logs/`; `formats-unit.log`, `formats-unit-final.log`; full-run
+`formats-full.log` / `formats-full-logs/`. Reproduction does not depend on these
+machine-local files. Fixtures and all CI setup are tracked; no image-only edits,
+new Docker dependency or interactive emulator/media changes. No viewer UI changed;
+existing curated screenshots remain current.
+
+**Next unchecked format item: SACD ISO**, requiring a suitable multi-track sample.
+Its static decoder branch is mapped, but DSF/DFF are not a substitute. Without
+that input, the next independent backlog is exact app behavior/discovery, not
+more speculative format-support claims. Embedded/multi-file CUE, CUE seek/EOF
+boundaries and hardware DSD output remain outside this checkpoint.
