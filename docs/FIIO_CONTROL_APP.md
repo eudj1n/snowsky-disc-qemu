@@ -183,6 +183,51 @@ shim builds passed. No full integration, legacy-profile integration or long powe
 rerun for this narrowly scoped helper change. No Dockerfile/Compose changes:
 the existing image/dependencies and tracked scenario reproduce the experiment.
 
+### Library, PEQ and settings screens: second batch (2026-09-16)
+
+Owner-supplied `IMG_6795.PNG`–`IMG_6806.PNG`, 18:07–18:08, continue the physical
+DISC app audit. The pictures do not independently identify firmware/app versions
+or provide network readback. Raw screenshots and personal library contents are
+not copied into Git. Coverage below means existing protocol helpers and their
+tests, **not** a completed replacement frontend or validation of every app action.
+
+| Screen/control | Screenshot | Existing coverage / gap |
+| --- | --- | --- |
+| All songs | 6795 | TCP `library('tracks')`, HTTP `catalog('all/song')`, positional selection and all-song playback exist. App's batch-selection actions are not shown. |
+| Artists | 6796 | TCP artist/artist-track reads and named artist selection/play-all are tested; HTTP artist/sub-album categories exist, but not every nested category has behavioral acceptance. Header-level “Play all” must not be assumed equivalent to playing a named artist. |
+| Albums | 6797 | Catalog, named album tracks and positional/whole-album playback are tested. Root-page “Play all” and batch actions need their own app evidence. |
+| Genres | 6798 | TCP genre listing and HTTP `style`, `style/song`, `style/album` categories are exposed. **Gap:** no validated genre selection/play-all helper; generic playback rejects that context. Reads do not prove playback. |
+| Folder → sdcard | 6799 | `/localdir/` browsing exists (root `/localdir/tmp/` observed in earlier app HAR; helper starts at `/tmp/sdcard`). **Gap:** no guarded folder/file playback helper. Native touchscreen file playback is a different path. |
+| Favorites | 6800 | Empty state shown. Explicit current-track favorite on/off and V2.57 favorite-index selection/readback are tested. No general batch favorite-by-ID helper or favorite play-all helper. Empty screenshot does not establish those operations. |
+| Custom Playlist and New Playlist dialog | 6801–6802 | Empty state, plus button and name/confirm/cancel dialog shown. HTTP create/rename/add/remove/delete and guarded whole-list/index playback are tested; this image does not prove creation succeeded or show populated-list menus. |
+| Mini-player | 6795–6801 | Track/artist metadata, play/pause and next have physical captures and emulator tests. Placeholder artwork alone does not prove cover retrieval failed. Opening the full player is frontend navigation, not a new protocol command. |
+| PEQ, off/save, graph, master and band controls | 6803 | `eq_type`, `peq()`, `set_peq()` and `eq_master_db` exist; first user preset, one band and master gain are integration-tested. **Partial coverage:** exact app preset selection, Save sequence and remaining editor fields are not shown/captured here. |
+| Update / Reset music library | 6804 | `scan_library()`, cooperative cancel and dedicated `reset_library(confirm=True)` are tested. Actual app reset command sequence is unobserved; do not reset a personal library merely for this audit. |
+| Gain | 6804–6805 | High/Low choices, High checked. Binary getter/setter and persistence tested; this screenshot does not map High/Low to wire 0/1 or measure dB. |
+| Bluetooth codec, SPDIF, balance, DRE | 6804 | Existing settings helpers/tested control paths; five source-codec choices already physically captured. SPDIF appears off and DRE on; balance/codec subpages are not included in this batch. No claim about physical audio/DSP output. |
+| Filter | 6806 | Six choices; slow minimum-phase checked. Client normalizes 0..5 and writes 9..14. **Gap:** app label-to-wire mapping is not established by menu order. Last two labels are truncated; do not invent their full names. Acceptance changes one filter and restores it, not six separately mapped labels. |
+| User Feedback | 6804 | Entry visible only. No implementation; classify as app/support functionality unless capture demonstrates a device operation. Destination and submitted data unknown. |
+
+PEQ screenshot: visible scale -24..+12 dB, master control, graph labels 31..16k,
+zero-valued gains/frequencies and an off-labelled button. The view is clipped at
+the right/bottom; do not derive the total band count from visible sliders. The
+ten-band contract comes from protocol evidence. Zero frequency/Q readback with EQ
+off is already known; this image alone neither diagnoses a bug nor justifies
+relaxing setter validation. The safe helper still requires a user preset before
+editing, and only exposes validated peaking filter type 0.
+
+Repeated/similar album and genre labels and multi-artist labels are visible.
+Preserve returned rows/positions and literal names; do not deduplicate, trim or
+split labels based on screenshots. Displayed similarity cannot establish whether
+underlying tags differ, nor prove an index defect.
+
+Next evidence: open one genre and a folder containing tracks, show their item
+menus and the batch-selection toolbar (without confirming deletion), then show
+the PEQ preset selector, if available, and the rest of its editor. First inventory
+the controls; request targeted TCP/HTTP captures for concrete gaps afterwards.
+Gain/filter label mapping can be captured separately while preserving settings;
+do not sweep unknown codes or change physical gain with active listening.
+
 ## Android 4.6.0 input (2026-09-15)
 
 User-provided `FiiOControl V4.6.0.apk`:

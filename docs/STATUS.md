@@ -150,6 +150,10 @@ full unchanged PNG retransmission for color/Date and four custom styles, now
 exposed by the helper and tested on V2.57. Color-slider/alpha UI semantics, the
 long app alias and catalog remain gaps; theme parity is not complete. See
 [capture evidence](FIIO_CONTROL_APP.md#physical-custom-style-save-2026-09-16).
+The next 12 library/PEQ/settings screens are also inventoried. Existing helpers
+cover most base reads/settings, but genre/folder playback, batch UI actions,
+exact PEQ Save flow and named gain/filter mapping are not established. See
+[coverage matrix](FIIO_CONTROL_APP.md#library-peq-and-settings-screens-second-batch-2026-09-16).
 Physical iOS background/reconnect testing is deferred unless an error appears
 (owner decision, 2026-09-16), not a blocker for the completed idle/USB checkpoint.
 Long power tests remain opt-in under the [test selection policy](CI.md#test-selection-policy).

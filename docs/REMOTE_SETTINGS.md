@@ -277,7 +277,7 @@ Static V2.57 callback registration must be checked against TCP admission:
 | Physical button assignments | `0820`, `0821`, `0822` are absent from the TCP allowlist (static evidence). Existing physical-control tests cover local assignments, not remote setters |
 | Playback preference effects | See the [validated control contract and limits](#playback-preferences-v257); actual audio/transitions/grouping/gestures are separate behavioral checks |
 | Cover/lyrics preferences | `064b`, `064c` are local callbacks but absent from the TCP allowlist (static evidence); online retrieval not tested |
-| Reset library | App UI exists; a dedicated safe library-reset command is not yet established. **0800 performs a broader factory reset**, including Wi-Fi and theme/song databases; it is not an appropriate substitute |
+| Reset library | Dedicated V2.57 `0621/0000` is implemented and disposable-tested; see [reset scope](LIBRARY_RESET.md). Exact app sequence remains uncaptured. **0800 performs a broader factory reset**, including Wi-Fi and theme/song databases; it is not an appropriate substitute |
 
 Getter-looking tags can be no-ops or send only local UI events; `0604`, for example,
 did not yield a network response in the emulator. A function in the shared command

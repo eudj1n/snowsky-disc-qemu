@@ -218,6 +218,11 @@ explicitly instead of retrying them indefinitely.
   to existing client helpers, protocol evidence and validation limits. Screenshots
   establish visible UI, not wire behavior or working hardware. Request additional
   captures only for concrete gaps; see [audit plan](FIIO_CONTROL_APP.md#screen-coverage-audit).
+  Second batch (`IMG_6795`–`IMG_6806`) inventories library/PEQ/settings. Open gaps:
+  genre/folder playback, root-category Play all semantics, batch action menus,
+  exact PEQ preset/Save flow and gain/filter label-to-wire mapping. Existing
+  catalog/settings helpers are not proof of complete app parity. See
+  [coverage matrix](FIIO_CONTROL_APP.md#library-peq-and-settings-screens-second-batch-2026-09-16).
 - [x] **UDP LAN discovery contract:** exact physical payload observed; controlled
   emulator idle/connected/disconnected lifecycle passed. [Details](DISCOVERY.md).
 - [x] **Official-app connection to emulator:** iPhone FiiO Control discovered
