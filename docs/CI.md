@@ -64,6 +64,12 @@ Keep the real five-minute firmware threshold and 310-second USB observation.
 Shortened timers would test a different condition. Document any validation not
 run; earlier success is not evidence for a subsequently changed implementation.
 
+Focused V2.57 `CI_SCENARIO=peq` exercises all supported device presets and ten
+user slots independently of unrelated settings. `CI_SCENARIO=sacd` additionally
+requires an owner-approved `CI_SACD_ISO=/absolute/path/to/sample.iso`; it uses a
+temporary copy and is never selected by `full` or hosted CI. Its logs/PCM must
+remain local because the input may be private. See [PEQ](PEQ.md) and [SACD](SACD.md).
+
 ### Branch policy after public publication
 
 - `2.x`: changes through pull requests, mandatory **Firmware-free checks** from

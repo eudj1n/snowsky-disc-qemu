@@ -1,12 +1,60 @@
 # DISC protocol research: continuation plan
 
-Updated 2026-09-16. This is the handoff checklist for continuing the research in
+Updated 2026-09-17. This is the handoff checklist for continuing the research in
 another session. Keep its status current when finishing a work item; detailed
 contracts and evidence remain in the linked documents.
 
 Umbrella tracker: [issue #10 — DISC protocol and FiiO Control coverage](https://github.com/eudj1n/snowsky-disc-qemu/issues/10).
 Keep the issue's high-level checklist current alongside this detailed handoff;
 keep release-facing summaries in `CHANGELOG.md` short rather than duplicating research logs.
+
+## API follow-ups #8 / #9 resumed (2026-09-17)
+
+Owner resumed both issues after the finalized local-protocol checkpoint below.
+The PEQ and SACD changes are recorded in separate commits for review against
+`2.x`. This checkpoint is not a firmware release. See [SACD](SACD.md) and
+[PEQ](PEQ.md) for contracts, scope and commands.
+
+- PEQ: fingerprinted device preset mapping, `EQ_LABELS`, and focused `peq`
+  acceptance cover 21 supported codes and ten User slots over TCP/WS. Partial
+  first/last-band edits, untouched bands/other slots, master gain, re-selection
+  and exact persisted-profile restoration passed. The first two exploratory
+  runs exposed the known transient Q=.71 versus serialized/reloaded Q=.7;
+  backing up the fresh persisted profile resolves the oracle without widening
+  tolerances or replaying a write. `peq-reload.log` passed with cleanup.
+- SACD: owner-approved ten-track stereo DSD64/uncompressed ISO, hashed and used
+  only as a temporary copy. Index/HTTP/TCP/WS, first/last catalog/queue/favorite
+  selection, ordinal/flags/durations, bounds, input hashes and removal/rescan
+  passed (`sacd-progress.log`). Favorites lose path/ordinal/isSacd on the wire,
+  although distinct persisted rows and positional playback work. The final extended
+  `sacd-verified.log` passed TCP/WS again, plus same-path title replacement in both
+  stereo TOCs, fresh rescan/selection, exact input-hash restoration, final removal/
+  three-track rescan and disposable-stack cleanup (exit 0).
+- SACD failure history: the first observer read only one queue page; a second
+  passed transport checks but compared raw database TITLE to filenames during
+  cleanup. These are corrected with complete pagination and path/network-title
+  assertions. A subsequent same-track re-selection returned playing metadata
+  before Pause succeeded. The final observer requires advancing `a103` position
+  and navigation spacing before one Pause, with no toggle retry. Exact firmware
+  cause of that isolated early Pause miss is not established. The first replacement
+  planner rejected text outside its initial sector before any write; the approved
+  image uses a 4096-byte text offset. A bounded area-wide reader and regression
+  cover that layout, and a read-only plan verified both 14-byte edits before rerun.
+- Firmware-free checks after the new structural/parser/pagination/replacement
+  regressions and preset labels: **322 Python / 37 JavaScript**, shell syntax and
+  four shim builds passed (`unit-final-verified.log`). No shared runtime/shim changes;
+  unrelated full/idle acceptance is not claimed.
+
+All raw evidence remains ignored under `work/api-8-9/`; the ISO, audio, private
+tags and captures are not published. The interactive emulator/media were not
+modified. Guest logs may contain private tags even when test summaries omit them.
+
+**Next for #9:** owner deferred phone captures until a suitable Wi-Fi connection
+is available; keep this workstream in the same branch. The short factory
+preset/Off/BYPASS capture comes first, followed by a backed-up disposable User
+slot for device/local Save, editor and Auto EQ scope. [PEQ.md](PEQ.md) records the
+sequence. Do not infer BYPASS from missing enum 7, overwrite personal presets,
+request credentials or reopen LAN exposure. Cloud/account remains #11.
 
 ## Finalized local-protocol checkpoint
 
@@ -438,9 +486,10 @@ explicitly instead of retrying them indefinitely.
 - [x] **CUE/DSF/DFF metadata and identity:** generated external UTF-8 CUE and
   stereo DSD64 fixtures, queue/favorite positions, shared path/zero track and
   ID/HTTP-mark ambiguity. See [scope and limitations](FORMATS.md).
-- [ ] **SACD ISO:** tracked separately in [issue #8](https://github.com/eudj1n/snowsky-disc-qemu/issues/8);
-  requires a suitable multi-track test sample; DSF/DFF do not
-  establish ISO support. Embedded/multi-file CUE and higher DSD rates remain
+- [x] **SACD ISO local metadata/selection:** approved ten-track stereo image
+  checked separately in [issue #8](https://github.com/eudj1n/snowsky-disc-qemu/issues/8),
+  including TCP/WS favorites and same-path metadata replacement; see [SACD.md](SACD.md).
+  DST/multichannel and hardware output remain unvalidated. Embedded/multi-file CUE and higher DSD rates remain
   secondary extensions, not covered by the current fixtures.
   Historical V2.40 favorite-position playback remains guarded;
   its missing internal ID is not an active-development requirement.

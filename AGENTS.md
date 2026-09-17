@@ -183,6 +183,20 @@ original-image/metadata readback; no automatic mutation retry. Direct/proxy
 V2.57 themes acceptance and 297 Python / 23 JS tests pass. Capability
 consolidation is complete; see `docs/DISC_CAPABILITIES.md`.
 
+API follow-ups #8/#9 resumed 2026-09-17. `CI_SCENARIO=peq` checks all 21
+reviewed preset codes and ten User slots through TCP/WS, including isolation and
+restoration; `EQ_LABELS` uses network codes and stock device labels. Fresh slot
+Q=.71 becomes .7 on persistence/reload: back up a reloaded profile. Physical
+BYPASS/device/local Save/Auto EQ captures are deferred by owner until suitable
+Wi-Fi, in this same workstream; `docs/PEQ.md` has the capture sequence.
+`CI_SCENARIO=sacd` requires explicit approved `CI_SACD_ISO`, makes a temporary
+copy, and is excluded from full/hosted CI. One stereo uncompressed DSD64 ISO
+indexes ten tracks; first/last catalog/queue/favorite selection works on TCP/WS.
+Favorites lose ISO path/track/flag despite distinct stored rows. Read all queue
+pages and observe advancing position before Pause; no mutation retries. Keep
+private ISO/audio/tags/logs out of Git/artifacts. See `docs/SACD.md` and the latest
+`docs/PROTOCOL_RESEARCH.md` checkpoint for exact validation and remaining limits.
+
 Physical `211747` / `212141` captures confirm folder type 4 and ordinary album
 type 3; artist-scoped albums use type 7 with exact `{"artist":"…", "album":"…"}`
 syntax. Whole-artist Play all uses type 7 with empty album, not a root Artists
@@ -402,7 +416,8 @@ queue IDs can collide with ordinary tracks, and HTTP `mark` can select the wrong
 row. Keep snapshot/position identity, never deduplicate by ID. CUE favorites
 responses lose path/track/isCue even though distinct database tracks survive and
 positional playback works. Generated DSF/DFF establish source metadata, not native
-DSD/DoP or hardware output; SACD ISO remains unvalidated. See `docs/FORMATS.md`.
+DSD/DoP or hardware output. SACD ISO now has separate approved-sample checks; see
+`docs/SACD.md` and `docs/FORMATS.md`.
 `docs/M21_COMPARISON.md` is reference only: M21's FiiO Music uses UTF-16 length
 units, a different state enum and toggle semantics. DISC remains the priority;
 do not copy those Android rules into its client.
