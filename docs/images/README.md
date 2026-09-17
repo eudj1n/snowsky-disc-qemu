@@ -10,6 +10,11 @@ during the documentation refresh.
   of the CSS device and live V2.57 screen, physical edge buttons and bottom
   audio/USB/SD connectors; Debug collapsed and QEMU badge visible. The body has no
   logo or lettering. This replaces the earlier photo-skin presentation.
+  Recaptured with the stock shade brightness slider at its maximum (40), verified
+  as `brightness(1)` in the Viewer, so its screen is comparable to the WASM
+  capture, which does not yet apply backlight brightness. The earlier capture
+  used a lower Viewer brightness and appeared darker. No image brightening was
+  applied after capture.
 
 The final approved page UI was captured at a 1065×1037 browser viewport on
 2026-09-17. The Viewer and WASM overview screenshots use the same viewport and
