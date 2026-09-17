@@ -14,6 +14,7 @@ This is one repository and one shared Docker toolchain, with no new service.
 | `controller/` | Physical-device TCP/HTTP/WS clients, discovery, optional bridges and network diagnostics | Python standard library; `aiohttp` for WS client/bridge; no emulator, firmware or research imports |
 | `firmware/profile.py`, `firmware/v*.json`, `firmware/tools/` | Reviewed profiles/fingerprints, acquisition, extraction, OTA and inventory tools | Native extraction tools where needed |
 | `research/ghidra/`, `research/diagnostics/` | Ghidra, ELF tables, GDB and process-memory inspection | Firmware profiles; emulator process helpers for live memory probes |
+| `research/browser/` | Experimental TinyEMU/WASM runtime, local bundle builder and browser UI | Reviewed firmware preparation/shims; pinned public TinyEMU, Linux and QEMU inputs; separate build image |
 | `tests/integration/`, `tests/fixtures/` | Cross-component acceptance and generated media | The components under test |
 | `ci/` | Test discovery, disposable Compose orchestration and cleanup | Test implementations under `tests/` |
 
@@ -55,6 +56,13 @@ sourced emulator scripts also support an explicit `REPO` override.
 | `ci/*_check.py`, other acceptance implementations | `tests/integration/`; orchestrated by `ci/integration.sh` |
 | `ci/*fixture.py`, `scripts/media_fixture.sh` | `tests/fixtures/` |
 | `tools/test_*`, `tools/fixtures/` | Component `tests/` directories; sanitized captures in `controller/tests/fixtures/` |
+
+The [browser experiment](BROWSER.md) has a separate shell entry point:
+`bash research/browser/run.sh build /absolute/path/to/main_os/ota_v257`, then
+`bash research/browser/run.sh serve`. Its tests live in `research/tests/`; all
+downloaded inputs, generated images and served firmware remain in ignored
+`work/browser-disc/`. It is maintained as experimental research on `2.x` and
+does not start through the normal `run.sh`, viewer or Compose services.
 
 The controller can be copied and imported without the emulator, rootfs, Docker,
 profiles or memory tooling. `controller.tests.test_isolation` verifies that
