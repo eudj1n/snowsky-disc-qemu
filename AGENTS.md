@@ -19,8 +19,8 @@ SD needs a re-mount after the guest's boot-time umount (`sd_mount()` in `lib.sh`
 
 Host: `./run.sh up <…/main_os/ota_v257>` (once) → `./run.sh boot` → `./run.sh tap <x> <y>`.
 Screenshots are copied to `./shots/`. For an **interactive** session use `./run.sh view` →
-open `http://localhost:8080` (live screen, click=tap, drag=swipe; optional device-photo skin
-from `viewer/assets/skin.png`) — see `docs/VIEWER.md`; the daemon is `viewer/server.py` /
+open `http://localhost:8080` (live screen, click=tap, drag=swipe; responsive CSS device
+with physical buttons and audio/USB/microSD controls) — see `docs/VIEWER.md`; the daemon is `viewer/server.py` /
 `viewer/scripts/40_stream.sh`. `boot` now keeps the guests alive ~30 min (`GUEST_TTL`) for this. `./run.sh shell` gives a container shell where the
 `/repo/emulator/scripts/*.sh` pipeline lives. Everything qemu-side runs **inside** the container
 (named `snowsky-disc-qemu`, `--privileged`); `/work` is a Docker volume holding the extracted
@@ -227,9 +227,12 @@ Physical controls now work in the viewer: volume single/double/hold respects the
 assignments; media play/pause is `0xfa`; `0x103` sleeps/wakes the screen. GPIO, brightness,
 touch/LCD stubs and browser DAC gain are implemented. Long Power safely stops only guest
 processes; Power while off boots them again (not stock standby/shutdown emulation).
-The viewer places translucent pink hotspots over the physical buttons on the photo;
-icons appear on hover/focus/press. Gesture shortcuts and alignment live in collapsed
-**Debug**. Without a skin, physical controls remain a labelled row. See `docs/VIEWER.md`.
+The viewer draws its device with HTML/CSS: visible Power, Play/pause and volume
+buttons, plus audio/USB/microSD connectors. No photo or alignment settings are used.
+Gesture shortcuts and audio replay live in collapsed **Debug**. Shared page/device
+styles live in `viewer/static/device.css`, copied into the standalone browser
+experiment by its UI refresh/build. QEMU/WASM badges distinguish execution modes.
+See `docs/VIEWER.md` and `docs/BROWSER.md`.
 Raw power code `0x108` can invoke `poweroff -f` and is blocked in the viewer — do not sweep
 event codes blindly. See `docs/KEYS.md` and the current screenshots in `docs/STATUS.md`.
 The stock idle-poweroff path also calls BusyBox `reboot`; `fbshim` blocks the kernel call

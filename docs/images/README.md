@@ -1,17 +1,25 @@
 # Screenshot provenance
 
-The `readme-*.png` images were captured on 2026-09-15 from the validated V2.57
-runtime on commit `b4461a5`, during the documentation refresh.
+The raw `readme-menu.png`, `readme-playing.png` and `readme-clock.png` images
+were captured on 2026-09-15 from the validated V2.57 runtime on commit `b4461a5`,
+during the documentation refresh.
 
 - `readme-menu.png`, `readme-playing.png`, `readme-clock.png`: unmodified 360×360
   guest framebuffer PNGs returned by the viewer's `/frame` endpoint.
-- `readme-viewer.png`: actual browser screenshot with the included device-photo
-  skin, physical-button hotspots and headphone/USB/SD controls; Debug collapsed.
+- `readme-viewer-qemu.png`: updated on 2026-09-17 with an actual browser screenshot
+  of the CSS device and live V2.57 screen, physical edge buttons and bottom
+  audio/USB/SD connectors; Debug collapsed and QEMU badge visible. The body has no
+  logo or lettering. This replaces the earlier photo-skin presentation.
+
+The final approved page UI was captured at a 1065×1037 browser viewport on
+2026-09-17. The Viewer and WASM overview screenshots use the same viewport and
+show the Browse files menu with the extra tools collapsed; no browser chrome,
+image resizing or compositing was added.
 
 Playback uses a temporary generated 90-second, 440 Hz stereo WAV (16-bit, 44.1 kHz),
 named `README demo.wav`. FiiO Link independently reported that path, duration and
 wire state `0` (playing) when the raw playback frame was captured. Browser sound
-was disabled. The skin screenshot uses stock brightness 38 for readability.
+was disabled. The original 2026-09-15 viewer capture used stock brightness 38.
 
 These images show the actual firmware and viewer; no interface elements or album
 art were added. They illustrate appearance, not proof of every displayed feature.
@@ -44,3 +52,15 @@ workflow, with row 2 selected. It is not an emulator render or a new packet trac
 English rows 5 and 6 have identical visible labels; the earlier Russian-language
 walkthrough's TCP capture establishes their different codes. See
 [mapping and evidence](../REMOTE_SETTINGS.md#physical-fiio-control-filter-mapping-2026-09-16).
+
+## Browser experiment UI, 2026-09-17
+
+`readme-browser.png` is an actual browser screenshot of the local WASM prototype
+with the V2.57 main menu loaded. `browser-debug.png` captures the page scrolled
+down to its expanded Debug and Prototype console panels, including the Back
+shortcut inside Debug. Both use the same CSS device geometry as the
+updated QEMU Viewer. The captured VM has no imported media; audio and peripheral
+controls are visibly disabled. The WASM badge identifies the execution mode.
+Screenshots establish appearance, not complete firmware or hardware support.
+No firmware images or generated VM artifacts are included. Earlier dated skin
+screenshots remain historical evidence in STATUS.md, not current UI instructions.

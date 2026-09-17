@@ -1,3 +1,4 @@
+import {bindPower} from './power.mjs';
 import {bindGestures} from './gestures.mjs';
 import {WIDTH, bgrxToRgba} from './pixels.mjs';
 
@@ -5,20 +6,25 @@ const byId = id => document.getElementById(id);
 const canvas = byId('screen');
 const context = canvas.getContext('2d');
 let worker = null, ready = false, pending = false, sequence = 0, frames = 0;
-let screenOn = null;
+let screenOn = null, failed = false;
 let started = 0, readyAt = 0, firstFrameAt = 0;
 let metricTimer = null, inputTimer = null;
 
 function setStatus(text) { byId('status').textContent = text; }
 function updateControls() {
     byId('back').disabled = !ready || pending || screenOn === false;
-    byId('power').disabled = !ready || pending;
-    byId('power').textContent = screenOn === false ? 'Wakeup' : screenOn === true ? 'Lock screen' : 'Wakeup / Lock';
+    const label = !worker ? 'Start player' : failed ? 'Restart player' : !ready ? 'Starting · hold to stop'
+        : pending ? 'Input pending · hold to stop' : screenOn === false ? 'Wakeup' : 'Lock screen';
+    byId('power-label').textContent = label;
+    byId('power').setAttribute('aria-label', label);
+    byId('power').title = label.includes('hold') ? label : `${label} · hold to stop the VM`;
+    // Keep local Stop available even while booting or awaiting a guest acknowledgement.
+    byId('power').disabled = false;
     canvas.classList.toggle('asleep', screenOn === false);
     canvas.classList.toggle('ready', ready && screenOn !== false);
 }
 function runningStatus() {
-    return screenOn === false ? 'Screen asleep · press Wakeup' : 'Running · tap or drag the screen';
+    return screenOn === false ? 'Screen asleep · press Power to wake' : 'Running · tap or drag the screen';
 }
 function log(text) {
     const el = byId('console');
@@ -26,7 +32,7 @@ function log(text) {
     el.scrollTop = el.scrollHeight;
 }
 function stop() {
-    cancelGesture(); screenOn = null;
+    cancelGesture(); screenOn = null; failed = false;
     worker?.terminate(); worker = null; ready = false; pending = false;
     clearInterval(metricTimer); clearTimeout(inputTimer); updateControls();
     canvas.classList.remove('ready'); context.clearRect(0, 0, WIDTH, WIDTH);
@@ -39,13 +45,14 @@ function updateMetrics() {
     const boot = readyAt ? ` · inputs ready in ${((readyAt - started) / 1000).toFixed(1)} s` : '';
     byId('metrics').textContent = `${seconds} s elapsed · ${frames} frames${boot} · 512 MiB guest RAM`;
 }
-byId('start').addEventListener('click', () => {
+function start() {
     if (worker) return;
     sequence = frames = 0; readyAt = firstFrameAt = 0; started = performance.now();
     metricTimer = setInterval(updateMetrics, 1000);
     byId('console').textContent = '';
     setStatus('Booting Linux…'); byId('start').disabled = true; byId('stop').disabled = false;
     worker = new Worker('worker.js');
+    failed = false; updateControls();
     const current = worker;
     worker.onmessage = ({data}) => {
         if (worker !== current) return;
@@ -69,17 +76,22 @@ byId('start').addEventListener('click', () => {
                 updateControls();
                 if (ready && !pending) setStatus(runningStatus());
             } else if (data.value.state === 'failed') {
-                ready = false; pending = false; cancelGesture(); clearTimeout(inputTimer);
+                failed = true; ready = false; pending = false; cancelGesture(); clearTimeout(inputTimer);
                 updateControls();
-                setStatus('Firmware stopped · Stop → Start player to restart');
+                setStatus('Firmware stopped · press Power to restart');
             }
             updateMetrics();
         }
-        if (data.type === 'error') { setStatus('VM error; see console'); log(data.message + '\n'); }
+        if (data.type === 'error') vmError(data.message);
     };
-    worker.onerror = event => { setStatus('VM error; see console'); log(event.message + '\n'); };
+    worker.onerror = event => { if (worker === current) vmError(event.message); };
     worker.postMessage({type:'start'});
-});
+}
+function vmError(message) {
+    failed = true; ready = false; pending = false; cancelGesture(); clearTimeout(inputTimer);
+    updateControls(); setStatus('VM error · press Power to restart; see console'); log(message + '\n');
+}
+byId('start').addEventListener('click', start);
 function sendGesture(gesture) {
     if (!worker || !ready || pending || (screenOn === false && gesture.kind !== 'power')) return;
     pending = true; sequence++; updateControls();
@@ -92,8 +104,11 @@ function sendGesture(gesture) {
 const cancelGesture = bindGestures(canvas, () => worker && ready && !pending && screenOn !== false, sendGesture);
 byId('back').addEventListener('click', () =>
     sendGesture({kind:'swipe', x0:18, y0:180, x1:320, y1:180}));
-byId('power').addEventListener('click', () =>
-    sendGesture({kind:'power', x0:0, y0:0, x1:0, y1:0}));
+bindPower(byId('power'), () => {
+    if (failed) stop();
+    if (!worker) start();
+    else sendGesture({kind:'power', x0:0, y0:0, x1:0, y1:0});
+}, () => { if (worker) stop(); });
 byId('stop').addEventListener('click', stop);
 byId('save').addEventListener('click', () => {
     canvas.toBlob(blob => {
@@ -109,3 +124,5 @@ byId('command-form').addEventListener('submit', event => {
     byId('command').value = '';
 });
 window.addEventListener('pagehide', stop);
+
+updateControls();

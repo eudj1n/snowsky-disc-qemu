@@ -47,15 +47,6 @@ device = Device(ROOTFS, boot_script=os.environ.get('DEVICE_BOOT_SCRIPT'))
 buttons = Buttons(ROOTFS, device)
 viewer_controls = Peripherals(device)
 
-# Optional device "skin": a photo of the player; the live round screen is composited
-# over its screen area so the viewer looks like the real device. Drop a PNG at $SKIN
-# (or /work/skin.png) — ideally with a transparent hole over the screen for pixel-perfect
-# alignment. Circle geometry is a fraction of the image (tune via env or ?cx&cy&d).
-SKIN = os.environ.get("SKIN", os.path.join(os.path.dirname(ROOTFS.rstrip('/')) or '/', "skin.png"))
-SKIN_CX = float(os.environ.get("SKIN_CX", "0.500"))     # screen centre X / image width
-SKIN_CY = float(os.environ.get("SKIN_CY", "0.500"))     # screen centre Y / image height
-SKIN_D = float(os.environ.get("SKIN_D", "0.679"))       # screen diameter / image width
-
 # ---- shared state: a grabber thread keeps the latest PNG ---------------------
 
 class State(FrameState):
@@ -79,43 +70,6 @@ class State(FrameState):
 
 
 state = State()
-
-# ---- optional device skin ----------------------------------------------------
-
-def _load_skin():
-    try:
-        data = open(SKIN, 'rb').read()
-        if data[:8] != b'\x89PNG\r\n\x1a\n':
-            return None
-        w, h = struct.unpack('>II', data[16:24])
-        return data, w, h
-    except OSError:
-        return None
-
-SKIN_DATA = _load_skin()
-
-def _skin_fields(cx=None, cy=None, d=None):
-    """Placeholder values for the page: mode + overlay geometry. cx/cy/d override the
-    defaults (fractions of the image) so the screen can be aligned live (?cx&cy&d)."""
-    if not SKIN_DATA:
-        return dict(MODE='plain', STAGE='360', L='0', T='0', D='100',
-                    CX='0', CY='0', DD='0', AR='1')
-    _, w, h = SKIN_DATA
-    cx = SKIN_CX if cx is None else cx
-    cy = SKIN_CY if cy is None else cy
-    d = SKIN_D if d is None else d
-    ar = w / h                              # so JS can recompute top% from a height-diameter
-    dh = d * ar
-    # Size the stage so the live circle renders at native 360px (1:1) — no downscale, so the UI
-    # text stays crisp (identical to the PNG). The photo is scaled to suit; a higher-res skin
-    # keeps the casing sharp too.
-    stage = max(360, min(1000, round(360.0 / d)))
-    return dict(MODE='skin', STAGE='%d' % stage,
-                L='%.2f' % ((cx - d / 2) * 100),
-                T='%.2f' % ((cy - dh / 2) * 100),
-                D='%.2f' % (d * 100),
-                CX='%.4f' % cx, CY='%.4f' % cy, DD='%.4f' % d, AR='%.4f' % ar)
-
 
 def grab_loop():
     period = 1.0 / FPS
@@ -198,9 +152,9 @@ class Handler(BaseHTTPRequestHandler):
     def do_GET(self):
         u = urlparse(self.path)
         p, qs = u.path, parse_qs(u.query)
-        if p in ('/audio.js', '/keys.js', '/frames.js', '/controls.js'):
+        if p in ('/audio.js', '/keys.js', '/frames.js', '/controls.js', '/device.css'):
             data = open(os.path.join(os.path.dirname(__file__), 'static', p[1:]), 'rb').read()
-            self._audio_response(200, 'text/javascript', data)
+            self._audio_response(200, 'text/css' if p.endswith('.css') else 'text/javascript', data)
         elif p == '/device.json':
             self._audio_response(200, 'application/json', json.dumps(state.device).encode())
         elif p == '/events':
@@ -221,32 +175,13 @@ class Handler(BaseHTTPRequestHandler):
             except (OSError, ValueError, struct.error):
                 self._audio_response(409, 'text/plain', b'Capture changed or invalid offset')
         elif p == '/':
-            def qf(k):
-                v = qs.get(k)
-                try:
-                    return float(v[0]) if v else None
-                except ValueError:
-                    return None
-            page = PAGE
-            for k, v in _skin_fields(qf('cx'), qf('cy'), qf('d')).items():
-                page = page.replace('__%s__' % k, v)
-            body = page.encode()
+            body = PAGE.encode()
             self.send_response(200)
             self.send_header('Content-Type', 'text/html; charset=utf-8')
             self.send_header('Content-Length', str(len(body)))
             self.send_header('Cache-Control', 'no-store')
             self.end_headers()
             self.wfile.write(body)
-        elif p == '/skin':
-            if not SKIN_DATA:
-                self.send_response(404); self.send_header('Content-Length', '0'); self.end_headers(); return
-            png = SKIN_DATA[0]
-            self.send_response(200)
-            self.send_header('Content-Type', 'image/png')
-            self.send_header('Content-Length', str(len(png)))
-            self.send_header('Cache-Control', 'max-age=3600')
-            self.end_headers()
-            self.wfile.write(png)
         elif p == '/frame':
             with state.lock:
                 png = state.png

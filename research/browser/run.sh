@@ -18,6 +18,9 @@ case "${1:-help}" in
             python3 -B -m research.browser.bundle
         printf '\nStart the static server: bash research/browser/run.sh serve\n'
         ;;
+    refresh-ui)
+        python3 -m research.browser.bundle --ui-only
+        ;;
     serve)
         test -f work/browser-disc/www/manifest.json || { echo 'Build the prototype first.' >&2; exit 1; }
         exec python3 -m http.server "${2:-8091}" --bind 127.0.0.1 --directory work/browser-disc/www
@@ -25,6 +28,7 @@ case "${1:-help}" in
     *)
         printf '%s\n' 'Usage:' \
             '  bash research/browser/run.sh build /path/to/main_os/ota_v257' \
-            '  bash research/browser/run.sh serve [port, default 8091]'
+            '  bash research/browser/run.sh serve [port, default 8091]' \
+            '  bash research/browser/run.sh refresh-ui  # stop VM first, then reload'
         ;;
 esac

@@ -1,6 +1,7 @@
 """Assemble the local browser bundle inside the prototype build container."""
 import hashlib
 import json
+import re
 from pathlib import Path
 import shutil
 import subprocess
@@ -19,6 +20,23 @@ def run(*args, cwd=None):
 def digest(path):
     with path.open('rb') as f:
         return hashlib.file_digest(f, 'sha256').hexdigest()
+
+
+def refresh_ui():
+    web = WORK / 'www'
+    web.mkdir(exist_ok=True)
+    assets = {f.name: f.read_bytes() for f in (SOURCE / 'static').iterdir()}
+    # Presentation only: no Viewer server/runtime is needed by the standalone VM.
+    assets['device.css'] = (REPO / 'viewer/static/device.css').read_bytes()
+    revision = hashlib.sha256(b''.join(name.encode() + data for name, data in sorted(assets.items()))).hexdigest()[:12]
+    for name, data in assets.items():
+        # A refresh must invalidate the whole module graph, not just index.html.
+        text = data.decode()
+        for asset in assets:
+            text = re.sub(r"([\"'])(\./)?" + re.escape(asset) + r"\1",
+                          lambda m: m[1] + (m[2] or '') + asset + '?v=' + revision + m[1], text)
+        (web / name).write_text(text)
+
 
 
 def bundle():
@@ -63,8 +81,7 @@ def bundle():
     run('mkfs.ext2', '-q', '-F', '-b', '4096', '-d', stage, image)
     web = WORK / 'www'
     web.mkdir(exist_ok=True)
-    for f in (SOURCE / 'static').iterdir():
-        shutil.copy2(f, web / f.name)
+    refresh_ui()
     for name in ('bbl64.bin', 'riscvemu64-wasm.wasm'):
         shutil.copy2(demo / name, web / name)
     # Replace only the download callback in the pinned, precompiled TinyEMU glue.
@@ -101,4 +118,13 @@ def bundle():
 
 
 if __name__ == '__main__':
-    bundle()
+    import argparse
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument('--ui-only', action='store_true')
+    args = parser.parse_args()
+    if args.ui_only:
+        if not (WORK / 'www/manifest.json').exists():
+            parser.error('Build the prototype first')
+        refresh_ui()
+    else:
+        bundle()

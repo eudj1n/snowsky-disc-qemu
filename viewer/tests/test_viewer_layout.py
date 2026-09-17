@@ -1,6 +1,5 @@
 from html.parser import HTMLParser
 import unittest
-from unittest.mock import patch
 from viewer import server as stream
 
 
@@ -28,18 +27,20 @@ class ViewerLayoutTests(unittest.TestCase):
         details = [attrs for tag, attrs in Tags(stream.PAGE).tags if tag == 'details']
         self.assertEqual(details, [{'id': 'debug-tools'}])
         self.assertIn('<summary>Debug</summary>', stream.PAGE)
-        self.assertLess(stream.PAGE.index('<details'), stream.PAGE.index('id=alignbtn'))
         self.assertLess(stream.PAGE.index('<details'), stream.PAGE.index('id=audio-replay'))
         self.assertNotIn('type=range', stream.PAGE)
         self.assertNotIn('id=key-help', stream.PAGE)
 
-    def test_plain_and_skin_render_without_unresolved_fields(self):
-        for skin, mode in ((None, 'plain'), ((b'', 1325, 1347), 'skin')):
-            with patch.object(stream, 'SKIN_DATA', skin):
-                fields = stream._skin_fields()
-            self.assertEqual(fields['MODE'], mode)
-            page = stream.PAGE
-            for key, value in fields.items():
-                page = page.replace('__%s__' % key, value)
-            self.assertNotRegex(page, r'__[A-Z]+__')
-            self.assertEqual(page.count('data-key='), stream.PAGE.count('data-key='))
+    def test_self_contained_device_keeps_live_screen_and_accessible_ports(self):
+        tags = Tags(stream.PAGE).tags
+        images = [attrs for tag, attrs in tags if tag == 'img']
+        self.assertEqual([img['id'] for img in images], ['scr'])
+        ports = [attrs for tag, attrs in tags if attrs.get('id') in
+                 ('audio-toggle', 'usb-toggle', 'sd-toggle')]
+        self.assertEqual(len(ports), 3)
+        for port in ports:
+            self.assertIn('aria-pressed', port)
+            self.assertTrue(port['aria-label'])
+        self.assertNotRegex(stream.PAGE, r'__[A-Z]+__')
+        self.assertNotIn('/skin', stream.PAGE)
+        self.assertNotIn('alignbtn', stream.PAGE)

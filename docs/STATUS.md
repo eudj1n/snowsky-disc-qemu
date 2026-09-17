@@ -16,7 +16,7 @@ peripheral controls. See the [README](../README.md) for setup and the visual ove
 | **Boot / UI** | Fingerprint-validated firmware, English main menu without the first-boot wizard, taps/holds/swipes. Boot waits for network, input and framebuffer readiness. | [Emulation](EMULATION.md), [Touch](TOUCH.md) |
 | **Storage** | FAT SD browsing and stock manual indexing. V2.57 insertion-triggered automatic scans handle Cyrillic add/rename/delete cases. Boot remounting alone does not trigger auto-scan. | [Media library](MEDIA_LIBRARY.md) |
 | **Audio** | Stock decoder → tinyalsa → PCM capture; source-sample comparisons, WAV export and browser playback with DAC gain. Browser live mode joins the current capture rather than replaying its full history. | [Audio](AUDIO.md) |
-| **Viewer** | Current device skin, button hotspots, headphone sound switch, USB charging simulation, real guest SD hotplug, brightness, and collapsed Debug controls. | [Viewer](VIEWER.md) |
+| **Viewer** | Responsive CSS device, physical buttons, audio switch, USB charging simulation, real guest SD hotplug, brightness, and collapsed Debug controls. | [Viewer](VIEWER.md) |
 | **Controls / power** | Assigned volume gestures, play/pause, sleep/wake and guest-only off/on. Stock libc reboot calls are confined and automatic poweroff requests handled by the viewer. | [Keys](KEYS.md) |
 | **USB power / idle** | V2.57 viewer cable drives stock sink-role/ADC detection and inhibits idle power-off; display timeout remains independent. TCP/WS screen-off reconnect, natural shutdown and explicit local boot/recovery tested. No USB data or hardware charging model. | [Power and reconnect](IDLE_POWER.md) |
 | **Frame transport** | Last-written buffer marker, lossless PNGs on visible changes, periodic idle refresh and device-state SSE. | [Viewer internals](VIEWER.md#how-it-works) |
@@ -52,13 +52,32 @@ coverage remain recorded limitations. Its migration to the current source
 layout does not constitute fresh runtime acceptance. The report defines the
 upstream fixes and local validation needed to return to active experimental status.
 
+### CSS viewer — 2026-09-17
+
+The viewer now draws a square device without a photo: a flat black screen bezel,
+Power on top, Play/pause and the volume rocker on the right, and audio/USB/microSD
+along the bottom. The face has no logo or lettering. Desktop renders the live
+frame at 360×360; narrower layouts preserve proportions and smooth downscaling.
+Skin loading and alignment settings have been removed; physical-button and
+peripheral handlers are unchanged. See [VIEWER.md](VIEWER.md).
+
+Firmware-free validation after UI unification: 313 Python and 37 JavaScript tests
+plus shell/shim checks passed. Full V2.57 disposable integration also passed, including the Viewer’s
+CSS/HTML/JS, frame/PCM and sleep/wake/stop/boot checks. Live browser checks covered
+Power startup/wake, unlocking with a swipe,
+audio and USB toggles, and a 320 px viewport without horizontal overflow.
+The two audio sockets share the browser audio switch; they do not emulate output
+selection. The updated screenshots record appearance, not hardware fidelity. The WASM
+experiment uses the same stylesheet and geometry, with a distinct badge, bottom
+status and adjacent Debug/Prototype console disclosures. See [browser screenshots](BROWSER.md).
+
 ### Current visual evidence
 
 | Main menu | Local playback | Clock lockscreen |
 | --- | --- | --- |
 | ![V2.57 menu](images/readme-menu.png) | ![V2.57 playback](images/readme-playing.png) | ![V2.57 clock](images/readme-clock.png) |
 
-Fresh captures from the actual V2.57 guest, 2026-09-15. The current browser skin
+Fresh captures from the actual V2.57 guest, 2026-09-15. The current CSS device
 and controls are shown in [VIEWER.md](VIEWER.md). These are screenshots, not mockups;
 they illustrate the interface rather than replacing protocol/audio assertions.
 The 2026-09-16 preference/playlist/scan/reset/EOF/formats/discovery investigations change protocol helpers/tests, not
