@@ -10,7 +10,7 @@ This is one repository and one shared Docker toolchain, with no new service.
 | Component | Owns | Depends on |
 | --- | --- | --- |
 | `emulator/scripts/`, `emulator/shims/`, `emulator/runtime/` | Guest setup, boot/stop, SD/network stubs, physical input, framebuffer and PCM | Shared `firmware.profile`; native tools from `docker/` |
-| `viewer/server.py`, `viewer/static/`, `viewer/assets/` | HTTP/SSE presentation, browser input/audio, device photo | Emulator runtime adapter; no controller transport |
+| `viewer/server.py`, `viewer/static/`, `viewer/assets/` | HTTP/SSE presentation, browser input/audio, shared device CSS; historical photo | Emulator runtime adapter; no controller transport |
 | `controller/` | Physical-device TCP/HTTP/WS clients, discovery, optional bridges and network diagnostics | Python standard library; `aiohttp` for WS client/bridge; no emulator, firmware or research imports |
 | `firmware/profile.py`, `firmware/v*.json`, `firmware/tools/` | Reviewed profiles/fingerprints, acquisition, extraction, OTA and inventory tools | Native extraction tools where needed |
 | `research/ghidra/`, `research/diagnostics/` | Ghidra, ELF tables, GDB and process-memory inspection | Firmware profiles; emulator process helpers for live memory probes |
@@ -100,7 +100,7 @@ The firmware-free runner discovers Python tests in every component test director
 if a test module is omitted or a test is skipped. JavaScript and shell discovery
 includes the component source/test directories, excluding ignored SD and rootfs data. See [CI](CI.md) for the full V2.57 and long
 power scenarios. The full scenario also exercises the viewer's real HTTP page,
-JavaScript, skin, frame, PCM, screen sleep/wake and Power stop/boot in its disposable
+JavaScript, frame, PCM, screen sleep/wake and Power stop/boot in its disposable
 guest.
 
 Local validation on 2026-09-17:

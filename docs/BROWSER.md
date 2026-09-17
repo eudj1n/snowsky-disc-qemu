@@ -15,6 +15,12 @@ The prototype runs the V2.57 main menu with taps and swipe navigation. This is a
 prototype, not a replacement for the validated Docker emulator. It does not
 enable another firmware profile or change the normal startup scripts.
 
+![Browser experiment with the V2.57 main menu](images/readme-browser.png)
+
+*Actual WASM browser capture, 2026-09-17. The page shares the Viewer’s device
+geometry and styling; the WASM badge identifies execution inside the browser.
+Dimmed controls are not connected in this experiment. [Capture details](images/README.md).*
+
 ## Project status
 
 This experiment is maintained under `research/browser/` on the development
@@ -42,23 +48,45 @@ bash research/browser/run.sh build /absolute/path/to/main_os/ota_v257
 bash research/browser/run.sh serve
 ```
 
-Open [the local prototype](http://127.0.0.1:8091/) and click **Start player**.
-The server binds to localhost only. **Stop** terminates the worker and clears
-the display; starting again creates a fresh VM. **Save screen** exports the
-actual Canvas pixels. The optional console sends commands into the emulated
-RISC-V Linux, not the host.
+Open [the local prototype](http://127.0.0.1:8091/) and click the **Power** button
+on the top edge. The server binds to localhost only. The page uses the same
+513 px square body and native 360×360 display as the [QEMU Viewer](VIEWER.md),
+scaling proportionally on narrow screens. The body has a flat black bezel and
+no logo or lettering. The shared stylesheet is `viewer/static/device.css`;
+the build copies it into the standalone bundle without a Viewer runtime dependency.
 
-Click to tap; drag across the screen to swipe. **Left → right** goes back; the
-**Back** button sends the same gesture. Vertical drags scroll lists or operate
-the firmware shade. A gesture is sent on pointer release and then played inside
-the VM; wait for it to finish before the next action. Cancellation sends nothing.
+| Control | Action |
+| --- | --- |
+| **Power, short press while off** | Start a fresh browser VM. |
+| **Power, short press while running** | Lock or wake the firmware screen. |
+| **Power, hold 1.8 seconds** | Stop the worker and clear the screen; session changes are discarded. Works during boot or a pending input too. |
+| **Power after a reported VM/firmware failure** | Explicitly restart with a fresh VM. No automatic input retry. |
+| **Screen** | Tap or swipe; left → right goes back, bottom → top dismisses the clock after waking. |
+| **Debug** | Back shortcut, explicit Start/Stop, Save screen, boot/frame metrics and limitations. |
+| **Prototype console** | Linux output and commands inside the browser VM, not the host. |
 
-The top physical button is represented by **Lock screen / Wakeup**. It sends a
-short press: when the display is on it sleeps; when off it wakes. The label and
-canvas blanking follow the firmware backlight stub, and touch/Back are disabled
-while asleep. Waking may show the stock clock lockscreen; swipe **bottom → top** to dismiss it.
-If the firmware processes have stopped, the button is disabled: use **Stop →
-Start player** for a fresh VM. Waking the display does not restart firmware.
+Status appears below the player. **Debug** and **Prototype console** are collapsed
+by default; their headers sit next to each other and their contents expand below.
+Space/Enter also operates focused Power. A cancelled pointer/keyboard hold does
+not send a short press. Save screen exports actual Canvas pixels.
+
+![Browser experiment debug tools and console](images/browser-debug.png)
+
+The side media/volume buttons and bottom audio/USB/microSD sockets show the physical
+layout but remain disabled: those features are not implemented by the prototype.
+A gesture is sent on pointer release and played inside the VM; wait for it to
+finish before the next action. Touch and Back are disabled while asleep or while
+an earlier gesture awaits acknowledgement. Injection acknowledgement alone is not
+proof that the screen has woken. Waking can show the stock clock lockscreen.
+
+For page-only changes, stop the VM, update the static assets, reload and start:
+
+```sh
+bash research/browser/run.sh refresh-ui
+```
+
+This copies UI files and the shared stylesheet with a content-based resource
+revision, without rebuilding or modifying the kernel, disk or firmware bundle.
 
 Docker is required to build the bundle, not to run it. Once built, serving
 `work/browser-disc/www` is sufficient. Do not rebuild that directory while a

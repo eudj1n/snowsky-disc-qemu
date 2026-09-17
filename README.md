@@ -21,7 +21,7 @@ without a physical device.
   </tr>
 </table>
 
-*Actual V2.57 emulator captures ([capture details](docs/images/README.md)). The browser viewer adds the device skin and interactive controls shown below.*
+*Actual V2.57 emulator captures ([capture details](docs/images/README.md)). The browser viewer adds the CSS device and interactive controls shown below.*
 
 Three components share one repository:
 
@@ -109,11 +109,11 @@ localhost. See [emulation internals](docs/EMULATION.md) and [validation limits](
 ## Viewer
 
 **A live, interactive player in the browser.** The viewer streams the emulator's
-actual framebuffer into the included device-photo skin. Its controls send input
-back to the stock applications.
+actual framebuffer inside a responsive CSS device. Its controls send input
+back to the stock applications. The **QEMU** badge identifies this host-backed mode.
 
 <p align="center">
-  <img src="docs/images/readme-viewer.png" width="960" alt="Current browser viewer with the SNOWSKY DISC skin, live screen, physical-button hotspots and headphone, USB and SD controls">
+  <img src="docs/images/readme-viewer-qemu.png" width="960" alt="Current browser viewer with a CSS device, live screen, physical buttons and audio, USB and SD controls">
 </p>
 
 Start it with `./run.sh view` after boot, then open **http://localhost:8080**.
@@ -122,16 +122,16 @@ Start it with `./run.sh view` after boot, then open **http://localhost:8080**.
 | --- | --- |
 | **Screen** | Click to tap, drag to swipe, hold to long-press. |
 | **Volume buttons** | Single, double and hold gestures follow the assignments in the stock settings. |
-| **Play / pause** | Use the physical-button hotspot or the stock player screen. |
+| **Play / pause** | Use the physical button or the stock player screen. |
 | **Power / lock** | Click to sleep/wake; hold to stop the guest; click while off to boot again. |
 | **Headphone jack** | Click the lower-left jack to enable browser sound. Stock volume controls also adjust browser output gain. |
 | **USB connector** | Toggle simulated USB power (V2.57 idle-power inhibition). |
 | **SD slot** | Remove and reinsert the emulated card; insertion follows the stock auto-scan rules. |
-| **Debug** | Expand for gesture shortcuts, skin alignment and replaying the current audio capture. |
+| **Debug** | Expand for gesture shortcuts and replaying the current audio capture. |
 
 Screen brightness follows the stock shade slider. The stream sends lossless PNGs
-when pixels change, with occasional idle refreshes. Without a skin, the viewer
-falls back to a plain screen with labelled controls.
+when pixels change, with occasional idle refreshes. The device scales to narrow
+screens without a photo asset or manual alignment.
 
 The headphone control enables browser audio; USB simulates power detection on
 V2.57, preventing idle power-off while connected (no USB data/DAC). See
@@ -144,6 +144,14 @@ and setup options are covered in the **[viewer guide](docs/VIEWER.md)**.
 The [browser experiment](docs/BROWSER.md) runs V2.57 locally through
 TinyEMU/WebAssembly → RISC-V Linux → qemu-mipsel. A static server supplies the
 files; the browser executes the firmware. Docker is needed to build the bundle.
+
+<p align="center">
+  <img src="docs/images/readme-browser.png" width="960" alt="WASM browser experiment running the V2.57 main menu, with the same CSS device as Viewer">
+</p>
+
+The **WASM** page shares the Viewer’s layout and device proportions. Power starts
+or wakes it; hold to stop the VM. Status is below the player; Debug holds Back,
+Start/Stop and Save screen, alongside the optional Prototype console.
 
 The prototype supports the stock menu, taps, swipes, Back and screen sleep/wake.
 Audio, SD/media import and saved state are not connected; lockscreen stability

@@ -48,13 +48,14 @@ def main():
             wait(lambda s: s['running'] and not s['transition'], 'running guest')
             kind, page = get('/')
             assert kind == 'text/html' and b'<title>Snowsky Disc</title>' in page
-            assert b'__MODE__' not in page and b'__STAGE__' not in page
+            assert b'id=screen-frame' in page and b'/skin' not in page
             for name in ('audio', 'keys', 'controls', 'frames'):
                 kind, data = get('/' + name + '.js')
                 assert kind == 'text/javascript'
                 assert data == Path('/repo/viewer/static', name + '.js').read_bytes()
-            kind, skin = get('/skin')
-            assert kind == 'image/png' and skin == Path('/repo/viewer/assets/skin.png').read_bytes()
+            kind, css = get('/device.css')
+            assert kind == 'text/css'
+            assert css == Path('/repo/viewer/static/device.css').read_bytes()
             state = wait(lambda s: s['running'], 'running')
             if not state['screen_on']:
                 button('single')
@@ -88,7 +89,7 @@ def main():
             wait(lambda s: s['running'] and s['screen_on'] and not s['transition'], 'guest rebooted')
             # Boot clears shots; retain the observed pre-reboot viewer frame afterwards.
             Path('/work/shots/ci-viewer-frame.png').write_bytes(png)
-            print('Viewer HTML/JS/skin, live frame/PCM, sleep/wake, stop and Power boot verified.')
+            print('Viewer CSS device/HTML/JS, live frame/PCM, sleep/wake, stop and Power boot verified.')
         finally:
             process.terminate()
             try:

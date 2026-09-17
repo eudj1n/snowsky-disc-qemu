@@ -14,13 +14,6 @@ export STREAM_PORT="${1:-${STREAM_PORT:-8080}}"
 
 [ -e "$ROOTFS/dev/input/event1" ] || { err "no touch stub — run 10_setup_env.sh"; exit 1; }
 
-# Device skin (optional): a photo of the player, composited behind the live screen so the
-# viewer looks like the real device. Prefer the repo asset (may be a transparent-hole PNG),
-# fall back to one dropped in the /work volume. See viewer/assets/README.md.
-if   [ -f "$REPO/viewer/assets/skin.png" ]; then export SKIN="$REPO/viewer/assets/skin.png"
-elif [ -f "$WORK/skin.png" ];        then export SKIN="$WORK/skin.png"
-fi
-[ -n "${SKIN:-}" ] && log "skin: $SKIN (tune with SKIN_CX/SKIN_CY/SKIN_D)"
 pgrep -f 'python3 -m viewer[.]server' >/dev/null 2>&1 && { pkill -f 'python3 -m viewer[.]server' || true; sleep 1; }
 sd_mount   # keep the SD mounted so the File Browser has content while you click around
 

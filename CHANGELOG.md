@@ -49,6 +49,12 @@ Active firmware: **V2.57**. Local protocol research is finalized in
 
 ### Changed
 
+- Viewer now draws a responsive CSS device with visible physical buttons and
+  audio/USB/microSD connectors, removing the photo skin and manual alignment.
+  The browser experiment shares its layout and adds a combined Power control;
+  QEMU/WASM badges distinguish the two pages. Updated screenshots and guides
+  cover both. [Viewer](docs/VIEWER.md), [browser experiment](docs/BROWSER.md).
+
 - Centralize the active firmware default and reviewed runtime/acceptance profiles;
   TCP and WebSocket share device-version compatibility guards. Existing explicit
   `FW_VERSION` pins remain supported. [Firmware profiles](docs/FIRMWARE_PROFILES.md).

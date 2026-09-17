@@ -1,0 +1,17 @@
+#screen{cursor:default}#screen.ready{cursor:pointer}#screen.asleep{filter:brightness(0)}
+#status{font-size:12px;line-height:1.6;text-align:center;color:#c7bdd7;margin:14px 0}
+.tools{position:relative;margin:20px auto 0;padding-top:36px;text-align:center}
+.tools details,.tools #debug-tools{margin:0}
+.tools summary,.tools #debug-tools summary{position:absolute;top:0;margin:0;cursor:pointer;color:#aaa1b8;
+ font-size:12px;padding:8px;list-style:none;white-space:nowrap}
+.tools #debug-tools summary{right:calc(50% + 8px)}
+.tools #prototype-console summary{left:calc(50% + 8px)}
+.tools summary:before{content:'▸ ';display:inline-block;width:12px}
+.tools details[open]>summary:before{content:'▾ '}
+#metrics{font-variant-numeric:tabular-nums}
+pre{height:250px;overflow:auto;text-align:left;background:#101116;border:1px solid #555060;border-radius:9px;
+ padding:14px;white-space:pre-wrap;overflow-wrap:anywhere;font:12px/1.45 monospace}
+form{display:flex;gap:10px}
+form input,form button{font:inherit;border:1px solid #555060;border-radius:9px;padding:8px 12px;background:#292630;color:inherit}
+form input{flex:1;min-width:0;font-size:12px}
+.bar button:disabled,form button:disabled{opacity:.4;cursor:default}

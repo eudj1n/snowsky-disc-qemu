@@ -2,13 +2,15 @@
 
 `./run.sh view` turns the emulator into an **interactive** stand: it streams the guest
 framebuffer to a browser and turns pointer events on that page into synthetic touches, so
-you drive the real stock UI from the host with no hardware. Optionally it composites the
-live round screen into a photo of the player so it looks like the real device.
+you drive the real stock UI from the host with no hardware. A responsive CSS device
+contains the live round screen, physical buttons and audio/USB/microSD connectors.
+The **QEMU** badge distinguishes this host-backed Viewer from the
+[WASM experiment](BROWSER.md), which uses the same page styling and device geometry.
 
-![Current V2.57 browser viewer](images/readme-viewer.png)
+![Current V2.57 browser viewer](images/readme-viewer-qemu.png)
 
-*Actual browser capture, 2026-09-15: physical-button hotspots and headphone,
-USB-charging and SD controls on the device skin. Debug is collapsed.*
+*Actual browser capture, 2026-09-17: CSS device with live V2.57 screen and
+physical, audio, USB and SD controls. Debug is collapsed.*
 
 ```sh
 ./run.sh boot          # start the guests (they now stay alive ~30 min, see GUEST_TTL)
@@ -25,9 +27,10 @@ An override is an absolute path inside the container, executed by Bash with the
 selected `ROOTFS` and the existing 90-second startup timeout. Recreate the container
 and restart the viewer after changing it. This does not change `./run.sh boot`.
 
-The first headphone jack at the lower left is **Enable sound**. Enabling browser audio
-shows an inserted plug; clicking it again mutes sound and removes the plug. This is a
-browser audio switch, not a stock headphone-detection event. **Replay capture** lives
+The audio sockets at the lower left share the **Enable sound** control. Enabling browser audio
+shows a plug in the 3.5 mm socket; clicking again mutes sound and removes the plug.
+The 4.4/3.5 labels represent their physical locations; this shared browser audio
+switch does not select a hardware output or inject stock headphone detection. **Replay capture** lives
 inside **Debug** and starts the current recording again. Select tracks and pause in
 the device UI. Volume remains controlled by the existing physical buttons and stock
 menus; DAC attenuation already drives the browser audio gains. There are no extra sliders.
@@ -37,12 +40,13 @@ backlight stub via device SSE and applies a CSS brightness factor to the screen 
 This approximates panel luminance; framebuffer pixels, lossless PNG transport and
 animation cadence are unchanged. Backlight zero still displays a black frame.
 
-Normal **Player on** status and usage hints are hidden. Off/sleep status is centered
+Normal **Player on** status is hidden. Off/sleep status is centered
 inside the dark screen; connection errors and transitions while the screen is lit
-appear below the device so they do not obscure the stock UI.
+appear in a compact panel near the bottom of the screen. Peripheral errors appear
+below the device.
 
 The USB connector is centered on the bottom edge; the SD slot is to its right.
-USB toggles a cable with a green charging mark and guest battery status
+USB toggles a visible plug, a charging label and guest battery status
 (`Charging` / `Discharging`). On V2.57 it also drives the stock USB-power detector
 through narrow sink-role/ADC emulation, so the firmware can inhibit idle power-off
 while plugged in. Cable state survives viewer/guest restarts. This is power-only
@@ -74,9 +78,9 @@ detached by `./run.sh view`) and serves:
 | route | purpose |
 |---|---|
 | `GET /` | the viewer page (stream + pointer capture + gesture buttons) |
+| `GET /device.css` | shared page and device styles |
 | `GET /stream` | lossless PNG stream on pixel changes, plus a full idle refresh every 15 seconds |
 | `GET /frame` | a single current PNG (handy for scripting) |
-| `GET /skin` | the device photo, if a skin is present |
 | `GET /audio.json` | capture generation/format/size, guest running state and DAC output gains |
 | `GET /audio.pcm?generation=…&offset=…` | bounded PCM chunk at a frame-aligned offset |
 | `GET /tap?x&y` | short tap at display coords (press, hold ~0.3 s, release) |
@@ -149,34 +153,33 @@ press+release in one batch is seen as a net release = no tap). A drag sends `dow
 up` over real wall-clock time, which is also how **swipes** work — the shade pull-down and the
 left→right back gesture are just server-side interpolated swipes, one click each.
 
-## Device skin (the "cool" look)
+## Device layout
 
-If a skin PNG is present (repo `viewer/assets/skin.png`, else `/work/skin.png`), the page shows the
-photo with the live round screen overlaid on the glass. Align the circle to your image live:
-open **Debug → ⊹ align**, then **Alt+arrows** to move / **+/-** to resize (Shift = bigger step) — the
-readout shows the exact `SKIN_CX / SKIN_CY / SKIN_D`. Those can also be passed as query params
-(`/?cx=0.5&cy=0.5&d=0.7`) or env vars to `viewer/scripts/40_stream.sh`; defaults live in `viewer/server.py`.
-A PNG with a **transparent hole** over the screen gives the cleanest result. Without a skin the
-viewer falls back to a plain framed round screen. See `viewer/assets/README.md`.
+The body, buttons and connectors are drawn with HTML/CSS in
+`viewer/static/index.html` and the shared `viewer/static/device.css`.
+The [browser prototype](BROWSER.md) copies the same stylesheet into its build.
+The live framebuffer remains a 360×360 image, displayed at its native CSS size
+on wide screens. On narrow screens it scales down with normal image smoothing;
+pointer coordinates map back to the original display pixels. No photo, overlay coordinates,
+`SKIN_*` environment settings or alignment mode are needed. The old `/skin` route
+and `cx`/`cy`/`d` geometry query parameters have been retired.
 
-Physical buttons are **44px translucent pink circles over the skin**: Power on the
-top edge, Play/pause at the upper right, volume at the two ends of the right rocker.
-Placement follows the [official DISC quick guide](https://fiio-instruction.fiio.net/%E5%BF%AB%E9%80%9F%E5%85%A5%E9%97%A8/2025/DISC.pdf).
-At rest, icons are hidden and the fill alpha is 0.13. Hover/keyboard focus reveals the
-icon and label; a held pointer or Space/Enter gives pressed feedback. Touch can press
-directly without hovering. Button names remain available to assistive technology.
-The transparent positioning layer does not intercept touches on the round screen.
-Without a skin, the same buttons become a labelled row, with no duplicate handlers.
+The body keeps the physical DISC’s square proportions, with its round screen and
+flat black bezel centered on the face. Power is on the top edge; Play/pause and the volume
+rocker are on the right edge. The bottom edge carries the two audio sockets,
+USB-C and microSD in the order shown in the
+[official quick guide](https://fiio-instruction.fiio.net/%E5%BF%AB%E9%80%9F%E5%85%A5%E9%97%A8/2025/DISC.pdf).
+There is no lettering or logo on the face. Small control symbols stay visible;
+hover lights the icons and reveals button names; keyboard focus also underlines
+the icon or port label. No rectangular button highlight is drawn. Connected audio/USB ports show plugs,
+and the SD slot changes to a card icon when ejected. Each control also has an
+accessible name and state. Space/Enter, pressed feedback, cancellation on pointer
+loss and the existing single/double/hold gestures are preserved. Reduced-motion
+preferences disable transitions. Debug contains gesture shortcuts and audio replay.
 
-Hotspot centers use per-button CSS `--x`/`--y` percentages in `viewer/static/index.html` for the
-committed photo (Power 84.4/3, Play 98/14.8, Volume up 98/28.5, down 98/51.5; headphones 15.6/99, USB 50/98.5, SD 80/98.5).
-They resize with the photo; replacing it requires adjusting these coordinates as
-well as screen alignment. Closing Debug cancels alignment mode. Reduced-motion
-preferences disable the visual transitions. Pointer loss, blur or guest shutdown
-clears pressed feedback and cancels held gestures.
-
-For these HTML/JS changes, just run `./run.sh view` and reload the browser; a guest
-reboot/image rebuild is unnecessary. There are no new dependencies or image changes.
+For these HTML/CSS and server changes, run `./run.sh view` and reload the browser;
+a guest reboot or image rebuild is unnecessary. The historical owner photo remains
+in `viewer/assets/` with its provenance, but is no longer loaded by the viewer.
 
 ## Notes / limits
 

@@ -41,7 +41,7 @@ __pycache__/
 !/emulator/sdcard/.gitkeep
 !/emulator/sdcard/README.md
 
-# Viewer skin: owner's original photo is committed; provenance in viewer/assets/README.md.
+# Historical viewer photo: provenance in viewer/assets/README.md.
 
 # JetBrains IDE
 .idea/

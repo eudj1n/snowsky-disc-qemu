@@ -1,37 +1,51 @@
 <!doctype html>
 <html lang="en">
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1">
 <title>DISC · Browser prototype</title>
-<style>
-  :root {color-scheme:dark; font:16px system-ui,sans-serif; background:#16171c; color:#eee;}
-  body {max-width:920px; margin:48px auto; padding:0 24px;}
-  h1 {font-size:28px; margin-bottom:6px;} p {color:#b7b8c4; line-height:1.5;}
-  .controls {display:flex; flex-wrap:wrap; gap:12px; margin:24px 0; align-items:center;}
-  button,input {font:inherit; padding:10px 16px; border-radius:8px; border:1px solid #545568; background:#292b34; color:inherit;}
-  button {cursor:pointer;} button:disabled {opacity:.45; cursor:default;}
-  #start {background:#c0b5fa; color:#16131d; border:0;}
-  .player {width:400px; max-width:100%; padding:20px; box-sizing:border-box; border-radius:38px; background:#555363; margin:24px auto; box-shadow:0 14px 35px #0005;}
-  canvas {display:block; width:100%; aspect-ratio:1; border-radius:50%; background:black; touch-action:none;}
-  canvas.ready {cursor:pointer;} canvas.asleep {filter:brightness(0);}
-  #status {font-weight:600;} #metrics {font-size:14px; text-align:center; font-variant-numeric:tabular-nums;}
-  details {margin-top:32px;} summary {cursor:pointer; color:#c3bddf;}
-  pre {height:250px; overflow:auto; background:#101116; padding:14px; white-space:pre-wrap; word-break:break-word; font:12px/1.45 monospace;}
-  form {display:flex; gap:10px;} input {flex:1; min-width:0; font:13px monospace;}
-</style>
-<h1>DISC in your browser</h1>
-<p>Stock firmware running locally in WebAssembly. This prototype supports taps and swipes. Drag left to right to go back; swipe up to dismiss the clock after Wakeup. Sound and media import are not connected yet.</p>
-<div class="controls">
-  <button id="start">Start player</button><button id="stop" disabled>Stop</button>
-  <button id="power" disabled title="Short press of the top physical button">Wakeup / Lock</button>
-  <button id="back" disabled>Back</button>
-  <button id="save" disabled>Save screen</button><span id="status" role="status">Ready to start</span>
-</div>
-<div class="player"><canvas id="screen" width="360" height="360" aria-label="DISC touchscreen"></canvas></div>
-<p id="metrics">512 MiB guest RAM · changes reset on restart</p>
-<details><summary>Prototype console</summary>
-  <pre id="console" aria-label="Linux console"></pre>
-  <form id="command-form"><input id="command" aria-label="Linux command" placeholder="Command inside the browser VM" autocomplete="off" spellcheck="false"><button id="send" disabled>Send</button></form>
-</details>
+<link rel="stylesheet" href="device.css">
+<link rel="stylesheet" href="prototype.css">
+<main id=wrap>
+ <header><div class=eyebrow>SNOWSKY · BROWSER EXPERIMENT</div><div class=page-title><h1>DISC in your browser</h1><span class=engine-badge>WASM</span></div>
+ <p class=subtitle>Stock firmware running locally in your browser</p></header>
+ <div id=stage>
+  <div class=volume-rocker aria-hidden=true></div>
+  <div id=screen-frame>
+   <canvas id=screen width=360 height=360 aria-label="DISC touchscreen"></canvas>
+  </div>
+  <div id=physical-controls role=group aria-label="Physical controls">
+   <button id=power class=physical data-key="power" aria-label="Start player" title="Click to start · hold to stop the VM">
+    <span class=key-symbol aria-hidden=true>⏻</span><span id=power-label class=key-label>Start player</span></button>
+   <button class=physical disabled data-key="play_pause" aria-label="Play / pause">
+    <span class=key-symbol aria-hidden=true>⏯</span><span class=key-label>Play / pause</span></button>
+   <button class=physical disabled data-key="volume_up" aria-label="Volume up">
+    <span class=key-symbol aria-hidden=true>+</span><span class=key-label>Volume up</span></button>
+   <button class=physical disabled data-key="volume_down" aria-label="Volume down">
+    <span class=key-symbol aria-hidden=true>−</span><span class=key-label>Volume down</span></button>
+   <div id=ports>
+    <button disabled id=audio-toggle class="physical port" aria-label="Audio unavailable in this prototype" aria-pressed=false>
+     <span class=connector aria-hidden=true></span><span class=port-name aria-hidden=true>4.4 · 3.5</span><span class=key-label>Audio unavailable</span></button>
+    <button disabled id=usb-toggle class="physical port" aria-label="USB unavailable in this prototype" aria-pressed=false>
+     <span class=connector aria-hidden=true></span><span class=port-name aria-hidden=true>USB-C</span><span class=key-label>USB unavailable</span></button>
+    <button disabled id=sd-toggle class="physical port" aria-label="microSD unavailable in this prototype" aria-pressed=false>
+     <span class=connector aria-hidden=true></span><span class=port-name aria-hidden=true>microSD</span><span class=key-label>microSD unavailable</span></button>
+   </div>
+  </div>
+ </div>
+ <p class="hint usage">Tap to select · drag to swipe<br>Power: click to start, lock or wake · hold to switch off</p>
+ <p id=status role=status>Ready to start · press Power</p>
+ <div class=tools>
+  <details id=debug-tools>
+   <summary>Debug</summary>
+   <div class=bar><button id=back disabled>↩ Back</button><button id=start>Start player</button><button id=stop disabled>Stop</button><button id=save disabled>Save screen</button></div>
+   <p id=metrics class=hint>512 MiB guest RAM · changes reset on restart</p>
+   <p class=hint>Experimental · session changes are lost on Stop.<br>Audio, media buttons, USB and microSD are not connected yet.</p>
+  </details>
+  <details id=prototype-console><summary>Prototype console</summary>
+   <pre id=console aria-label="Linux console"></pre>
+   <form id=command-form><input id=command aria-label="Linux command" placeholder="Command inside the browser VM" autocomplete=off spellcheck=false><button id=send disabled>Send</button></form>
+  </details>
+ </div>
+</main>
 <script type="module" src="app.js"></script>
 </html>
