@@ -1,4 +1,5 @@
 """Stock HTTP acceptance, ONLY for ci/integration.sh's disposable scanned SD."""
+from tests.integration.profile import (capability)
 import asyncio
 import inspect
 import os
@@ -111,7 +112,7 @@ def exercise(host, label):
     rest = client.catalog(offset=1, limit=2)
     assert first['items'] + rest['items'] == songs
     assert client.catalog('album/song', album='CI Album')['total'] == 2
-    if os.environ.get('FW_VERSION', '2.57') == '2.57':
+    if capability('image_route'):
         image_source = Path('/work/http-fixture.png')
         image_source.write_bytes(png())
         client.upload(image_source, image, image=True)

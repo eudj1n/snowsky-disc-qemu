@@ -2,8 +2,10 @@
 
 The firmware is **not** stored in this repository. Download it yourself from FiiO.
 
-GitHub integration downloads use only the active version's secret
-(`FIRMWARE_V257_URL`), never a committed direct URL. Legacy V2.40 local tooling
+The default comes from [active-version](active-version); runtime selection and
+controller compatibility are described in [firmware profiles](../docs/FIRMWARE_PROFILES.md).
+GitHub integration downloads use only that profile's named secret
+(currently `FIRMWARE_V257_URL`, passed to the downloader as `FIRMWARE_URL`), never a committed direct URL. Legacy V2.40 local tooling
 still understands `FIRMWARE_V240_URL`, but hosted CI does not receive it. Runtime profiles:
 [v2.40.json](v2.40.json), [v2.57.json](v2.57.json). See [CI policy](../docs/CI.md).
 

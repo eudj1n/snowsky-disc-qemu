@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """Small, dependency-free FiiO Link client. Defaults to the local emulator only."""
 import argparse
+from controller.compatibility import require
 import json
 import select
 import socket
@@ -252,8 +253,7 @@ class Client:
         payload = index_payload(index, list_type, name)
         if list_type == 6:
             version = self.settings()['soc_version']
-            if version != 257:
-                raise ValueError('favorite positions require DISC V2.57; V2.40 needs an internal ID absent from the list response')
+            require(version, 'favorite_positions')
         self.socket.sendall(frame('0100', payload))
 
     def play_queue_index(self, index):
@@ -270,13 +270,12 @@ class Client:
     def play_playlist(self, position, index=None, *, http, expected_name):
         """Play a custom list, or its zero-based track index, after fresh HTTP checks.
 
-        Requires V2.57 and an HTTPClient for this same device. expected_name is
+        Requires a reviewed playlist contract and HTTPClient for this device. expected_name is
         the displayed list name, not a persistent identity. No automatic retry.
         """
         command = playlist_command(position, index, expected_name)
         version = self.settings().get('soc_version')
-        if type(version) is not int or version != 257:
-            raise ValueError('custom playlist playback requires DISC V2.57')
+        require(version, 'playlist_playback')
         verify_playlist(http, position, index, expected_name)
         self.socket.sendall(frame(*command))
 
@@ -287,11 +286,10 @@ class Client:
         self.socket.sendall(frame('0502', f'{value:04X}'))
 
     def play_genre(self, genre, index=None, *, album=None, http):
-        """Play genre tracks, optionally scoped to an album, on V2.57."""
+        """Play genre tracks, optionally scoped to an album, with a reviewed contract."""
         command = genre_command(genre, index, album)
         version = self.settings().get('soc_version')
-        if type(version) is not int or version != 257:
-            raise ValueError('genre playback requires DISC V2.57')
+        require(version, 'genre_playback')
         verify_genre(http, genre, index, album)
         self.socket.sendall(frame(*command))
 
@@ -303,8 +301,7 @@ class Client:
         """
         command = artist_command(artist, index, album)
         version = self.settings().get('soc_version')
-        if type(version) is not int or version != 257:
-            raise ValueError('scoped artist playback requires DISC V2.57')
+        require(version, 'artist_playback')
         verify_artist(http, artist, index, album)
         self.socket.sendall(frame(*command))
 
@@ -312,8 +309,7 @@ class Client:
         """Play a folder or its displayed position (including directory rows)."""
         command = folder_command(path, index, expected_name)
         version = self.settings().get('soc_version')
-        if type(version) is not int or version != 257:
-            raise ValueError('folder playback requires DISC V2.57')
+        require(version, 'folder_playback')
         verify_folder(http, path, index, expected_name)
         self.socket.sendall(frame(*command))
 

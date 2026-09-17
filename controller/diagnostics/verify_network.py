@@ -5,6 +5,7 @@ import json
 import time
 import urllib.request
 from controller.fiio_link import Client
+from controller.compatibility import require
 from controller.diagnostics.probe_websocket import probe
 
 
@@ -14,7 +15,7 @@ def verify(control=False, start_library=False):
         result['protocol'] = client.handshake()
         assert result['protocol'] == '0306', result
         result['settings'] = client.settings()
-        assert result['settings']['soc_version'] == 240
+        require(result['settings'].get('soc_version'), 'network_check')
         result['tracks'] = client.tracks()
         assert isinstance(result['tracks']['items'], list)
         if control:

@@ -1,4 +1,5 @@
 """Artist/genre/folder acceptance with generated media on disposable V2.57 only."""
+from tests.integration.profile import (version as firmware_version, require_acceptance)
 import asyncio
 import hashlib
 import os
@@ -211,22 +212,21 @@ async def exercise(transport):
         assert http.catalog('style/album/song', style='Genre Ё', album='Shared Album')['total'] == 0
         for relative, *_ in TRACKS:
             assert (ROOT / 'tmp/sdcard' / FOLDER / relative).is_file()
-        with PlayerMemory(ROOT, '2.57') as memory:
+        with PlayerMemory(ROOT, firmware_version()) as memory:
             await scan(client, memory)
         assert http.catalog()['items'] == before['items']
 
 
 async def main():
-    if os.environ.get('CI_DISPOSABLE') != '1' or os.environ.get('FW_VERSION') != '2.57':
-        raise RuntimeError('library acceptance requires disposable V2.57')
-    with PlayerMemory(ROOT, '2.57'):
+    require_acceptance('library')
+    with PlayerMemory(ROOT, firmware_version()):
         pass
     sources()
     folder = generate(ROOT / 'tmp/sdcard')
     hashes = {folder / relative: hashlib.sha256((folder / relative).read_bytes()).hexdigest()
               for relative, *_ in TRACKS}
     async with connection('tcp') as client:
-        with PlayerMemory(ROOT, '2.57') as memory:
+        with PlayerMemory(ROOT, firmware_version()) as memory:
             await scan(client, memory)
     for transport in ('tcp', 'ws'):
         await exercise(transport)
@@ -237,11 +237,11 @@ async def main():
         (folder / relative).rmdir()
     folder.rmdir()
     async with connection('tcp') as client:
-        with PlayerMemory(ROOT, '2.57') as memory:
+        with PlayerMemory(ROOT, firmware_version()) as memory:
             await scan(client, memory)
         assert (await call(client.tracks))['total'] == 3
     sources()
-    print('LIBRARY CHECK PASS V2.57 TCP/WS; sources restored', flush=True)
+    print(f'LIBRARY CHECK PASS V{firmware_version()} TCP/WS; sources restored', flush=True)
 
 
 if __name__ == '__main__':

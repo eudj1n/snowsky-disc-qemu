@@ -16,7 +16,7 @@ printf '\377' > "$ROOTFS/emu/dac-right"
 # V2.57's native idle-power gate consumes ADC1 + AW35615 sink-role detection,
 # not the battery status string. fbshim implements only this reviewed power ABI.
 printf '0' > "$ROOTFS/emu/usb-power-supported"
-if [ "$FW_VERSION" = 2.57 ]; then
+if firmware_supports usb_power; then
   for d in jz_adc_aux_0 jz_adc_aux_1 jz_adc_aux_2 jz_adc_aux_3 aw35615 sgm41513; do
     : > "$ROOTFS/dev/$d"
   done

@@ -45,6 +45,10 @@ Active firmware: **V2.57**. Local protocol research is finalized in
 
 ### Changed
 
+- Centralize the active firmware default and reviewed runtime/acceptance profiles;
+  TCP and WebSocket share device-version compatibility guards. Existing explicit
+  `FW_VERSION` pins remain supported. [Firmware profiles](docs/FIRMWARE_PROFILES.md).
+
 - Separate emulator, viewer, controller, firmware tooling and research into explicit
   components. Keep root launch commands; media now lives in `emulator/sdcard/` and
   Docker names use `snowsky-disc-qemu`. [Source layout](docs/REPOSITORY.md).

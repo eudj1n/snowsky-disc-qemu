@@ -3,6 +3,7 @@
 Raw destructive requests deliberately stay here, outside the public client.
 Never select a deletion target for playback while sending DELETE.
 """
+from tests.integration.profile import (version as firmware_version, require_acceptance, diagnostic)
 import asyncio
 import hashlib
 import json
@@ -80,7 +81,7 @@ def check_effects(before, after, category, delete_source, generated):
 
 
 async def index(client, total):
-    with PlayerMemory(ROOT, '2.57') as memory:
+    with PlayerMemory(ROOT, firmware_version()) as memory:
         await scan(client, memory)
     assert (await call(client.tracks))['total'] == total
 
@@ -138,8 +139,8 @@ async def exercise(transport, generated, baseline):
             headers = http._category(category, filters)
             headers.update({'delete_source': str(delete_source),
                             'Content-Type': 'application/json'})
-            with PlayerMemory(ROOT, '2.57') as memory:
-                assert memory.word('8989d4') == 0, 'no deletion during scan'
+            with PlayerMemory(ROOT, firmware_version()) as memory:
+                assert memory.word(diagnostic('network.scan_running')) == 0, 'no deletion during scan'
             reply = http.request('DELETE', '/song_category_tree/', range_body(ranges), headers)
             assert reply.status == 200
             after = observe(http)
@@ -193,7 +194,7 @@ async def exercise(transport, generated, baseline):
 
 
 async def main():
-    assert os.environ.get('CI_DISPOSABLE') == '1' and os.environ.get('FW_VERSION') == '2.57'
+    require_acceptance('library-delete')
     sources()  # Refuse any SD contents other than the three generated CI sources.
     sd = ROOT / 'tmp/sdcard'
     baseline = {p: hashlib.sha256(p.read_bytes()).hexdigest() for p in sd.rglob('*') if p.is_file()}
@@ -212,7 +213,7 @@ async def main():
     async with connection('tcp') as client:
         await index(client, 3)
     sources()
-    print('LIBRARY DELETE PASSED V2.57: disposable files restored and cleaned', flush=True)
+    print(f'LIBRARY DELETE PASSED V{firmware_version()}: disposable files restored and cleaned', flush=True)
 
 
 if __name__ == '__main__':

@@ -2,6 +2,7 @@
 
 Only for ci/integration.sh's disposable guest, not an existing interactive session.
 """
+from tests.integration.profile import (version as firmware_version)
 import argparse
 import os
 from pathlib import Path
@@ -71,7 +72,7 @@ def scan():
     # Sample the actual worker flag across the stock UI-triggered scan. A very
     # short scan may fit between samples; record observed values without making
     # scheduler timing a CI pass/fail condition.
-    with PlayerMemory(ROOT, os.environ.get('FW_VERSION', '2.57')) as player:
+    with PlayerMemory(ROOT, firmware_version()) as player:
         address = player.profile['diagnostics']['network']['scan_running']
         stop = Event()
         def sample_scan():
@@ -93,7 +94,7 @@ def scan():
         print('Diagnostic scan_running samples:', sorted(observed))
     assert 'CI Tone' in str(tracks), tracks
     assert {item['title'] for item in tracks['items']} == set(NAMES), tracks
-    print(f'Fresh V{os.environ.get("FW_VERSION", "2.57")}: stock UI scanned {len(NAMES)} generated tracks; TCP index verified.')
+    print(f'Fresh V{firmware_version()}: stock UI scanned {len(NAMES)} generated tracks; TCP index verified.')
 
 
 def audio():

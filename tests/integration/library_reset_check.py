@@ -1,4 +1,5 @@
 """Dedicated DISC V2.57 library reset; disposable generated media ONLY."""
+from tests.integration.profile import (version as firmware_version, require_acceptance, diagnostic)
 import asyncio
 import os
 from pathlib import Path
@@ -32,7 +33,7 @@ def source_bytes():
 
 
 async def full_scan(client):
-    with PlayerMemory(ROOT, '2.57') as memory:
+    with PlayerMemory(ROOT, firmware_version()) as memory:
         await scan(client, memory)
     assert (await call(client.tracks))['total'] == 3
 
@@ -71,7 +72,7 @@ async def exercise(transport):
         await asyncio.sleep(2.1)  # Selection-to-pause guard, not a toggle retry.
         await call(client.play_pause)
         await snapshot(client, lambda s: s['state'] == 1)
-        await memory_state('2.57', 2)
+        await memory_state(firmware_version(), 2)
         assert http.catalog('love/song')['total'] == 1
         before_queue = http.catalog('curlist/song')
         assert before_queue['total'] == 2
@@ -83,9 +84,9 @@ async def exercise(transport):
         protected_bytes = {p: p.read_bytes() if p.exists() else None for p in protected}
         before_tables = tables()
         print(f'{transport}: tables before reset={sorted(before_tables)}', flush=True)
-        with PlayerMemory(ROOT, '2.57') as memory:
-            assert memory.word('8989d4') == 0, 'never reset during a scan'
-            assert memory.word('83a56c') == 0x4f0814
+        with PlayerMemory(ROOT, firmware_version()) as memory:
+            assert memory.word(diagnostic('network.scan_running')) == 0, 'never reset during a scan'
+            assert memory.word(diagnostic('network.reset_slot')) == int(diagnostic('network.reset_handler'), 16)
         await flush(client)
         result = client.reset_library(confirm=True)
         if asyncio.iscoroutine(result):
@@ -102,7 +103,7 @@ async def exercise(transport):
         assert db_rows('SELECT * FROM PLAY_LIST WHERE LIST_ID NOT IN (0,3)') == before_lists
         assert {p: p.read_bytes() if p.exists() else None for p in protected} == protected_bytes
         assert not [e for e in events if e[0] in ('a621', 'a60a', 'a622')], events
-        await memory_state('2.57', 2)  # Missing a202 metadata is NOT proof of stopped audio.
+        await memory_state(firmware_version(), 2)  # Missing a202 metadata is NOT proof of stopped audio.
         source_bytes()
         print(f'{transport}: dropped={sorted(before_tables - after_tables)}; events={events}', flush=True)
         assert http.catalog('all/song')['total'] == 0
@@ -157,13 +158,13 @@ async def exercise(transport):
 
 
 async def main():
-    assert os.environ.get('CI_DISPOSABLE') == '1' and os.environ.get('FW_VERSION') == '2.57'
-    admitted = commands((ROOT / 'usr/bin/mq_player').read_bytes(), '2.57')['admitted']
+    require_acceptance('library-reset')
+    admitted = commands((ROOT / 'usr/bin/mq_player').read_bytes(), firmware_version())['admitted']
     assert '0621' in admitted and '0800' not in admitted
     source_bytes()
     for transport in ('tcp', 'ws'):
         await exercise(transport)
-    print('LIBRARY RESET PASSED V2.57: dedicated command, scope, reboot and recovery', flush=True)
+    print(f'LIBRARY RESET PASSED V{firmware_version()}: dedicated command, scope, reboot and recovery', flush=True)
 
 
 if __name__ == '__main__':

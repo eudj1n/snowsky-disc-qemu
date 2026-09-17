@@ -4,6 +4,7 @@ Run only inside a disposable emulator. Uses stock commands, never writes guest D
 or memory directly. Leaves playback paused, restores play mode/favorite state,
 and does not change volume.
 """
+from tests.integration.profile import (capability)
 import asyncio
 import inspect
 import json
@@ -192,7 +193,7 @@ async def exercise(client, transport):
         favorite_added = True
         favorites = await call(client.library, 'playlist_tracks', 0, '我的最爱')
         assert favorites['total'] == 1 and favorites['items'][0].get('songName') == ordered[2]['title'], favorites
-        if version == '2.57':
+        if capability('favorite_positions'):
             await selected(0, 6, expected=ordered[2]['title'])
         else:
             try:
@@ -207,7 +208,7 @@ async def exercise(client, transport):
         await send(client, '0104', '0000')
         await snapshot(client, lambda s: s.get('love') is False)
         favorite_added = False
-        passed('built-in favorites read and ' + ('selection' if version == '2.57' else 'unsupported selection guard'))
+        passed('built-in favorites read and ' + ('selection' if capability('favorite_positions') else 'unsupported selection guard'))
 
         # Notifications from physical controls, with no intervening state query.
         await selected(0)

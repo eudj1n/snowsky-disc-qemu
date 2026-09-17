@@ -69,7 +69,9 @@ cd snowsky-disc-qemu
 ./run.sh view
 ```
 
-V2.57 is the default. Setup verifies and extracts the firmware, builds the shims,
+The reviewed default is selected by `firmware/active-version` (currently V2.57);
+`FW_VERSION` in `.env` can pin an installation to a reviewed version. See
+[firmware profiles](docs/FIRMWARE_PROFILES.md). Setup verifies and extracts the firmware, builds the shims,
 prepares the emulated SD card, and saves the OTA path in `.env`. Boot starts the
 firmware processes and writes screen captures to `shots/`.
 

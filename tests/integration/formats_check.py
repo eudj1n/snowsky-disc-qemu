@@ -1,4 +1,5 @@
 """V2.57 CUE/DSF/DFF metadata and positional selection on disposable media."""
+from tests.integration.profile import (version as firmware_version, require_acceptance)
 import asyncio
 import hashlib
 import os
@@ -140,15 +141,14 @@ async def exercise(transport):
 
 
 async def main():
-    if os.environ.get('CI_DISPOSABLE') != '1' or os.environ.get('FW_VERSION') != '2.57':
-        raise RuntimeError('format acceptance requires disposable V2.57')
-    with PlayerMemory(ROOT, '2.57'):
+    require_acceptance('formats')
+    with PlayerMemory(ROOT, firmware_version()):
         pass
     sources()
     folder = generate(ROOT / 'tmp/sdcard')
     hashes = {p: hashlib.sha256(p.read_bytes()).hexdigest() for p in folder.iterdir()}
     async with connection('tcp') as client:
-        with PlayerMemory(ROOT, '2.57') as memory:
+        with PlayerMemory(ROOT, firmware_version()) as memory:
             await scan(client, memory)
     for transport in ('tcp', 'ws'):
         await exercise(transport)
@@ -157,11 +157,11 @@ async def main():
         p.unlink()
     folder.rmdir()
     async with connection('tcp') as client:
-        with PlayerMemory(ROOT, '2.57') as memory:
+        with PlayerMemory(ROOT, firmware_version()) as memory:
             await scan(client, memory)
         assert (await call(client.tracks))['total'] == 3
     sources()
-    print('FORMAT CHECK PASS V2.57 TCP/WS: CUE/DSF/DFF metadata and identity; sources restored', flush=True)
+    print(f'FORMAT CHECK PASS V{firmware_version()} TCP/WS: CUE/DSF/DFF metadata and identity; sources restored', flush=True)
 
 
 if __name__ == '__main__':

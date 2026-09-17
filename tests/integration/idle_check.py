@@ -1,4 +1,5 @@
 """Bounded idle-power research on a disposable V2.57 guest, never a LAN bridge."""
+from tests.integration.profile import (version as firmware_version, profile as firmware_profile, main_os_version, require_acceptance, diagnostic)
 import asyncio
 import argparse
 import json
@@ -15,7 +16,7 @@ from tests.integration.queue_check import connection, http_client
 from tests.integration.queue_reads_check import prepare
 from tests.integration.storage_check import ui
 from research.diagnostics.player_memory import PlayerMemory
-from firmware.profile import load_profile, validate
+from firmware.profile import validate
 from emulator.runtime.keys import Device, Buttons
 from tests.integration.guest_check import capture
 from emulator.runtime.peripherals import Peripherals
@@ -29,9 +30,8 @@ def save_logs(label):
 
 
 def require_disposable():
-    if os.environ.get('CI_DISPOSABLE') != '1' or os.environ.get('FW_VERSION') != '2.57':
-        raise RuntimeError('idle acceptance requires disposable V2.57')
-    validate(ROOT, load_profile('2.57'))
+    require_acceptance('idle')
+    validate(ROOT, firmware_profile())
 
 
 def configure(power_save):
@@ -49,15 +49,10 @@ def configure(power_save):
 
 
 def power_snapshot(memory):
-    fields = {'screen': ('83a755', 1), 'mode': ('83a759', 1),
-              'idle_limit': ('83a75c', 4), 'marker': ('83a760', 1),
-              'usb_detected': ('83a768', 1),
-              'sleep_limit': ('83a76c', 4), 'connected': ('898950', 4),
-              'sleep_counter': ('899140', 2), 'idle_counter': ('899142', 2),
-              'previous_marker': ('899147', 1)}
+    fields = diagnostic('power')
     result = {k: memory.word(a, n) for k, (a, n) in fields.items()}
-    context = memory.word('83dfc4')
-    result['state'] = memory.integer(context + 0x48) if context else None
+    context = memory.word(diagnostic('keys.player_context'))
+    result['state'] = memory.integer(context + int(diagnostic('keys.state_offset'), 16)) if context else None
     result['power_request'] = (ROOT / 'emu/power-request').read_bytes()[:1].decode()
     return result
 
@@ -80,7 +75,7 @@ async def watch(memory, seconds, label, client=None):
         if client and elapsed - last_query >= 5:
             # Read-only activity, not a fabricated touch/heartbeat or mutation retry.
             try:
-                assert (await call(client.settings))['soc_version'] == 257
+                assert (await call(client.settings))['soc_version'] == main_os_version()
                 print(label, 'settings reply', round(elapsed, 2), flush=True)
             except (OSError, ConnectionError):
                 print(label, 'read unavailable during shutdown', flush=True)
@@ -146,7 +141,7 @@ async def usb_power_check():
     controls = Peripherals(device)
     buttons = Buttons(ROOT, device)
     assert not controls.snapshot()['usb_connected'], 'Expected fresh disconnected fixture'
-    with PlayerMemory(ROOT, '2.57') as memory:
+    with PlayerMemory(ROOT, firmware_version()) as memory:
         async with connection('tcp') as client:
             await call(client.set_play_mode, 2)
             await call(client.play_all, 3, 'CI Album')
@@ -207,7 +202,7 @@ async def usb_power_check():
 async def exercise(transport, shutdown):
     device = Device(ROOT)
     buttons = Buttons(ROOT, device)
-    with PlayerMemory(ROOT, '2.57') as memory:
+    with PlayerMemory(ROOT, firmware_version()) as memory:
         async with connection(transport) as client:
             await call(client.set_play_mode, 2)
             await call(client.play_all, 3, 'CI Album')
@@ -254,7 +249,7 @@ async def exercise(transport, shutdown):
                 quiet_trace(await watch(memory, 135, f'{transport}/quiet-paused'))
             if shutdown:
                 return
-            assert (await call(client.settings))['soc_version'] == 257
+            assert (await call(client.settings))['soc_version'] == main_os_version()
             assert (await snapshot(client, lambda s: s['state'] == 1))['song'] == paused['song']
             print(transport, 'same connection survives quiet screen timeout', flush=True)
         async with connection(transport) as client:
@@ -287,7 +282,7 @@ async def recover(transport):
     await wait_for(lambda: device.transition is None, 'explicit local boot', 100)
     assert device.error is None and device.running(), device.status()
     async with connection(transport) as client:
-        assert (await call(client.settings))['soc_version'] == 257
+        assert (await call(client.settings))['soc_version'] == main_os_version()
         assert (await call(client.tracks))['total'] == 3
         queue = http_client(transport).catalog('curlist/song')
         print(transport, 'explicit boot, fresh handshake/settings/catalog/queue', queue, flush=True)
@@ -300,16 +295,16 @@ async def recover(transport):
             current = await call(client.now_playing)
         except TimeoutError:
             current = None
-        with PlayerMemory(ROOT, '2.57') as memory:
-            context = memory.word('83dfc4')
+        with PlayerMemory(ROOT, firmware_version()) as memory:
+            context = memory.word(diagnostic('keys.player_context'))
             assert context, 'Missing local player after boot'
             runtime = power_snapshot(memory)
-            runtime['metadata_suppressed'] = memory.integer(context + 0x50)
+            runtime['metadata_suppressed'] = memory.integer(context + int(diagnostic('keys.metadata_suppressed_offset'), 16))
         print(transport, 'fresh playback after boot', current, runtime, flush=True)
         if current is None:
             assert runtime['metadata_suppressed'] == 1, runtime
         assert runtime['mode'] == 8 and runtime['power_request'] == '0', runtime
-        assert (await call(client.settings))['soc_version'] == 257
+        assert (await call(client.settings))['soc_version'] == main_os_version()
         assert await call(client.play_mode) == 2
         # A NEW deliberate test action after inspecting fresh state, not an
         # automatic reconnect retry of the old selection/toggle.
@@ -328,7 +323,7 @@ async def main(phase='all'):
     require_disposable()
     configure(300 if phase in ('usb', 'power') else 0)
     subprocess.run(['bash', '/repo/emulator/scripts/20_boot.sh'], check=True)
-    assert ui({'index': (0x8e1721, 1), 'seconds': (0x83a650, 4)}) == {'index': 3, 'seconds': 120}
+    assert ui(diagnostic('ui.display')) == {'display_index': 3, 'display_seconds': 120}
     await prepare()
     if phase == 'usb':
         await usb_power_check()
@@ -354,7 +349,7 @@ async def main(phase='all'):
         save_logs(f'{transport}-reboot')
     for path in Path('/work/idle-shots').glob('*.png'):
         shutil.copyfile(path, Path('/work/shots') / path.name)
-    print(f'IDLE CHECK PASS V2.57 phase={phase}: TCP/WS lifecycle', flush=True)
+    print(f'IDLE CHECK PASS V{firmware_version()} phase={phase}: TCP/WS lifecycle', flush=True)
 
 
 if __name__ == '__main__':

@@ -55,7 +55,7 @@ class FirmwareCITests(unittest.TestCase):
 
     def test_download_errors_do_not_print_secret(self):
         output = io.StringIO()
-        with patch('sys.argv', ['fetch', '/tmp/unused']), patch('sys.stderr', output), \
+        with patch('sys.argv', ['fetch', '/tmp/unused', '--version', '2.57']), patch('sys.stderr', output), \
              patch.dict('os.environ', {'FIRMWARE_V257_URL': 'https://private.invalid/secret'}), \
              patch('firmware.tools.fetch_firmware.fetch', side_effect=ValueError('https://private.invalid/secret')):
             with self.assertRaises(SystemExit) as result:
@@ -78,7 +78,7 @@ class FirmwareCITests(unittest.TestCase):
                 package.writestr(f'update/main_os/ota_v257/rootfs.squashfs.{index:04d}.{"a" * 64}.enc', b'test')
         data.seek(0)
         with tempfile.TemporaryDirectory() as directory:
-            extract_chunks(data, directory)
+            extract_chunks(data, directory, '2.57')
             self.assertEqual(len(list(Path(directory).iterdir())), 77)
 
     def test_v240_archive_cannot_be_selected_as_v257(self):
@@ -86,3 +86,18 @@ class FirmwareCITests(unittest.TestCase):
             with self.assertRaises(ValueError):
                 extract_chunks(archive(), directory, '2.57')
             self.assertFalse(list(Path(directory).iterdir()))
+
+    def test_selected_generic_url_is_removed_before_download(self):
+        env = {'FIRMWARE_URL': 'https://example.invalid/selected',
+               'FIRMWARE_V240_URL': 'https://example.invalid/old',
+               'FIRMWARE_V257_URL': 'https://example.invalid/current'}
+        def download(url, destination, version):
+            import os
+            self.assertEqual(url, 'https://example.invalid/selected')
+            self.assertEqual(version, '2.57')
+            self.assertFalse(any(key in os.environ for key in env))
+        with patch.dict('os.environ', env, clear=True), \
+             patch('sys.argv', ['fetch', '/tmp/unused', '--version', '2.57']), \
+             patch('firmware.tools.fetch_firmware.fetch', side_effect=download) as fetch:
+            main()
+            fetch.assert_called_once()
