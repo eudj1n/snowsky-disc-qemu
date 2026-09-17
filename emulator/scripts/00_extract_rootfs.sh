@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Verify and extract the selected exact firmware into a NEW rootfs.
-# FW_VERSION defaults to 2.57. Use a separate work volume for each version.
+# FW_VERSION defaults to firmware/active-version. Use a separate work volume for each version.
 # Never replace an existing rootfs or print the OTA password.
 set -euo pipefail
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"; source "$HERE/lib.sh"

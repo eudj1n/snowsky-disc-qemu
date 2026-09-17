@@ -11,8 +11,9 @@ export PYTHONPATH="$REPO${PYTHONPATH:+:$PYTHONPATH}"
 SHOTS="${SHOTS:-$WORK/shots}"         # captured PNG framebuffers
 QEMU="${QEMU:-/usr/bin/qemu-mipsel-static}"
 
-# Explicit runtime selection, defaulting to the released baseline. Pins live in firmware/v*.json.
-FW_VERSION="${FW_VERSION:-2.57}"
+# Explicit runtime selection, defaulting to the reviewed active build. Pins live in firmware/v*.json.
+export FW_VERSION="${FW_VERSION:-$(cat "$REPO/firmware/active-version")}"
+firmware_supports(){ python3 -B -m firmware.profile supports "$1" --version "$FW_VERSION"; }
 verify_firmware(){ python3 -B -m firmware.profile validate "$ROOTFS" --version "$FW_VERSION"; }
 
 # Screen geometry (360x360 round panel, 32bpp; virtual y = 3 sub-buffers).

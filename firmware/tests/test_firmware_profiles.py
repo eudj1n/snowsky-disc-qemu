@@ -7,7 +7,7 @@ import tempfile
 import unittest
 from unittest.mock import patch
 
-from firmware.profile import PROFILES, apply_key_patch, identify_player, load_profile, patch_state, validate
+from firmware.profile import PROFILES, available_versions, apply_key_patch, identify_player, load_profile, patch_state, validate
 from firmware.tools.firmware_extract import extract
 from firmware.tools.firmware_inventory import plaintext_digest
 
@@ -81,12 +81,13 @@ class ProfileTests(unittest.TestCase):
             validate(self.root, self.profile)
 
     def test_unknown_profile_rejected(self):
-        for version in ('../../other', '2.99', '257'):
-            with self.assertRaises(ValueError):
-                load_profile(version)
+        with patch('firmware.profile.PROFILES', self.root):
+            for version in ('../../other', '2.99', '257'):
+                with self.assertRaises(ValueError):
+                    load_profile(version)
 
     def test_profiles_match_inventory(self):
-        for version in ('2.40', '2.57'):
+        for version in available_versions():
             profile = load_profile(version)
             inventory = json.loads((PROFILES / f'inventory/v{version}.json').read_text())
             self.assertEqual(profile['rootfs_sha256'], inventory['rootfs']['sha256'])

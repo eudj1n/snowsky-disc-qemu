@@ -139,10 +139,11 @@ gh workflow run firmware.yml --ref 2.x
 
 Paste the direct HTTPS ZIP download URL at the hidden prompt; do not pass it as a
 command argument or put it in `.env`, YAML, docs or a chat. The workflow has no
-version selector and exposes only the active profile's `FIRMWARE_V257_URL`.
+version selector: it reads `firmware/active-version` and passes only the profile's
+`url_secret` (currently `FIRMWARE_V257_URL`) as `FIRMWARE_URL` to the download step.
 The unused historical secret may remain stored for archival work, but is not
-passed to current CI jobs. The workflow's version and secret are checked against
-the default runtime profile by `tests/unit/test_ci_pins.py`.
+passed to current CI jobs. `tests/unit/test_ci_pins.py` checks this selection and
+the trusted-branch policy. See [profile selection](FIRMWARE_PROFILES.md).
 Version, rootfs size/hash, chunk count and exact binary/patch fingerprints are in
 `firmware/v<version>.json`; no direct download URL is committed.
 

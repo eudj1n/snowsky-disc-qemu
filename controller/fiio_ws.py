@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """Async FiiO Link client over the emulator WebSocket bridge (requires aiohttp)."""
 import argparse
+from controller.compatibility import require
 import asyncio
 import contextlib
 import json
@@ -160,8 +161,7 @@ class WSClient:
         payload = index_payload(index, list_type, name)
         if list_type == 6:
             version = (await self.settings())['soc_version']
-            if version != 257:
-                raise ValueError('favorite positions require DISC V2.57; V2.40 needs an internal ID absent from the list response')
+            require(version, 'favorite_positions')
         await self.send('0100', payload)
 
     async def play_queue_index(self, index):
@@ -178,16 +178,14 @@ class WSClient:
         """Custom list/track selection with fresh HTTP preflight; never replay."""
         command = playlist_command(position, index, expected_name)
         version = (await self.settings()).get('soc_version')
-        if type(version) is not int or version != 257:
-            raise ValueError('custom playlist playback requires DISC V2.57')
+        require(version, 'playlist_playback')
         await asyncio.to_thread(verify_playlist, http, position, index, expected_name)
         await self.send(*command)
 
     async def play_genre(self, genre, index=None, *, album=None, http):
         command = genre_command(genre, index, album)
         version = (await self.settings()).get('soc_version')
-        if type(version) is not int or version != 257:
-            raise ValueError('genre playback requires DISC V2.57')
+        require(version, 'genre_playback')
         await asyncio.to_thread(verify_genre, http, genre, index, album)
         await self.send(*command)
 
@@ -195,16 +193,14 @@ class WSClient:
         """Type-7 artist/scoped-album playback; same guards as the TCP client."""
         command = artist_command(artist, index, album)
         version = (await self.settings()).get('soc_version')
-        if type(version) is not int or version != 257:
-            raise ValueError('scoped artist playback requires DISC V2.57')
+        require(version, 'artist_playback')
         await asyncio.to_thread(verify_artist, http, artist, index, album)
         await self.send(*command)
 
     async def play_folder(self, path, index=None, *, http, expected_name=None):
         command = folder_command(path, index, expected_name)
         version = (await self.settings()).get('soc_version')
-        if type(version) is not int or version != 257:
-            raise ValueError('folder playback requires DISC V2.57')
+        require(version, 'folder_playback')
         await asyncio.to_thread(verify_folder, http, path, index, expected_name)
         await self.send(*command)
 

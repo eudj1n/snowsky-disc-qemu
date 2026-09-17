@@ -65,6 +65,10 @@ or rewrite past validation results. V2.40 is no longer an ongoing release gate.
 The OTA monitor does not promote or retire firmware automatically. See
 [OTA.md](OTA.md) for issue tracking and [CI.md](CI.md) for release gates.
 
+Selection, profile fields and the independent controller contract are described in
+[Firmware selection and compatibility](FIRMWARE_PROFILES.md). Change the active
+default only in `firmware/active-version`, after candidate validation.
+
 ## 1. Intake and provenance — no execution
 
 Record the original archive name, public vendor release page (when confirmed), main

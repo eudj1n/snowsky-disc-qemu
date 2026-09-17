@@ -1,4 +1,5 @@
 """Natural EOF acceptance on disposable media; never inject next/seek/EOF."""
+from tests.integration.profile import (version as firmware_version, require_acceptance)
 import asyncio
 import hashlib
 import os
@@ -46,7 +47,7 @@ def make_fixture():
 
 
 async def index(client, expected):
-    with PlayerMemory(ROOT, '2.57') as memory:
+    with PlayerMemory(ROOT, firmware_version()) as memory:
         await scan(client, memory)
     assert (await call(client.tracks))['total'] == expected
 
@@ -134,7 +135,7 @@ async def exercise(transport):
             assert queue['total'] == 3
             assert [item['name'] for item in queue['items']] == order
             assert queue['mark'] == positions[-1]
-            runtime = memory_snapshot(ROOT, '2.57')
+            runtime = memory_snapshot(ROOT, firmware_version())
             assert runtime['player_state'] == (3 if mode in (0, 4) else 1)
             print(f'{transport} mode={mode}: PASS positions={positions}, '
                   f'player_state={runtime["player_state"]}, queue mark={queue["mark"]}, '
@@ -156,9 +157,8 @@ async def exercise(transport):
 
 
 async def main():
-    if os.environ.get('CI_DISPOSABLE') != '1' or os.environ.get('FW_VERSION') != '2.57':
-        raise RuntimeError('natural EOF acceptance requires disposable V2.57')
-    with PlayerMemory(ROOT, '2.57'):
+    require_acceptance('track-end')
+    with PlayerMemory(ROOT, firmware_version()):
         pass
     sources()
     fixture = make_fixture()
@@ -173,7 +173,7 @@ async def main():
     async with connection('tcp') as client:
         await index(client, 3)
     sources()
-    print('NATURAL EOF CHECK PASS V2.57 TCP/WS; source bytes and original catalog restored', flush=True)
+    print(f'NATURAL EOF CHECK PASS V{firmware_version()} TCP/WS; source bytes and original catalog restored', flush=True)
 
 
 if __name__ == '__main__':

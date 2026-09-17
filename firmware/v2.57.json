@@ -30,10 +30,14 @@
       "double": "0x83a793",
       "hold": "0x83a794",
       "player_context": "0x83dfc4",
-      "state_offset": "0x48"
+      "state_offset": "0x48",
+      "metadata_suppressed_offset": "0x50"
     },
     "network": {
-      "tcp_allowlist": {"table": "0x6d84e0", "count": 111},
+      "tcp_allowlist": {
+        "table": "0x6d84e0",
+        "count": 111
+      },
       "ready": "0x8781b8",
       "ip": "0x8781a8",
       "storage_type": "0x898d2c",
@@ -42,13 +46,182 @@
         "0502": "0x83a3f4",
         "0201": "0x83a3f8",
         "volume_device": "0x898dd4"
-      }
+      },
+      "expected_callbacks": {
+        "0502": "0x4ed814",
+        "0201": "0x4ed84c",
+        "volume_device": "0x4e9d24"
+      },
+      "connected": "0x898950",
+      "scan_stop": "0x85fbdc",
+      "reset_slot": "0x83a56c",
+      "reset_handler": "0x4f0814"
     },
     "http": {
       "table": "0x6d2580",
       "count": 17,
       "server": "0x4c0f90",
       "callback": "0x4c15a8"
+    },
+    "ui": {
+      "storage": {
+        "auto": [
+          8627664,
+          4
+        ],
+        "sd": [
+          8628000,
+          4
+        ],
+        "modal": [
+          9301646,
+          1
+        ],
+        "locked": [
+          9312053,
+          1
+        ]
+      },
+      "display": {
+        "display_index": [
+          9312033,
+          1
+        ],
+        "display_seconds": [
+          8627792,
+          4
+        ]
+      }
+    },
+    "preferences": {
+      "gapless": [
+        "0647",
+        "PLAY_GAP",
+        8628118,
+        9013856,
+        8627844,
+        5185068
+      ],
+      "folder_jump": [
+        "0687",
+        "FOLDER_JUMP",
+        8628117,
+        9013764,
+        8627756,
+        5184600
+      ],
+      "replay_gain": [
+        "0718",
+        "SYS_REPLAY_GAIN",
+        8628122,
+        9013868,
+        8627856,
+        5185396
+      ],
+      "artist_class_type": [
+        "0648",
+        "ARTIST_CLASS_TYPE",
+        8628120,
+        9014576,
+        8627848,
+        5185232
+      ],
+      "track_display": [
+        "064d",
+        "TRACK_DISPLAY",
+        8628125,
+        9013880,
+        8627764,
+        5184760
+      ],
+      "list_oper_mode": [
+        "064e",
+        "LIST_OPER_MODE",
+        8628132,
+        null,
+        8627768,
+        5184920
+      ]
+    },
+    "power": {
+      "screen": [
+        "83a755",
+        1
+      ],
+      "mode": [
+        "83a759",
+        1
+      ],
+      "idle_limit": [
+        "83a75c",
+        4
+      ],
+      "marker": [
+        "83a760",
+        1
+      ],
+      "usb_detected": [
+        "83a768",
+        1
+      ],
+      "sleep_limit": [
+        "83a76c",
+        4
+      ],
+      "connected": [
+        "898950",
+        4
+      ],
+      "sleep_counter": [
+        "899140",
+        2
+      ],
+      "idle_counter": [
+        "899142",
+        2
+      ],
+      "previous_marker": [
+        "899147",
+        1
+      ]
     }
-  }
+  },
+  "capabilities": [
+    "usb_power",
+    "display_fixture",
+    "discovery",
+    "image_route",
+    "theme_styles",
+    "favorite_positions",
+    "sd_hotplug"
+  ],
+  "acceptance": [
+    "full",
+    "queue",
+    "queue-reads",
+    "settings",
+    "themes",
+    "preferences",
+    "playlists",
+    "library",
+    "library-delete",
+    "scan-cancel",
+    "library-reset",
+    "track-end",
+    "formats",
+    "discovery",
+    "idle",
+    "idle-usb",
+    "storage",
+    "awake"
+  ],
+  "full_scenarios": [
+    "library",
+    "formats",
+    "track-end",
+    "scan-cancel",
+    "library-reset",
+    "storage",
+    "preferences"
+  ]
 }

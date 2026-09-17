@@ -1,16 +1,16 @@
 """V2.57 disposable CI display-time fixture; never patch guest memory."""
+from tests.integration.profile import (profile as firmware_profile, require_acceptance, diagnostic)
 import argparse
 import os
 import sqlite3
 import time
 
-from tests.integration.storage_check import ROOT, Device, load_profile, validate, ui
+from tests.integration.storage_check import ROOT, Device, validate, ui
 
 
 def run(configure):
-    if os.environ.get('CI_DISPOSABLE') != '1' or os.environ.get('FW_VERSION') != '2.57':
-        raise RuntimeError('Requires the disposable V2.57 CI stack')
-    validate(ROOT, load_profile('2.57'))
+    require_acceptance('awake')
+    validate(ROOT, firmware_profile())
     database = ROOT / 'usr/data/fiio/db/sysconfig.db'
     if configure:
         if Device(ROOT).processes():
@@ -26,7 +26,7 @@ def run(configure):
             assert db.execute('SELECT LIGTH_ON_TIME FROM SYSCONFIG WHERE ID=1').fetchone() == (7,)
         deadline = time.monotonic() + 10
         while True:
-            values = ui({'display_index': (0x8e1721, 1), 'display_seconds': (0x83a650, 4)})
+            values = ui(diagnostic('ui.display'))
             if values == {'display_index': 7, 'display_seconds': 65535}:
                 print(f'CI display-time readback: {values}', flush=True)
                 return

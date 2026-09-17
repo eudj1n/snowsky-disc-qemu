@@ -1,4 +1,5 @@
 """V2.57 scan cancellation on disposable generated media, never user libraries."""
+from tests.integration.profile import (version as firmware_version, require_acceptance, diagnostic)
 import asyncio
 import hashlib
 import io
@@ -33,7 +34,7 @@ def digest(path):
 
 
 async def scan(client, memory, *, cancel=False):
-    assert memory.word('8989d4') == 0
+    assert memory.word(diagnostic('network.scan_running')) == 0
     await flush(client)
     await call(client.scan_library)
     deadline = time.monotonic() + 60
@@ -50,7 +51,7 @@ async def scan(client, memory, *, cancel=False):
         events.append((tag, value))
         if cancel and requested is None and tag == 'a622' and value >= 1:
             assert ('a60a', 15) in events, events
-            assert memory.word('8989d4') == 1, 'scan finished before cancellation'
+            assert memory.word(diagnostic('network.scan_running')) == 1, 'scan finished before cancellation'
             await call(client.cancel_library_scan)
             requested = value
         if tag == 'a60a' and value == 5:
@@ -61,10 +62,10 @@ async def scan(client, memory, *, cancel=False):
     if cancel:
         assert requested is not None, 'did not cancel an active scan'
     deadline = time.monotonic() + 5
-    while memory.word('8989d4') and time.monotonic() < deadline:
+    while memory.word(diagnostic('network.scan_running')) and time.monotonic() < deadline:
         await asyncio.sleep(.05)
-    assert memory.word('8989d4') == 0
-    assert memory.word('85fbdc') == 0, 'finished scan must clear stop flag'
+    assert memory.word(diagnostic('network.scan_running')) == 0
+    assert memory.word(diagnostic('network.scan_stop')) == 0, 'finished scan must clear stop flag'
     print(f'Scan cancel={cancel}, request at count={requested}; events={events}', flush=True)
     return events
 
@@ -90,14 +91,14 @@ async def catalog(client, http):
 async def exercise(transport):
     async with connection(transport) as client:
         http = http_client(transport)
-        with PlayerMemory(ROOT, '2.57') as memory:
+        with PlayerMemory(ROOT, firmware_version()) as memory:
             before = await catalog(client, http)
             await flush(client)
             await call(client.cancel_library_scan)  # Idle cancellation: no library reset.
             idle = await collect(client, .3)
             assert not [e for e in idle if e[0] in ('a60a', 'a622')], idle
-            assert memory.word('85fbdc') == 1
-            assert memory.word('8989d4') == 0
+            assert memory.word(diagnostic('network.scan_stop')) == 1
+            assert memory.word(diagnostic('network.scan_running')) == 0
             assert await catalog(client, http) == before
 
             events = await scan(client, memory, cancel=True)
@@ -112,10 +113,10 @@ async def exercise(transport):
 
 
 async def run():
-    assert os.environ.get('CI_DISPOSABLE') == '1' and os.environ.get('FW_VERSION') == '2.57'
+    require_acceptance('scan-cancel')
     # Resolve and fingerprint the running guest before making the fixture.
-    with PlayerMemory(ROOT, '2.57') as memory:
-        assert memory.word('8989d4') == 0
+    with PlayerMemory(ROOT, firmware_version()) as memory:
+        assert memory.word(diagnostic('network.scan_running')) == 0
     sd = ROOT / 'tmp/sdcard'
     originals = {sd / 'Кириллица Ё й' / name for name in NAMES}
     assert {p for p in sd.rglob('*') if p.is_file()} == originals
@@ -132,7 +133,7 @@ async def run():
     # Establish a complete baseline first; cancellation must be tested as rescan,
     # not just an empty first scan. No direct database or memory writes.
     async with connection('tcp') as client:
-        with PlayerMemory(ROOT, '2.57') as memory:
+        with PlayerMemory(ROOT, firmware_version()) as memory:
             await scan(client, memory)
         assert len(await catalog(client, http_client('tcp'))) == COUNT + len(NAMES)
     for transport in ('tcp', 'ws'):
@@ -143,11 +144,11 @@ async def run():
         path.unlink()
     folder.rmdir()
     async with connection('tcp') as client:
-        with PlayerMemory(ROOT, '2.57') as memory:
+        with PlayerMemory(ROOT, firmware_version()) as memory:
             await scan(client, memory)
         expected = {'/' + str(p.relative_to(ROOT)) for p in originals}
         assert await catalog(client, http_client('tcp')) == expected
-    print('SCAN CANCELLATION PASSED V2.57: idle, partial rescan, recovery, source preservation', flush=True)
+    print(f'SCAN CANCELLATION PASSED V{firmware_version()}: idle, partial rescan, recovery, source preservation', flush=True)
 
 
 if __name__ == '__main__':

@@ -117,6 +117,11 @@ component; cross-component scenarios and generated media live under `tests/`.
   not on an OTA announcement. Preserve inventories and analysis; see `docs/PORTING.md`.
   V2.40 runtime/diagnostic profiles remain temporarily, but hosted CI runs only V2.57;
   their removal is a separate implementation task, not part of this policy change.
+- Read `docs/FIRMWARE_PROFILES.md` before adding firmware. The single active default
+  is `firmware/active-version`; `.env` may pin a reviewed override. Keep runtime
+  capabilities, diagnostic addresses and acceptance selection in the runtime profile.
+  Controller compatibility is independent and selected from device `soc_version`,
+  never local `FW_VERSION`. Unknown versions do not inherit reviewed capabilities.
 - `FW_VERSION` selects a reviewed runtime profile (default `2.57`, opt-in `2.40`).
   Setup/boot validate product/version and six binary fingerprints before execution.
   Key patch validation normalizes only the permitted instruction, then checks the full

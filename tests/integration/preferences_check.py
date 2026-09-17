@@ -3,6 +3,7 @@
 No firmware patches, DB writes or guest-memory writes. The rejected commands
 are individually identified stock UI settings, never a sweep of unknown tags.
 """
+from tests.integration.profile import (version as firmware_version, require_acceptance, diagnostic)
 import asyncio
 from pathlib import Path
 
@@ -14,28 +15,20 @@ from research.diagnostics.inspect_link_commands import commands
 from research.diagnostics.player_memory import PlayerMemory
 
 
-# name: (local-only tag, SQLite column, config byte, runtime word or None,
-#        callback slot, callback). All addresses are V2.57-only.
-FIELDS = {
-    'gapless': ('0647', 'PLAY_GAP', 0x83a796, 0x898a60, 0x83a684, 0x4f1e2c),
-    'folder_jump': ('0687', 'FOLDER_JUMP', 0x83a795, 0x898a04, 0x83a62c, 0x4f1c58),
-    'replay_gain': ('0718', 'SYS_REPLAY_GAIN', 0x83a79a, 0x898a6c, 0x83a690, 0x4f1f74),
-    'artist_class_type': ('0648', 'ARTIST_CLASS_TYPE', 0x83a798, 0x898d30, 0x83a688, 0x4f1ed0),
-    'track_display': ('064d', 'TRACK_DISPLAY', 0x83a79d, 0x898a78, 0x83a634, 0x4f1cf8),
-    'list_oper_mode': ('064e', 'LIST_OPER_MODE', 0x83a7a4, None, 0x83a638, 0x4f1d98),
-}
+def fields():
+    return diagnostic('preferences')
 
 
 def saved():
     return {name: db(f'SELECT {field[1]} FROM SYSCONFIG')[0][0]
-            for name, field in FIELDS.items()}
+            for name, field in fields().items()}
 
 
 async def verify(client, expected):
     assert saved() == expected
-    with PlayerMemory(version='2.57') as player:
+    with PlayerMemory(version=firmware_version()) as player:
         for name, value in expected.items():
-            _, _, config, runtime, slot, callback = FIELDS[name]
+            _, _, config, runtime, slot, callback = fields()[name]
             assert player.word(hex(slot)) == callback, name
             assert player.word(hex(config), 1) == value, name
             if runtime is not None:
@@ -51,7 +44,7 @@ async def exercise(client, label):
     original = saved()
     before_volume = (await call(client.settings))['currentVolume']
     await verify(client, original)
-    for name, (tag, *_) in FIELDS.items():
+    for name, (tag, *_) in fields().items():
         # Always request a DIFFERENT valid value: matching a default proves nothing.
         assert original[name] in ((0, 1, 2) if name == 'replay_gain' else (0, 1))
         value = (original[name] + 1) % (3 if name == 'replay_gain' else 2)
@@ -69,9 +62,10 @@ async def exercise(client, label):
 
 
 async def main():
-    admitted = commands(Path('/work/rootfs/usr/bin/mq_player').read_bytes(), '2.57')['admitted']
+    require_acceptance('preferences')
+    admitted = commands(Path('/work/rootfs/usr/bin/mq_player').read_bytes(), firmware_version())['admitted']
     assert '0501' in admitted
-    assert all(field[0] not in admitted for field in FIELDS.values())
+    assert all(field[0] not in admitted for field in fields().values())
     with Client(timeout=5) as client:
         await exercise(client, 'TCP')
     await asyncio.sleep(2)

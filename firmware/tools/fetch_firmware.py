@@ -13,7 +13,7 @@ import tempfile
 import urllib.parse
 import urllib.request
 import zipfile
-from firmware.profile import DEFAULT_VERSION, load_profile
+from firmware.profile import DEFAULT_VERSION, load_profile, available_versions
 
 MAX_DOWNLOAD = 1024 * 1024 * 1024
 MAX_CHUNK = 4 * 1024 * 1024
@@ -74,15 +74,15 @@ def fetch(url, destination, version=DEFAULT_VERSION):
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('destination', type=Path)
-    parser.add_argument('--version', default=DEFAULT_VERSION, choices=['2.40', '2.57'])
+    parser.add_argument('--version', default=DEFAULT_VERSION, choices=available_versions())
     args = parser.parse_args()
     # Pop so any later subprocess cannot inherit the URL. Never render an exception
     # originating in urllib: even its message/traceback can contain a signed URL.
     profile = load_profile(args.version)
     secret = profile['url_secret']
-    url = os.environ.pop(secret, '')
+    url = os.environ.pop('FIRMWARE_URL', '') or os.environ.pop(secret, '')
     # The workflow may provide both versions; never retain the unused URL either.
-    for name in ('FIRMWARE_V240_URL', 'FIRMWARE_V257_URL'):
+    for name in [key for key in os.environ if re.fullmatch(r'FIRMWARE_V\d+_URL', key)]:
         os.environ.pop(name, None)
     if not url:
         parser.exit(1, f'{secret} secret is missing\n')

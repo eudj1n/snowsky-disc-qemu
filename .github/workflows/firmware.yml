@@ -12,10 +12,6 @@ jobs:
     if: github.ref == 'refs/heads/2.x'
     runs-on: ubuntu-24.04
     timeout-minutes: 25
-    env:
-      # Keep in sync with firmware.profile.DEFAULT_VERSION and its URL secret.
-      # Promotion is a reviewed change, never an automatic OTA update.
-      FW_VERSION: '2.57'
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -33,9 +29,14 @@ jobs:
         run: |
           docker build --tag snowsky-disc-qemu-ci docker
           docker run --rm --network none --volume "$PWD:/repo:ro" snowsky-disc-qemu-ci bash /repo/ci/test.sh
+      - name: Select reviewed active firmware
+        id: firmware
+        run: |
+          echo "FW_VERSION=$(cat firmware/active-version)" >> "$GITHUB_ENV"
+          echo "url_secret=$(python3 -m firmware.profile get url_secret)" >> "$GITHUB_OUTPUT"
       - name: Download private firmware input
         env:
-          FIRMWARE_V257_URL: ${{ secrets.FIRMWARE_V257_URL }}
+          FIRMWARE_URL: ${{ secrets[steps.firmware.outputs.url_secret] }}
         run: |
           mkdir "$RUNNER_TEMP/snowsky-disc-ota"
           python3 -B -m firmware.tools.fetch_firmware "$RUNNER_TEMP/snowsky-disc-ota" --version "$FW_VERSION"

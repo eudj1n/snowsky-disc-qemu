@@ -3,13 +3,16 @@
 import argparse
 import hashlib
 import json
+import os
 from pathlib import Path
 import re
 import struct
 
-DEFAULT_VERSION = '2.57'
-
 PROFILES = Path(__file__).resolve().parent
+DEFAULT_VERSION = (PROFILES / 'active-version').read_text().strip()
+# Extra full-suite dispatch implemented by ci/integration.sh. New scenarios need code.
+FULL_SCENARIOS = frozenset({'library', 'formats', 'track-end', 'scan-cancel',
+                            'library-reset', 'storage', 'preferences'})
 
 
 def load_profile(version=DEFAULT_VERSION):
@@ -18,7 +21,47 @@ def load_profile(version=DEFAULT_VERSION):
     path = PROFILES / f'v{version}.json'
     if not path.is_file():
         raise ValueError('Unknown firmware version; add a reviewed profile first')
-    return json.loads(path.read_text())
+    profile = json.loads(path.read_text())
+    if profile.get('version') != version:
+        raise ValueError('Firmware profile identity mismatch')
+    for key in ('capabilities', 'acceptance', 'full_scenarios'):
+        if not isinstance(profile.get(key), list) or any(type(x) is not str for x in profile[key]):
+            raise ValueError(f'Missing or invalid reviewed {key}')
+    if not set(profile['full_scenarios']) <= FULL_SCENARIOS:
+        raise ValueError('Full suite contains a scenario without a runner')
+    if not set(profile['full_scenarios']) <= set(profile['acceptance']):
+        raise ValueError('Full suite includes an unreviewed scenario')
+    return profile
+
+
+def available_versions():
+    # Only explicit runtime profiles, never inventory or vendor announcements.
+    return sorted(p.stem[1:] for p in PROFILES.glob('v*.json')
+                  if re.fullmatch(r'v\d+\.\d{2}', p.stem))
+
+
+def selected_version():
+    return os.environ.get('FW_VERSION') or DEFAULT_VERSION
+
+
+def selected_profile():
+    return load_profile(selected_version())
+
+
+def value(profile, key):
+    result = profile
+    for part in key.split('.'):
+        result = result[part]
+    return result
+
+
+def supports(profile, feature):
+    return feature in profile.get('capabilities', [])
+
+
+def require_scenario(profile, scenario):
+    if scenario not in profile.get('acceptance', []):
+        raise ValueError(f"Unreviewed acceptance scenario {scenario!r} for V{profile['version']}")
 
 
 def patch_state(data, profile):
@@ -85,7 +128,7 @@ def require_v240_player(binary):
 
 def identify_player(data, version=None):
     """Select reviewed diagnostic addresses by full stock/patched fingerprint."""
-    for candidate in ([version] if version is not None else ['2.40', '2.57']):
+    for candidate in ([version] if version is not None else available_versions()):
         profile = load_profile(candidate)
         try:
             patch_state(data, profile)
@@ -99,14 +142,23 @@ def identify_player(data, version=None):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('operation', choices=['validate', 'patch-keys'])
-    parser.add_argument('rootfs', type=Path)
-    parser.add_argument('--version', default=DEFAULT_VERSION)
+    parser.add_argument('operation', choices=['validate', 'patch-keys', 'get', 'supports', 'require-scenario'])
+    parser.add_argument('target')
+    parser.add_argument('--version', default=selected_version())
     args = parser.parse_args()
     profile = load_profile(args.version)
-    validate(args.rootfs, profile)
+    if args.operation == 'get':
+        result = value(profile, args.target)
+        print(json.dumps(result) if isinstance(result, (dict, list, bool)) else result)
+        raise SystemExit(0)
+    if args.operation == 'supports':
+        raise SystemExit(0 if supports(profile, args.target) else 1)
+    if args.operation == 'require-scenario':
+        require_scenario(profile, args.target)
+        raise SystemExit(0)
+    validate(args.target, profile)
     if args.operation == 'patch-keys':
-        changed = apply_key_patch(args.rootfs / 'usr/bin/mq_player', profile)
+        changed = apply_key_patch(Path(args.target) / 'usr/bin/mq_player', profile)
         print(f'V{args.version}: keys enabled ({"patched" if changed else "already patched"})')
     else:
         print(f'V{args.version}: product and six binary fingerprints verified')

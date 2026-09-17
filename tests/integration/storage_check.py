@@ -2,6 +2,7 @@
 
 Uses stock hotplug and UI events. Never changes firmware memory or library rows.
 """
+from tests.integration.profile import (version as firmware_version, profile as firmware_profile, require_acceptance, diagnostic)
 import argparse
 import hashlib
 import os
@@ -13,21 +14,18 @@ import subprocess
 import sys
 import time
 
-from firmware.profile import load_profile, validate
+from firmware.profile import validate
 from research.diagnostics.player_memory import PlayerMemory, load_segments, parse_maps, guest_base, read_memory
 from emulator.runtime.keys import Device, Buttons
 from tests.integration.guest_check import ROOT, capture, tap
 from controller.fiio_link import Client
 from tests.fixtures.fixture import NAMES
 
-FIELDS = {'auto': (0x83a5d0, 4), 'sd': (0x83a720, 4),
-          'modal': (0x8dee8e, 1), 'locked': (0x8e1735, 1)}
-
 
 def ui(fields=None):
     binary = ROOT / 'usr/bin/mq_ui'
     data = binary.read_bytes()
-    assert hashlib.sha256(data).hexdigest() == load_profile('2.57')['binaries']['usr/bin/mq_ui']
+    assert hashlib.sha256(data).hexdigest() == firmware_profile()['binaries']['usr/bin/mq_ui']
     pids = [p for p in Device(ROOT).processes()
             if Path(f'/proc/{p}/comm').read_text().strip() == 'mq_ui']
     assert len(pids) == 1, pids
@@ -36,7 +34,7 @@ def ui(fields=None):
     base = guest_base(maps, load_segments(data), binary.stat())
     with (proc / 'mem').open('rb', buffering=0) as memory:
         return {name: int.from_bytes(read_memory(memory, maps, base, address, size), 'little')
-                for name, (address, size) in (FIELDS if fields is None else fields).items()}
+                for name, (address, size) in (diagnostic('ui.storage') if fields is None else fields).items()}
 
 
 def wait_for(predicate, description, timeout=15):
@@ -51,7 +49,7 @@ def wait_for(predicate, description, timeout=15):
 
 def event(action):
     assert action in ('add', 'remove')
-    with PlayerMemory(ROOT, '2.57') as player:
+    with PlayerMemory(ROOT, firmware_version()) as player:
         # One chroot-scoped, fingerprinted PID; never multicast or kernel PID 0.
         assert any(row.split()[1:3] == ['15', str(player.pid)] for row in
                    Path('/proc/net/netlink').read_text().splitlines()[1:])
@@ -114,7 +112,7 @@ def scan(label, remove=True):
     event('add')
     wait_for(lambda: starts() == before + 1, f'{label}: worker started')
     wait_for(matches, f'{label}: exact SD/SQLite/TCP match', 30)
-    with PlayerMemory(ROOT, '2.57') as player:
+    with PlayerMemory(ROOT, firmware_version()) as player:
         wait_for(lambda: player.word(player.profile['diagnostics']['network']['scan_running']) == 0,
                  'worker finished')
     time.sleep(1)  # Stock completion notification -> result button layout.
@@ -123,8 +121,8 @@ def scan(label, remove=True):
 
 
 def run():
-    assert os.environ.get('FW_VERSION') == '2.57', 'UI addresses are V2.57-only'
-    validate(ROOT, load_profile('2.57'))
+    require_acceptance('storage')
+    validate(ROOT, firmware_profile())
     sd = ROOT / 'tmp/sdcard'
     relative = Path('Кириллица Ё й/CI Tone — Проверка.wav')
     original = sd / relative
@@ -176,7 +174,7 @@ def run():
     time.sleep(2)
     assert starts() == before, 'Earlier blocked insertion unexpectedly replayed'
     scan('after-unlock', remove=False); dismiss()
-    print('V2.57: cold-cache remount, modal/lock gates, Unicode add/rename/delete and repeated scans passed.',
+    print(f'V{firmware_version()}: cold-cache remount, modal/lock gates, Unicode add/rename/delete and repeated scans passed.',
           flush=True)
 
 

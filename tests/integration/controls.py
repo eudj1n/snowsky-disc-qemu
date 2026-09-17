@@ -1,4 +1,5 @@
 """Physical events with protocol/sysfs readback, only in a disposable scanned guest."""
+from tests.integration.profile import (version as firmware_version, main_os_version, capability, diagnostic)
 from pathlib import Path
 import os
 import socket
@@ -54,21 +55,17 @@ def main():
     buttons = Buttons(root, device)
     buttons.reset()
     check_idle_key_cpu(device)
-    version = os.environ.get('FW_VERSION', '2.57')
+    version = firmware_version()
     network = network_snapshot(root, version)
     assert network['firmware'] == version and network['ready'] == 1, network
     assert network['storage_type'] == 1 and network['scan_running'] == 0, network
     assert network['dangerous_caps_dropped'] and network['capabilities']['NoNewPrivs'] == '1'
-    expected_callbacks = {
-        '2.40': {'0502': '0x4e4744', '0201': '0x4e477c', 'volume_device': '0x4e0fdc'},
-        '2.57': {'0502': '0x4ed814', '0201': '0x4ed84c', 'volume_device': '0x4e9d24'},
-    }
-    assert network['callbacks'] == expected_callbacks[version], network
+    assert network['callbacks'] == diagnostic('network.expected_callbacks'), network
     assert network['ip'] == socket.gethostbyname(socket.gethostname()), network
     table = routes((root / 'usr/bin/mq_player').read_bytes(), version)
-    assert len(table) == (17 if version == '2.57' else 16)
+    assert len(table) == diagnostic('http.count')
     assert any(r['method'] == 'GET' and r['path'] == '/log/' for r in table)
-    assert any(r['method'] == 'POST' and r['path'] == '/image/' for r in table) == (version == '2.57')
+    assert any(r['method'] == 'POST' and r['path'] == '/image/' for r in table) == capability('image_route')
     assert not any('websocket' in r['path'] for r in table)
     with sqlite3.connect(root / 'usr/data/fiio/db/sysconfig.db') as db:
         assignment = db.execute('SELECT KEY_SINGLE_CLICK_SLE, KEY_DOUBLE_CLICK_SLE, '
@@ -88,7 +85,7 @@ def main():
     with client:
         assert client.handshake() == '0306'
         settings = client.settings()
-        assert settings['soc_version'] == int(os.environ.get('FW_VERSION', '2.57').replace('.', ''))
+        assert settings['soc_version'] == main_os_version()
         initial = settings['currentVolume']
         assert initial > 0
         assert key_snapshot(root, version)['volume'] == initial

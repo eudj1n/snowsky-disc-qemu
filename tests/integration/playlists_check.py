@@ -1,4 +1,5 @@
 """Custom-playlist playback on disposable V2.57 generated media only."""
+from tests.integration.profile import (version as firmware_version)
 import asyncio
 from pathlib import Path
 
@@ -123,7 +124,7 @@ async def exercise(transport):
 async def main():
     for transport in ('tcp', 'ws'):
         await exercise(transport)
-    print('CUSTOM PLAYLIST ACCEPTANCE PASSED V2.57', flush=True)
+    print(f'CUSTOM PLAYLIST ACCEPTANCE PASSED V{firmware_version()}', flush=True)
 
 
 if __name__ == '__main__':

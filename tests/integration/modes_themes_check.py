@@ -1,4 +1,5 @@
 """Stock mode/codec/theme acceptance, ONLY on a disposable integration guest."""
+from tests.integration.profile import (capability)
 import asyncio
 import argparse
 import os
@@ -137,7 +138,7 @@ def themes(host, label):
         assert reply.headers['flag-in-use'] == '1'
         assert reply.body == (ROOT / row['PATH'].lstrip('/')).read_bytes()
         assert [r['POS_ID'] for r in theme_rows() if r['IS_SYSTEM'] and r['USE']] == [slot]
-    if os.environ.get('FW_VERSION') == '2.57':
+    if capability('theme_styles'):
         system_edits(http, label)
     source = Path('/work/theme-ci.png')
     source.write_bytes(png())
@@ -152,7 +153,7 @@ def themes(host, label):
     assert (row['ALPHA'], row['LOCK_TIME'], row['LOCK_DATE'], row['LOCK_BATTERY'],
             row['LOCK_ID3'], row['FRONT_COLOR'], row['USE']) == (70, 1, 1, 1, 0, 0x0c2238, 1)
     assert (ROOT / row['PATH'].lstrip('/')).read_bytes() == source.read_bytes()
-    if os.environ.get('FW_VERSION') == '2.57':
+    if capability('theme_styles'):
         # Explicitly probe time both off/on, including analog clock, rather than
         # inferring firmware coupling from the app's observed clock time=1 POST.
         for style in CUSTOM_STYLES:

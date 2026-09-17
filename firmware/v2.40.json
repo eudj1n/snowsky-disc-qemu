@@ -41,6 +41,11 @@
         "0502": "0x82e634",
         "0201": "0x82e638",
         "volume_device": "0x88cc44"
+      },
+      "expected_callbacks": {
+        "0502": "0x4e4744",
+        "0201": "0x4e477c",
+        "volume_device": "0x4e0fdc"
       }
     },
     "http": {
@@ -49,5 +54,13 @@
       "server": "0x4b9720",
       "callback": "0x4b9d38"
     }
-  }
+  },
+  "capabilities": [],
+  "acceptance": [
+    "full",
+    "queue",
+    "queue-reads",
+    "settings"
+  ],
+  "full_scenarios": []
 }

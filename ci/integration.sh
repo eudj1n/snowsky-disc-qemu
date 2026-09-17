@@ -5,23 +5,20 @@
 set -euo pipefail
 cd "$(dirname "${BASH_SOURCE[0]}")/.."
 export OTA_DIR="$(cd "${1:?path to OTA chunks}" && pwd)"
-export FW_VERSION="${FW_VERSION:-2.57}"
+export FW_VERSION="${FW_VERSION:-$(cat firmware/active-version)}"
 CI_SCENARIO="${CI_SCENARIO:-full}"
 CI_IDLE_PHASE="${CI_IDLE_PHASE:-all}"
 case "$CI_IDLE_PHASE" in all|quiet|power|usb) ;; *) echo 'Unknown CI_IDLE_PHASE' >&2; exit 2;; esac
 case "$CI_SCENARIO" in full|queue|queue-reads|settings|themes|preferences|playlists|library|library-delete|scan-cancel|library-reset|track-end|formats|discovery|idle|idle-usb) ;; *) echo 'Unknown CI_SCENARIO' >&2; exit 2;; esac
-if [[ ( "$CI_SCENARIO" = library || "$CI_SCENARIO" = library-delete ) && "$FW_VERSION" != 2.57 ]]; then
-  echo 'Genre/folder acceptance requires active firmware V2.57' >&2
-  exit 2
-fi
-if [[ "$CI_SCENARIO" = themes && "$FW_VERSION" != 2.57 ]]; then
-  echo 'Custom-style acceptance requires active firmware V2.57' >&2
-  exit 2
-fi
-if [[ "$CI_SCENARIO" = preferences || "$CI_SCENARIO" = playlists || "$CI_SCENARIO" = scan-cancel || "$CI_SCENARIO" = library-reset || "$CI_SCENARIO" = track-end || "$CI_SCENARIO" = formats || "$CI_SCENARIO" = discovery || "$CI_SCENARIO" = idle || "$CI_SCENARIO" = idle-usb ]] && [ "$FW_VERSION" != 2.57 ]; then
-  echo 'Preference/playlist/scan-cancel/library-reset/track-end/formats/discovery/idle acceptance requires active firmware V2.57' >&2
-  exit 2
-fi
+export EMU_IMAGE="${EMU_IMAGE:-snowsky-disc-qemu-ci}"
+profile() { docker run --rm --network none -v "$PWD:/repo:ro" "$EMU_IMAGE" python3 -B -m firmware.profile "$@" --version "$FW_VERSION"; }
+profile require-scenario "$CI_SCENARIO"
+CI_CAPABILITIES="$(profile get capabilities)"
+CI_ACCEPTANCE="$(profile get acceptance)"
+CI_FULL_SCENARIOS="$(profile get full_scenarios)"
+has_feature() { [[ "$CI_CAPABILITIES" == *\"$1\"* ]]; }
+has_scenario() { [[ "$CI_ACCEPTANCE" == *\"$1\"* ]]; }
+full_scenario() { [[ "$CI_FULL_SCENARIOS" == *\"$1\"* ]]; }
 CI_TMP="$(mktemp -d "${TMPDIR:-/tmp}/snowsky-disc-ci.XXXXXXXX")"
 CI_ID="snowsky-disc-ci-$(basename "$CI_TMP" | tr '[:upper:].' '[:lower:]-')"
 export EMU_IMAGE="${EMU_IMAGE:-snowsky-disc-qemu-ci}"
@@ -71,14 +68,14 @@ if [ "$CI_SCENARIO" = idle-usb ]; then
   compose exec -T emu python3 -B -m tests.integration.idle_check --phase usb
   exit 0
 fi
-if [ "$FW_VERSION" = 2.57 ]; then
+if has_feature display_fixture; then
   compose exec -T emu python3 -B -m tests.integration.awake_check --configure
 fi
 compose exec -T emu bash /repo/emulator/scripts/20_boot.sh
-if [ "$FW_VERSION" = 2.57 ]; then
+if has_feature display_fixture; then
   compose exec -T emu python3 -B -m tests.integration.awake_check
 fi
-if [[ "$FW_VERSION" = 2.57 && ( "$CI_SCENARIO" = full || "$CI_SCENARIO" = discovery ) ]]; then
+if has_feature discovery && [[ "$CI_SCENARIO" = full || "$CI_SCENARIO" = discovery ]]; then
   compose exec -T emu python3 -B -m tests.integration.discovery_check
   if [ "$CI_SCENARIO" = discovery ]; then exit 0; fi
 fi
@@ -148,19 +145,31 @@ compose exec -T emu python3 -B -m tests.integration.remote_control
 compose exec -T emu python3 -B -m tests.integration.queue_check
 compose exec -T emu python3 -B -m tests.integration.queue_reads_check
 compose exec -T emu python3 -B -m tests.integration.http_check
-if [ "$FW_VERSION" = 2.57 ]; then
+if has_scenario playlists; then
   compose exec -T emu python3 -B -m tests.integration.playlists_check
 fi
 compose exec -T emu python3 -B -m tests.integration.settings_check
 compose exec -T emu python3 -B -m tests.integration.modes_themes_check
 compose exec -T emu bash /repo/tests/integration/confinement.sh
-if [ "$FW_VERSION" = 2.57 ]; then
+if full_scenario library; then
   compose exec -T emu python3 -B -m tests.integration.library_check
+fi
+if full_scenario formats; then
   compose exec -T emu python3 -B -m tests.integration.formats_check
+fi
+if full_scenario track-end; then
   compose exec -T emu python3 -B -m tests.integration.track_end_check
+fi
+if full_scenario scan-cancel; then
   compose exec -T emu python3 -B -m tests.integration.scan_cancel_check
+fi
+if full_scenario library-reset; then
   compose exec -T emu python3 -B -m tests.integration.library_reset_check
+fi
+if full_scenario storage; then
   compose exec -T emu python3 -B -m tests.integration.storage_check --disposable
+fi
+if full_scenario preferences; then
   compose exec -T emu python3 -B -m tests.integration.preferences_check
 fi
 
