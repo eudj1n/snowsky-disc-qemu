@@ -10,7 +10,8 @@ GAIN_LABELS = {0: 'Low', 1: 'High'}
 FILTER_LABELS = {0: 'FAST_LL', 1: 'SLOW_LL', 2: 'SLOW_PC',
                  3: 'FAST_PC', 4: 'NON_OS', 5: 'Wideband_FF'}
 # V2.57 device labels keyed by NETWORK enum (unlike gain/filter helper values).
-# This does not map the app's separate BYPASS control. See docs/PEQ.md.
+# App BYPASS sends 240, but V2.57 only echoes it and reapplies the previous mode.
+# It is deliberately excluded from supported writes. See docs/PEQ.md.
 EQ_LABELS = {255: 'Off', 0: 'Jazz', 2: 'Rock', 4: 'R&B', 6: 'HIP-HOP',
              1: 'Pop', 3: 'Dance', 5: 'Classical', 8: 'Retro',
              9: 'Sibilance attenuation 1', 10: 'Sibilance attenuation 2',

@@ -183,12 +183,66 @@ original-image/metadata readback; no automatic mutation retry. Direct/proxy
 V2.57 themes acceptance and 297 Python / 23 JS tests pass. Capability
 consolidation is complete; see `docs/DISC_CAPABILITIES.md`.
 
+PEQ #9 paused by owner after capture 225312 on 2026-09-17; continue only when
+the owner resumes. No new capture, reconnect/write or scheduled follow-up now.
+Current physical Custom 10 state/restoration is unknown after Auto EQ Save and
+disconnect (6851 shows master -4.6). First resumed step: reconnect/read Custom
+10 before Reset, without repeating Save; then reset/readback/Off. Share/login
+is explicitly deferred. See the pause checkpoint in `docs/PROTOCOL_RESEARCH.md`.
+Owner subsequently requested committing/pushing this #9 checkpoint on
+`codex/api-sacd-peq-checkpoints`; the research/device work remains paused.
+
 API follow-ups #8/#9 resumed 2026-09-17. `CI_SCENARIO=peq` checks all 21
 reviewed preset codes and ten User slots through TCP/WS, including isolation and
 restoration; `EQ_LABELS` uses network codes and stock device labels. Fresh slot
 Q=.71 becomes .7 on persistence/reload: back up a reloaded profile. Physical
-BYPASS/device/local Save/Auto EQ captures are deferred by owner until suitable
-Wi-Fi, in this same workstream; `docs/PEQ.md` has the capture sequence.
+`203157` captures factory presets, USER1–USER10, BYPASS then Off. Owner-confirmed
+BYPASS sends 0690/00F0 and gets a639/00F0, but fingerprinted V2.57 has no 240
+case: it reapplies/persists the previous mode and echoes the input. Keep public
+240 writes rejected; this is not proof of DSP bypass. Initial/final Off match
+without a final fresh getter. Follow-up `214316` captures compact-hex `0678`
+(first gain -3.4), master -6.1, device Save `0626` and Reset `0675`; `214151`
+is an earlier frequency-edit/reset attempt. Save callback `4ef604` is a no-op;
+edits persist directly. Reset clears current User bands/master and persists.
+Owner navigated back, not a true reconnect; no edited-band getter before Reset.
+Final mode in that capture is USER10 (approved disposable slot), not Off.
+See `docs/PEQ.md`; no repeat full sweep.
+Local Save `215948` creates app card `p1`/`p2` without extra captured device
+mutation; fresh reselection reads first gain -3.5/master -6.5, then Reset without
+Save restores the baseline. PCAP ends 22:02:48, before 22:03 Apply screenshots
+6838/6839; latter shows shifted/duplicate frequency labels without wire evidence.
+Follow-up `221148` captures Apply's malformed bulk range/7-byte format; V2.57
+decodes 8-byte records. Disposable replay moves the first-band cut to position 9
+(32 Hz/-3.5), while first band becomes 32768 Hz/+6.2/Q179.2. On reselection,
+loader `45d66c` resets the invalid first band to 32 Hz/0/Q.71 (persisted .7),
+leaving the misplaced last cut and duplicate 32 Hz. Both phases are pinned.
+Keep the JSON helper, never copy that bulk payload. Physical post-Apply getter
+is still absent, but final Reset/baseline reread/Off are captured. No repeat
+Save/Apply sweep. Local menu offers Deleted/Share/Rename (`IMG_6842`); owner
+reports Share says “Please login first” and explicitly excludes that flow.
+Defer Share/account to #11, with no further captures/login requests. Remaining
+editor/Auto EQ checks should use only flows available without an account.
+Owner confirms Custom 10 Advanced settings offers only Peak in Filter type
+(iOS 4.6.0); no repeat filter dropdown capture. Auto EQ screenshots 6843/6844
+confirm searchable measurements and separate FT1 entries by FIIO/oratory1990;
+owner reports thousands of entries. Do not enumerate the catalog or infer its
+upstream source. Target screenshot 6845 includes Harman over-ear 2018; owner
+reports a large target list without search. Capture 224117 shows only initial
+USER10/default reads and cover GET, no PEQ writes. Screenshot 6846 has FT1 +
+Harman selected but flat PEQ/visible zero gains; 6847 Save as offers device or
+personal, unconfirmed. Capture 224456/6848 shows Random replacing both selectors
+with Massdrop Nobel X / KRK SYSTEMS KNS 8400(Innerfidelity); red PEQ/visible gains
+stay zero and captured device traffic is read-only. Next test deterministic
+FT1 by FIIO/Harman Save as → device → Confirm in approved USER10, read back
+before Reset, then reset/readback/Off. Save-time generation remains unknown;
+account work stays excluded. Do not repeat Random or the full catalog audit.
+Follow-up 225312 has only two unanswered 0599 handshakes and TCP resets;
+owner reports disconnect after Save-result screenshot 6851 (nonzero bands,
+master -4.6). No Save/write/readback/cleanup is captured. Do not replay Save;
+first reconnect and read Custom 10 before Reset, then reset/readback/Off.
+Persistence and disconnect cause remain unknown; do not infer a firmware crash.
+Focused TCP/WS `peq` passes mismatch/recovery, correct JSON application,
+isolation/restoration; firmware-free checks pass 326 Python / 37 JavaScript.
 `CI_SCENARIO=sacd` requires explicit approved `CI_SACD_ISO`, makes a temporary
 copy, and is excluded from full/hosted CI. One stereo uncompressed DSD64 ISO
 indexes ten tracks; first/last catalog/queue/favorite selection works on TCP/WS.

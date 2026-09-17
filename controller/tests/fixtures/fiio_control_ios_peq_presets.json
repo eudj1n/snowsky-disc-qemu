@@ -1,0 +1,424 @@
+{
+  "source": "2026-09-17-203157.pcap",
+  "source_sha256": "e4344cc33bdb4b1fa67859f9d85252d7de06465c5c0f6883c0232fc271ca5945",
+  "firmware": 257,
+  "firmware_packet": 1464,
+  "packet_count": 1855,
+  "truncated_packets": 0,
+  "note": "Sanitized PEQ-only frames. Stock labels come from fingerprinted firmware, not an owner-supplied ordered app-label list. Owner confirms BYPASS immediately before final Off. No network identifiers, unrelated settings, track metadata, cover data or factory curves retained. Times are seconds from capture start; packet identifies completion of each Link frame. No final fresh 0639 getter or reconnect was captured. Echo of 240 does not establish supported BYPASS behavior.",
+  "unacknowledged_before_handshake": {
+    "packet": 1447,
+    "seconds": 8.075377,
+    "wire": "0690000c0000"
+  },
+  "initial_eq_read": {
+    "request": {
+      "packet": 1462,
+      "seconds": 9.785006,
+      "wire": "0639000c0000"
+    },
+    "reply": {
+      "packet": 1466,
+      "seconds": 10.004729,
+      "wire": "a639000C00FF"
+    }
+  },
+  "transitions": [
+    {
+      "value": 0,
+      "stock_label": "Jazz",
+      "owner_confirmed_app_label": null,
+      "request": {
+        "packet": 1553,
+        "seconds": 14.76021,
+        "wire": "0690000c0000"
+      },
+      "reply": {
+        "packet": 1555,
+        "seconds": 14.773988,
+        "wire": "a639000C0000"
+      }
+    },
+    {
+      "value": 1,
+      "stock_label": "Pop",
+      "owner_confirmed_app_label": null,
+      "request": {
+        "packet": 1567,
+        "seconds": 17.077208,
+        "wire": "0690000c0001"
+      },
+      "reply": {
+        "packet": 1569,
+        "seconds": 17.113441,
+        "wire": "a639000C0001"
+      }
+    },
+    {
+      "value": 2,
+      "stock_label": "Rock",
+      "owner_confirmed_app_label": null,
+      "request": {
+        "packet": 1581,
+        "seconds": 18.794321,
+        "wire": "0690000c0002"
+      },
+      "reply": {
+        "packet": 1583,
+        "seconds": 18.810591,
+        "wire": "a639000C0002"
+      }
+    },
+    {
+      "value": 3,
+      "stock_label": "Dance",
+      "owner_confirmed_app_label": null,
+      "request": {
+        "packet": 1595,
+        "seconds": 20.869748,
+        "wire": "0690000c0003"
+      },
+      "reply": {
+        "packet": 1597,
+        "seconds": 20.879807,
+        "wire": "a639000C0003"
+      }
+    },
+    {
+      "value": 4,
+      "stock_label": "R&B",
+      "owner_confirmed_app_label": null,
+      "request": {
+        "packet": 1609,
+        "seconds": 22.420772,
+        "wire": "0690000c0004"
+      },
+      "reply": {
+        "packet": 1611,
+        "seconds": 22.439267,
+        "wire": "a639000C0004"
+      }
+    },
+    {
+      "value": 5,
+      "stock_label": "Classical",
+      "owner_confirmed_app_label": null,
+      "request": {
+        "packet": 1623,
+        "seconds": 23.887595,
+        "wire": "0690000c0005"
+      },
+      "reply": {
+        "packet": 1625,
+        "seconds": 23.902192,
+        "wire": "a639000C0005"
+      }
+    },
+    {
+      "value": 6,
+      "stock_label": "HIP-HOP",
+      "owner_confirmed_app_label": null,
+      "request": {
+        "packet": 1637,
+        "seconds": 25.387147,
+        "wire": "0690000c0006"
+      },
+      "reply": {
+        "packet": 1639,
+        "seconds": 25.401273,
+        "wire": "a639000C0006"
+      }
+    },
+    {
+      "value": 8,
+      "stock_label": "Retro",
+      "owner_confirmed_app_label": null,
+      "request": {
+        "packet": 1651,
+        "seconds": 26.770656,
+        "wire": "0690000c0008"
+      },
+      "reply": {
+        "packet": 1653,
+        "seconds": 26.788105,
+        "wire": "a639000C0008"
+      }
+    },
+    {
+      "value": 9,
+      "stock_label": "Sibilance attenuation 1",
+      "owner_confirmed_app_label": null,
+      "request": {
+        "packet": 1665,
+        "seconds": 28.121246,
+        "wire": "0690000c0009"
+      },
+      "reply": {
+        "packet": 1667,
+        "seconds": 28.13638,
+        "wire": "a639000C0009"
+      }
+    },
+    {
+      "value": 10,
+      "stock_label": "Sibilance attenuation 2",
+      "owner_confirmed_app_label": null,
+      "request": {
+        "packet": 1679,
+        "seconds": 29.604904,
+        "wire": "0690000c000A"
+      },
+      "reply": {
+        "packet": 1681,
+        "seconds": 29.618559,
+        "wire": "a639000C000A"
+      }
+    },
+    {
+      "value": 160,
+      "stock_label": "USER1",
+      "owner_confirmed_app_label": null,
+      "request": {
+        "packet": 1693,
+        "seconds": 30.988839,
+        "wire": "0690000c00A0"
+      },
+      "reply": {
+        "packet": 1695,
+        "seconds": 31.100047,
+        "wire": "a639000C00A0"
+      }
+    },
+    {
+      "value": 161,
+      "stock_label": "USER2",
+      "owner_confirmed_app_label": null,
+      "request": {
+        "packet": 1705,
+        "seconds": 32.288566,
+        "wire": "0690000c00A1"
+      },
+      "reply": {
+        "packet": 1707,
+        "seconds": 32.324833,
+        "wire": "a639000C00A1"
+      }
+    },
+    {
+      "value": 162,
+      "stock_label": "USER3",
+      "owner_confirmed_app_label": null,
+      "request": {
+        "packet": 1717,
+        "seconds": 33.872187,
+        "wire": "0690000c00A2"
+      },
+      "reply": {
+        "packet": 1719,
+        "seconds": 33.898077,
+        "wire": "a639000C00A2"
+      }
+    },
+    {
+      "value": 163,
+      "stock_label": "USER4",
+      "owner_confirmed_app_label": null,
+      "request": {
+        "packet": 1729,
+        "seconds": 35.189369,
+        "wire": "0690000c00A3"
+      },
+      "reply": {
+        "packet": 1731,
+        "seconds": 35.337397,
+        "wire": "a639000C00A3"
+      }
+    },
+    {
+      "value": 164,
+      "stock_label": "USER5",
+      "owner_confirmed_app_label": null,
+      "request": {
+        "packet": 1741,
+        "seconds": 36.556317,
+        "wire": "0690000c00A4"
+      },
+      "reply": {
+        "packet": 1743,
+        "seconds": 36.630835,
+        "wire": "a639000C00A4"
+      }
+    },
+    {
+      "value": 165,
+      "stock_label": "USER6",
+      "owner_confirmed_app_label": null,
+      "request": {
+        "packet": 1753,
+        "seconds": 38.05645,
+        "wire": "0690000c00A5"
+      },
+      "reply": {
+        "packet": 1755,
+        "seconds": 38.092393,
+        "wire": "a639000C00A5"
+      }
+    },
+    {
+      "value": 166,
+      "stock_label": "USER7",
+      "owner_confirmed_app_label": null,
+      "request": {
+        "packet": 1765,
+        "seconds": 39.273522,
+        "wire": "0690000c00A6"
+      },
+      "reply": {
+        "packet": 1767,
+        "seconds": 39.298199,
+        "wire": "a639000C00A6"
+      }
+    },
+    {
+      "value": 167,
+      "stock_label": "USER8",
+      "owner_confirmed_app_label": null,
+      "request": {
+        "packet": 1777,
+        "seconds": 40.607177,
+        "wire": "0690000c00A7"
+      },
+      "reply": {
+        "packet": 1779,
+        "seconds": 40.651235,
+        "wire": "a639000C00A7"
+      }
+    },
+    {
+      "value": 168,
+      "stock_label": "USER9",
+      "owner_confirmed_app_label": null,
+      "request": {
+        "packet": 1789,
+        "seconds": 42.05737,
+        "wire": "0690000c00A8"
+      },
+      "reply": {
+        "packet": 1791,
+        "seconds": 42.089886,
+        "wire": "a639000C00A8"
+      }
+    },
+    {
+      "value": 169,
+      "stock_label": "USER10",
+      "owner_confirmed_app_label": null,
+      "request": {
+        "packet": 1801,
+        "seconds": 43.540775,
+        "wire": "0690000c00A9"
+      },
+      "reply": {
+        "packet": 1803,
+        "seconds": 43.579798,
+        "wire": "a639000C00A9"
+      },
+      "reads": [
+        {
+          "packet": 1805,
+          "seconds": 43.581392,
+          "wire": "0629000c0000"
+        },
+        {
+          "packet": 1807,
+          "seconds": 43.582096,
+          "wire": "0628001000000009"
+        },
+        {
+          "packet": 1809,
+          "seconds": 43.613787,
+          "wire": "a629000C0000"
+        },
+        {
+          "packet": 1811,
+          "seconds": 43.625242,
+          "wire": "a628009C0000000900000020004700000000400047000000007D004700000000FA004700000001F4004700000003E8004700000007D000470000000FA000470000001F4000470000003E80004700"
+        }
+      ]
+    },
+    {
+      "value": 240,
+      "stock_label": null,
+      "owner_confirmed_app_label": "BYPASS",
+      "request": {
+        "packet": 1813,
+        "seconds": 45.141647,
+        "wire": "0690000c00F0"
+      },
+      "reply": {
+        "packet": 1815,
+        "seconds": 45.154965,
+        "wire": "a639000C00F0"
+      },
+      "reads": [
+        {
+          "packet": 1817,
+          "seconds": 45.156422,
+          "wire": "0629000c0000"
+        },
+        {
+          "packet": 1819,
+          "seconds": 45.157044,
+          "wire": "0628001000000009"
+        },
+        {
+          "packet": 1821,
+          "seconds": 45.166317,
+          "wire": "a629000C0000"
+        },
+        {
+          "packet": 1823,
+          "seconds": 45.179668,
+          "wire": "a628009C0000000900000020004600000000400046000000007D004600000000FA004600000001F4004600000003E8004600000007D000460000000FA000460000001F4000460000003E80004600"
+        }
+      ]
+    },
+    {
+      "value": 255,
+      "stock_label": "Off",
+      "owner_confirmed_app_label": "Off",
+      "request": {
+        "packet": 1825,
+        "seconds": 46.774872,
+        "wire": "0690000c00FF"
+      },
+      "reply": {
+        "packet": 1827,
+        "seconds": 46.791171,
+        "wire": "a639000C00FF"
+      },
+      "reads": [
+        {
+          "packet": 1829,
+          "seconds": 46.792799,
+          "wire": "0629000c0000"
+        },
+        {
+          "packet": 1831,
+          "seconds": 46.793646,
+          "wire": "0628001000000009"
+        },
+        {
+          "packet": 1833,
+          "seconds": 46.814246,
+          "wire": "a629000C0000"
+        },
+        {
+          "packet": 1835,
+          "seconds": 46.824414,
+          "wire": "a628009C0000000900000020004600000000400046000000007D004600000000FA004600000001F4004600000003E8004600000007D000460000000FA000460000001F4000460000003E80004600"
+        }
+      ]
+    }
+  ]
+}

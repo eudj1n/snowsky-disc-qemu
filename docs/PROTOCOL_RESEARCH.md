@@ -8,6 +8,44 @@ Umbrella tracker: [issue #10 — DISC protocol and FiiO Control coverage](https:
 Keep the issue's high-level checklist current alongside this detailed handoff;
 keep release-facing summaries in `CHANGELOG.md` short rather than duplicating research logs.
 
+## Paused by owner — PEQ checkpoint (2026-09-17, after capture 225312)
+
+Owner requested recording the current status and continuing later. Do not start
+new captures, reconnect attempts, device writes or scheduled follow-ups now.
+Issue #9 remains open; the completed umbrella checkpoint #10 stays closed.
+
+Completed this session: physical preset/BYPASS mapping, device edit/Save/Reset,
+local Save/Apply analysis, Peak-only editor confirmation, Auto EQ selector and
+Random observations. Local Apply's bulk-format mismatch is reproduced on V2.57;
+the existing JSON helper applies correctly. Focused TCP/WS `peq` and 326 Python /
+37 JavaScript tests passed. Later Auto EQ evidence adds sanitized fixtures/docs
+only; no production behavior was changed or further firmware acceptance claimed.
+Share says “Please login first” per owner and is explicitly deferred to #11.
+
+**Unresolved device state:** screenshot 6851 shows a nonzero Custom 10 profile
+and master −4.6 dB after Auto EQ Save, followed by owner-reported disconnect.
+Capture 225312 contains only two unanswered Link handshakes/TCP resets, not
+the Save, band readback or cleanup. The latest device profile and restoration
+are unknown. Earlier successful resets do not establish this latest state.
+
+**First action when the owner resumes:** capture reconnect and fresh Custom 10
+reads before Reset, without repeating Save/Random/Auto EQ selection. Then reset
+only approved Custom 10, verify via Off → Custom 10, and finish Off. If reconnect
+fails, retain the evidence and diagnose without replaying writes or silently
+rebooting. Continue Auto EQ save/application analysis only after resolving that
+state. No repeat preset sweep, full Local Apply capture, catalog enumeration or
+Share/login investigation is needed. Details and capture hashes: [PEQ](PEQ.md).
+
+At the initial pause, session changes were local and uncommitted. The owner
+subsequently requested committing/pushing the #9 checkpoint on
+`codex/api-sacd-peq-checkpoints`; research/device work remains paused.
+Raw captures/screenshots and decompilation stay ignored. This is not a release.
+After explicit owner confirmation, the pause status, completed findings,
+validation and exact resumption steps were published to GitHub issue #9;
+the body was read back and verified, and the issue remains open. Owner explicitly
+instructed leaving closed issue #10 unchanged. No code/docs commit or push was
+performed as part of this status update.
+
 ## API follow-ups #8 / #9 resumed (2026-09-17)
 
 Owner resumed both issues after the finalized local-protocol checkpoint below.
@@ -49,12 +87,92 @@ All raw evidence remains ignored under `work/api-8-9/`; the ISO, audio, private
 tags and captures are not published. The interactive emulator/media were not
 modified. Guest logs may contain private tags even when test summaries omit them.
 
-**Next for #9:** owner deferred phone captures until a suitable Wi-Fi connection
-is available; keep this workstream in the same branch. The short factory
-preset/Off/BYPASS capture comes first, followed by a backed-up disposable User
-slot for device/local Save, editor and Auto EQ scope. [PEQ.md](PEQ.md) records the
-sequence. Do not infer BYPASS from missing enum 7, overwrite personal presets,
-request credentials or reopen LAN exposure. Cloud/account remains #11.
+**Physical #9 follow-up:** `2026-09-17-203157.pcap` now captures all ten factory
+presets, USER1–USER10, BYPASS then Off. Owner identifies BYPASS as the penultimate
+action: `0690/00F0` → `a639/00F0`; Off is `00FF`. Fingerprinted V2.57 code has
+no 240 case: it reapplies/persists the previous selected mode and echoes 240.
+USER10 Q=.71 → .70 after BYPASS agrees with a profile reload, not proof of DSP
+bypass. Keep 240 rejected by public setters. Initial Off/final Off notification
+match, but no final fresh mode getter/reconnect or complete profile restoration
+was captured. Sanitized fixture/regression and details are in [PEQ.md](PEQ.md).
+
+**Device edit/Save/Reset #9:** newest `214316` captures USER10 first-band −3.4 dB
+at 32 Hz/Q .70, master −6.1 dB, Save-associated `0626/0000`, Reset `0675/0000`
+and complete reset-profile readback after Off → USER10. Earlier `214151` is a
+separate frequency-edit/reset attempt, not an overlapping part of the later
+capture. Owner chose Save → device and only navigated back; no physical
+reconnect or edited-band getter before Reset occurred. Final captured mode is
+USER10, not Off. Static V2.57: compact hex `0678` converts to the persisting JSON
+path and directs its immediate band reply locally; `0626` callback `4ef604`
+only returns zero; `0675` resets/persists the current User's ten bands/master.
+Fixture, screenshot hashes and detailed limits are in [PEQ.md](PEQ.md).
+Fresh disposable `peq` passes TCP/WS compact writes, SQLite persistence before
+Save, real reconnect, Save no-op, Reset without Save, complete default-profile
+readback/reload/reconnect, isolation and original profile/selection restoration.
+Full firmware-free validation: **324 Python / 37 JavaScript**, shell syntax and
+four shim builds. Logs are in ignored `work/peq-captures/`; no full/idle rerun.
+
+**Local Save #9:** `215948` plus `IMG_6833`–`6839` shows local card `p1`/`p2`,
+first-band −3.5/master −6.5 and fresh physical edited-profile reads after
+reselection. No extra device write accompanies local Save; no `0626` occurs.
+Reset without Save and full baseline readback are captured. PCAP ends at
+22:02:48, before the 22:03 Apply screenshots. Their apparent duplicate/shifted
+frequency labels lack device readback: do not infer corruption or UI-only error.
+Later `221148` captures Apply: master `0630/FFBF`, then bulk `0678` using the
+getter's range/ten-7-byte-band layout. The V2.57 setter expects 8-byte records;
+exact disposable replay moves the intended first-band cut to position 9.
+First-band readback/SQLite initially contain 32768 Hz/+6.2/Q179.2; reselection
+runs loader `45d66c`, restoring first-band defaults but retaining the misplaced
+last cut and duplicate 32 Hz. JSON helpers retain explicit
+positions. Physical post-Apply band reads are still absent, but final Reset,
+baseline reread and Off acknowledgement are present. No repeat full Apply
+capture is required; see [PEQ](PEQ.md#physical-local-apply-and-v257-format-mismatch-2026-09-17).
+Final focused `peq` passes on TCP/WS, including both mismatch stages, Reset
+recovery, correct JSON application, isolation and restoration; disposable cleanup
+exits 0 (`work/peq-captures/local-apply-final.log`). Two exploratory oracles
+conflated immediate and reselected state; exact staged assertions resolve them.
+Firmware-free checks pass **326 Python / 37 JavaScript**, shell syntax and four
+shim builds (`local-apply-unit.log`). Raw captures and decompilation stay ignored.
+
+**Local menu #9:** `IMG_6842` shows Deleted / Share / Rename on card `p1`/`p2`.
+Owner reports Share displays “Please login first” and explicitly excludes this
+flow. Defer Share/account work to #11 without more captures or login requests;
+no export format is established.
+
+**Editor #9:** owner confirms the Custom 10 advanced Filter type dropdown offers
+only Peak (iOS 4.6.0). This agrees with the reviewed type-zero update path; no
+additional filter dropdown capture is needed.
+
+**Auto EQ selector #9:** `IMG_6843`/`6844` show searchable measurement data,
+including Flat and distinct FiiO FT1 rows by FIIO/oratory1990. Owner reports
+thousands of entries; exact count/catalog source and generation remain unknown.
+Do not enumerate the full catalog. `IMG_6845` shows target choices including
+Flat, AutoEq in-ear, crinacle EARS + 711 Harman over-ear 2018, Diffuse Field 5128
+(-1 dB/oct), Harman in-ear 2019, Harman over-ear 2018 and HMS II.3 variants.
+Owner reports a large target list without search. `224117` captures the requested
+FT1/Harman selection through opening Save as: only initial USER10/default-band
+reads and cover GET, no captured PEQ mutation. `6846` shows flat red PEQ/visible
+zero gains despite purple/green graphs; `6847` offers Save to device (checked)
+and Save to personal, not confirmed. No generation or destination behavior is
+established. `224456`/`6848` then show Random replacing both selectors with
+Massdrop Nobel X and KRK SYSTEMS KNS 8400(Innerfidelity), while red PEQ/visible
+gains stay zero. Its Link request/reply sequence matches the read-only `224117`
+capture; no mutation or confirmed Save. Next capture FT1 by FIIO/Harman Save as
+→ device → Confirm, fresh USER10 readback before Reset, then reset/readback/Off.
+Only approved Custom 10 may be overwritten. See [PEQ](PEQ.md).
+
+**Auto EQ interrupted Save #9:** owner reports disconnect after the result
+screenshot. `6851` shows nonzero bands/master −4.6, but `225312` captures only
+two unanswered `0599` handshakes, followed by TCP resets; no Save/profile read
+or cleanup. Neither persistence nor failure of Save is established. Do not
+replay Save. Next capture restored connection and fresh Custom 10 reads before
+Reset, then reset/readback/Off. Cause of disconnect remains unknown.
+
+**Next for #9:** Auto EQ without an account and remaining editor bounds/rounding. No
+repeat preset or full device-Save sweep is needed; physical edited-profile
+reconnect remains unobserved, and exact app-label spelling is separate from
+stock device labels. Do not overwrite personal presets, request credentials or
+reopen LAN exposure. Cloud/account remains #11.
 
 ## Finalized local-protocol checkpoint
 
@@ -560,10 +678,11 @@ no capture is currently needed for those preferences.
   registration/sign-in. No account operations or new catalog capture now.
   Coordinate PEQ cloud/preset overlap with issue #9.
 
-- [ ] PEQ preset/BYPASS mapping, device/local Save flow, Auto EQ and app/catalog
-  scope: [issue #9](https://github.com/eudj1n/snowsky-disc-qemu/issues/9).
-  Owner explicitly split this larger task from the current screen/library audit;
-  preserve existing helpers, document visible gaps and resume separately.
+- [ ] Remaining PEQ editor, Auto EQ and app/catalog scope (Share/login deferred):
+  [issue #9](https://github.com/eudj1n/snowsky-disc-qemu/issues/9). Resumed on
+  2026-09-17; preset/BYPASS and device/local Save/Apply captures are analyzed
+  in the latest checkpoint above. Preserve JSON helpers and do not repeat the
+  completed captures.
 - [ ] Reorganize into emulator/viewer/controller plus shared firmware/research:
   [issue #7](https://github.com/eudj1n/snowsky-disc-qemu/issues/7). The agreed
   migration is separate from this protocol checkpoint; files have not moved.
