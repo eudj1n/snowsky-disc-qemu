@@ -4,8 +4,9 @@ This checkpoint tests stock indexing and protocol selection, not native DSD/DoP
 output or audible fidelity. Fixtures are generated locally: one 12-second WAV
 with a two-track UTF-8 CUE sheet, an eight-second stereo DSD64 DSF with ID3v2.3
 tags, and an uncompressed DSDIFF/DFF with a title. No downloaded music is needed.
-SACD ISO remains a separate, unvalidated source; it is not equivalent to DSF/DFF.
-Follow-up research is tracked in [issue #8](https://github.com/eudj1n/snowsky-disc-qemu/issues/8).
+SACD ISO is a separate source; it is not equivalent to DSF/DFF. The owner-approved
+stereo-image investigation resumed on 2026-09-17; see [SACD evidence and limits](SACD.md)
+and [issue #8](https://github.com/eudj1n/snowsky-disc-qemu/issues/8).
 
 ## Observed formats
 
@@ -114,8 +115,9 @@ favorites/files, restores the original mode, pauses a valid original album and
 rescans the original three tracks. Full integration runs it before natural EOF.
 No new Dockerfile/normal Compose setting or image-only experiment is required.
 
-Limits: one external UTF-8, single-file/two-track WAV CUE; one DSD64 stereo DSF
-and uncompressed DFF. Embedded/multi-file CUE, other text encodings, SACD ISO,
+Limits of this generated fixture: one external UTF-8, single-file/two-track WAV CUE;
+one DSD64 stereo DSF and uncompressed DFF. SACD ISO has a [separate opt-in scenario](SACD.md).
+Embedded/multi-file CUE, other text encodings,
 DST, higher DSD rates, full CUE seek/EOF boundaries and hardware audio need their
 own evidence. Current validation/failure history is in
 [the research checkpoint](PROTOCOL_RESEARCH.md#cue-dsd-investigation-2026-09-16).
