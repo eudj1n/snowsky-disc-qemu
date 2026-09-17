@@ -41,8 +41,6 @@ __pycache__/
 !/emulator/sdcard/.gitkeep
 !/emulator/sdcard/README.md
 
-# Historical viewer photo: provenance in viewer/assets/README.md.
-
 # JetBrains IDE
 .idea/
 *.iml

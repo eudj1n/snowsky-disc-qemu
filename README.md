@@ -287,7 +287,7 @@ source layout, dependency boundaries and test locations.
 | Area | Start here | Source |
 | --- | --- | --- |
 | **Emulator** | [How it works](docs/EMULATION.md) · [Current results](docs/STATUS.md) | `run.sh`, `emulator/scripts/`, `emulator/shims/`, `docker/` |
-| **Viewer** | [Viewer guide](docs/VIEWER.md) · [Touch](docs/TOUCH.md) · [Buttons](docs/KEYS.md) | `viewer/server.py`, `viewer/static/*.js`, `viewer/assets/` |
+| **Viewer** | [Viewer guide](docs/VIEWER.md) · [Touch](docs/TOUCH.md) · [Buttons](docs/KEYS.md) | `viewer/server.py`, `viewer/static/` |
 | **Media** | [Audio](docs/AUDIO.md) · [Library](docs/MEDIA_LIBRARY.md) · [Settings](docs/SETTINGS.md) | `emulator/sdcard/`, `emulator/runtime/audio.py` |
 | **Controller** | [Capabilities](docs/DISC_CAPABILITIES.md) · [Network](docs/NETWORK.md) · [Protocol](docs/PROTOCOL.md) · [WebSocket](docs/WEBSOCKET.md) · [Opt-in phone LAN bridge](docs/DISCOVERY.md) | `controller/fiio_link.py`, `controller/bridge/ws_bridge.py`, `controller/bridge/lan_bridge.py` |
 | **Firmware research** | [Acquisition](firmware/README.md) · [Porting](docs/PORTING.md) · [Reverse engineering](docs/RE.md) | `firmware/`, `research/ghidra/` |

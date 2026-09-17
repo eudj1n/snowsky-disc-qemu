@@ -69,3 +69,26 @@ controls are visibly disabled. The WASM badge identifies the execution mode.
 Screenshots establish appearance, not complete firmware or hardware support.
 No firmware images or generated VM artifacts are included. Earlier dated skin
 screenshots remain historical evidence in STATUS.md, not current UI instructions.
+
+## Historical viewer photo
+
+The device photo visible in the older Viewer screenshots was taken by the
+repository owner, eudj1n, who confirmed authorship and approved public distribution
+under the repository's MIT license on 2026-09-11. The standalone photo skin is no
+longer needed by the CSS Viewer and has been removed. Dated screenshots remain as
+historical evidence; depicted branding and vendor UI are not relicensed.
+
+## diskOS V2.40 preview, 2026-09-17
+
+`diskos-v240-preview.png` is an actual 1065×1037 browser capture of the source-built
+diskOS UI at commit `85a327ca56af2676c850f24ddcba5f34135132d4`, running over the
+fingerprint-validated stock V2.40 backend in the isolated preview stack. It shows
+the idle home screen, with no imported media, inside the current QEMU Viewer.
+The quick-panel brightness was set to maximum and the Viewer reported
+`brightness(1)`; no image brightening or compositing was applied after capture.
+
+The build, startup, main screen and quick-panel interaction were checked for this
+capture; the 2026-09-13 playback and Power-cycle results were not repeated.
+The image does not change the experiment's historical/unsupported status.
+diskOS UI source is GPL-3.0-or-later; the screenshot does not relicense its depicted
+interface. See [the preview report](../DISKOS_PREVIEW.md) for source and limitations.

@@ -179,8 +179,8 @@ loss and the existing single/double/hold gestures are preserved. Reduced-motion
 preferences disable transitions. Debug contains gesture shortcuts and audio replay.
 
 For these HTML/CSS and server changes, run `./run.sh view` and reload the browser;
-a guest reboot or image rebuild is unnecessary. The historical owner photo remains
-in `viewer/assets/` with its provenance, but is no longer loaded by the viewer.
+a guest reboot or image rebuild is unnecessary. The unused photo skin has been
+removed; dated screenshots of the earlier viewer remain in [STATUS.md](STATUS.md).
 
 ## Notes / limits
 

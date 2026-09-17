@@ -13,8 +13,10 @@ and hosted firmware CI now target only V2.57; release immutability remains enabl
 ## Prepared
 
 - MIT license chosen by the owner for project code/documentation.
-- Owner confirmed `viewer/assets/skin.png` is their original photo; provenance recorded in
-  [viewer/assets/README.md](../viewer/assets/README.md). The skin is tracked, not ignored.
+- At publication, the owner confirmed the original viewer photo was theirs and
+  approved its distribution under MIT. The unused skin was removed after the CSS
+  device replaced it; historical screenshots retain that provenance in
+  [the capture notes](images/README.md#historical-viewer-photo).
 - Root README omits the OTA password and references to the owner's private projects.
   Tooling and technical preparation notes retain necessary decryption details.
 - Shared agent instructions moved to `AGENTS.md`, without a duplicate legacy file.
