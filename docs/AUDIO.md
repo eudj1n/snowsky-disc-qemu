@@ -97,7 +97,7 @@ Capture integrity tests cover signed stereo, frame boundaries, growing captures,
 generations, and WAV's unsigned 8-bit convention:
 
 ```sh
-python3 -m unittest discover -s tools -p 'test_*.py'
+python3 -m ci.unit
 ```
 
 `emulator/runtime/audio.py` exports a bounded WAV snapshot. `/audio.json` reports generation, format,

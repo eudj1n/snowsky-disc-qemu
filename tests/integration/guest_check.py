@@ -13,11 +13,14 @@ from threading import Event
 
 from emulator.runtime.audio import capture_info
 from controller.fiio_link import Client
-from viewer.server import tap, swipe, _png as png, _to_rgb as to_rgb, BUF
+from emulator.runtime.framebuffer import png, to_rgb, BUF
+from emulator.runtime.touch import Touch
 from research.diagnostics.player_memory import PlayerMemory
 from tests.fixtures.fixture import NAMES
 
 ROOT = Path('/work/rootfs')
+touch = Touch(ROOT)
+tap, swipe = touch.tap, touch.swipe
 
 
 def capture(name):

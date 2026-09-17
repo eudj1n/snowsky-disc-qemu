@@ -18,5 +18,5 @@ repository's [MIT license](../../LICENSE). Without a skin the viewer falls back 
 plain framed round screen. Device branding is not a claim of affiliation.
 
 The skin's physical buttons have translucent HTML hotspots; the PNG is unchanged.
-For another photo, adjust their `--x`/`--y` percentages in `viewer/server.py` too.
+For another photo, adjust their `--x`/`--y` percentages in `viewer/static/index.html` too.
 See [VIEWER.md](../../docs/VIEWER.md) for positions and gesture behavior.

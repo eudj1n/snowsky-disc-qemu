@@ -11,7 +11,7 @@ remain in [RE.md](RE.md) and [research/ghidra/README.md](../research/ghidra/READ
 | `CHANGELOG.md` | Changes actually made to the emulator, grouped by its release/tag. |
 | `firmware/inventory/v<version>.json` | Reproducible input facts: versions, ZIP/rootfs hashes, sizes, chunk count. Not an enablement profile or a compatibility claim. |
 | `docs/firmware/<version>.md` | Upstream notes, tested/not-tested matrix, findings, failures, evidence and remaining work for that firmware. |
-| Shared emulator/scripts/tools + this guide | Repeatable methods and regression tests useful for later versions/products. |
+| Shared emulator/controller/research code + this guide | Repeatable methods and regression tests useful for later versions/products. |
 
 Keep development on `2.x`, using short-lived task branches where useful. Do not fork
 the entire emulator for every minor firmware. Firmware-based immutable tags preserve

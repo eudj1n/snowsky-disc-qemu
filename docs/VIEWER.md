@@ -168,7 +168,7 @@ directly without hovering. Button names remain available to assistive technology
 The transparent positioning layer does not intercept touches on the round screen.
 Without a skin, the same buttons become a labelled row, with no duplicate handlers.
 
-Hotspot centers use per-button CSS `--x`/`--y` percentages in `viewer/server.py` for the
+Hotspot centers use per-button CSS `--x`/`--y` percentages in `viewer/static/index.html` for the
 committed photo (Power 84.4/3, Play 98/14.8, Volume up 98/28.5, down 98/51.5; headphones 15.6/99, USB 50/98.5, SD 80/98.5).
 They resize with the photo; replacing it requires adjusting these coordinates as
 well as screen alignment. Closing Debug cancels alignment mode. Reduced-motion

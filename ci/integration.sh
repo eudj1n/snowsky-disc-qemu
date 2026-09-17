@@ -163,3 +163,5 @@ if [ "$FW_VERSION" = 2.57 ]; then
   compose exec -T emu python3 -B -m tests.integration.storage_check --disposable
   compose exec -T emu python3 -B -m tests.integration.preferences_check
 fi
+
+compose exec -T emu python3 -B -m tests.integration.viewer_check

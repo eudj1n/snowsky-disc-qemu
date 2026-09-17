@@ -216,7 +216,7 @@ On an analyzed stock V2.40 `mq_player` Ghidra project, use the committed scripts
 
 ```sh
 analyzeHeadless /path/to/project mqproj -process mq_player -noanalysis -readOnly \
-  -scriptPath /path/to/snowsky-disc-qemu/ghidra \
+  -scriptPath /path/to/snowsky-disc-qemu/research/ghidra \
   -postScript DecFuncs.java 0x4b89a0 0x4b7e00 0x4e99d0 0x4c7408 0x4b6a60 \
   -postScript DecFuncs.java 0x4e4744 0x4e477c
 ```

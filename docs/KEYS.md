@@ -112,7 +112,7 @@ changing volume. A complete matrix of every track/position/gesture combination w
 Automated checks:
 
 ```sh
-python3 -m unittest discover -s tools -p 'test_*.py'
+python3 -m ci.unit
 node --test viewer/tests/test_keys.js viewer/tests/test_audio_browser.js
 # Read-only runtime state, inside the container (V2.40 addresses only):
 python3 -m research.diagnostics.probe_keys

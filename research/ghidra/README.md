@@ -33,10 +33,10 @@ After importing/analyzing `mq_ui`, the relevant existing helpers are:
 
 ```sh
 "$GH" <proj_dir> <proj_name> -process mq_ui -noanalysis \
-  -scriptPath ghidra -postScript DecAt.java 481d10 481a78 47a994 47cea0 \
+  -scriptPath research/ghidra -postScript DecAt.java 481d10 481a78 47a994 47cea0 \
   -postScript RefsTo.java 008e1735 008def90 00461c7c
 "$GH" <proj_dir> <proj_name> -process mq_player -noanalysis \
-  -scriptPath ghidra -postScript DecAt.java 4e5af4 4f3c54 4c34ec
+  -scriptPath research/ghidra -postScript DecAt.java 4e5af4 4f3c54 4c34ec
 ```
 
 The resulting conditions and live acceptance are summarized in

@@ -65,7 +65,7 @@ reversible by scanning.
 ## Static cross-check
 
 Addresses below are V2.57 `mq_player`, selected by the reviewed full stock/key-
-patched fingerprint through `firmware_profile.identify_player`, not version text:
+patched fingerprint through `firmware.profile.identify_player`, not version text:
 
 - `0x49484c`: category DELETE; allowlist at `0x6cda34`, range gathering,
   scan-running gate, ID-based deletion for flag zero and path/unlink branch for

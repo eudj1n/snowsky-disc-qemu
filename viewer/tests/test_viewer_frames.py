@@ -1,97 +1,14 @@
 """Lossless frame deduplication, buffer selection and real multipart transport."""
 import http.client
-import struct
-import tempfile
 import threading
 import unittest
-import zlib
-from pathlib import Path
 from unittest.mock import patch
 
 from viewer import server as stream
 
 
-def pixels(blue, green=20, red=40, unused=0):
-    return bytes((blue, green, red, unused)) * (stream.W * stream.H)
-
-
-def decode_png(png):
-    """Check exact pixel bytes independently of the encoder (RGB, filter 0)."""
-    assert png[:8] == b'\x89PNG\r\n\x1a\n'
-    compressed = b''
-    offset = 8
-    while offset < len(png):
-        size = struct.unpack('>I', png[offset:offset + 4])[0]
-        if png[offset + 4:offset + 8] == b'IDAT':
-            compressed += png[offset + 8:offset + 8 + size]
-        offset += size + 12
-    data = zlib.decompress(compressed)
-    stride = stream.W * 3 + 1
-    assert all(data[y * stride] == 0 for y in range(stream.H))
-    return b''.join(data[y * stride + 1:(y + 1) * stride] for y in range(stream.H))
-
-
-class FrameStateTests(unittest.TestCase):
-    def setUp(self):
-        self.state = stream.State()
-        self.a, self.b = pixels(10), pixels(80)
-
-    def test_duplicate_and_unused_byte_changes_do_not_encode_or_publish(self):
-        self.assertTrue(self.state.update_frame(self.a + self.b, 0, True))
-        revision = self.state.frame_revision
-        with patch.object(stream, '_png', side_effect=AssertionError('Redundant encoding')):
-            self.assertFalse(self.state.update_frame(self.a + self.b, 0, True))
-            self.assertFalse(self.state.update_frame(pixels(10, unused=255) + self.b, 0, True))
-            self.assertFalse(self.state.update_frame(self.a + self.a, 1, True))
-        self.assertEqual(self.state.frame_revision, revision)
-
-    def test_active_buffer_and_same_buffer_writes_are_lossless(self):
-        self.state.update_frame(self.a + self.b, 1, True)
-        self.assertEqual(decode_png(self.state.png), bytes((40, 20, 80)) * (stream.W * stream.H))
-        # Marker does not change, but pixels do. Also verify rotation with one
-        # distinguishable pixel at the beginning of the raw framebuffer.
-        changed = bytes((1, 2, 3, 0)) + self.b[4:]
-        self.assertTrue(self.state.update_frame(self.a + changed, 1, True))
-        expected = bytes((40, 20, 80)) * (stream.W * stream.H - 1) + bytes((3, 2, 1))
-        self.assertEqual(decode_png(self.state.png), expected)
-
-    def test_sleep_wake_and_reconnect_keep_complete_current_frame(self):
-        self.state.update_frame(self.a + self.b, 0, True)
-        awake = self.state.png
-        self.assertTrue(self.state.update_frame(self.a + self.b, 0, False))
-        self.assertEqual(decode_png(self.state.png), stream.BLACK_RGB)
-        self.assertFalse(self.state.update_frame(self.b + self.a, 1, False))
-        self.assertTrue(self.state.update_frame(self.a + self.b, 0, True))
-        self.assertEqual(self.state.png, awake)
-        self.assertEqual(self.state.wait_frame(None, 0)[1], awake)
-
-    def test_fallback_and_short_read(self):
-        self.state.update_frame(self.a + self.b, None, True)
-        self.state.update_frame(self.a + pixels(90), None, True)
-        self.assertEqual(self.state.live, 1)
-        previous = self.state.png
-        self.assertFalse(self.state.update_frame(b'short', 0, True))
-        self.assertEqual(self.state.png, previous)
-
-    def test_marker_switch_during_read_retries_and_unstable_sample_is_skipped(self):
-        with tempfile.TemporaryDirectory() as directory:
-            path = Path(directory) / 'fb0'
-            path.write_bytes(self.a + self.b + pixels(200))
-            with patch.object(stream, 'FB', str(path)):
-                with patch.object(stream, '_active_buffer', side_effect=[0, 1, 1, 1]):
-                    raw, active = stream._read_frame()
-                self.assertEqual(raw, self.a + self.b)
-                self.assertEqual(active, 1)
-                with patch.object(stream, '_active_buffer', side_effect=[0, 1, 1, 0]):
-                    self.assertIsNone(stream._read_frame())
-
-    def test_slow_consumer_gets_latest_complete_frame(self):
-        revision, _ = self.state.wait_frame(None, 0)
-        for blue in range(10, 15):
-            self.state.update_frame(pixels(blue) + self.b, 0, True)
-        latest, png = self.state.wait_frame(revision, 0)
-        self.assertGreater(latest, revision)
-        self.assertEqual(decode_png(png), bytes((40, 20, 14)) * (stream.W * stream.H))
+from emulator.runtime.framebuffer import W, H
+from tests.fixtures.framebuffer import pixels, decode_png
 
 
 class FrameTransportTests(unittest.TestCase):
@@ -153,7 +70,7 @@ class FrameTransportTests(unittest.TestCase):
         self.assertEqual(self.frame(response), self.state.png)
         self.assertEqual(self.frame(response), self.state.png)  # Idle refresh.
         self.state.update_frame(pixels(42) * 2, 1, True)
-        expected = bytes((40, 20, 42)) * (stream.W * stream.H)
+        expected = bytes((40, 20, 42)) * (W * H)
         self.assertEqual(decode_png(self.frame(response)), expected)
         self.assertEqual(decode_png(self.frame(self.connect())), expected)
 
@@ -172,7 +89,7 @@ class FrameTransportTests(unittest.TestCase):
             self.state.update_frame(pixels(77) * 2, 0, True)
             # HTTP timeout is 2s, much shorter than the idle refresh interval.
             self.assertEqual(decode_png(self.frame(response)),
-                             bytes((40, 20, 77)) * (stream.W * stream.H))
+                             bytes((40, 20, 77)) * (W * H))
             response.close()
         # Wake the old long waiter after restoring the short test heartbeat, so
         # a disconnected handler cannot outlive this test's patched state.

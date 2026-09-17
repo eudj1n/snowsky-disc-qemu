@@ -1,0 +1,177 @@
+<!doctype html><meta charset=utf-8>
+<meta name=viewport content="width=device-width, initial-scale=1">
+<title>Snowsky Disc</title>
+<style>
+ html,body{margin:0;background:#fff;color:#333;font:13px system-ui;text-align:center}
+ #wrap{display:inline-block;margin:28px auto;max-width:100%}
+ /* device-skin mode: photo of the player with the live round screen over the glass */
+ #stage{position:relative;width:__STAGE__px;max-width:calc(100vw - 64px);margin:0 auto}
+ #stage.skin #skin{display:block;width:100%}
+ #stage.skin #scr{position:absolute;left:__L__%;top:__T__%;width:__D__%;aspect-ratio:1/1;
+        height:auto;border-radius:50%;object-fit:cover}
+ /* plain mode (no skin): a framed round screen */
+ #stage.plain{width:360px}
+ #stage.plain #skin{display:none}
+ #stage.plain #scr{width:100%;height:auto;aspect-ratio:1;border-radius:50%;background:#000;
+        box-shadow:0 0 0 6px #ddd,0 0 30px rgba(0,0,0,.15)}
+ #scr{image-rendering:pixelated;touch-action:none;cursor:pointer;display:block}
+ #scr.touching{cursor:grabbing}
+ .hint{color:#888;margin-top:14px}
+ .bar{margin-top:12px}
+ .bar button{background:#f4f4f5;color:#333;border:1px solid #d5d5d8;border-radius:9px;
+      padding:7px 13px;margin:3px;font:13px system-ui;cursor:pointer}
+ .bar button:hover{background:#eaeaec}
+ #debug-tools{margin:20px auto 0;color:#888}
+ #debug-tools summary{cursor:pointer;width:fit-content;margin:auto;font-size:12px}
+ #debug-tools[open] summary{color:#555}
+ #physical-controls{display:flex;flex-wrap:wrap;justify-content:center;gap:8px;margin-top:16px}
+ .physical{touch-action:none;user-select:none;cursor:pointer;font:14px system-ui;
+   border:1px solid #d5d5d8;border-radius:9px;padding:8px;background:#f4f4f5;color:#333}
+ .key-symbol{font-size:20px;line-height:1}
+ .physical:focus-visible{outline:3px solid #a92368;outline-offset:4px}
+ .physical.is-pressed{background:#f6bad6}
+ .physical:disabled{opacity:.35;cursor:not-allowed}
+ #stage.skin #physical-controls{position:absolute;inset:0;margin:0;pointer-events:none}
+ #stage.skin .physical{position:absolute;left:var(--x);top:var(--y);transform:translate(-50%,-50%);
+   display:grid;place-items:center;width:44px;height:44px;padding:0;border-radius:50%;
+   pointer-events:auto;color:#64173e;background:rgba(244,114,182,.13);border:1px solid rgba(255,215,235,.40);
+   box-shadow:0 0 0 4px rgba(244,114,182,.035);transition:background .18s,box-shadow .18s,transform .18s}
+ #stage.skin .key-symbol{opacity:0;transition:opacity .18s}
+ #stage.skin .physical:not(:disabled):hover,#stage.skin .physical:focus-visible{background:rgba(244,114,182,.32);
+   box-shadow:0 0 0 6px rgba(244,114,182,.07)}
+ #stage.skin .physical.is-pressed:not(:disabled){background:rgba(236,72,153,.55);color:white;
+   transform:translate(-50%,-50%) scale(.92);box-shadow:0 0 0 8px rgba(244,114,182,.10)}
+ #stage.skin .physical:hover .key-symbol,#stage.skin .physical:focus-visible .key-symbol,
+ #stage.skin .physical.is-pressed .key-symbol{opacity:1}
+ #stage.skin .key-label{position:absolute;right:calc(100% + 14px);white-space:nowrap;
+   padding:7px 10px;border-radius:7px;background:#35232e;color:white;font-size:12px;
+   opacity:0;visibility:hidden;pointer-events:none;transition:opacity .14s}
+ #stage.skin [data-key=power] .key-label{right:0;top:calc(100% + 12px)}
+ #stage.skin .physical:hover .key-label,#stage.skin .physical:focus-visible .key-label{
+   opacity:1;visibility:visible}
+ @media(prefers-reduced-motion:reduce){#stage.skin .physical,#stage.skin .key-label,
+   #stage.skin .key-symbol{transition:none}}
+
+ #key-status{pointer-events:none;position:absolute;left:var(--screen-left,__L__%);top:var(--screen-top,__T__%);width:var(--screen-width,__D__%);
+   aspect-ratio:1;border-radius:50%;display:flex;align-items:center;justify-content:center;
+   box-sizing:border-box;padding:40px;color:#aaa;background:#080808;line-height:1.7;font-size:14px}
+ #key-status[hidden]{display:none}
+ #stage.plain #key-status:not(.screen-on){left:0;top:0;width:100%}
+ #key-status.screen-on{background:transparent;color:#777;left:0;top:calc(100% + 64px);width:100%;
+   aspect-ratio:auto;padding:8px 0;font-size:12px}
+ #control-error{color:#a52c57;max-width:340px;margin:72px auto 0;line-height:1.5}
+ #control-error:empty{display:none}
+ .connector{display:none;pointer-events:none}
+ #stage.skin .is-connected .key-symbol{opacity:0}
+ #stage.skin .is-connected{background:transparent;border-color:transparent;box-shadow:none}
+ #stage.skin .physical.is-connected:not(:disabled):hover,#stage.skin .physical.is-connected:focus-visible{
+   background:transparent;border-color:transparent;box-shadow:none}
+ #stage.skin .is-connected .connector{display:block;position:absolute;left:50%;top:45%;
+   width:16px;height:35px;transform:translateX(-50%);border:1px solid #555;border-radius:3px 3px 6px 6px;
+   background:repeating-linear-gradient(0deg,#252527 0 3px,#3d3d40 3px 4px);box-shadow:1px 2px 3px #0003}
+ #stage.skin .is-connected .connector:after{content:'';position:absolute;width:4px;height:30px;
+   background:#333;top:100%;left:50%;transform:translateX(-50%);border-radius:0 0 3px 3px}
+ #stage.skin #usb-toggle .connector{width:24px;height:30px;border-radius:5px;background:#323236}
+ #stage.skin #usb-toggle .connector:before{content:'ϟ';font-size:22px;color:#89dda7}
+ #stage.skin #sd-toggle .connector{display:block;position:absolute;left:50%;top:50%;width:34px;height:5px;
+   transform:translate(-50%,-50%);background:#303036;border:1px solid #555;border-radius:2px;box-shadow:1px 2px 3px #0003}
+ #stage.skin #sd-toggle.is-ejected .connector{top:calc(50% + 19px);width:28px;height:34px;
+   background:linear-gradient(180deg,#c8a366 0 20%,#303036 20%);clip-path:polygon(0 0,75% 0,100% 25%,100% 100%,0 100%)}
+ #stage.skin #sd-toggle .key-symbol{display:none}
+ #stage.skin #sd-toggle .key-label{right:0;top:-34px}
+ #stage.skin #audio-toggle .key-label,#stage.skin #usb-toggle .key-label{right:auto;left:0;top:-34px}
+ #debug-tools{margin-top:70px}
+ #stage.plain ~ #debug-tools{margin-top:24px}
+ #stage:has(#key-status.screen-on:not([hidden])) ~ #debug-tools{margin-top:120px}
+ #control-error:not(:empty) + #debug-tools{margin-top:20px}
+ @media(max-width:440px){#wrap{margin-top:22px}}
+</style>
+<div id=wrap>
+ <div id="stage" class="__MODE__">
+  <img id=skin src="/skin" draggable=false alt="">
+  <img id=scr width=360 height=360 alt="Player screen" draggable=false>
+  <div id=key-status role=status>Connecting to player…</div>
+  <div id=physical-controls role=group aria-label="Physical controls">
+   <button class=physical data-key="power" style="--x:84.4%;--y:3%" aria-label="Power / lock">
+    <span class=key-symbol aria-hidden=true>⏻</span><span class=key-label>Power / lock</span></button>
+   <button class=physical data-key="play_pause" style="--x:98%;--y:14.8%" aria-label="Play / pause">
+    <span class=key-symbol aria-hidden=true>⏯</span><span class=key-label>Play / pause</span></button>
+   <button class=physical data-key="volume_up" style="--x:98%;--y:28.5%" aria-label="Volume up">
+    <span class=key-symbol aria-hidden=true>+</span><span class=key-label>Volume up</span></button>
+   <button class=physical data-key="volume_down" style="--x:98%;--y:51.5%" aria-label="Volume down">
+    <span class=key-symbol aria-hidden=true>−</span><span class=key-label>Volume down</span></button>
+   <button id=audio-toggle class=physical style="--x:15.6%;--y:99%" aria-label="Enable sound" aria-pressed=false>
+    <span class=key-symbol aria-hidden=true>♫</span><span class=connector aria-hidden=true></span><span class=key-label>Enable sound</span></button>
+   <button id=usb-toggle class=physical style="--x:50%;--y:98.5%" aria-label="Connect USB charging cable" aria-pressed=false>
+    <span class=key-symbol aria-hidden=true>ϟ</span><span class=connector aria-hidden=true></span><span class=key-label>Connect USB</span></button>
+   <button id=sd-toggle class=physical style="--x:80%;--y:98.5%" aria-label="Eject SD card" aria-pressed=true>
+    <span class=key-symbol aria-hidden=true>▣</span><span class=connector aria-hidden=true></span><span class=key-label>Eject SD card</span></button>
+  </div>
+ </div>
+ <div id=control-error role=alert></div>
+ <details id=debug-tools>
+  <summary>Debug</summary>
+  <div class=bar><button id=audio-replay>Replay capture</button></div>
+  <div id=audio-status class=hint>Sound off</div>
+  <div id=key-action class=hint aria-live=polite></div>
+  <div class=bar>
+   <button onclick="go('/swipe?dir=down')">▼ shade</button>
+   <button onclick="go('/swipe?dir=up')">▲ up</button>
+   <button onclick="go('/swipe?dir=back')">↩ back (→)</button>
+   <button onclick="go('/swipe?dir=left')">◀ left</button>
+   <button id=alignbtn onclick="align.on=!align.on;draw()">⊹ align</button>
+  </div>
+  <div id=readout class=hint></div>
+ </details>
+</div>
+<script src="/audio.js"></script>
+<script src="/frames.js"></script>
+<script src="/controls.js"></script>
+<script src="/keys.js"></script>
+<script>
+const img=document.getElementById('scr');
+const R=360, TH=6;                       // display px, drag threshold
+// --- skin align: nudge the round screen over the photo, read off cx/cy/d ---
+const align={on:false, cx:__CX__, cy:__CY__, d:__DD__, ar:__AR__};
+document.getElementById('alignbtn').disabled='__MODE__'!=='skin';
+document.getElementById('debug-tools').addEventListener('toggle', event=>{
+  if(!event.target.open){align.on=false;if('__MODE__'==='skin')draw();}
+});
+function draw(){
+  const l=(align.cx-align.d/2)*100, t=(align.cy-align.d*align.ar/2)*100;
+  img.style.left=l.toFixed(2)+'%'; img.style.top=t.toFixed(2)+'%'; img.style.width=(align.d*100).toFixed(2)+'%';
+  const stage=document.getElementById('stage');
+  stage.style.setProperty('--screen-left',l+'%');
+  stage.style.setProperty('--screen-top',t+'%');
+  stage.style.setProperty('--screen-width',(align.d*100)+'%');
+  document.getElementById('alignbtn').style.background=align.on?'#d9e8b0':'';
+  document.getElementById('readout').textContent=align.on
+    ? `align: Alt+arrows move · +/- size · cx=${align.cx.toFixed(3)} cy=${align.cy.toFixed(3)} d=${align.d.toFixed(3)}  →  SKIN_CX=${align.cx.toFixed(3)} SKIN_CY=${align.cy.toFixed(3)} SKIN_D=${align.d.toFixed(3)}`
+    : '';
+}
+addEventListener('keydown',e=>{if(!align.on)return;const s=e.shiftKey?0.005:0.001;let h=true;
+  if(e.altKey&&e.key==='ArrowLeft')align.cx-=s; else if(e.altKey&&e.key==='ArrowRight')align.cx+=s;
+  else if(e.altKey&&e.key==='ArrowUp')align.cy-=s; else if(e.altKey&&e.key==='ArrowDown')align.cy+=s;
+  else if(e.key==='+'||e.key==='=')align.d+=s; else if(e.key==='-'||e.key==='_')align.d-=s; else h=false;
+  if(h){e.preventDefault();draw();}});
+if('__MODE__'==='skin')draw();
+let down=false, moved=false, pointerId=null, sx=0, sy=0, lastMove=0;
+function pt(e){const r=img.getBoundingClientRect();
+  return [Math.round((e.clientX-r.left)*R/r.width),
+          Math.round((e.clientY-r.top )*R/r.height)];}
+function go(u){fetch(u).catch(()=>{});}
+img.addEventListener('pointerdown',e=>{if(down||e.button!==0)return;e.preventDefault();
+  [sx,sy]=pt(e);down=true;moved=false;pointerId=e.pointerId;img.classList.add('touching');img.setPointerCapture(e.pointerId);});
+img.addEventListener('pointermove',e=>{if(!down||e.pointerId!==pointerId)return;
+  const [x,y]=pt(e);
+  if(!moved && Math.abs(x-sx)+Math.abs(y-sy)>TH){moved=true;go(`/down?x=${sx}&y=${sy}`);}
+  if(moved){const t=performance.now();if(t-lastMove>30){lastMove=t;go(`/move?x=${x}&y=${y}`);}}});
+img.addEventListener('pointerup',e=>{if(!down||e.pointerId!==pointerId)return;down=false;pointerId=null;img.classList.remove('touching');
+  if(moved){const [x,y]=pt(e);go(`/move?x=${x}&y=${y}`);setTimeout(()=>go('/up'),20);}
+  else{go(`/tap?x=${sx}&y=${sy}`);}});
+function cancelTouch(e){if(!down||(e.pointerId!==undefined&&e.pointerId!==pointerId))return;
+  down=false;pointerId=null;img.classList.remove('touching');if(moved)go('/up');}
+img.addEventListener('pointercancel',cancelTouch);
+img.addEventListener('lostpointercapture',cancelTouch);
+addEventListener('blur',cancelTouch);
+</script>

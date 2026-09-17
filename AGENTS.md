@@ -80,6 +80,13 @@ count printed by `fb2png.py` is only a fallback heuristic, not evidence of recen
 
 ## Where things are
 
+See `docs/REPOSITORY.md` for component boundaries and the entry-point inventory.
+Use explicit package imports and `python3 -m package.module` from the repository
+root. Do not add directory-specific `sys.path` searches. Controller must remain
+independent of emulator, viewer, firmware and research; integration tests use
+emulator runtime primitives, not viewer internals. Unit tests live with their
+component; cross-component scenarios and generated media live under `tests/`.
+
 - Emulation pipeline: `emulator/scripts/` (numbered). Shared helpers/paths: `emulator/scripts/lib.sh`.
 - Shim source: `emulator/shims/fbshim.c` (fb + input-name ioctls). Diagnostic mq_open interposer:
   `emulator/shims/mqshim.c` (only needed if you suspect an attr/errno issue — normally unused).

@@ -84,7 +84,8 @@ The owner approved public publication and configuring this policy on 2026-09-13.
 
 ## Firmware-free CI
 
-Python unit tests live with each component; shared harness tests live in
+Source ownership and the entry-point inventory are in [REPOSITORY.md](REPOSITORY.md).
+Python unit tests live in each component's `tests/` directory; shared harness tests live in
 `tests/unit/`. The runner detects omitted modules and discovers JavaScript and
 shell checks across every component. Cross-component scenarios live in
 `tests/integration/`; generated media helpers live in `tests/fixtures/`.

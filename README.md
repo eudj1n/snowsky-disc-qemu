@@ -200,6 +200,9 @@ and [CHANGELOG.md](CHANGELOG.md).
 
 ## Documentation & source map
 
+See [repository components and Python entry points](docs/REPOSITORY.md) for the
+source layout, dependency boundaries and test locations.
+
 | Area | Start here | Source |
 | --- | --- | --- |
 | **Emulator** | [How it works](docs/EMULATION.md) · [Current results](docs/STATUS.md) | `run.sh`, `emulator/scripts/`, `emulator/shims/`, `docker/` |
