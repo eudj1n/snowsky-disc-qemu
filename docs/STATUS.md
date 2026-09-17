@@ -1,6 +1,6 @@
 # Status
 
-_Current overview updated 2026-09-16. Dated experiments below retain their original findings._
+_Current overview updated 2026-09-17. Dated experiments below retain their original findings._
 
 ## Current capabilities
 
@@ -33,6 +33,15 @@ peripheral controls. See the [README](../README.md) for setup and the visual ove
 | **Playback preferences** | V2.57 gapless, folder jump and ReplayGain are readable via fresh `0501` snapshots. Six local UI setter tags are rejected by the independent TCP allowlist, also through the WS bridge; no remote setters exposed. | [Evidence and limits](REMOTE_SETTINGS.md#playback-preferences-v257) |
 | **Modes and lock screen** | Stock USB/local/AirPlay control transitions, five Bluetooth source-codec preferences, five system themes, full custom PNG/overlay metadata and four V2.57 custom styles. Physical audio and screen rendering need separate checks. | [Modes and themes](REMOTE_MODES_THEMES.md) |
 | **OTA monitoring** | Daily catalog check and one tracking Issue per new main-OS/recovery pair. First GitHub-hosted run passed. Package metadata/signature and one chunk were checked separately; guest installation remains untested. | [OTA](OTA.md) |
+
+### Browser execution experiment
+
+The separate [TinyEMU/WebAssembly prototype](BROWSER.md) executes V2.57 inside
+the browser and has verified menu navigation, taps/swipes, Back, and manual
+screen sleep/wake with upward-swipe unlock. Audio, media import and persistence
+are not implemented. An observed lockscreen SIGBUS remains unisolated; the next
+milestone is navigation and sleep/wake/unlock stability. The Docker emulator
+results above do not establish browser-runtime acceptance.
 
 ### Current visual evidence
 

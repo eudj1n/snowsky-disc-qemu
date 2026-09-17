@@ -139,6 +139,17 @@ V2.57, preventing idle power-off while connected (no USB data/DAC). See
 removal performs an actual guest unmount and refuses a busy card. These behaviors
 and setup options are covered in the **[viewer guide](docs/VIEWER.md)**.
 
+## Experimental: firmware running entirely in the browser
+
+The [browser experiment](docs/BROWSER.md) runs V2.57 locally through
+TinyEMU/WebAssembly → RISC-V Linux → qemu-mipsel. A static server supplies the
+files; the browser executes the firmware. Docker is needed to build the bundle.
+
+The prototype supports the stock menu, taps, swipes, Back and screen sleep/wake.
+Audio, SD/media import and saved state are not connected; lockscreen stability
+remains an open research item. It has a separate build/run command under
+`research/browser/`. See the [reproduction guide and limitations](docs/BROWSER.md).
+
 ## Controller
 
 **Control a physical SNOWSKY DISC or the emulator through the same network APIs.**
@@ -260,6 +271,7 @@ source layout, dependency boundaries and test locations.
 | **Media** | [Audio](docs/AUDIO.md) · [Library](docs/MEDIA_LIBRARY.md) · [Settings](docs/SETTINGS.md) | `emulator/sdcard/`, `emulator/runtime/audio.py` |
 | **Controller** | [Capabilities](docs/DISC_CAPABILITIES.md) · [Network](docs/NETWORK.md) · [Protocol](docs/PROTOCOL.md) · [WebSocket](docs/WEBSOCKET.md) · [Opt-in phone LAN bridge](docs/DISCOVERY.md) | `controller/fiio_link.py`, `controller/bridge/ws_bridge.py`, `controller/bridge/lan_bridge.py` |
 | **Firmware research** | [Acquisition](firmware/README.md) · [Porting](docs/PORTING.md) · [Reverse engineering](docs/RE.md) | `firmware/`, `research/ghidra/` |
+| **Browser experiment** | [Build, results and next milestone](docs/BROWSER.md) | `research/browser/`, `research/tests/test_browser_*.js` |
 | **Contributing** | [CI](docs/CI.md) · [Agent instructions](AGENTS.md) | `ci/`, `.github/workflows/` |
 
 ## License & scope

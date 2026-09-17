@@ -15,6 +15,24 @@ The prototype runs the V2.57 main menu with taps and swipe navigation. This is a
 prototype, not a replacement for the validated Docker emulator. It does not
 enable another firmware profile or change the normal startup scripts.
 
+## Project status
+
+This experiment is maintained under `research/browser/` on the development
+branch `2.x`. It has an independent build/run workflow and experimental status;
+the normal viewer and emulator keep their own acceptance criteria.
+
+| Area | Browser result |
+| --- | --- |
+| Startup and display | Real V2.57 menu and framebuffer; observed startup roughly 100–160 seconds on the development machine, with 512 MiB guest RAM. |
+| Navigation | Taps, swipe transport, Browse files entry and return by swipe/Back verified. |
+| Screen button | Manual sleep → Wakeup → clock → upward-swipe unlock verified without restarting the VM. |
+| Lockscreen stability | One SIGBUS after a horizontal swipe remains unisolated; no complete idle/power lifecycle claim. |
+| Media and sound | SD/media import and browser audio delivery are not implemented. |
+| State | VM changes are discarded on Stop/restart; persistence is not implemented. |
+
+Only source, instructions and firmware-free tests belong in Git. The locally
+built bundle contains firmware and is not a distributable project artifact.
+
 ## Build and run locally
 
 From the repository root, with Docker available and the stock OTA unpacked:
@@ -120,7 +138,7 @@ not SD mounting or media playback. The worker's Stop control was also exercised.
 Fresh browser entropy initialized the virtual kernel's CRNG at about 0.9 seconds
 of guest time; this does not establish a startup-speed improvement.
 
-On this branch, firmware-free checks passed: **312 Python tests and 33 JavaScript
+At the 2026-09-17 checkpoint, firmware-free checks passed: **312 Python tests and 33 JavaScript
 tests**, shell syntax and all four standard MIPS shim builds. The RISC-V adapter
 also compiled with `-Wall -Wextra -Werror`. The generated bundle's dependency
 hashes and local documentation links were checked. No shared emulator runtime
@@ -159,6 +177,25 @@ are not overridden; complete power/screen lifecycle behavior is not validated.
 The page reserves 512 MiB of guest RAM; the browser needs additional memory for
 the emulator, disk cache and display. Double CPU emulation makes startup and UI
 operations substantially slower than the normal Docker emulator.
+
+## Next milestone: navigation and screen lifecycle stability
+
+Before adding media import or sound:
+
+1. Reproduce and isolate the lockscreen SIGBUS, preserving the exact input
+   sequence and crash evidence under ignored `work/browser-disc/`.
+2. Verify repeated menu → Browse files → Back and manual sleep → wake → unlock
+   cycles in the browser, including cancelled gestures and input while asleep.
+3. Observe the actual browser screen timeout and idle shutdown separately.
+   Confirm wake after timeout and explicit restart after stopped firmware,
+   without fake keepalive input, timer overrides or replaying uncertain commands.
+
+Record browser-visible transitions and guest process/state evidence; input
+injection acknowledgements alone do not pass this milestone. Keep browser
+acceptance distinct from native TinyEMU diagnostics and the normal Docker
+`idle`/`idle-usb` checks. Firmware-free tests remain in the standard test suite;
+browser firmware acceptance is a local, opt-in workflow. This milestone and a
+documented disposition of the crash are prerequisites for expanding the scope.
 
 References: [TinyEMU](https://bellard.org/tinyemu/),
 [JSLinux technical notes](https://bellard.org/jslinux/tech.html),
