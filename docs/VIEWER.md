@@ -10,7 +10,8 @@ The **QEMU** badge distinguishes this host-backed Viewer from the
 ![Current V2.57 browser viewer](images/readme-viewer-qemu.png)
 
 *Actual browser capture, 2026-09-17: CSS device with live V2.57 screen and
-physical, audio, USB and SD controls. Debug is collapsed.*
+physical, audio, USB and SD controls. Debug is collapsed; stock brightness is at
+maximum for comparison with the WASM screenshot. [Capture details](images/README.md).*
 
 ```sh
 ./run.sh boot          # start the guests (they now stay alive ~30 min, see GUEST_TTL)
@@ -178,8 +179,8 @@ loss and the existing single/double/hold gestures are preserved. Reduced-motion
 preferences disable transitions. Debug contains gesture shortcuts and audio replay.
 
 For these HTML/CSS and server changes, run `./run.sh view` and reload the browser;
-a guest reboot or image rebuild is unnecessary. The historical owner photo remains
-in `viewer/assets/` with its provenance, but is no longer loaded by the viewer.
+a guest reboot or image rebuild is unnecessary. The unused photo skin has been
+removed; dated screenshots of the earlier viewer remain in [STATUS.md](STATUS.md).
 
 ## Notes / limits
 

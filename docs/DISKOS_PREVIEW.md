@@ -11,8 +11,16 @@ The source was recovered from experiment commit
 The preserved implementation lives in `research/diskos/`; this migration updates
 repository paths, package imports and the CI image name. It retains the pinned
 upstream source and warm-start adaptation, and now rejects firmware other than
-the historically verified V2.40. End-to-end execution with the current repository
-layout has **not** been revalidated; the results below are historical evidence.
+the historically verified V2.40. A fresh build and startup with the current layout
+were checked for the screenshot below on 2026-09-17. The full playback and
+Power-cycle acceptance has **not** been repeated; those results remain historical.
+
+![diskOS main screen over the stock V2.40 backend in the QEMU Viewer](images/diskos-v240-preview.png)
+
+*Actual emulator capture, 2026-09-17: diskOS `85a327c` over the stock V2.40 backend,
+shown in the current CSS Viewer. The player is idle, with no media imported.
+Brightness was set to maximum through diskOS's own quick panel.
+[Capture details](images/README.md#diskos-v240-preview-2026-09-17).*
 
 ## Source-built UI preview
 
@@ -136,6 +144,14 @@ Migration validation on 2026-09-17 passed:
 
 These checks do not repeat the historical playback or Power-cycle acceptance and
 do not promote this to a supported runtime.
+
+Screenshot refresh on 2026-09-17 separately verified a build from the pinned
+source, fresh V2.40 setup (including all six stock fingerprints), the warm UI
+handoff, main-screen rendering, and opening/closing the quick panel to set
+brightness. This used the isolated preview stack on localhost:8081 with an empty
+media directory. No playback, library scan, Power cycle or hardware features were
+retested. The preview was stopped after capture; historical/unsupported status
+and the known limitations above are unchanged.
 
 ## Revisit the status
 
