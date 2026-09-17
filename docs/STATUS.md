@@ -2,6 +2,13 @@
 
 _Current overview updated 2026-09-17. Dated experiments below retain their original findings._
 
+Issue #8 audit: the limited stereo SACD metadata/identity checkpoint is committed
+in PR #20, including title replacement at the same path and exact restoration.
+Replacing the image with different tracks/layout remains unchecked; seek/EOF,
+DST/multichannel and hardware output are extensions. Issue #8 remains open with
+those limits; this status audit does not rerun media or change PEQ #9's pause.
+See [SACD status](SACD.md#status-audit-2026-09-17).
+
 ## Current capabilities
 
 **V2.57 is the active/default firmware; V2.40 is historical.** Its legacy runtime

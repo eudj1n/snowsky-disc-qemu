@@ -243,6 +243,13 @@ first reconnect and read Custom 10 before Reset, then reset/readback/Off.
 Persistence and disconnect cause remain unknown; do not infer a firmware crash.
 Focused TCP/WS `peq` passes mismatch/recovery, correct JSON application,
 isolation/restoration; firmware-free checks pass 326 Python / 37 JavaScript.
+Issue #8 status audited against committed `f5c08b7` / PR #20: approved stereo
+metadata/identity and same-path title replacement are complete; source replacement
+with different tracks/layout is still untested. Seek/EOF, DST/multichannel,
+redistributable playable fixture and hardware output are separate extensions.
+Keep #8 open with these limits; no media run is needed for a status update.
+Old ignored SACD logs are absent in this checkout; distinguish dated reported
+acceptance from fresh verification. PEQ #9 remains paused; do not change closed #10.
 `CI_SCENARIO=sacd` requires explicit approved `CI_SACD_ISO`, makes a temporary
 copy, and is excluded from full/hosted CI. One stereo uncompressed DSD64 ISO
 indexes ten tracks; first/last catalog/queue/favorite selection works on TCP/WS.

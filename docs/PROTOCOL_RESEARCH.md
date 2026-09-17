@@ -46,6 +46,23 @@ the body was read back and verified, and the issue remains open. Owner explicitl
 instructed leaving closed issue #10 unchanged. No code/docs commit or push was
 performed as part of this status update.
 
+## Issue #8 status audit (2026-09-17)
+
+SACD work is already in `f5c08b7` plus shared docs `d4aebe4`, on the same branch
+and PR #20 as PEQ. The stale issue checklist is updated to the completed limited
+stereo metadata/identity checkpoint. Indexing all ten tracks, first/last selection
+through catalog/queue/favorites on TCP/WS, guarded queue bounds, title replacement
+in both TOCs at the same path, exact hash restoration and removal/rescan passed.
+
+Remaining source-replacement coverage is an image with different tracks/layout;
+the existing test changes title only, leaving layout/audio intact. Seek/EOF,
+DST/multichannel, a redistributable playable fixture and hardware DSD/DoP are
+separate extensions. Keep #8 open with these explicit limits; do not rerun the
+completed sample or touch media to perform this status audit. Old ignored SACD
+logs are absent from this checkout; prior results are retained as dated reports,
+not independently rechecked runtime evidence. See [SACD](SACD.md#status-audit-2026-09-17).
+PEQ #9 remains paused; closed #10 is not changed.
+
 ## API follow-ups #8 / #9 resumed (2026-09-17)
 
 Owner resumed both issues after the finalized local-protocol checkpoint below.

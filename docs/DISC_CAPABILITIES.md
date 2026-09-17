@@ -87,8 +87,10 @@ Physical screenshot inventory and per-capture limitations: [FiiO Control evidenc
   and Auto EQ flows without an account; Share/login is deferred to #11. Preset/BYPASS and device/local Save/Apply are
   captured; Local Apply's bulk-format mismatch is reproduced on V2.57, while
   the public JSON helper applies the intended bands correctly. See [PEQ](PEQ.md).
-- [#8](https://github.com/eudj1n/snowsky-disc-qemu/issues/8): resumed with an approved
-  stereo ISO; metadata/selection/favorites checked locally. See [scope and limits](SACD.md).
+- [#8](https://github.com/eudj1n/snowsky-disc-qemu/issues/8): stereo ISO metadata,
+  selection/favorites and same-path title replacement verified; committed in
+  PR #20. Different track-layout replacement remains unchecked; seek/EOF,
+  DST/multichannel and hardware output are separate extensions. See [scope and limits](SACD.md).
 - [#7](https://github.com/eudj1n/snowsky-disc-qemu/issues/7): repository separation.
 - Subsequent product work: local backend/frontend and Docker packaging, browser
   state service, production reconnect/conflict UI. Exact FiiO slider-formula

@@ -5,6 +5,31 @@
 never the interactive library. No source audio, titles, private paths or firmware
 data belong in Git or hosted artifacts.
 
+## Status audit (2026-09-17)
+
+The implementation is already published in commit `f5c08b7`, with the shared
+checkpoint in `d4aebe4`, on `codex/api-sacd-peq-checkpoints` / PR #20 against
+`2.x`. The issue's original unchecked checklist predates these results.
+The approved sample, scanner/decoder trace, index/metadata comparison, first/last
+catalog/queue/favorite selection, guarded queue bound, same-path title replacement
+and restoration are complete for the documented stereo image. Source replacement
+coverage is **metadata-only**: both TOCs change title while track count, layout
+and audio remain unchanged. Do not call that a different-image/layout test.
+
+Issue #8 remains open for the outstanding replacement/coverage follow-ups below;
+the completed limited checkpoint should not be repeated merely to refresh status.
+First remaining source-replacement case: a separately approved image with a
+different track layout at the same path, followed by rescan, fresh positional
+selection and restoration. No new sample use or mutation starts in this audit.
+Seek/EOF, a redistributable playable fixture, DST/multichannel and hardware output
+are separate extensions, not failures of the completed stereo metadata tests.
+
+This audit compared committed code, tests, docs and GitHub status. Prior focused
+TCP/WS acceptance is recorded below; the referenced old local SACD logs are not
+present in this checkout, so no independent log reinspection or fresh firmware
+run is claimed. The later 326 Python / 37 JavaScript branch suite passed after
+the PEQ additions; it does not expand SACD's tested media/runtime scope.
+
 ## Input and structural scope
 
 Input SHA-256: `1c5f017feb212151c7307159ec59e982a037ece9901eee65bfb9369bb39debe9`.

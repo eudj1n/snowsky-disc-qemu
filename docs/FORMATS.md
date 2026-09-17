@@ -79,7 +79,8 @@ Addresses below are for the fingerprinted V2.57 `mq_player` only:
   HTTP directory flags. These are distinct from the indexed song catalog.
 - `44badc` has an SACD-specific branch calling `61c82c(path, track, open_mode, 0)`
   and a separate `AudioCodecOpen` path for other sources, including DSD files.
-  That branch establishes a research entry point, not tested SACD ISO support.
+  That branch alone establishes a research entry point; the subsequent approved
+  stereo ISO acceptance and its limits are documented separately in [SACD.md](SACD.md).
 
 Reproduce with `research/ghidra/DecAt.java` and `RefsTo.java`; keep binaries/projects/raw
 decompilation ignored. No firmware binary, database or shim patch is involved.
