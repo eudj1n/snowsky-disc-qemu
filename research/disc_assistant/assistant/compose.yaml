@@ -1,0 +1,23 @@
+# Independent desktop-assistant infrastructure. Run from the repository root:
+# docker compose --env-file research/disc_assistant/assistant/.env -f research/disc_assistant/assistant/compose.yaml up -d
+# The Python CLI runs on the host; see ../README.md.
+name: disc-assistant
+
+services:
+  typesense:
+    image: typesense/typesense:30.2
+    environment:
+      TYPESENSE_API_KEY: "${TYPESENSE_API_KEY:?set TYPESENSE_API_KEY in research/disc_assistant/assistant/.env}"
+      TYPESENSE_DATA_DIR: /data
+      TYPESENSE_API_ADDRESS: 0.0.0.0
+      TYPESENSE_API_PORT: "8108"
+    ports:
+      - "127.0.0.1:${TYPESENSE_PORT:-8108}:8108"
+    volumes:
+      - typesense-data:/data
+    cap_drop: [ALL]
+    security_opt: ["no-new-privileges:true"]
+    stop_grace_period: 30s
+
+volumes:
+  typesense-data:

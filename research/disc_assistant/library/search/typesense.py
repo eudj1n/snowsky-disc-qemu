@@ -1,0 +1,100 @@
+"""Official async SDK adapter. SQLite selects a completely built collection."""
+import hashlib
+import json
+from uuid import uuid4
+
+from research.disc_assistant.library.store import StaleSnapshot
+
+SCHEMA_VERSION = 1
+FIELDS = ['title', 'artist', 'album', 'title_aliases', 'artist_aliases']
+
+
+def signature(aliases, server):
+    value = json.dumps([SCHEMA_VERSION, aliases, server], sort_keys=True, ensure_ascii=False)
+    return hashlib.sha256(value.encode()).hexdigest()
+
+
+def create_client(config, api_key):
+    try:
+        from typesense import AsyncClient
+    except ImportError as exc:
+        raise RuntimeError('install the prototype requirements to use search') from exc
+    return AsyncClient({'api_key': api_key, 'nodes': [{'host': config.search_host,
+        'port': config.search_port, 'protocol': config.search_protocol}],
+        'connection_timeout_seconds': config.timeout, 'num_retries': 0})
+
+
+class Search:
+    def __init__(self, client, aliases, server):
+        self.client = client
+        self.aliases = aliases
+        self.signature = signature(aliases, server)
+
+    async def build(self, store, device):
+        head = store.head(device)
+        generation = head['generation']
+        if generation is None:
+            raise ValueError('no catalog snapshot; run sync first')
+        documents = store.documents(generation)
+        for doc in documents:
+            doc['artist_aliases'] = self.aliases.get('artists', {}).get(doc['artist'], [])
+            doc['title_aliases'] = self.aliases.get('titles', {}).get(doc['title'], [])
+        # Random per attempt: no in-place updates and no exposed partial collections.
+        name = 'disc_prototype_' + uuid4().hex
+        collection = self.client.collections[name]
+        try:
+            await self.client.collections.create({'name': name, 'fields': [
+                {'name': field, 'type': 'string[]' if field.endswith('_aliases') else 'string'}
+                for field in FIELDS] + [{'name': 'generation', 'type': 'string', 'index': False}]})
+            for start in range(0, len(documents), 200):
+                batch = documents[start:start + 200]
+                result = await collection.documents.import_(batch, {'action': 'create'})
+                # HTTP 200 can include per-document failures. Never publish those.
+                if (not isinstance(result, list) or len(result) != len(batch)
+                        or any(not isinstance(row, dict) or row.get('success') is not True for row in result)):
+                    raise ValueError('Typesense rejected an index batch; old projection retained')
+            info = await collection.retrieve()
+            if info.get('num_documents') != head['track_count']:
+                raise ValueError('Typesense document count mismatch; old projection retained')
+            store.publish_index(device, generation, name, self.signature)
+        except BaseException:
+            # Best effort for this attempt only. Do not delete a previous published index.
+            try:
+                await collection.delete()
+            except Exception:
+                pass
+            raise
+        return store.head(device)
+
+    async def search(self, store, device, query, *, limit=10):
+        if not isinstance(query, str) or not query.strip() or len(query) > 1000:
+            raise ValueError('query must contain 1..1000 characters')
+        if type(limit) is not int or not 1 <= limit <= 50:
+            raise ValueError('limit must be in 1..50')
+        head = store.verify_index(device, self.signature)
+        reply = await self.client.collections[head['collection']].documents.search({
+            'q': query.strip(), 'query_by': ','.join(FIELDS), 'query_by_weights': '6,5,2,4,3',
+            'per_page': limit, 'num_typos': 2, 'prefix': True,
+            'drop_tokens_threshold': 0, 'split_join_tokens': 'off',
+            'highlight_fields': ','.join(FIELDS), 'enable_highlight_v1': True,
+        })
+        if store.verify_index(device, self.signature) != head:
+            raise StaleSnapshot('catalog or index changed during search; repeat the query')
+        if (type(reply.get('found')) is not int or not isinstance(reply.get('hits'), list)
+                or reply.get('search_cutoff') is True):
+            raise ValueError('incomplete or invalid search response')
+        hits = []
+        for hit in reply['hits']:
+            document = hit['document']
+            row = store.db.execute('SELECT * FROM tracks WHERE id=? AND generation=?',
+                                   (document.get('id'), head['generation'])).fetchone()
+            if row is None or any(document.get(k) != row[k] for k in ('generation', 'title', 'artist', 'album')):
+                raise StaleSnapshot('search result disagrees with SQLite; rebuild the index')
+            evidence = [{'field': h['field'], 'matched_tokens': h.get('matched_tokens', [])}
+                        for h in hit.get('highlights', []) if h.get('field') in FIELDS]
+            hits.append({'id': row['id'], 'title': row['title'], 'artist': row['artist'],
+                         'album': row['album'], 'source': json.loads(row['source']),
+                         'match': evidence, 'text_match': str(hit.get('text_match', ''))})
+        return {'device': device, 'generation': head['generation'], 'observed_at': head['observed_at'],
+                'query': query, 'found': reply['found'], 'candidates': hits,
+                'selection': 'candidates_only', 'identity': 'snapshot-only'}

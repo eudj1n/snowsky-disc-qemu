@@ -1,0 +1,31 @@
+# Run from the repository root. One device per config; key is a user-assigned
+# persistent namespace, not a discovered serial number. Do not reuse for another device.
+[device]
+key = "local-disc-emulator"
+host = "127.0.0.1"
+tcp_port = 12100
+http_port = 12113 # Direct emulator HTTP. Physical DISC normally uses 12103.
+
+[storage]
+# Default: OS application-data location / disc-hub / prototype.
+# Explicit overrides must be absolute, outside this checkout. ~ is expanded.
+# data_dir = "~/Library/Application Support/disc-hub/prototype"
+
+[typesense]
+host = "127.0.0.1"
+port = 8108
+protocol = "http"
+api_key_env = "TYPESENSE_API_KEY"
+
+[sync]
+page_size = 200
+max_tracks = 100000
+max_requests = 10000
+# Per network operation; a complete import can take much longer.
+timeout = 8
+
+# Optional explicit search aliases; these do not rewrite device metadata.
+[aliases.artists]
+"Linkin Park" = ["линкин парк"]
+[aliases.titles]
+"Numb" = ["намб"]

@@ -1,0 +1,39 @@
+# Assistant application prototype
+
+Experimental CLI orchestration in `research/disc_assistant/assistant/`.
+See the [prototype guide](../README.md) for setup, commands and acceptance, and the
+[implementation plan](../../../docs/ASSISTANT.md) for later voice/playback work.
+
+| File | Responsibility |
+| --- | --- |
+| `__main__.py` | `sync`, `status`, `index`, `search`; JSON output and errors |
+| `config.py`, `config.example.toml` | Explicit device/search/storage configuration and aliases |
+| `session.py` | One short sequential controller TCP session and matching HTTP endpoint during import |
+| `requirements.txt` | Python runtime pins: official Typesense async SDK and aiohttp |
+| `compose.yaml`, `.env.example` | Independent local Typesense service |
+| `voice/` | Reserved package; no recording or recognition yet |
+| `tests/` | Configuration, CLI and session tests |
+
+The application asks [library](../library/README.md) for persistence/search and
+uses the existing [controller](../../../controller/) public APIs. No emulator or
+viewer imports. Importing modules creates no storage, connections or microphone.
+Use `research/disc_assistant/run.sh` for setup, local Typesense and CLI commands.
+It selects the explicit `.venv/bin/python`, loads the private key and invokes
+`-m research.disc_assistant.assistant` from the repository root; shell aliases
+do not override its interpreter.
+
+The official [typesense-python](https://github.com/typesense/typesense-python)
+2.0.0 AsyncClient is used only by library search; its transport closes on CLI exit.
+Aiohttp is reserved for the future application's HTTP/WebSocket service and is
+used by disposable acceptance for readiness. This slice has no application server.
+Speech dependencies and a transitive lockfile remain deferred.
+
+The current controller client deliberately discards unrelated events during
+queries. This bounded importer checks queued scan events around HTTP reads, but
+is not a persistent event service or listening-history collector. Before adding
+playback/history, implement one reader that routes replies and events centrally,
+serializes commands and never replays an uncertain mutation.
+
+Russian and English metadata/aliases are searchable independently of the device's
+UI language. Natural-language commands, dialogue, ranking policy, fresh selection
+and execution verification will be implemented in subsequent slices.
