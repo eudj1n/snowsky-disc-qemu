@@ -15,7 +15,7 @@ Active firmware: **V2.57**. Local protocol research is finalized in
 ### Added
 
 - Experimental local browser execution of DISC through TinyEMU/WebAssembly,
-  with a separate build workflow and framebuffer/tap adapter. [Prototype](docs/BROWSER.md).
+  with a separate build workflow, live screen, taps, swipe navigation, Back and screen sleep/wake controls. [Prototype](docs/BROWSER.md).
 - Remote playback, seeking, play modes, favorites and guarded queue selection,
   with natural end-of-track/list checks. [Playback](docs/REMOTE_CONTROL.md).
 - HTTP file transfer, library browsing and custom playlist management/playback;

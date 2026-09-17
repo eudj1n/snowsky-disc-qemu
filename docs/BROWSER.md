@@ -8,10 +8,10 @@ there is no server-side firmware process or framebuffer API.
 Browser Web Worker
   TinyEMU / WebAssembly → RISC-V Linux → qemu-mipsel → mq_ui + mq_player
        ↕ virtual 9P filesystem (in browser memory)
-  Canvas framebuffer ← frame.bgrx     tap-N → MIPS input events
+  Canvas framebuffer ← frame.bgrx     gesture-N → MIPS input events
 ```
 
-The first target is the V2.57 main menu and a working tap. This is a research
+The prototype runs the V2.57 main menu with taps and swipe navigation. This is a research
 prototype, not a replacement for the validated Docker emulator. It does not
 enable another firmware profile or change the normal startup scripts.
 
@@ -29,6 +29,18 @@ The server binds to localhost only. **Stop** terminates the worker and clears
 the display; starting again creates a fresh VM. **Save screen** exports the
 actual Canvas pixels. The optional console sends commands into the emulated
 RISC-V Linux, not the host.
+
+Click to tap; drag across the screen to swipe. **Left → right** goes back; the
+**Back** button sends the same gesture. Vertical drags scroll lists or operate
+the firmware shade. A gesture is sent on pointer release and then played inside
+the VM; wait for it to finish before the next action. Cancellation sends nothing.
+
+The top physical button is represented by **Lock screen / Wakeup**. It sends a
+short press: when the display is on it sleeps; when off it wakes. The label and
+canvas blanking follow the firmware backlight stub, and touch/Back are disabled
+while asleep. Waking may show the stock clock lockscreen; swipe **bottom → top** to dismiss it.
+If the firmware processes have stopped, the button is disabled: use **Stop →
+Start player** for a fresh VM. Waking the display does not restart firmware.
 
 Docker is required to build the bundle, not to run it. Once built, serving
 `work/browser-disc/www` is sufficient. Do not rebuild that directory while a
@@ -77,8 +89,14 @@ and these notes can be committed independently.
   the existing viewer, this is not an atomic framebuffer fence.
 - Touch uses explicit **16-byte MIPS input_event** records; the RISC-V host's
   native timeval layout must not be used. The adapter flips both coordinates
-  and separates press/release by 300 ms of guest time. Only one tap may be
-  pending. Missing acknowledgement never causes an automatic retry.
+  and separates tap press/release by 300 ms of guest time. Swipes use 12
+  interpolated moves, spaced 28 ms apart, matching the normal viewer. Only one
+  gesture may be pending. Missing acknowledgement never causes an automatic retry.
+- The screen button sends only the reviewed `0x103` key with a 120 ms
+  press/release on `event0`, using the same MIPS event layout as touch. It has
+  no arbitrary key-code interface, long-press shutdown or automatic retry.
+  Screen state is read from the standard backlight brightness stub; injection
+  acknowledgement alone does not establish a successful wake.
 - TinyEMU's old path walker does not resolve `/` as an import directory; the
   guest sets the 9P import directory to `.`. Using `/` silently drops imported
   commands even though framebuffer exports continue working.
@@ -102,20 +120,40 @@ not SD mounting or media playback. The worker's Stop control was also exercised.
 Fresh browser entropy initialized the virtual kernel's CRNG at about 0.9 seconds
 of guest time; this does not establish a startup-speed improvement.
 
-On this branch, firmware-free checks passed: **312 Python tests and 25 JavaScript
+On this branch, firmware-free checks passed: **312 Python tests and 33 JavaScript
 tests**, shell syntax and all four standard MIPS shim builds. The RISC-V adapter
 also compiled with `-Wall -Wextra -Werror`. The generated bundle's dependency
 hashes and local documentation links were checked. No shared emulator runtime
-code was changed, and no full/idle acceptance claim is made for this prototype.
+code was changed. Browser-specific acceptance is separate from the normal
+Docker lifecycle checks. Both required disposable V2.57 scenarios passed:
+`idle` (full TCP/WS lifecycle) and `idle-usb` (including the real 310-second
+USB observation). These guard the standard runtime and do not establish the
+same long-duration lifecycle coverage inside TinyEMU.
+
+A subsequent browser run with gesture support reached the menu at about 137
+seconds. A click opened Browse files; a real left-to-right pointer drag returned
+to the main menu, with a fresh frame confirming the transition. Re-entering
+Browse files and pressing **Back** also returned to the menu. Both paths were
+verified in the browser, beyond input-injection acknowledgements.
+
+Screen-control testing observed the real backlight transition on → off → on,
+with the button changing Lock screen → Wakeup → Lock screen and the clock
+appearing after wake. A bottom-to-top swipe dismissed the clock both in a diagnostic
+run and in the final normal bundle, without restarting the VM. One earlier left-to-right swipe after waking ended `mq_ui` with MIPS
+SIGBUS (target signal 10, host wait status 7). Its cause remains unisolated;
+do not treat the presence of a Wakeup button as proof of complete lockscreen
+stability. No firmware timer or idle policy is overridden by this control.
 
 The same RISC-V kernel/disk also boots with native TinyEMU as a diagnostic
 preflight. Native results alone are not browser acceptance. Firmware-free
 checks include known-color/opposite-corner framebuffer conversion and rejection
-of truncated or concatenated frames.
+of truncated or concatenated frames. Pointer tests cover scaled coordinates,
+small tap jitter, clamped drags, cancellation, second-pointer rejection and
+preventing an out-and-back drag from activating an item.
 
-Implemented scope: startup, framebuffer delivery, click-to-tap transport,
+Implemented scope: startup, framebuffer delivery, tap/swipe transport, Back and screen sleep/wake buttons,
 worker stop/restart, screen export and a guest console. Sound delivery, SD/media
-import, swipes, physical buttons, network control, persistence and mobile-browser
+import, other physical buttons, network control, persistence and mobile-browser
 performance remain outside this prototype. Existing firmware sleep/idle settings
 are not overridden; complete power/screen lifecycle behavior is not validated.
 The page reserves 512 MiB of guest RAM; the browser needs additional memory for

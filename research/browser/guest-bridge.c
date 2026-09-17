@@ -1,4 +1,4 @@
-/* RISC-V host adapter inside TinyEMU: DISC framebuffer and one-at-a-time taps.
+/* RISC-V host adapter inside TinyEMU: DISC framebuffer and one-at-a-time gestures.
  * Firmware and existing MIPS shims stay unmodified by this adapter.
  */
 #define _GNU_SOURCE
@@ -90,17 +90,58 @@ static int event(int fd, uint16_t type, uint16_t code, int32_t value) {
     return write_all(fd, &e, sizeof(e));
 }
 
-static int tap(int x, int y) {
-    if (x < 0 || x >= WIDTH || y < 0 || y >= WIDTH) return -1;
+static int position(int fd, int x, int y) {
+    x = WIDTH - 1 - x; y = WIDTH - 1 - y;
+    return event(fd, 3, 0x35, x) || event(fd, 3, 0x36, y) ||
+        event(fd, 3, 0, x) || event(fd, 3, 1, y);
+}
+
+static int screen_on(void) {
+    FILE *f = fopen("/disc/sys/bus/platform/drivers/pwm-backlight/backlight/backlight/backlight/brightness", "r");
+    int brightness = -1;
+    if (f) { if (fscanf(f, "%d", &brightness) != 1) brightness = -1; fclose(f); }
+    return brightness < 0 ? -1 : brightness > 0;
+}
+
+static int power_key(void) {
+    int fd = open("/disc/dev/input/event0", O_WRONLY | O_APPEND);
+    if (fd < 0) return -1;
+    /* Only the reviewed short screen sleep/wake code. No raw key-code API. */
+    int rc = event(fd, 1, 0x103, 1) || event(fd, 0, 0, 0);
+    usleep(120000);
+    rc |= event(fd, 1, 0x103, 0);
+    rc |= event(fd, 0, 0, 0);
+    close(fd);
+    return rc ? -1 : 0;
+}
+
+static int gesture(const char *kind, int x0, int y0, int x1, int y1) {
+    if (x0 < 0 || x0 >= WIDTH || y0 < 0 || y0 >= WIDTH ||
+        x1 < 0 || x1 >= WIDTH || y1 < 0 || y1 >= WIDTH) return -1;
+    if (!strcmp(kind, "power")) return power_key();
+    if (screen_on() == 0) return -1;
+    int swipe = !strcmp(kind, "swipe");
+    if (!swipe && strcmp(kind, "tap")) return -1;
     int fd = open("/disc/dev/input/event1", O_WRONLY | O_APPEND);
     if (fd < 0) return -1;
-    x = WIDTH - 1 - x; y = WIDTH - 1 - y;
-    int rc = event(fd, 3, 0x39, 0) || event(fd, 3, 0x35, x) ||
-        event(fd, 3, 0x36, y) || event(fd, 3, 0, x) || event(fd, 3, 1, y) ||
+    int rc = event(fd, 3, 0x39, 0) || position(fd, x0, y0) ||
         event(fd, 1, 0x14a, 1) || event(fd, 0, 0, 0);
-    /* Separate phases so LVGL sees a press, preserving the normal tap duration. */
-    usleep(300000);
-    rc |= event(fd, 3, 0x39, -1) || event(fd, 1, 0x14a, 0) || event(fd, 0, 0, 0);
+    if (swipe) {
+        /* Match the normal viewer: 12 moves with 28 ms between samples.
+         * Guest time keeps LVGL and injection on the same emulated clock. */
+        usleep(28000);
+        for (int i = 1; i <= 12 && !rc; i++) {
+            rc = position(fd, x0 + (x1 - x0) * i / 12, y0 + (y1 - y0) * i / 12) ||
+                event(fd, 0, 0, 0);
+            usleep(28000);
+        }
+    } else {
+        usleep(300000);
+    }
+    /* Always release, even if an earlier write failed. */
+    rc |= event(fd, 3, 0x39, -1);
+    rc |= event(fd, 1, 0x14a, 0);
+    rc |= event(fd, 0, 0, 0);
     close(fd);
     return rc ? -1 : 0;
 }
@@ -139,7 +180,7 @@ int main(void) {
     int fb = open("/disc/dev/fb0", O_RDONLY);
     if (fb < 0) { perror("framebuffer"); return 1; }
     unsigned sequence = 1, frames = 0;
-    int ready = 0, failed = 0;
+    int ready = 0, failed = 0, last_screen = -2;
     for (;;) {
         int status;
         if (waitpid(ui, &status, WNOHANG) == ui || waitpid(player, &status, WNOHANG) == player) {
@@ -170,18 +211,28 @@ int main(void) {
             }
         }
         if (ready) {
+            int on = screen_on();
+            if (on != last_screen) {
+                char message[128];
+                snprintf(message, sizeof(message), "{\"state\":\"screen\",\"screenOn\":%s}",
+                    on < 0 ? "null" : on ? "true" : "false");
+                if (!publish("status.json", message, strlen(message))) last_screen = on;
+                printf("BROWSER_DISC: screen %s\n", on < 0 ? "unknown" : on ? "on" : "off");
+            }
             char path[128];
-            snprintf(path, sizeof(path), "/exchange/tap-%u", sequence);
+            snprintf(path, sizeof(path), "/exchange/gesture-%u", sequence);
             FILE *f = fopen(path, "r");
             if (f) {
-                int x, y, rc = -1;
+                int x0, y0, x1, y1, rc = -1;
+                char kind[8] = "invalid";
                 char extra;
-                if (fscanf(f, "%d %d %c", &x, &y, &extra) == 2) rc = tap(x, y);
+                if (fscanf(f, "%7s %d %d %d %d %c", kind, &x0, &y0, &x1, &y1, &extra) == 5)
+                    rc = gesture(kind, x0, y0, x1, y1);
                 fclose(f); unlink(path);
                 char message[128];
-                snprintf(message, sizeof(message), "{\"state\":\"ready\",\"tap\":%u,\"ok\":%s}", sequence, rc ? "false" : "true");
+                snprintf(message, sizeof(message), "{\"state\":\"ready\",\"sequence\":%u,\"ok\":%s}", sequence, rc ? "false" : "true");
                 publish("status.json", message, strlen(message));
-                printf("BROWSER_DISC: tap %u %s\n", sequence, rc ? "failed" : "injected");
+                printf("BROWSER_DISC: %s %u %s\n", kind, sequence, rc ? "failed" : "injected");
                 sequence++;
             }
         }

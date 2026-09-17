@@ -1,21 +1,34 @@
+import {bindGestures} from './gestures.mjs';
 import {WIDTH, bgrxToRgba} from './pixels.mjs';
 
 const byId = id => document.getElementById(id);
 const canvas = byId('screen');
 const context = canvas.getContext('2d');
 let worker = null, ready = false, pending = false, sequence = 0, frames = 0;
+let screenOn = null;
 let started = 0, readyAt = 0, firstFrameAt = 0;
-let metricTimer = null, tapTimer = null;
+let metricTimer = null, inputTimer = null;
 
 function setStatus(text) { byId('status').textContent = text; }
+function updateControls() {
+    byId('back').disabled = !ready || pending || screenOn === false;
+    byId('power').disabled = !ready || pending;
+    byId('power').textContent = screenOn === false ? 'Wakeup' : screenOn === true ? 'Lock screen' : 'Wakeup / Lock';
+    canvas.classList.toggle('asleep', screenOn === false);
+    canvas.classList.toggle('ready', ready && screenOn !== false);
+}
+function runningStatus() {
+    return screenOn === false ? 'Screen asleep · press Wakeup' : 'Running · tap or drag the screen';
+}
 function log(text) {
     const el = byId('console');
     el.textContent = (el.textContent + text.replace(/\r/g, '').replace(/\x1b\[[0-9;]*[A-Za-z]/g, '')).slice(-65536);
     el.scrollTop = el.scrollHeight;
 }
 function stop() {
+    cancelGesture(); screenOn = null;
     worker?.terminate(); worker = null; ready = false; pending = false;
-    clearInterval(metricTimer); clearTimeout(tapTimer);
+    clearInterval(metricTimer); clearTimeout(inputTimer); updateControls();
     canvas.classList.remove('ready'); context.clearRect(0, 0, WIDTH, WIDTH);
     byId('start').disabled = false; byId('stop').disabled = true;
     byId('save').disabled = true; byId('send').disabled = true;
@@ -47,11 +60,18 @@ byId('start').addEventListener('click', () => {
             if (data.value.state === 'ready') {
                 ready = true; if (!readyAt) readyAt = performance.now();
                 canvas.classList.add('ready');
-                if (data.value.tap === sequence) { pending = false; clearTimeout(tapTimer); }
-                setStatus(data.value.ok === false ? 'Tap failed; see console' : 'Running · click the screen');
+                if (data.value.sequence === sequence) { pending = false; clearTimeout(inputTimer); }
+                updateControls();
+                setStatus(data.value.ok === false ? 'Input failed; see console' : runningStatus());
+            } else if (data.value.state === 'screen') {
+                screenOn = data.value.screenOn;
+                if (screenOn === false) cancelGesture();
+                updateControls();
+                if (ready && !pending) setStatus(runningStatus());
             } else if (data.value.state === 'failed') {
-                ready = false; pending = false; canvas.classList.remove('ready');
-                setStatus('Firmware stopped; see console');
+                ready = false; pending = false; cancelGesture(); clearTimeout(inputTimer);
+                updateControls();
+                setStatus('Firmware stopped · Stop → Start player to restart');
             }
             updateMetrics();
         }
@@ -60,18 +80,20 @@ byId('start').addEventListener('click', () => {
     worker.onerror = event => { setStatus('VM error; see console'); log(event.message + '\n'); };
     worker.postMessage({type:'start'});
 });
-canvas.addEventListener('click', event => {
-    if (!worker || !ready || pending) return;
-    const r = canvas.getBoundingClientRect();
-    const x = Math.floor((event.clientX - r.left) * WIDTH / r.width);
-    const y = Math.floor((event.clientY - r.top) * WIDTH / r.height);
-    if (x < 0 || x >= WIDTH || y < 0 || y >= WIDTH) return;
-    pending = true; sequence++; setStatus('Sending tap…');
-    worker.postMessage({type:'tap', sequence, x, y});
-    tapTimer = setTimeout(() => {
-        if (pending) setStatus('Tap unconfirmed · stop and restart before retrying');
+function sendGesture(gesture) {
+    if (!worker || !ready || pending || (screenOn === false && gesture.kind !== 'power')) return;
+    pending = true; sequence++; updateControls();
+    setStatus(`Sending ${gesture.kind}…`);
+    worker.postMessage({type:'gesture', sequence, ...gesture});
+    inputTimer = setTimeout(() => {
+        if (pending) setStatus('Input unconfirmed · stop and restart before retrying');
     }, 15000);
-});
+}
+const cancelGesture = bindGestures(canvas, () => worker && ready && !pending && screenOn !== false, sendGesture);
+byId('back').addEventListener('click', () =>
+    sendGesture({kind:'swipe', x0:18, y0:180, x1:320, y1:180}));
+byId('power').addEventListener('click', () =>
+    sendGesture({kind:'power', x0:0, y0:0, x1:0, y1:0}));
 byId('stop').addEventListener('click', stop);
 byId('save').addEventListener('click', () => {
     canvas.toBlob(blob => {

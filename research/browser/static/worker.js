@@ -47,11 +47,12 @@ self.onmessage = ({data}) => {
         importScripts('riscvemu64-wasm.js');
     } else if (data.type === 'console' && loaded) {
         for (const c of data.text) Module.ccall('console_queue_char', null, ['number'], [c.charCodeAt(0)]);
-    } else if (data.type === 'tap' && loaded) {
-        if (![data.x, data.y, data.sequence].every(Number.isInteger) ||
-            data.x < 0 || data.x >= 360 || data.y < 0 || data.y >= 360 || data.sequence < 1) return;
-        const bytes = new TextEncoder().encode(`${data.x} ${data.y}\n`);
+    } else if (data.type === 'gesture' && loaded) {
+        if (!['tap', 'swipe', 'power'].includes(data.kind) ||
+            !Number.isSafeInteger(data.sequence) || data.sequence < 1 || data.sequence > 0xffffffff ||
+            ![data.x0, data.y0, data.x1, data.y1].every(v => Number.isInteger(v) && v >= 0 && v < 360)) return;
+        const bytes = new TextEncoder().encode(`${data.kind} ${data.x0} ${data.y0} ${data.x1} ${data.y1}\n`);
         // fs_import_file owns/frees this allocation; the import stays inside WASM.
-        importBytes(`tap-${data.sequence}`, bytes);
+        importBytes(`gesture-${data.sequence}`, bytes);
     }
 };
