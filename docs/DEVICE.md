@@ -23,6 +23,12 @@ dns-sd -B _fiio._tcp           # an instance appears only while a control channe
 arp -n <ip>                    # MAC, to re-find the device after a DHCP change
 ```
 
+V2.57 follow-up: the UDP payload is exactly `SNOWSKY DISC`, with no embedded
+address/port. Stock TCP acceptance suppresses its beacons until disconnect.
+The `_fiio._tcp` registration code uses port **12102**; do not infer control port
+12100 from that service name. Current physical/emulator evidence, caveats and
+the opt-in host LAN bridge are in [DISCOVERY.md](DISCOVERY.md).
+
 ## Open ports (stock V2.40, full 65535 scan)
 
 | port | service | notes |
@@ -30,7 +36,7 @@ arp -n <ip>                    # MAC, to re-find the device after a DHCP change
 | 53/tcp | dnsmasq (DNS) | background |
 | 111/tcp + high (mountd/statd) | rpcbind + NFS RPC daemons | **no exports, no `nfsd`** → NFS is *not* a file-access path (it exists for the NFS *client*, to mount a NAS) |
 | **12100/tcp** | FiiO Link — control, state, library | **auth-free**, one client at a time |
-| **12103/tcp** | Mongoose HTTP/WS — `/api/*`, `/fs/*`, dashboard | `mg_dash` gate (see [PROTOCOL.md](PROTOCOL.md)) |
+| **12103/tcp** | Stock Mongoose HTTP — `/dir/`, `/audio/`, image and library routes | Active router is not `mg_dash`; no stock WebSocket route established (see [PROTOCOL.md](PROTOCOL.md)) |
 | 12101/udp | discovery multicast | `224.0.0.255` |
 
 12100 is the working channel. Minimal client:
@@ -63,7 +69,10 @@ print(s.recv(4096))
 
 - The music SD is mounted at **`/tmp/sdcard/`** (confirmed from a now-playing path, e.g.
   `/tmp/sdcard/<Artist>/<Album>/NN. Track.flac`). The emulator reproduces this mount point.
-- **No protocol path uploads files to the SD** (see [PROTOCOL.md](PROTOCOL.md) — the device-WS
-  command set has no file-push). Writing to the card needs `mg_dash` `/fs` (provisioned creds) or
-  a root shell (UART/diskOS). Library **read** and transport **control**, however, are fully
-  available auth-free on 12100.
+- FiiO Control exposes Wi-Fi file import and folder creation for DISC in user-provided
+  screenshots (2026-09-15). Follow-up tests confirmed `POST /audio/`, `GET/POST /dir/`
+  and single-path `DELETE /file/` in the emulator and on physical V2.57 with generated
+  media; see [HTTP_API.md](HTTP_API.md) for the exact request contract and evidence.
+  The earlier claim that SD writes require `mg_dash` credentials or a root shell was
+  incorrect. Tested library **read** and transport **control** use auth-free 12100;
+  file management is a separate [HTTP investigation](PROTOCOL.md#file-transfer-is-a-separate-http-investigation).

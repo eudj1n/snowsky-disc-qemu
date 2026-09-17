@@ -1,0 +1,157 @@
+{
+  "source": "2026-09-16-001300.pcap",
+  "source_sha256": "ba7160176115f2b7c07d72235e8e8953902af1384a95b79691e1eba3080567e8",
+  "note": "Exact queue selector and transport commands; catalog names/authors replaced and snapshots reduced to synthetic song identity plus observed outer fields. Not full original HTTP or a202 bodies. Private album name, track metadata, artwork and unrelated traffic omitted.",
+  "initial_play_mode": 1,
+  "queue_request": {
+    "method": "GET",
+    "path": "/song_category_tree/",
+    "headers": {
+      "type": "curlist/song",
+      "start-pos": "0",
+      "num-max": "100",
+      "artist": "",
+      "album": "",
+      "style": ""
+    }
+  },
+  "queue_response": {
+    "headers": {
+      "total-num": "15",
+      "mark-pos": "0",
+      "type": "curlist/song",
+      "content-type": "application/json"
+    },
+    "rows": [
+      {
+        "pos": 0,
+        "name": "Fixture Track 01",
+        "author": "Fixture Artist",
+        "count": 0
+      },
+      {
+        "pos": 1,
+        "name": "Fixture Track 02",
+        "author": "Fixture Artist",
+        "count": 0
+      },
+      {
+        "pos": 2,
+        "name": "Fixture Track 03",
+        "author": "Fixture Artist",
+        "count": 0
+      },
+      {
+        "pos": 3,
+        "name": "Fixture Track 04",
+        "author": "Fixture Artist",
+        "count": 0
+      },
+      {
+        "pos": 4,
+        "name": "Fixture Track 05",
+        "author": "Fixture Artist",
+        "count": 0
+      },
+      {
+        "pos": 5,
+        "name": "Fixture Track 06",
+        "author": "Fixture Artist",
+        "count": 0
+      },
+      {
+        "pos": 6,
+        "name": "Fixture Track 07",
+        "author": "Fixture Artist",
+        "count": 0
+      },
+      {
+        "pos": 7,
+        "name": "Fixture Track 08",
+        "author": "Fixture Artist",
+        "count": 0
+      },
+      {
+        "pos": 8,
+        "name": "Fixture Track 09",
+        "author": "Fixture Artist",
+        "count": 0
+      },
+      {
+        "pos": 9,
+        "name": "Fixture Track 10",
+        "author": "Fixture Artist",
+        "count": 0
+      },
+      {
+        "pos": 10,
+        "name": "Fixture Track 11",
+        "author": "Fixture Artist",
+        "count": 0
+      },
+      {
+        "pos": 11,
+        "name": "Fixture Track 12",
+        "author": "Fixture Artist",
+        "count": 0
+      },
+      {
+        "pos": 12,
+        "name": "Fixture Track 13",
+        "author": "Fixture Artist",
+        "count": 0
+      },
+      {
+        "pos": 13,
+        "name": "Fixture Track 14",
+        "author": "Fixture Artist",
+        "count": 0
+      },
+      {
+        "pos": 14,
+        "name": "Fixture Track 15",
+        "author": "Fixture Artist",
+        "count": 0
+      }
+    ]
+  },
+  "commands": [
+    {
+      "time": "2026-09-16T00:13:43.740781+05:00",
+      "wire": "0100003b00020000Список воспроизведения"
+    },
+    {
+      "time": "2026-09-16T00:13:51.442394+05:00",
+      "wire": "0201000c0001"
+    },
+    {
+      "time": "2026-09-16T00:13:58.977273+05:00",
+      "wire": "0201000c0002"
+    },
+    {
+      "time": "2026-09-16T00:14:05.445209+05:00",
+      "wire": "0201000c0000"
+    }
+  ],
+  "snapshots": [
+    {
+      "time": "2026-09-16T00:13:24.493615+05:00",
+      "payload": "{\"song\":\"{\\\"id\\\":100,\\\"pos_id\\\":1,\\\"song_name\\\":\\\"Fixture Track 01\\\",\\\"song_artist_name\\\":\\\"Fixture Artist\\\",\\\"song_file_path\\\":\\\"/tmp/sdcard/Fixture/01.flac\\\"}\",\"love\":false,\"playerflag\":3,\"state\":2,\"playing_num\":\"1/15\",\"work_mode\":\"LOCAL\"}"
+    },
+    {
+      "time": "2026-09-16T00:13:43.959002+05:00",
+      "payload": "{\"song\":\"{\\\"id\\\":102,\\\"pos_id\\\":3,\\\"song_name\\\":\\\"Fixture Track 03\\\",\\\"song_artist_name\\\":\\\"Fixture Artist\\\",\\\"song_file_path\\\":\\\"/tmp/sdcard/Fixture/03.flac\\\"}\",\"love\":false,\"playerflag\":0,\"state\":2,\"playing_num\":\"3/15\",\"work_mode\":\"LOCAL\"}"
+    },
+    {
+      "time": "2026-09-16T00:13:53.174547+05:00",
+      "payload": "{\"song\":\"{\\\"id\\\":110,\\\"pos_id\\\":11,\\\"song_name\\\":\\\"Fixture Track 11\\\",\\\"song_artist_name\\\":\\\"Fixture Artist\\\",\\\"song_file_path\\\":\\\"/tmp/sdcard/Fixture/11.flac\\\"}\",\"love\":false,\"playerflag\":0,\"state\":2,\"playing_num\":\"11/15\",\"work_mode\":\"LOCAL\"}"
+    },
+    {
+      "time": "2026-09-16T00:13:59.098748+05:00",
+      "payload": "{\"song\":\"{\\\"id\\\":102,\\\"pos_id\\\":3,\\\"song_name\\\":\\\"Fixture Track 03\\\",\\\"song_artist_name\\\":\\\"Fixture Artist\\\",\\\"song_file_path\\\":\\\"/tmp/sdcard/Fixture/03.flac\\\"}\",\"love\":false,\"playerflag\":0,\"state\":2,\"playing_num\":\"3/15\",\"work_mode\":\"LOCAL\"}"
+    }
+  ],
+  "final_state": 1,
+  "app_version": "4.6.0",
+  "app_version_evidence": "Owner confirmed on 2026-09-16 that all supplied iOS checks/captures used FiiO Control 4.6.0; not derived from network User-Agent."
+}

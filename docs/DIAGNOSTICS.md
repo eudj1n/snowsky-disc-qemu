@@ -22,6 +22,8 @@ docker exec diskos-qemu python3 /repo/tools/inspect_http_routes.py
 docker exec diskos-qemu python3 /repo/tools/probe_keys.py --version 2.57 --rootfs /work/rootfs
 # Offline route inspection also works on the host:
 python3 tools/inspect_http_routes.py /path/to/mq_player --version 2.57
+# Offline TCP admission table; reviewed only for active V2.57:
+python3 tools/inspect_link_commands.py /path/to/mq_player --version 2.57
 ```
 
 `player_memory.py` restricts process discovery to the selected chroot and matches
@@ -33,6 +35,11 @@ handles this overlap without confusing code and data.
 QEMU's host mapping of executable guest code can be `r--p` because instructions are
 translated. Multiple players, missing/unreadable ranges, null context pointers and
 short reads fail explicitly. Memory is opened only as `rb`; these tools never write it.
+If process discovery sees multiple matching PIDs, it rechecks up to ten times
+at 50 ms intervals before failing: a main-thread `popen` fork can temporarily
+inherit both `mq_player` comm and argv. It never chooses the first ambiguous PID.
+Only discovery is retried, before opening memory or sending a diagnostic event;
+guest mutations are not retried. An absent player still fails immediately.
 Snapshots span several reads and are not atomic; retry if the guest changes context
 or exits. They are manual diagnostics, not a high-rate viewer transport.
 
@@ -51,10 +58,19 @@ All values below are **guest virtual addresses** in the exact pinned builds.
 | `0502` / `0201` callback slots | `82e634 / 82e638` | `83a3f4 / 83a3f8` |
 | Device-volume callback slot | `88cc44` | `898dd4` |
 | HTTP route table / entries | `6c7a50 / 16` | `6d2580 / 17` |
+| TCP allowlist / entries | Not reviewed | `6d84e0 / 111` |
 | HTTP thread / active callback | `4b9720 / 4b9d38` | `4c0f90 / 4c15a8` |
 
 V2.57 static derivation, using `mipsel-linux-gnu-objdump -d` and string/pointer xrefs:
 
+- TCP receiver `4db020` calls `4dabc4`, which compares tags against the independent
+  allowlist at `6d84e0` before enqueueing a command. NULL terminates it at `6d869c`.
+  `inspect_link_commands.py` checks the full fingerprint, file-backed PT_LOAD
+  ranges, exact count, lowercase tag strings, uniqueness and termination. It
+  does not execute firmware or send commands. Presence means admission, not an
+  implemented callback. Local dispatch tables are broader than this list; see
+  [playback preferences](REMOTE_SETTINGS.md#playback-preferences-v257) for rejected
+  TCP/WS commands despite populated runtime callbacks.
 - Key dispatcher `4e72f0` uses configuration base `83a740`; the screen/assignment
   loads are at offsets `15`, `52`, `53`, `54`. Local-volume getter `4ea718` selects
   `83a74c`; the decrease path writes the same byte.

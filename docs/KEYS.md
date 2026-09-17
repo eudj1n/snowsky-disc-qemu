@@ -31,6 +31,10 @@ The guest's own idle-poweroff is also confined: `fbshim` intercepts libc `reboot
 `emu/power-request`, and the viewer stops only this guest. Without a running viewer the
 kernel reboot is still blocked; the request waits for the supervisor. This is not a
 security sandbox for arbitrary direct syscalls or unrelated binaries.
+V2.57 USB power now follows the existing viewer cable switch through stock
+sink-role/ADC detection and inhibits idle power-off, without changing the user's
+idle setting. Display timeout and the separate Sleep timer are independent.
+See [power/reconnect validation and limits](IDLE_POWER.md).
 
 After installing these changes, restart the guest and viewer once:
 

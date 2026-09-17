@@ -1,0 +1,169 @@
+{
+  "app_version": "4.6.0",
+  "app_version_evidence": "Owner confirmed all supplied iOS checks used FiiO Control 4.6.0; not derived from User-Agent.",
+  "source": {
+    "date": "2026-09-16",
+    "capture": "2026-09-16-230929",
+    "device": "physical DISC; firmware version not newly confirmed",
+    "har_sha256": "715ff6e0da18c701b2c41a20ce329b14217b2cf8609c53d425225089909a2178",
+    "pcap_sha256": "aed798b150e1054a9c78fd8c9375490d75d5d37a8bf4758cb473cba0638e6eba",
+    "http_exchanges": 7,
+    "tcp_12100_packets": 0,
+    "scope": "Sanitized headers and hashes only; no image bytes or network addresses."
+  },
+  "owner_observations": {
+    "control_label": "Background opacity",
+    "displayed_sequence": [
+      100,
+      49,
+      0,
+      100
+    ],
+    "appearance": "Intermediate value visibly dims the background; at zero no background image is visible, only dark background.",
+    "refresh": "While already locked, effect required unlocking and locking again. Physical actions/appearance are owner observations, not packet evidence."
+  },
+  "route": "/image/lock_screen/",
+  "common_post_headers": {
+    "content-type": "image/png",
+    "x-fields-to-update": "1",
+    "msg-style": "default/2",
+    "front-color": "r=191;g=139;b=66",
+    "flag-in-use": "1",
+    "subclass": "lock_screen/system/default",
+    "lock-screen": "time=1;date=1;battery=1;id3=1",
+    "alias": "FIIO%20Sheep",
+    "file-source": "lock_screen/system"
+  },
+  "posts": [
+    {
+      "request_frame": 1267,
+      "seconds": 6.275078,
+      "displayed_percent": 100,
+      "back-groud": "alpha=100",
+      "body_size": 0,
+      "status": 200
+    },
+    {
+      "request_frame": 1313,
+      "seconds": 27.310357,
+      "displayed_percent": 49,
+      "back-groud": "alpha=49",
+      "body_size": 0,
+      "status": 200
+    },
+    {
+      "request_frame": 1450,
+      "seconds": 38.504302,
+      "displayed_percent": 0,
+      "back-groud": "alpha=0",
+      "body_size": 0,
+      "status": 200
+    },
+    {
+      "request_frame": 1615,
+      "seconds": 60.749504,
+      "displayed_percent": 100,
+      "back-groud": "alpha=100",
+      "body_size": 0,
+      "status": 200
+    }
+  ],
+  "readbacks": [
+    {
+      "request_frame": 1322,
+      "response_frame": 1326,
+      "seconds": 27.383343,
+      "request_headers": {
+        "x-fields-to-update": "1",
+        "file-source": "lock_screen/system"
+      },
+      "response_headers": {
+        "content-type": "image/png",
+        "alias": "FIIO%20Sheep",
+        "x-fields-to-update": "1",
+        "back-groud": "alpha=49",
+        "lock-screen": "time=1;date=1;battery=1;id3=1",
+        "msg-style": "default/2",
+        "front-color": "r=191;g=139;b=66",
+        "flag-in-use": "1",
+        "file-source": "lock_screen/system",
+        "subclass": "lock_screen/system/default"
+      },
+      "status": 200,
+      "image": {
+        "size": 199846,
+        "sha256": "11d070bec3962cc573f390dbc3c3acdd873f8d2b780e1959217878557d7b31e2",
+        "dimensions": [
+          360,
+          360
+        ]
+      }
+    },
+    {
+      "request_frame": 1459,
+      "response_frame": 1463,
+      "seconds": 38.564353,
+      "request_headers": {
+        "x-fields-to-update": "1",
+        "file-source": "lock_screen/system"
+      },
+      "response_headers": {
+        "content-type": "image/png",
+        "alias": "FIIO%20Sheep",
+        "x-fields-to-update": "1",
+        "back-groud": "alpha=0",
+        "lock-screen": "time=1;date=1;battery=1;id3=1",
+        "msg-style": "default/2",
+        "front-color": "r=191;g=139;b=66",
+        "flag-in-use": "1",
+        "file-source": "lock_screen/system",
+        "subclass": "lock_screen/system/default"
+      },
+      "status": 200,
+      "image": {
+        "size": 199846,
+        "sha256": "11d070bec3962cc573f390dbc3c3acdd873f8d2b780e1959217878557d7b31e2",
+        "dimensions": [
+          360,
+          360
+        ]
+      }
+    },
+    {
+      "request_frame": 1624,
+      "response_frame": 1632,
+      "seconds": 60.801147,
+      "request_headers": {
+        "x-fields-to-update": "1",
+        "file-source": "lock_screen/system"
+      },
+      "response_headers": {
+        "content-type": "image/png",
+        "alias": "FIIO%20Sheep",
+        "x-fields-to-update": "1",
+        "back-groud": "alpha=100",
+        "lock-screen": "time=1;date=1;battery=1;id3=1",
+        "msg-style": "default/2",
+        "front-color": "r=191;g=139;b=66",
+        "flag-in-use": "1",
+        "file-source": "lock_screen/system",
+        "subclass": "lock_screen/system/default"
+      },
+      "status": 200,
+      "image": {
+        "size": 199846,
+        "sha256": "11d070bec3962cc573f390dbc3c3acdd873f8d2b780e1959217878557d7b31e2",
+        "dimensions": [
+          360,
+          360
+        ]
+      }
+    }
+  ],
+  "limits": [
+    "No initial GET; first POST requests system slot 1 at alpha 100. Previously active theme is unknown.",
+    "All GETs omit preview-flag; byte equality applies to returned default-preview images, not a disk/original-image read.",
+    "No custom-theme opacity update or reboot persistence test in this capture.",
+    "Final GET confirms system slot 1 active at alpha 100; does not prove restoration of an unobserved prior theme."
+  ]
+}

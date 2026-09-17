@@ -1,0 +1,70 @@
+{
+  "source": "2026-09-15-231411.har",
+  "source_sha256": "22ccecbea6bc205091dffb5f1f390b5515ee183674e2a2228061106f08c300e4",
+  "app_version_reported_by_user": "FiiO Control iOS 4.6.0",
+  "capture_creator": {
+    "version": "5.22.0",
+    "name": "Surge iOS"
+  },
+  "note": "Only protocol metadata; all image bodies and personal cover artwork omitted. Header names normalized to lowercase. Responses precede selections; no final GET is present.",
+  "selections": [
+    {
+      "slot": 1,
+      "response_headers": {
+        "content-type": "image/png",
+        "alias": "FIIO%20Sheep",
+        "x-fields-to-update": "1",
+        "back-groud": "alpha=100",
+        "lock-screen": "time=1;date=1;battery=1;id3=1",
+        "msg-style": "default/2",
+        "front-color": "r=191;g=139;b=66",
+        "flag-in-use": "0",
+        "file-source": "lock_screen/system",
+        "subclass": "lock_screen/system/default"
+      },
+      "post_headers": {
+        "content-type": "image/png",
+        "x-fields-to-update": "1",
+        "back-groud": "alpha=100",
+        "msg-style": "default/2",
+        "front-color": "r=191;g=139;b=66",
+        "flag-in-use": "1",
+        "subclass": "lock_screen/system/default",
+        "lock-screen": "time=1;date=1;battery=1;id3=1",
+        "alias": "FIIO%20Sheep",
+        "file-source": "lock_screen/system"
+      },
+      "post_body_size": 0
+    },
+    {
+      "slot": 0,
+      "response_headers": {
+        "content-type": "image/png",
+        "alias": "Clock",
+        "x-fields-to-update": "0",
+        "back-groud": "alpha=100",
+        "lock-screen": "time=1;date=1;battery=1;id3=1",
+        "msg-style": "clock/0",
+        "front-color": "r=254;g=1;b=86",
+        "flag-in-use": "1",
+        "file-source": "lock_screen/system",
+        "subclass": "lock_screen/system/default"
+      },
+      "post_headers": {
+        "content-type": "image/png",
+        "x-fields-to-update": "0",
+        "back-groud": "alpha=100",
+        "msg-style": "clock/0",
+        "front-color": "r=254;g=1;b=86",
+        "flag-in-use": "1",
+        "subclass": "lock_screen/system/default",
+        "lock-screen": "time=1;date=1;battery=1;id3=1",
+        "alias": "Clock",
+        "file-source": "lock_screen/system"
+      },
+      "post_body_size": 0
+    }
+  ],
+  "app_version": "4.6.0",
+  "app_version_evidence": "Owner confirmed on 2026-09-16 that all supplied iOS checks/captures used FiiO Control 4.6.0; not derived from network User-Agent."
+}

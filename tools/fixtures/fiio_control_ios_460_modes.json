@@ -1,0 +1,59 @@
+{
+  "source": "2026-09-15-233337.pcap",
+  "source_sha256": "ac46002c2e579c075f46c0d2df7b34fa06f2c2b570f5f55cd59cb3defdf804f8",
+  "note": "Curated successful connection only. Unrelated phone traffic, IP addresses and OTA endpoint omitted. Capability fields are a subset, not an exact a501 wire response. Times use UTC+05:00. Retained frames preserve original hex letter case; iOS uses lowercase length digits, while our encoder uses uppercase.",
+  "handshake": {
+    "request": "0599000c0000",
+    "reply": "a599000C0306"
+  },
+  "initial_mode": {
+    "request": "0607000c0000",
+    "reply": "a607000C0008"
+  },
+  "modes": [
+    {
+      "time": "2026-09-15T23:34:10.416330+05:00",
+      "value": 1,
+      "request": "0657000c0001",
+      "reply": "a607000C0001"
+    },
+    {
+      "time": "2026-09-15T23:34:15.634257+05:00",
+      "value": 8,
+      "request": "0657000c0008",
+      "reply": "a607000C0008"
+    },
+    {
+      "time": "2026-09-15T23:34:17.768497+05:00",
+      "value": 10,
+      "request": "0657000c000A",
+      "reply": "a607000C000A"
+    },
+    {
+      "time": "2026-09-15T23:34:21.652392+05:00",
+      "value": 8,
+      "request": "0657000c0008",
+      "reply": "a607000C0008"
+    }
+  ],
+  "capabilities": {
+    "maxVolume": 120,
+    "http_replace_link": 1,
+    "http_custom_list": 1,
+    "soc_version": 257,
+    "width": 364,
+    "height": 364,
+    "quality": 100,
+    "rgb": 888,
+    "cus_count": 1,
+    "sys_count": 5,
+    "video": "[\"mp4\"]",
+    "image": "[\"png\", \"gif\"]"
+  },
+  "peq": {
+    "request": "0628001000000009",
+    "reply": "a628009C0000000900000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000"
+  },
+  "app_version": "4.6.0",
+  "app_version_evidence": "Owner confirmed on 2026-09-16 that all supplied iOS checks/captures used FiiO Control 4.6.0; not derived from network User-Agent."
+}

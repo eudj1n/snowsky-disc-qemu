@@ -1,0 +1,41 @@
+{
+  "app_version_evidence": "Owner confirmed on 2026-09-16 that all supplied iOS checks/captures used FiiO Control 4.6.0; not derived from network User-Agent.",
+  "source": "2026-09-16-185016.pcap",
+  "source_sha256": "37a1d51d875fd3cf68a9d1f4c378cb7827ecdb72f3eea9cdb90ec3b112090977",
+  "har_sha256": "d2f1dadab4a32aef7dd2f45e4b149674fc89d05aa0e85e7018331c7ce42c2571",
+  "firmware": 257,
+  "app_version": "4.6.0",
+  "note": "Sanitized physical iOS trace. Genre/album names replaced consistently; payloads are not byte-identical originals and frame lengths must be recomputed. IPs, track identities, artwork, unrelated traffic and full settings omitted. Times are PCAP-relative seconds. HAR has only the first 3 of 13 device HTTP exchanges; later evidence comes from PCAP.",
+  "genre": "Fixture Genre",
+  "album": "Fixture Album",
+  "http_requests": [
+    {"frame": 7102, "category": "style", "filters": {}, "headers": {"type": "style", "style": "", "album": "", "artist": "", "start-pos": "0", "num-max": "100"}, "total": 17},
+    {"frame": 8376, "category": "style/album", "filters": {"style": "Fixture Genre"}, "headers": {"type": "style/album", "style": "Fixture%20Genre", "album": "", "artist": "", "start-pos": "0", "num-max": "100"}, "total": 4, "group_counts": [18, 16, 1, 19]},
+    {"frame": 9807, "category": "style/album/song", "filters": {"style": "Fixture Genre", "album": "Fixture Album"}, "headers": {"type": "style/album/song", "style": "Fixture%20Genre", "album": "Fixture%20Album", "artist": "", "start-pos": "0", "num-max": "100"}, "total": 19},
+    {"frame": 10043, "category": "style/album/song", "filters": {"style": "Fixture Genre", "album": "Fixture Album"}, "headers": {"type": "style/album/song", "style": "Fixture%20Genre", "album": "Fixture%20Album", "artist": "", "start-pos": "0", "num-max": "100"}, "total": 19}
+  ],
+  "commands": [
+    {"frame": 8078, "seconds": 23.219875, "action": "genre_all", "tag": "0101", "payload": "0008{\"style\":\"Fixture CUE Genre\", \"album\":\"\"}"},
+    {"frame": 8483, "seconds": 39.540728, "action": "genre_all", "tag": "0101", "payload": "0008{\"style\":\"Fixture Genre\", \"album\":\"\"}"},
+    {"frame": 10105, "seconds": 76.349471, "action": "album_track", "index": 15, "tag": "0100", "payload": "000f0008{\"style\":\"Fixture Genre\", \"album\":\"Fixture Album\"}"},
+    {"frame": 10268, "seconds": 79.566729, "action": "next", "tag": "0201", "payload": "0001"},
+    {"frame": 10404, "seconds": 81.683434, "action": "next", "tag": "0201", "payload": "0001"},
+    {"frame": 10636, "seconds": 84.400428, "action": "toggle", "tag": "0201", "payload": "0000", "subsequent_state": 1},
+    {"frame": 10812, "seconds": 87.401630, "action": "album_all", "tag": "0101", "payload": "0008{\"style\":\"Fixture Genre\", \"album\":\"Fixture Album\"}"},
+    {"frame": 11257, "seconds": 91.519274, "action": "toggle", "tag": "0201", "payload": "0000", "subsequent_state": 1}
+  ],
+  "observations": {
+    "genre_all_queue": "7/54",
+    "album_track_queue": "16/19",
+    "next_queues": ["17/19", "18/19"],
+    "album_all_queue": "1/19",
+    "playerflag": 8,
+    "cue_loading_positions": ["1/17", "2/17", "3/17", "4/17", "5/17", "6/17"],
+    "cue_state": 2,
+    "cue_duration_ms": 0,
+    "cue_following_status": "a60a/000D",
+    "cue_status_count": 6,
+    "folder_selection_observed": false,
+    "bulk_mutation_observed": false
+  }
+}

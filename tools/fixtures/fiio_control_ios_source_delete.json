@@ -1,0 +1,240 @@
+{
+  "source": "2026-09-16-225423.pcap",
+  "source_sha256": "da7b98de0ee7e36d3420d2cae2031543c1a4eff968e120498f9949cde57e2748",
+  "har_sha256": "f93eb298fb7ab2b92c837a9fd6d2d1270b4ee887acb824b6994b07d269747426",
+  "screenshot": "IMG_6821.PNG",
+  "screenshot_sha256": "9e70306fcd00a13681426eeb5859c03faa8ddaa3f4b2f5189145a4069a99499c",
+  "app_version": "4.6.0",
+  "app_version_evidence": "Owner confirmed all supplied iOS checks/captures used 4.6.0 on 2026-09-16; not derived from User-Agent.",
+  "firmware": 257,
+  "settings_frame": 1632,
+  "play_mode": 0,
+  "http_exchanges": 11,
+  "note": "Generated disposable media. Only test-genre rows retained from root catalog; root card listing, unrelated names, addresses and full settings omitted. All 11 HTTP response hashes match HAR; contiguous device streams without reported loss/retransmission/truncation. DELETE is the only HTTP mutation; Link payloads are initial handshake/read requests, with no scan/upload/playback mutation. Post-delete track GET starts at offset 1 and returns [] with total 1, not an empty album. Directory listing and screenshot show A2 and B1 only. No file-content hashes, pre-delete file listing, reboot or favorites/custom-list side effects in this capture.",
+  "before": [
+    {
+      "frame": 1666,
+      "seconds": 14.06348,
+      "path": "/song_category_tree/",
+      "headers": {
+        "style": "",
+        "artist": "",
+        "album": "",
+        "start-pos": "0",
+        "type": "style",
+        "num-max": "100"
+      },
+      "response_frame": 1668,
+      "response_headers": {
+        "total-num": "16",
+        "mark-pos": "-1",
+        "type": "style",
+        "content-type": "application/json"
+      },
+      "items": [
+        {
+          "pos": 5,
+          "name": "DISC Delete Probe",
+          "author": "",
+          "count": 2
+        }
+      ]
+    },
+    {
+      "frame": 1675,
+      "seconds": 17.983774,
+      "path": "/song_category_tree/",
+      "headers": {
+        "style": "DISC%20Delete%20Probe",
+        "artist": "",
+        "album": "",
+        "start-pos": "0",
+        "type": "style/album",
+        "num-max": "100"
+      },
+      "response_frame": 1677,
+      "response_headers": {
+        "total-num": "1",
+        "mark-pos": "-1",
+        "type": "style/album",
+        "content-type": "application/json"
+      },
+      "items": [
+        {
+          "pos": 0,
+          "name": "DISC Delete Album A",
+          "author": "",
+          "count": 2
+        }
+      ]
+    },
+    {
+      "frame": 1684,
+      "seconds": 19.651737,
+      "path": "/song_category_tree/",
+      "headers": {
+        "style": "DISC%20Delete%20Probe",
+        "artist": "",
+        "album": "DISC%20Delete%20Album%20A",
+        "start-pos": "0",
+        "type": "style/album/song",
+        "num-max": "100"
+      },
+      "response_frame": 1686,
+      "response_headers": {
+        "total-num": "2",
+        "mark-pos": "-1",
+        "type": "style/album/song",
+        "content-type": "application/json"
+      },
+      "items": [
+        {
+          "pos": 0,
+          "name": "Probe A2",
+          "author": "DISC Delete Probe",
+          "count": 0
+        },
+        {
+          "pos": 1,
+          "name": "Probe A1",
+          "author": "DISC Delete Probe",
+          "count": 0
+        }
+      ]
+    }
+  ],
+  "delete": {
+    "frame": 1729,
+    "seconds": 34.343705,
+    "method": "DELETE",
+    "path": "/song_category_tree/",
+    "headers": {
+      "transfer-encoding": "chunked",
+      "delete_source": "1",
+      "style": "DISC%20Delete%20Probe",
+      "content-type": "application/json",
+      "artist": "",
+      "album": "DISC%20Delete%20Album%20A",
+      "type": "style/album/song"
+    },
+    "decoded_body": "[[1,1]]",
+    "chunked_body": "7\r\n[[1,1]]\r\n0\r\n\r\n",
+    "status": 200,
+    "response_frame": 1733,
+    "response_headers": {
+      "type": "delete",
+      "content-length": "0"
+    }
+  },
+  "after": [
+    {
+      "frame": 1735,
+      "seconds": 34.389385,
+      "path": "/song_category_tree/",
+      "headers": {
+        "style": "DISC%20Delete%20Probe",
+        "artist": "",
+        "album": "DISC%20Delete%20Album%20A",
+        "start-pos": "1",
+        "type": "style/album/song",
+        "num-max": "100"
+      },
+      "response_frame": 1737,
+      "response_headers": {
+        "total-num": "1",
+        "mark-pos": "-1",
+        "type": "style/album/song",
+        "content-type": "application/json"
+      },
+      "items": []
+    },
+    {
+      "frame": 1741,
+      "seconds": 34.41538,
+      "path": "/song_category_tree/",
+      "headers": {
+        "style": "DISC%20Delete%20Probe",
+        "artist": "",
+        "album": "",
+        "start-pos": "0",
+        "type": "style/album",
+        "num-max": "100"
+      },
+      "response_frame": 1745,
+      "response_headers": {
+        "total-num": "1",
+        "mark-pos": "-1",
+        "type": "style/album",
+        "content-type": "application/json"
+      },
+      "items": [
+        {
+          "pos": 0,
+          "name": "DISC Delete Album A",
+          "author": "",
+          "count": 1
+        }
+      ]
+    },
+    {
+      "frame": 1743,
+      "seconds": 34.415619,
+      "path": "/song_category_tree/",
+      "headers": {
+        "style": "",
+        "artist": "",
+        "album": "",
+        "start-pos": "0",
+        "type": "style",
+        "num-max": "100"
+      },
+      "response_frame": 1749,
+      "response_headers": {
+        "total-num": "16",
+        "mark-pos": "-1",
+        "type": "style",
+        "content-type": "application/json"
+      },
+      "items": [
+        {
+          "pos": 5,
+          "name": "DISC Delete Probe",
+          "author": "",
+          "count": 1
+        }
+      ]
+    }
+  ],
+  "directory_after": {
+    "frame": 1782,
+    "seconds": 50.943187,
+    "path": "/dir/tmp/sdcard%2FDISC%20Delete%20Probe/",
+    "headers": {
+      "start-pos": "0",
+      "num-max": "50"
+    },
+    "response_frame": 1784,
+    "response_headers": {
+      "total-num": "2",
+      "content-type": "application/json"
+    },
+    "items": [
+      {
+        "pos": 0,
+        "is_dir": false,
+        "name": "02-Probe-A2.flac",
+        "is_cue": false,
+        "is_m3u": false,
+        "is_image": false
+      },
+      {
+        "pos": 1,
+        "is_dir": false,
+        "name": "03-Probe-B1.flac",
+        "is_cue": false,
+        "is_m3u": false,
+        "is_image": false
+      }
+    ]
+  }
+}

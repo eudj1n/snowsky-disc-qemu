@@ -58,6 +58,9 @@ There is no real framebuffer/driver, so an `LD_PRELOAD`-style shim intercepts `i
 - Empty `read` calls on `/dev/input/event0` wait 5 ms, preventing the physical-key
   reader from spinning on the regular-file stub's EOF. Actual reads delegate to the
   guest libc's `__read`; queued events and other files are not delayed.
+- V2.57 USB sink-role/ADC1 reads follow the viewer cable byte, so the stock
+  detector controls idle-power inhibition. Narrow device/ioctl gates leave other
+  ADC channels unavailable and do not model USB data; see [IDLE_POWER.md](IDLE_POWER.md).
 
 The shim is **freestanding** (`-nostdlib`, raw MIPS syscalls). A normal glibc-linked
 `.so` fails to load because the host toolchain glibc (2.36) ≠ device glibc (2.29):
@@ -232,7 +235,10 @@ or held buttons; see [KEYS.md](KEYS.md). The
 initial **`open("/dev/gpio")` must succeed** or `mq_player` aborts with `failed to open
 device` before it inits the DAC / pushes UI state (→ stuck splash). So `10_setup_env.sh`
 creates 0-byte stubs for `/dev/gpio`, `/dev/jz_adc_aux_0`, `/dev/jz_watchdog` (open works,
-later ioctls still fail). `/dev/jz_adc_aux_0`'s ADC reads still fail — not needed for boot.
+later ioctls generally still fail). V2.57 `15_controls.sh` additionally installs
+USB-power stubs: ADC enable succeeds for sequential channel initialization,
+ADC1 reports cable state, and ADC0/2/3 reads explicitly fail with ENODEV.
+Those other sensors are not needed for boot and are not emulated.
 
 ## Troubleshooting
 

@@ -59,6 +59,13 @@ The resulting conditions and live acceptance are summarized in
   address is only a label (a callback reached via a function pointer). Use on pointer targets.
 - `RefsTo.java <addr…>` — list READ/WRITE/CALL refs to an address with the containing function
   (follow runtime-registered callbacks; find who sets a flag).
+- `FindText.java <regex…>` — search defined strings using case-insensitive Java
+  regular expressions and list referencing function addresses. Read-only; it does
+  not discover undefined strings or text in external JSON resources. For example,
+  use `-readOnly -postScript FindText.java 'FAST_LL|SLOW_PC'` on V2.57 `mq_ui`,
+  then `DecAt.java` at the reported function entries. UI translations also live
+  in `/usr/project/config/ui/set_menu/others.json`; see
+  [Gain/filter evidence](../docs/REMOTE_SETTINGS.md#gain-and-filter-labels-v257).
 - `TouchDump.java` — the original touch-string finder (below).
 
 ## Setup notes (Ghidra 12.x)

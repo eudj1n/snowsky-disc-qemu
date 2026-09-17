@@ -1,0 +1,35 @@
+{
+  "app_version_evidence": "Owner confirmed on 2026-09-16 that all supplied iOS checks/captures used FiiO Control 4.6.0; not derived from network User-Agent.",
+  "app_version": "4.6.0",
+  "source": {
+    "har_sha256": "f93bf63246be06b84d4237835efc5ff5e161f37fccd4c631a04608db7cf815a6",
+    "pcap_sha256": "a25963dbbbfc9204c7bb85b53c5eb0981120debe4342f13ed2a6204ac3994faa",
+    "date": "2026-09-16",
+    "device": "physical DISC; firmware version not newly confirmed",
+    "scope": "Sanitized HTTP fields only; no artwork or addresses. Timestamps are request starts from PCAP."
+  },
+  "image": {
+    "size": 203218,
+    "sha256": "ef76ab578f8daa06a5ff1b52101259420cb5da701d276cc4dce87757409e1442",
+    "unchanged_in_all_custom_posts_and_gets": true
+  },
+  "common_post_headers": {
+    "content-type": "image/png",
+    "x-fields-to-update": "0",
+    "file-source": "lock_screen/custom",
+    "subclass": "lock_screen/custom/default",
+    "front-color": "r=255;g=255;b=255",
+    "flag-in-use": "1",
+    "back-groud": "alpha=100"
+  },
+  "app_alias": "Пользовательский",
+  "posts": [
+    {"time": "17:47:22.463+05:00", "style": "default/0", "flags": "time=0;date=0;battery=0;id3=0", "readback": "17:47:22.716+05:00"},
+    {"time": "17:47:32.790+05:00", "style": "default/1", "flags": "time=0;date=0;battery=0;id3=0", "readback": "17:47:33.043+05:00"},
+    {"time": "17:47:38.350+05:00", "style": "default/2", "flags": "time=0;date=0;battery=0;id3=0", "readback": "17:47:38.536+05:00"},
+    {"time": "17:47:44.101+05:00", "style": "clock/0", "flags": "time=1;date=0;battery=0;id3=0", "readback": "17:47:44.302+05:00"},
+    {"time": "17:48:00.313+05:00", "style": "default/0", "flags": "time=1;date=0;battery=0;id3=0", "readback": "17:48:00.501+05:00"}
+  ],
+  "final_system_selection": {"time": "17:48:03.856+05:00", "slot": 0, "status": 200, "readback": null},
+  "tcp_12100_packets": 0
+}

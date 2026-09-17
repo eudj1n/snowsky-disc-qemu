@@ -33,6 +33,7 @@
       "state_offset": "0x48"
     },
     "network": {
+      "tcp_allowlist": {"table": "0x6d84e0", "count": 111},
       "ready": "0x8781b8",
       "ip": "0x8781a8",
       "storage_type": "0x898d2c",

@@ -1,0 +1,410 @@
+{
+  "note": "Sanitized physical iOS captures: names and paths replaced consistently; payload lengths must be recomputed. No IPs, artwork, full catalogs or settings. HTTP response body hashes matched HAR; device TCP streams contiguous, no reported lost/retransmitted/truncated packets. Root-category Play all and batch mutations absent.",
+  "folder": "/tmp/sdcard/Fixture Folder/Edition",
+  "album": "Fixture Album",
+  "artist": "Fixture Artist",
+  "artist_album": "Fixture Artist",
+  "solo_artist": "Fixture Solo Artist",
+  "sessions": [
+    {
+      "source": "2026-09-16-211747.pcap",
+      "source_sha256": "1f4b0f65c08757cec84430f7a8a8822b831989ede17696b4871ab28d93931658",
+      "har_sha256": "5f7470fcb6e823f71e9196372424de04c0958ba8ef0fea20ae2ba1971c8c41de",
+      "firmware": 257,
+      "play_mode": 0,
+      "http_exchanges": 16,
+      "http_requests": [
+        {
+          "frame": 1054,
+          "seconds": 12.486647,
+          "path": "/localdir/tmp/sdcard%2FFixture%20Folder%2FEdition/",
+          "total": 17,
+          "first_rows": [
+            {
+              "pos": 0,
+              "name": "Artwork",
+              "is_dir": true
+            },
+            {
+              "pos": 1,
+              "name": "01. First.flac",
+              "is_dir": false
+            },
+            {
+              "pos": 2,
+              "name": "02. Second.flac",
+              "is_dir": false
+            }
+          ],
+          "note": "App encodes slashes below /tmp/; compare decoded path with helper URI."
+        },
+        {
+          "frame": 1233,
+          "seconds": 44.633331,
+          "category": "album",
+          "filters": {},
+          "headers": {
+            "style": "",
+            "artist": "",
+            "album": "",
+            "start-pos": "0",
+            "type": "album",
+            "num-max": "100"
+          },
+          "total": 53
+        },
+        {
+          "frame": 1244,
+          "seconds": 48.106483,
+          "category": "album/song",
+          "filters": {
+            "album": "Fixture Album"
+          },
+          "headers": {
+            "style": "",
+            "artist": "",
+            "album": "Fixture%20Album",
+            "start-pos": "0",
+            "type": "album/song",
+            "num-max": "100"
+          },
+          "total": 15
+        },
+        {
+          "frame": 1476,
+          "seconds": 63.073787,
+          "category": "artist",
+          "filters": {},
+          "headers": {
+            "style": "",
+            "artist": "",
+            "album": "",
+            "start-pos": "0",
+            "type": "artist",
+            "num-max": "100"
+          },
+          "total": 38
+        },
+        {
+          "frame": 1487,
+          "seconds": 69.759898,
+          "category": "artist/album",
+          "filters": {
+            "artist": "Fixture Artist"
+          },
+          "headers": {
+            "style": "",
+            "artist": "Fixture%20Artist",
+            "album": "",
+            "start-pos": "0",
+            "type": "artist/album",
+            "num-max": "100"
+          },
+          "total": 17
+        },
+        {
+          "frame": 1496,
+          "seconds": 72.675912,
+          "category": "artist/album/song",
+          "filters": {
+            "artist": "Fixture Artist",
+            "album": "Fixture Artist"
+          },
+          "headers": {
+            "style": "",
+            "artist": "Fixture%20Artist",
+            "album": "Fixture%20Artist",
+            "start-pos": "0",
+            "type": "artist/album/song",
+            "num-max": "100"
+          },
+          "total": 17
+        }
+      ],
+      "commands": [
+        {
+          "frame": 1068,
+          "seconds": 15.403479,
+          "tag": "0100",
+          "payload": "00020004/tmp/sdcard/Fixture Folder/Edition",
+          "action": "folder_track",
+          "index": 2,
+          "loading_frame": 1070,
+          "playerflag": 4,
+          "playing_num": "2/16",
+          "pos_id": 2,
+          "loading_state": 2,
+          "following_states": [
+            2,
+            0,
+            0
+          ],
+          "progress_values": [
+            1000,
+            2000,
+            3000
+          ]
+        },
+        {
+          "frame": 1141,
+          "seconds": 19.271422,
+          "tag": "0201",
+          "payload": "0000",
+          "action": "toggle",
+          "following_states": [
+            1,
+            1
+          ],
+          "progress_values": []
+        },
+        {
+          "frame": 1159,
+          "seconds": 29.156375,
+          "tag": "0101",
+          "payload": "0004/tmp/sdcard/Fixture Folder/Edition",
+          "action": "folder_all",
+          "loading_frame": 1161,
+          "playerflag": 4,
+          "playing_num": "1/16",
+          "pos_id": 1,
+          "loading_state": 2,
+          "following_states": [
+            2,
+            0,
+            0
+          ],
+          "progress_values": [
+            1000,
+            2000
+          ]
+        },
+        {
+          "frame": 1208,
+          "seconds": 33.074548,
+          "tag": "0201",
+          "payload": "0000",
+          "action": "toggle",
+          "following_states": [
+            1,
+            1
+          ],
+          "progress_values": [
+            3000
+          ]
+        },
+        {
+          "frame": 1250,
+          "seconds": 50.327609,
+          "tag": "0100",
+          "payload": "00010003Fixture Album",
+          "action": "album_track",
+          "index": 1,
+          "loading_frame": 1252,
+          "playerflag": 3,
+          "playing_num": "2/15",
+          "pos_id": 2,
+          "loading_state": 2,
+          "following_states": [
+            2,
+            0,
+            0
+          ],
+          "progress_values": [
+            1000,
+            2000
+          ]
+        },
+        {
+          "frame": 1350,
+          "seconds": 53.628281,
+          "tag": "0201",
+          "payload": "0000",
+          "action": "toggle",
+          "following_states": [
+            1,
+            1
+          ],
+          "progress_values": []
+        },
+        {
+          "frame": 1356,
+          "seconds": 55.211363,
+          "tag": "0101",
+          "payload": "0003Fixture Album",
+          "action": "album_all",
+          "loading_frame": 1358,
+          "playerflag": 3,
+          "playing_num": "1/15",
+          "pos_id": 1,
+          "loading_state": 2,
+          "following_states": [
+            2,
+            0,
+            0
+          ],
+          "progress_values": [
+            1000,
+            2000
+          ]
+        },
+        {
+          "frame": 1459,
+          "seconds": 58.579151,
+          "tag": "0201",
+          "payload": "0000",
+          "action": "toggle",
+          "following_states": [
+            1,
+            1
+          ],
+          "progress_values": []
+        },
+        {
+          "frame": 1502,
+          "seconds": 77.583713,
+          "tag": "0100",
+          "payload": "00010007{\"artist\":\"Fixture Artist\", \"album\":\"Fixture Artist\"}",
+          "action": "artist_album_track",
+          "index": 1,
+          "loading_frame": 1504,
+          "playerflag": 7,
+          "playing_num": "2/17",
+          "pos_id": 2,
+          "loading_state": 2,
+          "following_states": [
+            2,
+            0,
+            0
+          ],
+          "progress_values": [
+            1000,
+            2000
+          ]
+        },
+        {
+          "frame": 1568,
+          "seconds": 81.20045,
+          "tag": "0201",
+          "payload": "0000",
+          "action": "toggle",
+          "following_states": [
+            1,
+            1
+          ],
+          "progress_values": []
+        },
+        {
+          "frame": 1593,
+          "seconds": 82.71726,
+          "tag": "0101",
+          "payload": "0007{\"artist\":\"Fixture Artist\", \"album\":\"Fixture Artist\"}",
+          "action": "artist_album_all",
+          "loading_frame": 1595,
+          "playerflag": 7,
+          "playing_num": "1/17",
+          "pos_id": 1,
+          "loading_state": 2,
+          "following_states": [
+            2,
+            0,
+            0
+          ],
+          "progress_values": [
+            1000
+          ]
+        },
+        {
+          "frame": 1675,
+          "seconds": 85.768453,
+          "tag": "0201",
+          "payload": "0000",
+          "action": "toggle",
+          "following_states": [
+            1,
+            1
+          ],
+          "progress_values": []
+        }
+      ]
+    },
+    {
+      "source": "2026-09-16-212141.pcap",
+      "source_sha256": "27a67af97ea4c8d83120e5322838c557f950c3fc2a5354cd4bc795a87258b7b6",
+      "har_sha256": "b575fb8c9ddabf199c9c511fa46d960db478d16487c0a102adffe0b105f8de63",
+      "firmware": 257,
+      "play_mode": 0,
+      "http_exchanges": 5,
+      "http_requests": [
+        {
+          "frame": 1048,
+          "seconds": 8.706818,
+          "category": "artist",
+          "filters": {},
+          "headers": {
+            "style": "",
+            "artist": "",
+            "album": "",
+            "start-pos": "0",
+            "type": "artist",
+            "num-max": "100"
+          },
+          "total": 38
+        },
+        {
+          "frame": 1073,
+          "seconds": 10.743754,
+          "category": "artist/album",
+          "filters": {
+            "artist": "Fixture Solo Artist"
+          },
+          "headers": {
+            "style": "",
+            "artist": "Fixture%20Solo%20Artist",
+            "album": "",
+            "start-pos": "0",
+            "type": "artist/album",
+            "num-max": "100"
+          },
+          "total": 1
+        }
+      ],
+      "commands": [
+        {
+          "frame": 1079,
+          "seconds": 13.258407,
+          "tag": "0101",
+          "payload": "0007{\"artist\":\"Fixture Solo Artist\", \"album\":\"\"}",
+          "action": "artist_all",
+          "loading_frame": 1081,
+          "playerflag": 7,
+          "playing_num": "1/13",
+          "pos_id": 1,
+          "loading_state": 2,
+          "following_states": [
+            2,
+            0,
+            0
+          ],
+          "progress_values": [
+            1000,
+            2000
+          ]
+        },
+        {
+          "frame": 1171,
+          "seconds": 17.209697,
+          "tag": "0201",
+          "payload": "0000",
+          "action": "toggle",
+          "following_states": [
+            1,
+            1
+          ],
+          "progress_values": []
+        }
+      ]
+    }
+  ],
+  "app_version": "4.6.0",
+  "app_version_evidence": "Owner confirmed on 2026-09-16 that all supplied iOS checks/captures used FiiO Control 4.6.0; not derived from network User-Agent."
+}

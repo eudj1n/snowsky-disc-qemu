@@ -19,12 +19,13 @@ from player_memory import PlayerMemory, load_segments, parse_maps, guest_base, r
 from keys import Device, Buttons
 from guest_check import ROOT, capture, tap
 from fiio_link import Client
+from fixture import NAMES
 
 FIELDS = {'auto': (0x83a5d0, 4), 'sd': (0x83a720, 4),
           'modal': (0x8dee8e, 1), 'locked': (0x8e1735, 1)}
 
 
-def ui():
+def ui(fields=None):
     binary = ROOT / 'usr/bin/mq_ui'
     data = binary.read_bytes()
     assert hashlib.sha256(data).hexdigest() == load_profile('2.57')['binaries']['usr/bin/mq_ui']
@@ -36,7 +37,7 @@ def ui():
     base = guest_base(maps, load_segments(data), binary.stat())
     with (proc / 'mem').open('rb', buffering=0) as memory:
         return {name: int.from_bytes(read_memory(memory, maps, base, address, size), 'little')
-                for name, (address, size) in FIELDS.items()}
+                for name, (address, size) in (FIELDS if fields is None else fields).items()}
 
 
 def wait_for(predicate, description, timeout=15):
@@ -80,7 +81,7 @@ def db_paths():
 
 
 def matches():
-    expected = sorted('/' + str(p.relative_to(ROOT)) for p in (ROOT / 'tmp/sdcard').rglob('*.wav'))
+    expected = sorted('/' + str(p.relative_to(ROOT)) for p in (ROOT / 'tmp/sdcard').rglob('*') if p.suffix in ('.wav', '.flac'))
     if db_paths() != expected:
         return False
     try:
@@ -128,9 +129,11 @@ def run():
     sd = ROOT / 'tmp/sdcard'
     relative = Path('Кириллица Ё й/CI Tone — Проверка.wav')
     original = sd / relative
-    assert sorted(p.relative_to(sd) for p in sd.rglob('*') if p.is_file()) == [relative], \
+    expected = sorted(relative.with_name(name) for name in NAMES)
+    assert sorted(p.relative_to(sd) for p in sd.rglob('*') if p.is_file()) == expected, \
         'Requires only the generated CI fixture; refusing to modify other media'
-    assert original.read_bytes() == (Path('/sdcard') / relative).read_bytes()
+    for name in expected:
+        assert (sd / name).read_bytes() == (Path('/sdcard') / name).read_bytes()
     subprocess.run(['bash', '/repo/scripts/20_boot.sh'], check=True)
 
     # Recreate first enumeration: mmcblk0 and mmcblk0p1 alias one loop device.
@@ -150,7 +153,7 @@ def run():
     added, renamed = sd / 'Новый трек — Ё.wav', sd / 'Переименован — й.wav'
     shutil.copyfile(original, added)
     time.sleep(2)
-    assert len(db_paths()) == 1, 'File edit alone unexpectedly changed index'
+    assert len(db_paths()) == len(NAMES), 'File edit alone unexpectedly changed index'
     scan('add'); dismiss()
     added.rename(renamed)
     scan('rename'); dismiss()

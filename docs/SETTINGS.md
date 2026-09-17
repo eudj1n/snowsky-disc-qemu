@@ -4,6 +4,11 @@ This is an emulator/operator reference for the pinned V2.40 and V2.57 firmware.
 It separates confirmed values from fields whose names are known but whose enums or
 effects still need testing. A database column is not necessarily a live setter.
 
+Verified stock network commands for gain, DRE, filter, SPDIF and user PEQ are in
+[REMOTE_SETTINGS.md](REMOTE_SETTINGS.md), including the differences between wire
+and database enums. Disposable V2.40/V2.57 tests check both network readback and
+persisted configuration through TCP and WS.
+
 ## Storage and when changes take effect
 
 | Location inside the guest | Purpose | How to change |

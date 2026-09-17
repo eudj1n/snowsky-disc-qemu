@@ -1,0 +1,221 @@
+{
+  "source": "2026-09-15-235540.pcap",
+  "source_sha256": "00da5a3a19bc08d4ed0bb954ae616f79adb8341d914fbb998b32690ee5eb99bd",
+  "note": "Exact seek, play-order, toggle, state-delta and position frames only. Original hex case preserved. Personal metadata, artwork and unrelated traffic omitted. Initial fields below are a subset of decoded responses, not an exact wire snapshot. Screenshots were supplied later and mapped by reported order, not timestamp.",
+  "initial": {
+    "play_mode": 1,
+    "state": 1,
+    "now_playing_query": "02020008",
+    "full_snapshot_received": true
+  },
+  "screenshots": [
+    {
+      "file": "IMG_6779.PNG",
+      "mode": 1
+    },
+    {
+      "file": "IMG_6780.PNG",
+      "mode": 2
+    },
+    {
+      "file": "IMG_6781.PNG",
+      "mode": 3
+    },
+    {
+      "file": "IMG_6782.PNG",
+      "mode": 4
+    },
+    {
+      "file": "IMG_6783.PNG",
+      "mode": 0
+    },
+    {
+      "file": "IMG_6784.PNG",
+      "mode": 1
+    }
+  ],
+  "events": [
+    {
+      "time": "2026-09-15T23:56:10.239954+05:00",
+      "direction": "app",
+      "wire": "0103001000003eda"
+    },
+    {
+      "time": "2026-09-15T23:56:11.689643+05:00",
+      "direction": "app",
+      "wire": "010300100001d651"
+    },
+    {
+      "time": "2026-09-15T23:56:14.740302+05:00",
+      "direction": "app",
+      "wire": "010300100001a768"
+    },
+    {
+      "time": "2026-09-15T23:56:16.007037+05:00",
+      "direction": "app",
+      "wire": "0103001000025191"
+    },
+    {
+      "time": "2026-09-15T23:56:20.605324+05:00",
+      "direction": "app",
+      "wire": "0201000c0000"
+    },
+    {
+      "time": "2026-09-15T23:56:22.338628+05:00",
+      "direction": "disc",
+      "wire": "a2020013{\"state\":0}"
+    },
+    {
+      "time": "2026-09-15T23:56:22.343235+05:00",
+      "direction": "disc",
+      "wire": "a2020013{\"state\":0}"
+    },
+    {
+      "time": "2026-09-15T23:56:23.157886+05:00",
+      "direction": "disc",
+      "wire": "a1030010000251C0"
+    },
+    {
+      "time": "2026-09-15T23:56:24.181659+05:00",
+      "direction": "disc",
+      "wire": "a1030010000255A8"
+    },
+    {
+      "time": "2026-09-15T23:56:25.205863+05:00",
+      "direction": "disc",
+      "wire": "a103001000025990"
+    },
+    {
+      "time": "2026-09-15T23:56:26.229694+05:00",
+      "direction": "disc",
+      "wire": "a103001000025D78"
+    },
+    {
+      "time": "2026-09-15T23:56:26.990809+05:00",
+      "direction": "app",
+      "wire": "0201000c0000"
+    },
+    {
+      "time": "2026-09-15T23:56:27.009536+05:00",
+      "direction": "disc",
+      "wire": "a2020013{\"state\":1}"
+    },
+    {
+      "time": "2026-09-15T23:56:27.012646+05:00",
+      "direction": "disc",
+      "wire": "a2020013{\"state\":1}"
+    },
+    {
+      "time": "2026-09-15T23:56:31.028716+05:00",
+      "direction": "app",
+      "wire": "0103001000026a67"
+    },
+    {
+      "time": "2026-09-15T23:56:31.592639+05:00",
+      "direction": "app",
+      "wire": "01030010000334c1"
+    },
+    {
+      "time": "2026-09-15T23:56:33.462072+05:00",
+      "direction": "app",
+      "wire": "01030010000267a4"
+    },
+    {
+      "time": "2026-09-15T23:56:34.010183+05:00",
+      "direction": "app",
+      "wire": "0103001000034cab"
+    },
+    {
+      "time": "2026-09-15T23:56:35.026079+05:00",
+      "direction": "app",
+      "wire": "0201000c0000"
+    },
+    {
+      "time": "2026-09-15T23:56:35.044952+05:00",
+      "direction": "disc",
+      "wire": "a2020013{\"state\":0}"
+    },
+    {
+      "time": "2026-09-15T23:56:35.066000+05:00",
+      "direction": "disc",
+      "wire": "a2020013{\"state\":0}"
+    },
+    {
+      "time": "2026-09-15T23:56:35.957712+05:00",
+      "direction": "disc",
+      "wire": "a103001000034FA8"
+    },
+    {
+      "time": "2026-09-15T23:56:36.985642+05:00",
+      "direction": "disc",
+      "wire": "a103001000035390"
+    },
+    {
+      "time": "2026-09-15T23:56:37.543175+05:00",
+      "direction": "app",
+      "wire": "0201000c0000"
+    },
+    {
+      "time": "2026-09-15T23:56:37.565493+05:00",
+      "direction": "disc",
+      "wire": "a2020013{\"state\":1}"
+    },
+    {
+      "time": "2026-09-15T23:56:37.568405+05:00",
+      "direction": "disc",
+      "wire": "a2020013{\"state\":1}"
+    },
+    {
+      "time": "2026-09-15T23:56:47.095335+05:00",
+      "direction": "app",
+      "wire": "0102000c0002"
+    },
+    {
+      "time": "2026-09-15T23:56:47.115845+05:00",
+      "direction": "disc",
+      "wire": "a102000C0002"
+    },
+    {
+      "time": "2026-09-15T23:56:48.962235+05:00",
+      "direction": "app",
+      "wire": "0102000c0003"
+    },
+    {
+      "time": "2026-09-15T23:56:48.982529+05:00",
+      "direction": "disc",
+      "wire": "a102000C0003"
+    },
+    {
+      "time": "2026-09-15T23:56:51.346036+05:00",
+      "direction": "app",
+      "wire": "0102000c0004"
+    },
+    {
+      "time": "2026-09-15T23:56:51.366735+05:00",
+      "direction": "disc",
+      "wire": "a102000C0004"
+    },
+    {
+      "time": "2026-09-15T23:56:53.296485+05:00",
+      "direction": "app",
+      "wire": "0102000c0000"
+    },
+    {
+      "time": "2026-09-15T23:56:53.321064+05:00",
+      "direction": "disc",
+      "wire": "a102000C0000"
+    },
+    {
+      "time": "2026-09-15T23:56:55.030144+05:00",
+      "direction": "app",
+      "wire": "0102000c0001"
+    },
+    {
+      "time": "2026-09-15T23:56:55.053743+05:00",
+      "direction": "disc",
+      "wire": "a102000C0001"
+    }
+  ],
+  "app_version": "4.6.0",
+  "app_version_evidence": "Owner confirmed on 2026-09-16 that all supplied iOS checks/captures used FiiO Control 4.6.0; not derived from network User-Agent."
+}

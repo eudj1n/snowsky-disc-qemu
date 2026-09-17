@@ -3,6 +3,7 @@ import argparse
 import os
 from pathlib import Path
 import struct
+import time
 
 from firmware_profile import identify_player
 from keys import Device
@@ -77,6 +78,32 @@ def read_memory(memory, maps, base, address, size):
     return data
 
 
+def player_pids(device):
+    pids = []
+    for pid in device.processes():
+        try:
+            # A main-thread popen fork can briefly inherit BOTH comm and argv.
+            if Path(f'/proc/{pid}/comm').read_text().strip() == 'mq_player' and \
+                    b'/usr/bin/mq_player' in Path(f'/proc/{pid}/cmdline').read_bytes().split(b'\0'):
+                pids.append(pid)
+        except FileNotFoundError:
+            continue
+    return pids
+
+
+def unique_player_pid(device):
+    # Retry only this read-only discovery, before opening memory or sending any
+    # event. Never pick the first of ambiguous PIDs or retry a guest mutation.
+    for attempt in range(11):
+        pids = player_pids(device)
+        if len(pids) == 1:
+            return pids[0]
+        if not pids or attempt == 10:
+            break
+        time.sleep(.05)
+    raise ValueError(f'Expected one running mq_player in {device.root}, found PIDs {pids}')
+
+
 class PlayerMemory:
     def __init__(self, rootfs='/work/rootfs', version=None):
         self.device = Device(rootfs)
@@ -88,19 +115,7 @@ class PlayerMemory:
             data = source.read()
         self.profile = identify_player(data, version)
         self.segments = load_segments(data)
-        pids = []
-        for pid in self.device.processes():
-            try:
-                # popen children can briefly retain the parent's argv. Select
-                # the main thread, not a fork from echo_powerMG/other workers.
-                if Path(f'/proc/{pid}/comm').read_text().strip() == 'mq_player' and \
-                        b'/usr/bin/mq_player' in Path(f'/proc/{pid}/cmdline').read_bytes().split(b'\0'):
-                    pids.append(pid)
-            except FileNotFoundError:
-                continue
-        if len(pids) != 1:
-            raise ValueError(f'Expected one running mq_player in {self.device.root}, found {len(pids)}')
-        self.pid = pids[0]
+        self.pid = unique_player_pid(self.device)
         self.proc = Path(f'/proc/{self.pid}')
         self.maps = parse_maps((self.proc / 'maps').read_text())
         self.base = guest_base(self.maps, self.segments, stat)

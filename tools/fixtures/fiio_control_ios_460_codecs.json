@@ -1,0 +1,60 @@
+{
+  "source": "2026-09-15-234051.pcap",
+  "source_sha256": "824f1f598070e75c27045afde4420d600ebb242b95d14de0cc18c6c90afa64d8",
+  "screenshot": "IMG_6778.PNG",
+  "note": "User selected codec rows bottom to top and restored the selected bottom row (LDAC sound quality priority). Only protocol frames retained, original hex case preserved. No personal images, OTA endpoint or unrelated phone traffic.",
+  "initial_reads": [
+    {
+      "request": "06d4000c0000",
+      "reply": "a6d4000C0004"
+    },
+    {
+      "request": "06d4000c0000",
+      "reply": "a6d4000C0004"
+    }
+  ],
+  "transitions": [
+    {
+      "value": 3,
+      "label": "LDAC balanced",
+      "request_time": "2026-09-15T23:41:18.629609+05:00",
+      "reply_time": "2026-09-15T23:41:18.673607+05:00",
+      "request": "06d3000c0003",
+      "reply": "a6d4000C0003"
+    },
+    {
+      "value": 2,
+      "label": "LDAC connection priority",
+      "request_time": "2026-09-15T23:41:21.880382+05:00",
+      "reply_time": "2026-09-15T23:41:22.240661+05:00",
+      "request": "06d3000c0002",
+      "reply": "a6d4000C0002"
+    },
+    {
+      "value": 1,
+      "label": "AAC",
+      "request_time": "2026-09-15T23:41:24.964284+05:00",
+      "reply_time": "2026-09-15T23:41:25.309793+05:00",
+      "request": "06d3000c0001",
+      "reply": "a6d4000C0001"
+    },
+    {
+      "value": 0,
+      "label": "SBC",
+      "request_time": "2026-09-15T23:41:27.782009+05:00",
+      "reply_time": "2026-09-15T23:41:28.381728+05:00",
+      "request": "06d3000c0000",
+      "reply": "a6d4000C0000"
+    },
+    {
+      "value": 4,
+      "label": "LDAC sound quality priority",
+      "request_time": "2026-09-15T23:41:30.565465+05:00",
+      "reply_time": "2026-09-15T23:41:31.386317+05:00",
+      "request": "06d3000c0004",
+      "reply": "a6d4000C0004"
+    }
+  ],
+  "app_version": "4.6.0",
+  "app_version_evidence": "Owner confirmed on 2026-09-16 that all supplied iOS checks/captures used FiiO Control 4.6.0; not derived from network User-Agent."
+}

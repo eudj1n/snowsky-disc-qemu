@@ -17,6 +17,11 @@ def main():
                 for p in card.rglob('*.wav')}
     before = tracks()
     assert before, 'Expected generated CI media'
+    version = controls._profile()['version']
+    if version == '2.57':
+        from storage_check import ui, starts, matches, wait_for, dismiss
+        from player_memory import PlayerMemory
+        initial_scans = starts()
     # A real open file prevents unmount. Refuse before stock cleanup and keep
     # both the nodes and data intact; never use forced/lazy unmount to fake success.
     with next(card.rglob('*.wav')).open('rb'):
@@ -33,8 +38,7 @@ def main():
             time.sleep(.1)
         assert controls.operation is None and controls.error is None, controls.snapshot()
         assert controls.snapshot()['sd_inserted'] == inserted
-        if controls._profile()['version'] == '2.57':
-            from storage_check import ui
+        if version == '2.57':
             deadline = time.monotonic() + 8
             while ui()['sd'] != int(inserted) and time.monotonic() < deadline:
                 time.sleep(.1)
@@ -53,7 +57,25 @@ def main():
         assert controls.snapshot()['usb_connected'] == connected
         expected = 'Charging' if connected else 'Discharging'
         assert (root / 'sys/class/power_supply/cw221X-bat/status').read_text().strip() == expected
-    print('Viewer: repeated SD eject/insert preserves media; USB charging stub verified.')
+        if version == '2.57':
+            with PlayerMemory(root, '2.57') as memory:
+                deadline = time.monotonic() + 5
+                while memory.word('83a768', 1) != int(connected) and time.monotonic() < deadline:
+                    time.sleep(.1)
+                assert memory.word('83a768', 1) == int(connected), 'Native USB detector did not follow cable'
+    if version == '2.57':
+        # SD insertion queues a later stock UI auto-scan. A mounted card and a
+        # finished USB toggle do not establish a stable catalog. The TCP/WS
+        # comparison must not straddle that scan's drop/rebuild of SONG.
+        wait_for(lambda: starts() > initial_scans, 'peripheral auto-scan started', 30)
+        with PlayerMemory(root, version) as memory:
+            scan_flag = memory.profile['diagnostics']['network']['scan_running']
+            wait_for(lambda: memory.word(scan_flag) == 0 and ui()['modal'] == 1,
+                     'peripheral auto-scan finished/result visible', 30)
+        wait_for(matches, 'peripheral SD/SQLite/TCP catalog agreement', 30)
+        dismiss()
+        print('Viewer: insertion-triggered scan settled before TCP/WS comparison.')
+    print('Viewer: SD media preserved; USB cable/sysfs and V2.57 native power detection verified.')
 
 
 if __name__ == '__main__':

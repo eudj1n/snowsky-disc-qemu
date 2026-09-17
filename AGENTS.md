@@ -91,8 +91,9 @@ count printed by `fb2png.py` is only a fallback heuristic, not evidence of recen
 - Firmware acquisition + decrypt: `firmware/README.md` (password `fo123`; rootfs and
   six stock binary hashes pinned in `firmware/v<version>.json`).
 - Protocol + real-device RE: `docs/PROTOCOL.md` (FiiO Link frames, verified-live 12100 handshake
-  `0599…`, the corrected 12103 route mapping — **TCP device control is auth-free**, no file-upload
-  command), `docs/DEVICE.md` (ports/mDNS, no stock debug unlock), `docs/DISKOS.md` (V2.40 builds;
+  `0599…`, the corrected 12103 route mapping — **TCP device control is auth-free**;
+  stock file transfer uses separate HTTP, see `docs/HTTP_API.md`), `docs/DEVICE.md`
+  (ports/mDNS, no stock debug unlock), `docs/DISKOS.md` (V2.40 builds;
   only the size cap blocks). Network/auth `mq_player` function addresses are in `ghidra/README.md`.
 
 ## Conventions
@@ -101,6 +102,8 @@ count printed by `fb2png.py` is only a fallback heuristic, not evidence of recen
   report first. `firmware/inventory/` contains observed inputs, not runtime enablement
   profiles. Keep vendor-reported changes separate from verified emulator features;
   update `CHANGELOG.md` for emulator changes. Never replace V2.40 hashes/addresses blindly.
+- Keep `CHANGELOG.md` human-readable: short, grouped user-facing outcomes with
+  links to domain docs, not packet layouts, test transcripts or experiment logs.
 - Actively support one firmware: the latest validated version (currently V2.57).
   Develop on `2.x`; preserve older versions as historical release snapshots, without
   promised backports or continuing integration gates. Promote only after validation,
@@ -124,6 +127,19 @@ count printed by `fb2png.py` is only a fallback heuristic, not evidence of recen
 - Full firmware-free suite: `docker run --rm --network none -v "$PWD:/repo:ro"
   diskos-qemu-ci bash /repo/ci/test.sh` after `docker build -t diskos-qemu-ci docker`.
   `ci/integration.sh` uses a fresh disposable Compose stack, never the interactive volume.
+  V2.57 CI alone presets `LIGTH_ON_TIME=7` (never) while stopped and verifies UI
+  index/timeout readback, avoiding screen-timeout interference in long network tests.
+  Do not copy this into interactive setup or treat it as a remote-wake fix; see
+  `docs/CI.md`. `POWER_SAVE` is unchanged in ordinary CI; opt-in `idle`/`idle-usb`
+  instead use reviewed 120-second screen and 0/300-second idle fixtures.
+- Select tests by impact; do not rerun long power acceptance for unrelated work.
+  Documentation-only changes need diff/link checks, not firmware execution.
+  Normal code changes use firmware-free checks plus the relevant focused scenario;
+  shared runtime changes additionally need `full`. Run `idle` and `idle-usb` for
+  power/USB/timer/shutdown/reconnect changes, a new firmware profile, and the exact
+  release candidate. They are explicit local gates, not part of `full` or the
+  current hosted workflow. Keep the real 310-second USB observation; do not shorten
+  firmware timers to make it pass faster. See `docs/CI.md#test-selection-policy`.
 - Firmware and anything derived from it (rootfs, `.enc`, `.squashfs`, FiiO binaries, Ghidra
   project, captured `shots/`) are **git-ignored** — never commit firmware. Commit code,
   scripts, docs, and the curated screenshots in `docs/images/`.
@@ -132,6 +148,62 @@ count printed by `fb2png.py` is only a fallback heuristic, not evidence of recen
 - Screenshots for the docs live in `docs/images/`; throwaway captures go to `shots/` (ignored).
 
 ## Likely next tasks (see docs/STATUS.md "Next")
+
+The agreed local DISC protocol checkpoint is finalized. Start with
+`docs/DISC_CAPABILITIES.md` for the controller contract and
+`docs/PROTOCOL_RESEARCH.md` for evidence/history:
+it records the checkpoint, remaining tasks in priority order and validation status.
+Update that document when completing a research item so another session can resume.
+Keep the high-level protocol tracker (GitHub issue #10) current as checkpoints complete.
+
+Physical opacity capture `230929` edits **system slot 1 / FIIO Sheep**, not custom:
+empty POST bodies, displayed 100 → 49 → 0 → 100 map directly to `back-groud: alpha`;
+fresh GET confirms 49/0/100 and unchanged preview images. Owner reports visible
+refresh requires unlock/relock when already locked. Do not confuse saved metadata
+with repaint, invert opacity, or reuse empty-body updates for custom themes.
+Color capture `231820` now confirms exact RGB saves/readback and hue/lightness-like
+slider roles. Final pink 255/169/169 differs from initial 191/139/66; do not claim
+restoration or infer a numerical slider conversion formula. Official wallpapers
+and FiiO account/cloud sync are deferred by owner decision to issue #11 (owner
+reports registration/sign-in is required); no new cloud capture/login now.
+`update_system_lock_screen` now edits/activates system metadata and verifies
+original-image/metadata readback; no automatic mutation retry. Direct/proxy
+V2.57 themes acceptance and 297 Python / 23 JS tests pass. Capability
+consolidation is complete; see `docs/DISC_CAPABILITIES.md`.
+
+Physical `211747` / `212141` captures confirm folder type 4 and ordinary album
+type 3; artist-scoped albums use type 7 with exact `{"artist":"…", "album":"…"}`
+syntax. Whole-artist Play all uses type 7 with empty album, not a root Artists
+action. Guarded `play_artist` checks fresh `artist/song` or `artist/album/song`;
+indexed type 7 requires a named album. `CI_SCENARIO=library` tests overlapping
+artist/album names on TCP/WS; do not flatten artist albums to generic type 3.
+All four root-tab Play all buttons are confirmed in iPhone FiiO Control, but
+the `213631` capture shows no playback request for reported ineffective root
+taps. Named-genre Play all then works on the same connection. This is an app-side
+dispatch gap in that state, not a firmware rejection or proof of a permanent
+missing feature. Root wire semantics remain unknown; do not repeat identical
+captures or invent empty selectors. See `docs/LIBRARY_BROWSING.md`.
+Physical `215831` confirms first/third album-track addition: one HTTP
+`POST /add_custom_list/`, `type: album/song`, `dst_list_id: 1`, decoded ranges
+`[[0,0],[2,2]]`; fresh count/membership verifies two tracks. HAR preserves HTTP
+chunk framing, which is not part of the JSON. Folder batch actions are absent
+per owner. `221421` then confirms one `style/album` POST for group positions
+0/2, expanding 16 + 89 tracks, and playlist rename via `custom_list_cmd`,
+`type: update`, `list_id: 2`. Fresh GET confirms renamed list/count 105;
+only the first 100 membership rows were requested. Do not claim full membership
+identity or repeat these add captures. `CI_SCENARIO=library-delete` now isolates
+seven category-delete cases on generated V2.57 media. Read `docs/LIBRARY_DELETE.md`:
+index-only general deletion loses favorites/custom membership; custom source
+deletion can affect other lists or leave stale entries. Public helpers keep flag
+zero. Physical `224332` confirms scoped-track DELETE with unchecked source box
+and `delete_source: 0`; album B becomes empty and A keeps two tracks. File
+inspection was skipped. Group Delete shows unsupported (`IMG_6820`, owner report;
+no PCAP), so do not repeat it. `225423` confirms flag one for A1 at position 1
+(actual order A2, A1); directory retains A2 and B1. Post-delete offset 1 gives
+empty items with total 1: refresh from zero, do not call the album empty.
+Track-level flag-zero/one capture work is complete. All supplied
+iOS checks used FiiO Control 4.6.0 per owner confirmation on 2026-09-16.
+Current-track/CUE deletion is outside the verified scope.
 
 Local audio works: `tinyshim` redirects `/proc/asound/cards` discovery to `/etc/asound.cards`
 (x2000), so stock firmware selects I2S3_OUT (6), hw:0,3. No audio binary patches.
@@ -154,6 +226,17 @@ with actual guest `poweroff -f` after verifying its dynamic symbol binding to th
 `fbshim` observes framebuffer mmap/memcpy and records `emu/fb-live` so the viewer picks
 the actual last-written buffer instead of a stale frame when both buffers changed.
 
+V2.57 viewer USB now models power, not just a battery-status graphic: `15_controls.sh`
+enables narrow AW35615 sink-role/ADC1/charger stubs in `fbshim`. Stock detection
+sets `83a768`, inhibiting idle shutdown without changing POWER_SAVE. ADC0/2/3
+remain unavailable (ENODEV); USB data/storage/DAC are not implemented. V2.40
+retains its old charging-status-only behavior. Cable transitions can wake the
+display; Sleep and Screen off are separate from idle power-off. Opt-in disposable
+`CI_SCENARIO=idle` and `idle-usb` cover long lifecycle behavior; ordinary full CI
+checks native cable detection briefly. See `docs/IDLE_POWER.md`. Never defeat idle
+policy with fake touches or replay mutations after reconnect; a stopped guest
+requires explicit local Power before a new handshake and fresh state reads.
+
 Network services now bind 12100/12103: Compose names the real Docker interface `eth1`
 (Compose >=2.36), and `scripts/16_network.sh` re-announces its existing address after
 the stock netlink detector subscribes. No Wi-Fi DB overrides or network binary patches.
@@ -174,7 +257,140 @@ do not launch it. CI enables the profile explicitly.
 `./run.sh wscheck --control` compares TCP/WS and checks volume/playback (leaves paused).
 `http://localhost:12103/bridge/` is a read-only protocol inspector; disconnect it before
 another client (stock TCP is single-client). See `docs/WEBSOCKET.md`. LAN discovery
-and FiiO Control app compatibility remain unvalidated.
+and FiiO Control app compatibility are tracked in `docs/DISCOVERY.md`.
+V2.57 UDP discovery is plain `SNOWSKY DISC` to 224.0.0.255:12101, ~2 s, no
+embedded IP/ports. TCP accept suppresses it before handshake; disconnect resumes
+it (`CI_SCENARIO=discovery`). Passive host tool: `tools/fiio_discovery.py`.
+Opt-in `tools/lan_bridge.py` runs on the HOST, binds a specific LAN IPv4 and allows
+one phone IP; TCP 12100 -> localhost 12100, HTTP 12103 -> localhost 12113. It exposes
+unauthenticated control/file APIs: require explicit approval, trusted LAN, acknowledgement
+flag and bounded duration. Never autostart it or change default Compose localhost
+bindings. mDNS `_fiio._tcp` statically uses 12102, not a substitute control endpoint.
+Physical iPhone FiiO Control discovered the host adapter, connected, opened the
+emulator library and rediscovered it after confirmed disconnect. LAN listeners
+were then closed. This does not validate every app operation or physical iOS
+background/reconnect; emulator idle/USB behavior is covered separately above.
+
+Stock HTTP file/playlist operations and remote settings are documented in
+`docs/HTTP_API.md` and `docs/REMOTE_SETTINGS.md`. Use `tools/fiio_http.py` for
+`/dir/`, raw-body `/audio/` uploads, `/progress/`, single-path `/file/` deletion and
+custom playlists. HTTP 200 is not success; progress can survive deletion. Playlist
+headers named `list_id`/`src_list_id`/`dst_list_id` use positions, not database IDs.
+Custom playlist playback on V2.57 uses list type 5 and JSON `{"id":<position>}`:
+`0100` takes a track position first; `0101` starts the list. This JSON ID also
+means list position, not SQLite LIST_ID. `play_playlist(position, index=None,
+http=..., expected_name=...)` checks fresh HTTP list/track rows and name before
+sending; the HTTP client must target the same device. Catalog ordering need not
+match insertion order. No atomic revision exists; serialize edits and never
+replay selections. See `docs/PLAYLISTS.md`; focused `CI_SCENARIO=playlists` checks
+TCP/WS with ID gaps, rename/add/remove and stale/empty-selector rejection.
+V2.57 `play_genre` uses captured type 8 with empty album for whole-genre Play all,
+type 10 for an indexed genre track, or type 8 for a named genre-scoped album; type 8's
+argument is parsed by sscanf, not JSON (fixed keys/spacing, no quote/backslash
+escaping). `play_folder` uses type 4 and positions from fresh HTTP localdir,
+including directory rows; Play all skips directories, not recursive. Both check
+fresh bounds. `add_selection_to_playlist` checks destination name and source
+filters/ranges; genre album groups expand without leaking other genres. DELETE
+does not accept these group categories even though it returns HTTP 200. Focused
+`CI_SCENARIO=library` tests generated media, TCP/WS and direct/proxied HTTP,
+including index-only scoped track deletion and rescan recovery. No arbitrary
+source-delete helper. Physical capture `2026-09-16-185016` confirms scoped-album
+commands and HTTP genre hierarchy. Whole-genre type 8 is now compared against
+type 10 in disposable CI (modes 0/4, queue/order/restart). Do not use empty-album
+type 8 for indexed playback: that separate path failed the exploratory probe.
+Folder playback/bulk actions are not in the capture;
+see `docs/LIBRARY_BROWSING.md` before continuing the remaining workflows.
+Avoid stock batch recursive deletion (it constructs shell commands). `0622/0000`
+starts a scan; watch `a60a` start/finish and `a622` counts. Gain/DRE/filter/SPDIF and
+PEQ helpers are shared by TCP/WS; filter and EQ network enums differ from SQLite.
+V2.57 gain is 0 Low / 1 High, not menu row order. `GAIN_LABELS`/`FILTER_LABELS`
+map stock UI names; all two/six values have TCP/WS and SQLite acceptance. Expanded
+iPhone filter rows are now paired by physical capture `2026-09-16-192141` and
+the owner's 3→4→5→6→1→2 walkthrough, with final fresh restoration readback.
+English screenshot IMG_6817 labels rows 5/6 identically (Reference super slow
+roll-off), but codes 000D/000E differ; never deduplicate by label. Russian names
+remain clipped. Do not infer analog response from label/code correspondence.
+Fixture tests pin all six; curated English app screenshot is in docs/images/.
+V2.57 `cancel_library_scan()` sends `0622/0001` once without draining events.
+Cancellation leaves a partial replacement index, not a rollback; `a60a/0005`
+also occurs after cancel. Do not query through the sequential client while
+collecting scan events or replay cancel after reconnect. See `docs/LIBRARY_SCAN.md`;
+`CI_SCENARIO=scan-cancel` checks TCP/WS and recovery on disposable generated media.
+V2.57 `reset_library(confirm=True)` sends dedicated `0621/0000` once, not `0800`.
+It drops SONG/MY_LOVE and queue tables; files/settings/custom-list rows survive.
+Immediate HTTP favorites have invalid total -1; custom songs can have count >0
+with no items, and empty `a202` does not mean stopped playback. Rescan rebuilds
+tracks/custom membership but not MY_LOVE; guest restart recreates empty favorites.
+Never reset during a scan, replay an uncertain reset, or silently reboot. See
+`docs/LIBRARY_RESET.md` and disposable `CI_SCENARIO=library-reset`.
+Channel balance uses getter `0712`, setter `0713`, reply `a712`: helper integers
+-20..20 mean L20..0..R20; wire high byte 0=left/1=right, low byte=magnitude.
+It is not signed 16-bit or percent. `BALANCE_VOL` stores the packed value;
+the opposite DAC channel receives 0..20 attenuation steps. `ci/settings_check.py`
+checks TCP/WS, SQLite and DAC mirrors and restores state; focused scenario
+`CI_SCENARIO=settings` is available. Physical analog output remains unvalidated.
+V2.57 has a separate TCP receive allowlist (111 tags at `6d84e0`): local UI
+callbacks do not prove remote support. `tools/inspect_link_commands.py` inspects
+it by full binary fingerprint. Gapless/folder jump/ReplayGain are read-only via
+`0501` JSON; `0647/0687/0718/0648/064d/064e` are rejected over TCP and WS even
+with populated callbacks. `ci/preferences_check.py` verifies no state change and
+fresh reads after each negative probe. `0820/0821/0822` and `064b/064c` are also
+absent (static evidence). Invalid tags clear the current TCP receive buffer,
+including coalesced later frames; do not pipeline a negative probe with a query.
+Admission alone is insufficient too: `0426` is admitted but has no handler.
+The new CI scenarios use only disposable generated media. Never substitute the
+broad `0800` factory-reset command for the app's library-reset action.
+
+`docs/REMOTE_MODES_THEMES.md` covers stock work-mode control (Link 1 USB DAC,
+8 local, 10 AirPlay), the five `06d3` source-codec preferences, and lock-screen HTTP.
+Mode/codec readback does not establish hardware audio. Codec changes reopen the
+local player; restore the desired mode afterwards. `tools/fiio_theme.py` uploads
+and activates complete custom PNGs: an empty-body custom POST clears its image
+path, and `flag-in-use: 0` still clears the previously active theme. System-theme
+selection uses a separate source namespace. The capture checklist in that doc
+requires HTTP 12103 and TCP 12100; an ordinary HTTP proxy may miss the latter.
+Physical app captures confirm full unchanged PNG retransmission for color/Date
+and four custom styles. `upload_lock_screen(..., style=...)` allows `default/0`,
+`default/1`, `default/2`, `clock/0`; `subclass` stays custom/default and flags
+remain explicit. `CI_SCENARIO=themes` checks direct/proxied HTTP on disposable
+V2.57 without unrelated tests. Do not infer automatic time-flag changes or
+physical rendering from style readback. The app's 96-byte encoded Russian alias
+exceeds the stock 63-byte bound: header truncation occurs BEFORE percent-decoding
+and can persist invalid UTF-8. Boundary tests verify this through direct/proxy HTTP
+and raw SQLite bytes; keep the client rejection despite HTTP 200/blank GET alias.
+
+Physical iOS captures are summarized in `docs/FIIO_CONTROL_APP.md`; only sanitized
+protocol fixtures live in `tools/fixtures/`. Full `a202` snapshots and state-only
+deltas coexist; DISC uses 0 playing / 1 paused. Paused seeks have no immediate
+position acknowledgement. Current queue is observed via HTTP `curlist/song`, then
+TCP `0100` index + type 0 + localized queue label. `play_queue_index()` now reads
+the current queue length before selecting without a label; `ci/queue_check.py`
+checks label variants and empty/replaced queues (`CI_SCENARIO=queue` for fresh
+empty-queue coverage). A raw out-of-range selector can leave `0202` silent until
+a valid album is selected again. Never replay stale queue selections. The physical trace ran in random mode
+and moved 3 → 11 → 3, so never infer queue position by increment/decrement alone.
+`play_mode()` reads `0105` but expects `a102`, not the mechanically derived `a105`.
+`0426` has no assigned handler in V2.40/V2.57; retained counter JSON strings do not prove
+support. Use `0406`, HTTP `curlist/song` and `0202` instead. The focused
+`CI_SCENARIO=queue-reads` verifies both read commands without relying on M21 semantics.
+Natural EOF on V2.57 is checked over TCP/WS for all five modes with six-second
+WAV/FLAC tracks, gapless/folder jump off. Modes 0/4 finally send `a103=0` then
+metadata-free `a202 state=2`; fresh `0202` is silent, but mode reads and the
+retained HTTP queue work. Internal stopped state is 3, not wire 2. Full loading
+snapshots also have state 2; duplicate state-0 deltas are not repeats. Observe
+events without queries during EOF and never infer stop from timeout alone.
+See `docs/TRACK_END.md` and disposable `CI_SCENARIO=track-end`; physical timing,
+gapless/folder-jump enabled and stopped-state resume remain unvalidated.
+CUE/DSF/DFF metadata and positional selection are covered by disposable V2.57
+`CI_SCENARIO=formats`. Both CUE entries can share path and `song_track=0`;
+queue IDs can collide with ordinary tracks, and HTTP `mark` can select the wrong
+row. Keep snapshot/position identity, never deduplicate by ID. CUE favorites
+responses lose path/track/isCue even though distinct database tracks survive and
+positional playback works. Generated DSF/DFF establish source metadata, not native
+DSD/DoP or hardware output; SACD ISO remains unvalidated. See `docs/FORMATS.md`.
+`docs/M21_COMPARISON.md` is reference only: M21's FiiO Music uses UTF-16 length
+units, a different state enum and toggle semantics. DISC remains the priority;
+do not copy those Android rules into its client.
 
 Manual Update media lib now works too: `sd_mount()` mounts INSIDE chroot so
 `/proc/mounts` records source `/dev/mmcblk0p1`, accessible to the scanner. The old

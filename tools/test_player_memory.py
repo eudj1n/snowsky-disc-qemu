@@ -2,10 +2,33 @@ import io
 import os
 from types import SimpleNamespace
 import unittest
-from player_memory import guest_base, parse_maps, read_memory
+from unittest.mock import patch
+from player_memory import guest_base, parse_maps, read_memory, unique_player_pid
 
 
 class MemoryTests(unittest.TestCase):
+    def test_transient_duplicate_pid_is_rechecked_without_choosing_one(self):
+        with patch('player_memory.player_pids', side_effect=[[12, 13], [12]]) as scan, \
+                patch('player_memory.time.sleep') as sleep:
+            self.assertEqual(unique_player_pid(SimpleNamespace(root='/guest')), 12)
+            self.assertEqual(scan.call_count, 2)
+            sleep.assert_called_once_with(.05)
+
+    def test_persistent_duplicate_pids_still_fail_closed(self):
+        with patch('player_memory.player_pids', return_value=[12, 13]) as scan, \
+                patch('player_memory.time.sleep') as sleep:
+            with self.assertRaisesRegex(ValueError, 'found PIDs'):
+                unique_player_pid(SimpleNamespace(root='/guest'))
+            self.assertEqual(scan.call_count, 11)
+            self.assertEqual(sleep.call_count, 10)
+
+    def test_missing_pid_fails_without_waiting(self):
+        with patch('player_memory.player_pids', return_value=[]), \
+                patch('player_memory.time.sleep') as sleep:
+            with self.assertRaises(ValueError):
+                unique_player_pid(SimpleNamespace(root='/guest'))
+            sleep.assert_not_called()
+
     def setUp(self):
         self.maps = parse_maps('1000-2000 r--p 00000000 00:01 42 /guest/usr/bin/mq_player\n'
                                '3000-4000 rw-p 00001000 00:01 42 /guest/usr/bin/mq_player\n'

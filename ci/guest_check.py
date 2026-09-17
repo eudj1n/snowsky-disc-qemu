@@ -16,6 +16,7 @@ from audio import capture_info
 from fiio_link import Client
 from stream import tap, swipe, _png, _to_rgb, BUF
 from player_memory import PlayerMemory
+from fixture import NAMES
 
 ROOT = Path('/work/rootfs')
 
@@ -82,14 +83,15 @@ def scan():
                 tap(180, 85)
                 time.sleep(2)
                 capture('scan')
-                tracks = wait_library(1)
+                tracks = wait_library(len(NAMES))
             finally:
                 stop.set()
             observed = sample.result()
         assert observed <= {0, 1}, observed
         print('Diagnostic scan_running samples:', sorted(observed))
     assert 'CI Tone' in str(tracks), tracks
-    print(f'Fresh V{os.environ.get("FW_VERSION", "2.57")}: stock UI scanned the generated track; TCP index verified.')
+    assert {item['title'] for item in tracks['items']} == set(NAMES), tracks
+    print(f'Fresh V{os.environ.get("FW_VERSION", "2.57")}: stock UI scanned {len(NAMES)} generated tracks; TCP index verified.')
 
 
 def audio():

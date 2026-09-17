@@ -70,8 +70,12 @@ class ViewerControls:
                 raise ValueError('Wait for the current operation')
             path = self.root / 'emu/usb-connected'
             path.parent.mkdir(parents=True, exist_ok=True)
-            path.write_text('1' if connected else '0')
-            # Only stub sysfs inside the guest, never USB gadget/role-switch events.
+            # The ADC shim polls this byte. Avoid a transient empty file between
+            # truncate/write being interpreted as a cable removal.
+            with path.open('r+b' if path.exists() else 'wb') as marker:
+                marker.write(b'1' if connected else b'0')
+            # V2.57's shim reports sink-role/ADC power detection from this byte;
+            # only guest sysfs, never host USB gadget/role-switch events.
             battery = self.root / 'sys/class/power_supply/cw221X-bat/status'
             if battery.is_file():
                 battery.write_text('Charging\n' if connected else 'Discharging\n')

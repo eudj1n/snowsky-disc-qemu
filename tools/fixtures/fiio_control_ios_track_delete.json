@@ -1,0 +1,221 @@
+{
+  "source": "2026-09-16-224332.pcap",
+  "source_sha256": "d97b825d9d8244a4ca83d4cb770aae098d7418559fff6f44c08f0ff9e2ecaabd",
+  "har_sha256": "662cc90a426cc67260f289b4e728b9d8db9d7be1a221818ca4a35f95adfb5cdd",
+  "screenshot": "IMG_6819.PNG",
+  "screenshot_sha256": "f67454dfbb5e3ce5bb5312165fb00c33e2d6024fc86e0531b5307eba5a8f6cc4",
+  "firmware": null,
+  "app_version": "4.6.0",
+  "http_exchanges": 7,
+  "link_payload_frames": 0,
+  "note": "Physical iOS capture of generated disposable fixtures. No Link payload/settings reply: firmware version not freshly established. Root genre responses retain only the generated genre row, with original total-num; other library names omitted. All 7 HTTP response body hashes match HAR; streams contiguous without reported loss/retransmission/truncation. No file listing, upload, scan, playlist/favorite readback or source-file existence check. Owner reports skipping file inspection and no re-upload.",
+  "dialog": {
+    "title": "Confirm to delete?",
+    "source_checkbox": "Also delete source files",
+    "source_checked": false,
+    "buttons": [
+      "Cancel",
+      "Delete"
+    ]
+  },
+  "before": [
+    {
+      "frame": 1108,
+      "seconds": 9.02828,
+      "headers": {
+        "style": "",
+        "artist": "",
+        "album": "",
+        "start-pos": "0",
+        "type": "style",
+        "num-max": "100"
+      },
+      "response_frame": 1110,
+      "response_headers": {
+        "total-num": "16",
+        "mark-pos": "-1",
+        "type": "style",
+        "content-type": "application/json"
+      },
+      "items": [
+        {
+          "pos": 5,
+          "name": "DISC Delete Probe",
+          "author": "",
+          "count": 3
+        }
+      ]
+    },
+    {
+      "frame": 1117,
+      "seconds": 13.211937,
+      "headers": {
+        "style": "DISC%20Delete%20Probe",
+        "artist": "",
+        "album": "",
+        "start-pos": "0",
+        "type": "style/album",
+        "num-max": "100"
+      },
+      "response_frame": 1119,
+      "response_headers": {
+        "total-num": "2",
+        "mark-pos": "-1",
+        "type": "style/album",
+        "content-type": "application/json"
+      },
+      "items": [
+        {
+          "pos": 0,
+          "name": "DISC Delete Album A",
+          "author": "",
+          "count": 2
+        },
+        {
+          "pos": 1,
+          "name": "DISC Delete Album B",
+          "author": "",
+          "count": 1
+        }
+      ]
+    },
+    {
+      "frame": 1126,
+      "seconds": 16.130552,
+      "headers": {
+        "style": "DISC%20Delete%20Probe",
+        "artist": "",
+        "album": "DISC%20Delete%20Album%20B",
+        "start-pos": "0",
+        "type": "style/album/song",
+        "num-max": "100"
+      },
+      "response_frame": 1128,
+      "response_headers": {
+        "total-num": "1",
+        "mark-pos": "-1",
+        "type": "style/album/song",
+        "content-type": "application/json"
+      },
+      "items": [
+        {
+          "pos": 0,
+          "name": "Probe B1",
+          "author": "DISC Delete Probe",
+          "count": 0
+        }
+      ]
+    }
+  ],
+  "delete": {
+    "frame": 1161,
+    "seconds": 37.745145,
+    "method": "DELETE",
+    "path": "/song_category_tree/",
+    "headers": {
+      "transfer-encoding": "chunked",
+      "delete_source": "0",
+      "style": "DISC%20Delete%20Probe",
+      "content-type": "application/json",
+      "artist": "",
+      "album": "DISC%20Delete%20Album%20B",
+      "type": "style/album/song"
+    },
+    "decoded_body": "[[0,0]]",
+    "chunked_body": "7\r\n[[0,0]]\r\n0\r\n\r\n",
+    "response_frame": 1165,
+    "status": 200,
+    "response_headers": {
+      "type": "delete",
+      "content-length": "0"
+    }
+  },
+  "after": [
+    {
+      "frame": 1167,
+      "seconds": 37.800115,
+      "headers": {
+        "style": "DISC%20Delete%20Probe",
+        "artist": "",
+        "album": "DISC%20Delete%20Album%20B",
+        "start-pos": "0",
+        "type": "style/album/song",
+        "num-max": "100"
+      },
+      "response_frame": 1169,
+      "response_headers": {
+        "total-num": "0",
+        "mark-pos": "-1",
+        "type": "style/album/song",
+        "content-type": "application/json"
+      },
+      "items": []
+    },
+    {
+      "frame": 1173,
+      "seconds": 37.856527,
+      "headers": {
+        "style": "DISC%20Delete%20Probe",
+        "artist": "",
+        "album": "",
+        "start-pos": "0",
+        "type": "style/album",
+        "num-max": "100"
+      },
+      "response_frame": 1177,
+      "response_headers": {
+        "total-num": "1",
+        "mark-pos": "-1",
+        "type": "style/album",
+        "content-type": "application/json"
+      },
+      "items": [
+        {
+          "pos": 0,
+          "name": "DISC Delete Album A",
+          "author": "",
+          "count": 2
+        }
+      ]
+    },
+    {
+      "frame": 1175,
+      "seconds": 37.856732,
+      "headers": {
+        "style": "",
+        "artist": "",
+        "album": "",
+        "start-pos": "0",
+        "type": "style",
+        "num-max": "100"
+      },
+      "response_frame": 1181,
+      "response_headers": {
+        "total-num": "16",
+        "mark-pos": "-1",
+        "type": "style",
+        "content-type": "application/json"
+      },
+      "items": [
+        {
+          "pos": 5,
+          "name": "DISC Delete Probe",
+          "author": "",
+          "count": 2
+        }
+      ]
+    }
+  ],
+  "group_delete_observation": {
+    "source": "IMG_6820.PNG",
+    "source_sha256": "7b1fa9e84bee7aeb0bc48e57f2cd69933ec409aed1cc83c4675f007ced7d1f02",
+    "selected_group": "DISC Delete Album A",
+    "visible_group_count": 1,
+    "visible_track_count": 2,
+    "toast": "This function is not yet supported",
+    "action": "Owner reports Delete on the genre album-group screen",
+    "packet_capture_supplied": false,
+    "limits": "Screenshot/owner report establish unsupported UI behavior in this state, not presence/absence of a wire request or an additional firmware runtime result. No repeat capture requested."
+  },
+  "app_version_evidence": "Owner confirmed on 2026-09-16 that all supplied iOS checks/captures used FiiO Control 4.6.0; not derived from network User-Agent."
+}
