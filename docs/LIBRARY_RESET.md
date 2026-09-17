@@ -92,7 +92,7 @@ V2.57 `mq_player`, matched by its full firmware-profile fingerprint:
   that broader path also rewrites Wi-Fi config, clears Wi-Fi data, removes theme
   and song DB files and calls system-reset logic. **Never sent in this task.**
 
-Reproduce with `tools/inspect_link_commands.py`, `ghidra/DecAt.java` at the
+Reproduce with `research/diagnostics/inspect_link_commands.py`, `research/ghidra/DecAt.java` at the
 function entries and `RefsTo.java` on the callback/SQL functions. Raw binaries,
 Ghidra projects and decompilation stay ignored under `work/`.
 
@@ -103,7 +103,7 @@ CI_SCENARIO=library-reset FW_VERSION=2.57 CI_LOGS="$PWD/work/library-reset" \
   bash ci/integration.sh /absolute/path/to/main_os/ota_v257
 ```
 
-`ci/library_reset_check.py` refuses anything but `CI_DISPOSABLE=1`, V2.57, the
+`tests/integration/library_reset_check.py` refuses anything but `CI_DISPOSABLE=1`, V2.57, the
 reviewed binary and exact generated SD fixture. Mutations use stock Link/HTTP;
 DB/memory inspection is read-only. Tests never reset the interactive emulator or
 a physical device. No image patch or new Docker dependency is required.

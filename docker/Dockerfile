@@ -1,7 +1,7 @@
 # Reproducible environment for emulating the FiiO Snowsky Disc firmware
 # (Ingenic X2000, MIPS32 LE) under qemu-user on any host via Docker.
 #
-# Build:  docker build -t diskos-qemu docker/
+# Build:  docker build -t snowsky-disc-qemu docker/
 # Run:    see ../README.md  (needs --privileged for binfmt_misc + POSIX mqueue + qemu VA reservation)
 #
 # Works on both amd64 and arm64 Docker hosts (Debian is multi-arch; qemu-user-static
@@ -9,6 +9,8 @@
 FROM debian:12@sha256:6ebd97fa83deb272194a2cf015b3d26a4d538e9ad3a7a79d544c8af5b0a01443
 
 ENV DEBIAN_FRONTEND=noninteractive
+# One package root for python -m entry points (source is mounted, not baked in).
+ENV PYTHONPATH=/repo
 
 # Signed, dated package indexes pin transitive dependencies on both host architectures.
 # HTTP bootstraps ca-certificates; apt still verifies Debian signatures and package hashes.
@@ -44,7 +46,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 # so it survives container restarts). /repo is this repository (mount read-write).
 WORKDIR /work
 
-# util-linux supplies setpriv: scripts/lib.sh drops dangerous capabilities for
+# util-linux supplies setpriv: emulator/scripts/lib.sh drops dangerous capabilities for
 # MIPS guests and their children. Network setup uses iproute2; no manual packages.
 RUN command -v setpriv && command -v ip
 # Native WebSocket bridge/client, outside the MIPS rootfs; installed only at build time.

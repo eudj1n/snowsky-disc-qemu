@@ -238,7 +238,7 @@ are version-specific.
 | ![low battery](images/02-low-battery.png) | Critically-low-battery warning (before the battery sysfs fix) |
 | ![language](images/03-language.png) | First-boot language wizard, **English** selected (options stay in their native scripts; the 确定 button is the fallback locale until you confirm) |
 | ![main](images/04-main-menu.png) | **Main menu** carousel (Settings / Browse files / Now playing), battery 100%, volume 120 |
-| ![files](images/05-file-browser.png) | **File browser** at `/tmp/sdcard` showing the `Test Artist` folder from `./sdcard` |
+| ![files](images/05-file-browser.png) | **File browser** at `/tmp/sdcard` showing the `Test Artist` folder from `./emulator/sdcard` |
 | ![tracks](images/06-sd-tracks.png) | Two levels in — `/tmp/sdcard/Test Artist/Greatest Hits` listing the `.wav` tracks |
 
 ## Current controls — screenshots from 2026-09-11
@@ -268,7 +268,7 @@ The full track/position/gesture matrix and physical-device timing were not exhau
 
 Passed: **28 Python tests + 7 JavaScript tests**, Compose validation, image rebuild /
 container recreation, repeated setup/boot and viewer Power-on. The live host check
-`python3 tools/verify_network.py --control --start-library` verifies protocol 3.06,
+`python3 -m controller.diagnostics.verify_network --control --start-library` verifies protocol 3.06,
 volume **119 → 118 → 119**, the same track's wire state **0 → 1 → 0**, and HTTP 12103.
 The test leaves playback paused. Guest memory independently confirmed volume 119,
 player state 2 (paused), network-ready=1, Docker IP and dropped dangerous capabilities.

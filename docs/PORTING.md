@@ -2,7 +2,7 @@
 
 This is the reusable process, not a list of addresses to copy. Version-specific
 observations belong in [firmware reports](firmware/2.40.md); detailed RE techniques
-remain in [RE.md](RE.md) and [ghidra/README.md](../ghidra/README.md).
+remain in [RE.md](RE.md) and [research/ghidra/README.md](../research/ghidra/README.md).
 
 ## Keep four different records
 
@@ -11,7 +11,7 @@ remain in [RE.md](RE.md) and [ghidra/README.md](../ghidra/README.md).
 | `CHANGELOG.md` | Changes actually made to the emulator, grouped by its release/tag. |
 | `firmware/inventory/v<version>.json` | Reproducible input facts: versions, ZIP/rootfs hashes, sizes, chunk count. Not an enablement profile or a compatibility claim. |
 | `docs/firmware/<version>.md` | Upstream notes, tested/not-tested matrix, findings, failures, evidence and remaining work for that firmware. |
-| Shared scripts/tools + this guide | Repeatable methods and regression tests useful for later versions/products. |
+| Shared emulator/scripts/tools + this guide | Repeatable methods and regression tests useful for later versions/products. |
 
 Keep development on `2.x`, using short-lived task branches where useful. Do not fork
 the entire emulator for every minor firmware. Firmware-based immutable tags preserve
@@ -71,15 +71,15 @@ Record the original archive name, public vendor release page (when confirmed), m
 and recovery versions, ZIP digest, encrypted rootfs integrity and plaintext rootfs
 digest. Keep the direct URL in a per-version secret; no ZIP/rootfs in Git or CI artifacts.
 
-`tools/firmware_inventory.py` supports differing version numbers and chunk counts:
+`firmware/tools/firmware_inventory.py` supports differing version numbers and chunk counts:
 
 ```sh
-docker build -t diskos-qemu-ci docker
+docker build -t snowsky-disc-qemu-ci docker
 FW_PACKAGE_DIR=/absolute/path/to/SNOWSKY_DISC_update_20260909_v257
 FW_ARCHIVE=/absolute/path/to/SNOWSKY_DISC_update_20260909_v257.zip
 docker run --rm --network none \
   -v "$PWD:/repo:ro" -v "$FW_PACKAGE_DIR:/package:ro" -v "$FW_ARCHIVE:/package.zip:ro" \
-  diskos-qemu-ci python3 -B /repo/tools/firmware_inventory.py /package \
+  snowsky-disc-qemu-ci python3 -B -m firmware.tools.firmware_inventory /package \
   --archive /package.zip --decrypt-rootfs
 ```
 
@@ -115,7 +115,7 @@ fail closed for operations requiring that patch/probe, not silently reuse anothe
 Separate these opt-in runtime profiles from the read-only inventory records.
 
 **Implemented boundary:** `firmware/v<version>.json` holds runtime profiles for V2.40
-and V2.57, separate from inventory JSON. `tools/firmware_profile.py` checks product,
+and V2.57, separate from inventory JSON. `firmware/profile.py` checks product,
 main/recovery metadata and six binary hashes before setup/boot. Key patch validation
 normalizes only the permitted instruction, then checks the full stock hash, original
 bytes and executable PT_LOAD address mapping. Unknown builds fail closed.
@@ -123,12 +123,12 @@ Key/network/HTTP-route diagnostics use separately verified addresses for both bu
 selected by full binary fingerprint; unknown builds fail closed. See
 [DIAGNOSTICS.md](DIAGNOSTICS.md). Legacy GDB breakpoint files remain V2.40-specific.
 
-Static extraction without execution, into a **new** research volume (not `diskos-work`):
+Static extraction without execution, into a **new** research volume (not `snowsky-disc-work`):
 
 ```sh
 docker run --rm --network none -v "$PWD:/repo:ro" \
   -v "$FW_PACKAGE_DIR:/package:ro" -v snowsky-static-v257:/study \
-  diskos-qemu-ci python3 -B /repo/tools/firmware_static.py /package \
+  snowsky-disc-qemu-ci python3 -B -m firmware.tools.firmware_static /package \
   /repo/firmware/inventory/v2.57.json /study/rootfs
 ```
 

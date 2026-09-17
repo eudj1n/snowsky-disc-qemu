@@ -80,7 +80,7 @@ Button-assignment `0820/0821/0822` and cover/lyrics `064b/064c` tags are also ab
 An invalid tag clears the current receive buffer, potentially dropping coalesced
 valid frames too. Do not batch negative probes with reads. The WS bridge does not
 add stock commands. Reproduce the list offline with fingerprint-validating
-`tools/inspect_link_commands.py`; see [diagnostics](DIAGNOSTICS.md).
+`research/diagnostics/inspect_link_commands.py`; see [diagnostics](DIAGNOSTICS.md).
 
 ## Verified live against the physical V2.40 device
 
@@ -118,7 +118,7 @@ POSIX message queues (created with `mq_maxmsg=32, mq_msgsize=8192`):
 - **`player`** — created by `mq_player`; `mq_ui` sends control frames back.
 
 These carry the same FiiO-Link frames as the network protocol. Sniff them non-destructively
-by creating `/ui` yourself and reading it before `mq_player` connects: `tools/uisniff.c`.
+by creating `/ui` yourself and reading it before `mq_player` connects: `research/diagnostics/uisniff.c`.
 
 ## Network services (real device)
 

@@ -76,28 +76,28 @@ path is established. These observations are verified for V2.57 only.
 Read-only examples, while the guest is running or stopped:
 
 ```sh
-docker exec diskos-qemu sqlite3 -readonly -header -column \
+docker exec snowsky-disc-qemu sqlite3 -readonly -header -column \
   /work/rootfs/usr/data/fiio/db/sysconfig.db \
   'SELECT LANGUAGE,VOLUME,MAX_VOL,KEY_SINGLE_CLICK_SLE,KEY_DOUBLE_CLICK_SLE,KEY_LONG_PRESS_SLE FROM SYSCONFIG;'
-docker exec diskos-qemu python3 /repo/tools/probe_keys.py
+docker exec snowsky-disc-qemu python3 -m research.diagnostics.probe_keys
 ```
 
 For live volume, use the existing protocol setter, which updates the running player:
 
 ```sh
-python3 tools/fiio_link.py --volume 80
+python3 -m controller.fiio_link --volume 80
 ```
 
 For confirmed persistent settings without a supported live setter, stop only the
 guest processes, back up SQLite, edit, and boot without rerunning setup:
 
 ```sh
-docker exec diskos-qemu bash -lc 'source /repo/scripts/lib.sh; verify_firmware; kill_guest'
-docker exec diskos-qemu sqlite3 /work/rootfs/usr/data/fiio/db/sysconfig.db \
+docker exec snowsky-disc-qemu bash -lc 'source /repo/emulator/scripts/lib.sh; verify_firmware; kill_guest'
+docker exec snowsky-disc-qemu sqlite3 /work/rootfs/usr/data/fiio/db/sysconfig.db \
   '.backup /work/sysconfig-before-settings.db'
-docker exec diskos-qemu sqlite3 /work/rootfs/usr/data/fiio/db/sysconfig.db \
+docker exec snowsky-disc-qemu sqlite3 /work/rootfs/usr/data/fiio/db/sysconfig.db \
   'BEGIN IMMEDIATE; UPDATE SYSCONFIG SET LANGUAGE=9,KEY_SINGLE_CLICK_SLE=1,KEY_DOUBLE_CLICK_SLE=0,KEY_LONG_PRESS_SLE=1 WHERE ID=1; COMMIT;'
-docker exec diskos-qemu bash /repo/scripts/20_boot.sh
+docker exec snowsky-disc-qemu bash /repo/emulator/scripts/20_boot.sh
 ```
 
 Check the actual row ID before editing. Keep earlier backups under distinct names.
@@ -114,8 +114,8 @@ requested `1/0/1` assignments from guest memory. The interactive volume was not 
 directly after an offline language edit, or explicitly pass the setup override:
 
 ```sh
-docker exec -e LANG_CODE=9 diskos-qemu bash /repo/scripts/10_setup_env.sh
-docker exec diskos-qemu bash /repo/scripts/20_boot.sh
+docker exec -e LANG_CODE=9 snowsky-disc-qemu bash /repo/emulator/scripts/10_setup_env.sh
+docker exec snowsky-disc-qemu bash /repo/emulator/scripts/20_boot.sh
 ```
 
 `LANG_CODE` is a setup environment variable, not a firmware database column.

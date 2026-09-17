@@ -84,6 +84,11 @@ The owner approved public publication and configuring this policy on 2026-09-13.
 
 ## Firmware-free CI
 
+Python unit tests live with each component; shared harness tests live in
+`tests/unit/`. The runner detects omitted modules and discovers JavaScript and
+shell checks across every component. Cross-component scenarios live in
+`tests/integration/`; generated media helpers live in `tests/fixtures/`.
+
 `.github/workflows/ci.yml`: every push/PR plus manual dispatch; hosted Ubuntu 24.04.
 No secrets, firmware, privileged containers, cache upload or image publishing.
 
@@ -97,8 +102,8 @@ No secrets, firmware, privileged containers, cache upload or image publishing.
 Local equivalent:
 
 ```sh
-docker build -t diskos-qemu-ci docker
-docker run --rm --network none -v "$PWD:/repo:ro" diskos-qemu-ci bash /repo/ci/test.sh
+docker build -t snowsky-disc-qemu-ci docker
+docker run --rm --network none -v "$PWD:/repo:ro" snowsky-disc-qemu-ci bash /repo/ci/test.sh
 OTA_DIR=/tmp/unused docker compose config --quiet
 ```
 
@@ -136,14 +141,14 @@ command argument or put it in `.env`, YAML, docs or a chat. The workflow has no
 version selector and exposes only the active profile's `FIRMWARE_V257_URL`.
 The unused historical secret may remain stored for archival work, but is not
 passed to current CI jobs. The workflow's version and secret are checked against
-the default runtime profile by `tools/test_ci_pins.py`.
+the default runtime profile by `tests/unit/test_ci_pins.py`.
 Version, rootfs size/hash, chunk count and exact binary/patch fingerprints are in
 `firmware/v<version>.json`; no direct download URL is committed.
 
 For the daily OTA monitor and verified OTA file access, see [OTA.md](OTA.md).
 Firmware integration still uses fixed ZIP inputs.
 
-`tools/fetch_firmware.py` receives the secret only in its download step. It requires
+`firmware/tools/fetch_firmware.py` receives the secret only in its download step. It requires
 HTTPS (including redirects), suppresses download exception details, bounds ZIP/chunk
 sizes and extracts validated chunk basenames (77 for active V2.57). The legacy local
 V2.40 downloader still validates its 85 chunks until cleanup. It never extracts archive paths,
@@ -158,7 +163,7 @@ The workflow first runs the firmware-free suite on the same commit, then:
    randomly named container/work volume and a separate generated SD directory.
 3. Decrypts/verifies/extracts the selected firmware, checks six binary fingerprints,
    applies its guarded key patch, primes a new config DB, and boots normally.
-   On V2.57, `ci/discovery_check.py` observes stock UDP announcements, suppression
+   On V2.57, `tests/integration/discovery_check.py` observes stock UDP announcements, suppression
    before/after a TCP handshake and recovery after disconnect, without changing
    media/settings or exposing LAN ports. See [discovery](DISCOVERY.md).
 4. Confirms an initially empty TCP catalog, slowly drags to Settings, scrolls to
@@ -179,16 +184,16 @@ The workflow first runs the firmware-free suite on the same commit, then:
    selection, next/previous, seek, modes, album/queue/favorites and physical event
    notifications, with read-only memory/SQLite checks. The WS client uses Docker DNS
    with a localhost Host header; server Host/Origin protections remain enabled.
-   Then runs `ci/queue_check.py`: optional queue-label equivalence, guarded current
+   Then runs `tests/integration/queue_check.py`: optional queue-label equivalence, guarded current
    queue selection, replacement and stale-index rejection, and recovery after a
    raw invalid-index probe. Both TCP/WS and HTTP mark/metadata readback are checked.
-   `ci/queue_reads_check.py` follows with five-mode `0105` reads and bounded `0426`
+   `tests/integration/queue_reads_check.py` follows with five-mode `0105` reads and bounded `0426`
    absence checks during playback, pause and after queue replacement.
 9. Runs [stock HTTP acceptance](HTTP_API.md) directly and through the proxy: streamed
    upload with byte-exact file checks, directory operations, catalog paging, and
    custom playlist lifecycle with internal-ID gaps. TCP/WS scans add the uploaded
    fourth track and remove it from the index after file deletion. V2.57 also uploads PNG.
-   On V2.57, `ci/playlists_check.py` then verifies whole-list and track playback
+   On V2.57, `tests/integration/playlists_check.py` then verifies whole-list and track playback
    over TCP/WS, HTTP queue order/mark, playlist ID gaps, rename/add/remove and
    fresh-preflight rejection after deletion/renaming or with empty lists.
 10. Runs [remote settings/PEQ acceptance](REMOTE_SETTINGS.md) over TCP/WS, checking
@@ -200,31 +205,31 @@ The workflow first runs the firmware-free suite on the same commit, then:
     control transitions, five codec preferences, five stock lock screens, exact
     custom PNG and metadata, and empty-body/activation quirks. TCP/WS and direct/proxy
     HTTP are exercised.
-12. On V2.57, runs `ci/formats_check.py`: generated two-track CUE/WAV, DSF and DFF,
+12. On V2.57, runs `tests/integration/formats_check.py`: generated two-track CUE/WAV, DSF and DFF,
     stock scanning, TCP/HTTP catalog agreement, metadata and positional selection
     over TCP/WS, including CUE queue/favorites. Checks source preservation and
     restores the original three-track index. Records stock ID collisions and
     lossy favorites without rewriting them; see [formats and identity](FORMATS.md).
-    Then runs `ci/track_end_check.py`: three generated six-second WAV/FLAC
+    Then runs `tests/integration/track_end_check.py`: three generated six-second WAV/FLAC
     tracks, a custom queue and all five modes over TCP/WS. Event-only observation
     proves natural completion/repeat/wrap/stop with gapless/folder jump off;
     checks retained queue, fresh mode reads and stopped/playing runtime. Restores
     mode, removes its fixtures/list and reindexes the original three tracks.
     See [EOF contract](TRACK_END.md), including silent `0202` after final stop.
-    Before SD hotplug acceptance, runs `ci/scan_cancel_check.py` with
+    Before SD hotplug acceptance, runs `tests/integration/scan_cancel_check.py` with
     1024 additional generated WAVs: idle/active cancellation over TCP/WS, partial
     index agreement, unchanged source bytes and full-scan recovery. Removes its
     fixtures and reindexes the original three before the SD scenario's reboot.
-    Then `ci/library_reset_check.py` verifies dedicated `0621` on paused TCP/WS
+    Then `tests/integration/library_reset_check.py` verifies dedicated `0621` on paused TCP/WS
     fixtures: index/favorites loss, preserved source/settings/custom lists,
     immediate inconsistent replies, scan-only recovery limits and explicit
     guest-restart persistence/recovery. No direct DB writes or factory reset.
     Runs automatic SD scanning and Cyrillic add/rename/delete checks, then
-    `ci/preferences_check.py`: fingerprinted TCP allowlist, three
+    `tests/integration/preferences_check.py`: fingerprinted TCP allowlist, three
     read-only playback preferences, and six rejected local-only setters over TCP/WS.
     Confirms unchanged SQLite/config/runtime and continued fresh network reads.
 13. Stops its guest, unmounts/detaches its SD loop, removes only its own stack/work
-   volume and generated media. The interactive `diskos-work`/`sdcard` remain untouched.
+   volume and generated media. The interactive `snowsky-disc-work`/`sdcard` remain untouched.
 
 Local equivalent using already extracted chunks:
 
@@ -310,7 +315,7 @@ are not covered. See [scope and reproduction](FORMATS.md).
 normal Compose setting, image mutation or firmware patch. Event observation is
 bounded at 35 seconds per mode and stops early after proven continuation or a
 terminal sequence plus a two-second quiet tail. Query timeouts alone never pass.
-For V2.57 scenarios other than `idle`/`idle-usb`, `ci/awake_check.py --configure` sets `LIGTH_ON_TIME=7` (never)
+For V2.57 scenarios other than `idle`/`idle-usb`, `tests/integration/awake_check.py --configure` sets `LIGTH_ON_TIME=7` (never)
 in the **stopped disposable guest's** settings DB before boot, then checks the
 fingerprinted UI's index 7 / timeout 65535 readback. This is test-fixture setup,
 not a network capability or firmware patch. `CI_DISPOSABLE=1` is supplied only by
@@ -334,7 +339,7 @@ other playback scenarios.
 `queue-reads` prepares its index with the verified stock TCP `0622/0000` scanner
 instead of navigating the settings UI. It checks the generated files byte-for-byte,
 requires an initially empty index, and verifies all three indexed names. The full
-scenario and `queue` retain the UI scan test in `ci/guest_check.py`.
+scenario and `queue` retain the UI scan test in `tests/integration/guest_check.py`.
 
 ### Idle shutdown versus protocol failure
 
@@ -369,7 +374,7 @@ exceptions. A secret also does not preserve an expired/disappeared upstream file
 
 ## V2.57 emulator release scope
 
-V2.57 integration additionally runs `ci/storage_check.py --disposable`: cold-cache
+V2.57 integration additionally runs `tests/integration/storage_check.py --disposable`: cold-cache
 SD discovery, stock remove/add, repeated Auto update with result dismissal, screen
 lock/unlock, and exact Cyrillic add/rename/delete comparisons across SD/SQLite/TCP.
 It uses V2.57-only fingerprinted UI reads. The legacy V2.40 local scenario remains

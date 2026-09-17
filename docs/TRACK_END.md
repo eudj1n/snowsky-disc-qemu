@@ -92,8 +92,8 @@ These addresses apply only to the fingerprinted V2.57 `mq_player`:
   synthesizing empty or stopped metadata. The independent status at offset
   `+0x48` is read by `4536c0`; it is not the flag used by this reply gate.
 
-Reproduce with `ghidra/DecAt.java` at function entries and an ELF disassembly
-for the switch; see [Ghidra instructions](../ghidra/README.md). Keep binaries,
+Reproduce with `research/ghidra/DecAt.java` at function entries and an ELF disassembly
+for the switch; see [Ghidra instructions](../research/ghidra/README.md). Keep binaries,
 projects and raw output under ignored `work/`. No firmware modification is needed.
 
 ## Reproducible acceptance and limits
@@ -103,7 +103,7 @@ CI_SCENARIO=track-end FW_VERSION=2.57 CI_LOGS="$PWD/work/track-end-check" \
   bash ci/integration.sh /absolute/path/to/main_os/ota_v257
 ```
 
-`ci/track_end_check.py` requires the disposable V2.57 stack and exact original
+`tests/integration/track_end_check.py` requires the disposable V2.57 stack and exact original
 generated source files. It creates three short files and one custom playlist,
 indexes through stock scanning, then tests all modes on TCP and WS. A bounded
 event-only observation checks completed six-second cycles, fresh metadata,

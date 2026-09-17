@@ -19,7 +19,7 @@
 # The firmware is NOT included — see firmware/README.md to obtain it.
 set -euo pipefail
 REPO_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-CTR="diskos-qemu"                # container_name set in compose.yaml
+CTR="snowsky-disc-qemu"                # container_name set in compose.yaml
 
 running(){ docker ps --format '{{.Names}}' | grep -qx "$CTR"; }
 exists(){  docker ps -a --format '{{.Names}}' | grep -qx "$CTR"; }
@@ -48,40 +48,40 @@ case "$cmd" in
     echo "==> docker compose up (build)"
     ( cd "$REPO_DIR" && OTA_DIR="$OTA" docker compose up -d --build )
     echo "==> extracting rootfs (first run only takes a minute)"
-    docker exec "$CTR" bash -lc '[ -e /work/rootfs/usr/bin/mq_ui ] || /repo/scripts/00_extract_rootfs.sh /ota'
+    docker exec "$CTR" bash -lc '[ -e /work/rootfs/usr/bin/mq_ui ] || /repo/emulator/scripts/00_extract_rootfs.sh /ota'
     echo "==> setting up environment"
-    docker exec "$CTR" bash -lc '/repo/scripts/10_setup_env.sh'
+    docker exec "$CTR" bash -lc '/repo/emulator/scripts/10_setup_env.sh'
     echo "==> ready. Try: ./run.sh boot"
     ;;
   start) need_ctr; echo "container '$CTR' running";;
   shell) need_ctr; docker exec -it "$CTR" bash ;;
   boot)
     need_ctr
-    docker exec "$CTR" bash -lc "/repo/scripts/10_setup_env.sh >/dev/null && /repo/scripts/20_boot.sh ${1:-0}"
+    docker exec "$CTR" bash -lc "/repo/emulator/scripts/10_setup_env.sh >/dev/null && /repo/emulator/scripts/20_boot.sh ${1:-0}"
     mkdir -p "$REPO_DIR/shots"; docker cp "$CTR":/work/shots/. "$REPO_DIR/shots/" 2>/dev/null || true
     echo "==> PNGs copied to $REPO_DIR/shots/"
     ;;
   tap)
     need_ctr
-    docker exec "$CTR" bash -lc "/repo/scripts/30_tap.sh ${1:?x} ${2:?y}"
+    docker exec "$CTR" bash -lc "/repo/emulator/scripts/30_tap.sh ${1:?x} ${2:?y}"
     mkdir -p "$REPO_DIR/shots"; docker cp "$CTR":/work/shots/. "$REPO_DIR/shots/" 2>/dev/null || true
     echo "==> PNGs copied to $REPO_DIR/shots/"
     ;;
   diag)
     need_ctr
-    docker exec "$CTR" bash -lc '/repo/scripts/10_setup_env.sh >/dev/null 2>&1; /repo/scripts/diag_tap.sh'
+    docker exec "$CTR" bash -lc '/repo/emulator/scripts/10_setup_env.sh >/dev/null 2>&1; /repo/research/diagnostics/diag_tap.sh'
     mkdir -p "$REPO_DIR/shots"; docker cp "$CTR":/work/shots/. "$REPO_DIR/shots/" 2>/dev/null || true
     echo "==> PNGs copied to $REPO_DIR/shots/ (see d0-*.png before, d1-*.png after)"
     ;;
   capture)
     need_ctr
-    docker exec "$CTR" bash -lc "/repo/scripts/capture.sh ${1:-cap}"
+    docker exec "$CTR" bash -lc "/repo/emulator/scripts/capture.sh ${1:-cap}"
     mkdir -p "$REPO_DIR/shots"; docker cp "$CTR":/work/shots/. "$REPO_DIR/shots/" 2>/dev/null || true
     echo "==> PNGs copied to $REPO_DIR/shots/"
     ;;
   audio)
     need_ctr
-    docker exec "$CTR" python3 /repo/tools/audio.py /work/audio.wav
+    docker exec "$CTR" python3 -m emulator.runtime.audio /work/audio.wav
     mkdir -p "$REPO_DIR/shots"
     docker cp "$CTR":/work/audio.wav "$REPO_DIR/shots/audio.wav"
     echo "==> WAV copied to $REPO_DIR/shots/audio.wav"
@@ -89,15 +89,15 @@ case "$cmd" in
   view)
     need_ctr
     PORT="${1:-8080}"
-    docker exec -d "$CTR" bash -lc "/repo/scripts/40_stream.sh $PORT >/work/stream.log 2>&1"
+    docker exec -d "$CTR" bash -lc "/repo/viewer/scripts/40_stream.sh $PORT >/work/stream.log 2>&1"
     sleep 1
     echo "==> live viewer: http://localhost:$PORT   (click = tap · drag = swipe · buttons for gestures/keys)"
     echo "    (needs ./run.sh boot for a live screen; log: docker exec $CTR cat /work/stream.log)"
     ;;
-  stop) need_ctr; docker exec "$CTR" bash -lc '/repo/scripts/99_stop.sh' ;;
+  stop) need_ctr; docker exec "$CTR" bash -lc '/repo/emulator/scripts/99_stop.sh' ;;
   wscheck)
     need_ctr
-    ( cd "$REPO_DIR" && docker compose --profile wsbridge exec -T wsbridge python3 -B /repo/tools/verify_websocket.py --tcp-host emu "$@" )
+    ( cd "$REPO_DIR" && docker compose --profile wsbridge exec -T wsbridge python3 -B -m controller.diagnostics.verify_websocket --tcp-host emu "$@" )
     ;;
   down) ( cd "$REPO_DIR" && OTA_DIR="${OTA_DIR:-$REPO_DIR}" docker compose --profile wsbridge down );          echo "containers stopped & removed (work volume kept)";;
   nuke) ( cd "$REPO_DIR" && OTA_DIR="${OTA_DIR:-$REPO_DIR}" docker compose --profile wsbridge down -v );       echo "containers + work volume removed";;

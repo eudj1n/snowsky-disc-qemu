@@ -55,7 +55,7 @@ or implementation is required by the current library audit.
 
 ## Gain and filter labels (V2.57)
 
-`GAIN_LABELS` / `FILTER_LABELS` in `tools/fiio_settings.py` use helper/SQLite
+`GAIN_LABELS` / `FILTER_LABELS` in `controller/fiio_settings.py` use helper/SQLite
 values, not menu positions. Stock Gain lists **H first, L second**, but its
 callback maps those rows to **1 and 0**, respectively.
 
@@ -85,7 +85,7 @@ Gain setter/getter are `4f182c` / `4f18e0`. Labels come from the English/Russian
 filter `HIGH_PASS`, but the shipped resource displays `Wideband_FF`.
 
 Reproduce with `FindText.java`, `RefsTo.java` and `DecAt.java` in the
-[Ghidra workflow](../ghidra/README.md), using fingerprinted V2.57 binaries.
+[Ghidra workflow](../research/ghidra/README.md), using fingerprinted V2.57 binaries.
 Focused `settings` acceptance exercises **both gain values and all six filters**
 over TCP/WS, checks normalized network reads and SQLite, restores originals and
 checks unchanged volume. This establishes control/persistence, not analog/DSP
@@ -123,7 +123,7 @@ Final fresh query at frame 1095 receives `0001` / `000A` at 1103/1105, confirmin
 restoration independently of the last setter acknowledgement and checked row 2.
 HAR has zero entries; this operation is evidenced by TCP 12100, not HTTP.
 
-[Sanitized fixture](../tools/fixtures/fiio_control_ios_filters.json) retains source
+[Sanitized fixture](../controller/tests/fixtures/fiio_control_ios_filters.json) retains source
 hashes, frame numbers, relative times, labels and only relevant Link messages.
 `test_all_filter_rows_match_physical_ios_capture_and_restore` checks all six TCP/WS
 setter encodings and normalization of both reply enums. Helpers needed no wire
@@ -301,7 +301,7 @@ discarded too. Do not pipeline negative probes with read requests.
 Admission is necessary, not sufficient: admitted `0426` still has a NULL handler.
 
 Reproduce the allowlist without running firmware:
-`python3 tools/inspect_link_commands.py /path/to/mq_player --version 2.57`.
+`python3 -m research.diagnostics.inspect_link_commands /path/to/mq_player --version 2.57`.
 The tool validates the full binary fingerprint (normalizing only the permitted
 key patch), PT_LOAD mappings, count, strings and NULL terminator; it sends nothing.
 
@@ -330,13 +330,13 @@ enum and reversed list-row mapping. The UI command senders start at `4580ac`,
 `46d0ac`, `4654fc`, `460e3c`, `467d60`, `45e140`: include the two instructions
 **before** their stack prologue, which load the selected byte.
 
-Reuse `ghidra/DecAt.java` on these entries after analysis; see `ghidra/README.md`.
+Reuse `research/ghidra/DecAt.java` on these entries after analysis; see `research/ghidra/README.md`.
 Binary copies, projects and raw decompilation stay under ignored `work/`, not Git.
 Do not reuse these addresses for another firmware.
 
 ### Validation scope
 
-`ci/preferences_check.py` first checks the fingerprinted TCP allowlist. It reads
+`tests/integration/preferences_check.py` first checks the fingerprinted TCP allowlist. It reads
 the three available settings through TCP and WS, independently comparing SQLite,
 player configuration and runtime. For each of the six local-only tags it then
 sends an individually identified negative probe requesting a **different** valid
@@ -374,14 +374,14 @@ table is not proof of a usable remote feature.
 
 ## Reproduce
 
-`ci/settings_check.py` runs TCP and WS against the disposable integration guest,
+`tests/integration/settings_check.py` runs TCP and WS against the disposable integration guest,
 changes/restores balance, gain, DRE, filter, SPDIF and user PEQ, and reads SQLite without writes.
 Balance additionally checks both channel-attenuation mirrors at center, ±1 and ±20.
 Use `CI_SCENARIO=settings` with `ci/integration.sh` for an isolated focused run;
 the full integration scenario includes the same checks.
 `CI_SCENARIO=preferences FW_VERSION=2.57` runs read-only preference and rejected-write
 checks separately; full V2.57 integration includes them too.
-`tools/test_fiio_settings.py` pins wire examples, signed gain, binary PEQ structure,
+`controller/tests/test_fiio_settings.py` pins wire examples, signed gain, binary PEQ structure,
 validation and the user-preset guard.
 
 Static V2.57 references: filter `4ee628`, network EQ type `4ef174`, PEQ getter

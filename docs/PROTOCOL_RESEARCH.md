@@ -191,7 +191,7 @@ remains the separate emulator checkpoint below.
 
 ## Previous checkpoint: category DELETE scopes
 
-`ci/library_delete_check.py` and `CI_SCENARIO=library-delete` now reproduce
+`tests/integration/library_delete_check.py` and `CI_SCENARIO=library-delete` now reproduce
 seven deletion cases through each HTTP route on a fresh V2.57 disposable stack.
 All 14 cases, scan recovery, exact remaining files, SQLite membership and final
 baseline/stack cleanup passed. Firmware-free checks: 286 Python / 23 JavaScript,
@@ -329,8 +329,8 @@ current machine. Do not download or execute
 an unreviewed firmware profile as a substitute.
 
 ```sh
-docker build -t diskos-qemu-ci docker
-docker run --rm --network none -v "$PWD:/repo:ro" diskos-qemu-ci bash /repo/ci/test.sh
+docker build -t snowsky-disc-qemu-ci docker
+docker run --rm --network none -v "$PWD:/repo:ro" snowsky-disc-qemu-ci bash /repo/ci/test.sh
 CI_SCENARIO=full FW_VERSION=2.57 bash ci/integration.sh "$OTA_257"
 # Focused diagnostics, not substitutes for the full run above:
 CI_SCENARIO=queue FW_VERSION=2.57 bash ci/integration.sh "$OTA_257"
@@ -351,7 +351,7 @@ CI_SCENARIO=idle-usb FW_VERSION=2.57 bash ci/integration.sh "$OTA_257"
 
 Run firmware integration sequentially to limit resource pressure. Each run uses
 generated media, a randomly named Compose stack and disposable volume, and cleans
-them up. Leave interactive `diskos-qemu` and `diskos-preview` untouched. Do not
+them up. Leave interactive `snowsky-disc-qemu` and `diskos-preview` untouched. Do not
 reset all binfmt registrations. Raw captures, firmware, decompilation, generated
 screenshots and detailed logs stay ignored; only code/docs/curated fixtures belong
 in the commit. `CI_SHOTS` can retain diagnostic screenshots locally.
@@ -955,7 +955,7 @@ instead of claiming measured physical suppression. A short mDNS browse saw no
 `_fiio._tcp` instance. Static registration `489d70` uses port 12102, with TXT
 fields built by `4898a4`; it is not evidence of a TCP-12100 discovery requirement.
 
-Added passive `tools/fiio_discovery.py` and explicit host `tools/lan_bridge.py`.
+Added passive `controller/fiio_discovery.py` and explicit host `controller/bridge/lan_bridge.py`.
 The latter synthesizes the verified announcement from the selected host interface
 and forwards TCP 12100 and direct stock HTTP 12103 to existing loopback ports.
 It requires a single allowed phone IP, acknowledgement of unauthenticated control
@@ -1024,7 +1024,7 @@ The owner's physical observation (5-minute Idle poweroff, Sleep off, 2-minute
 screen timeout, USB power prevents idle shutdown) prompted a native power model.
 The previous viewer cable/sysfs stub did not set the stock USB flag. Traced
 AW35615 sink role, sequential ADC initialization and ADC1 thresholds, then added
-narrow V2.57-only shim/setup support. The firmware itself now updates its power
+narrow V2.57-only emulator/shims/setup support. The firmware itself now updates its power
 gate. Other ADC sensors fail explicitly; no fabricated jack state, USB data,
 direct runtime-memory writes, firmware patches or POWER_SAVE override.
 See [the complete contract and addresses](IDLE_POWER.md).
@@ -1084,7 +1084,7 @@ evidence, not a hosted exact-commit release gate.
 Evidence remains ignored under
 `work/idle/`, `shots/idle*` and local `/tmp/disc-idle-*.log`; do not upload guest
 logs or derived binaries. Reproduction is entirely in tracked setup/shim and
-`ci/idle_check.py`, selected by `CI_SCENARIO=idle|idle-usb`. Dockerfile dependencies
+`tests/integration/idle_check.py`, selected by `CI_SCENARIO=idle|idle-usb`. Dockerfile dependencies
 already suffice, Compose remains localhost-only, and the interactive guest and
 physical player are untouched. Phone background/reconnect and hardware timing
 are not covered by these emulator tests.

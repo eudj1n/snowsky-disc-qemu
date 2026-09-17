@@ -13,8 +13,8 @@ and hosted firmware CI now target only V2.57; release immutability remains enabl
 ## Prepared
 
 - MIT license chosen by the owner for project code/documentation.
-- Owner confirmed `assets/skin.png` is their original photo; provenance recorded in
-  [assets/README.md](../assets/README.md). The skin is tracked, not ignored.
+- Owner confirmed `viewer/assets/skin.png` is their original photo; provenance recorded in
+  [viewer/assets/README.md](../viewer/assets/README.md). The skin is tracked, not ignored.
 - Root README omits the OTA password and references to the owner's private projects.
   Tooling and technical preparation notes retain necessary decryption details.
 - Shared agent instructions moved to `AGENTS.md`, without a duplicate legacy file.

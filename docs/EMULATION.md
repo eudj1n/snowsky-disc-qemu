@@ -37,10 +37,10 @@ host VM's own native arm64 binaries (containerd-shim, unpigz, …) → `exec for
 breaking Docker until you restart Docker Desktop. This happened twice.
 
 Instead register a single mipsel entry with a mask that matches MIPS32-LE ELFs and
-nothing else (`scripts/10_setup_env.sh`). The mask ignores ELF bytes 6–15 so it matches
+nothing else (`emulator/scripts/10_setup_env.sh`). The mask ignores ELF bytes 6–15 so it matches
 busybox (which sets `EI_ABIVERSION`) as well as glibc binaries.
 
-## The ioctl shim (`shim/fbshim.c`)
+## The ioctl shim (`emulator/shims/fbshim.c`)
 
 The guest opens `/dev/fb0` and issues framebuffer ioctls, and reads input-device names.
 There is no real framebuffer/driver, so an `LD_PRELOAD`-style shim intercepts `ioctl`:
@@ -79,7 +79,7 @@ It preloads via `/rootfs/etc/ld.so.preload` (a file the guest ld.so reads), **no
 must resolve inside the chroot.
 
 `/dev/fb0` is a plain file; qemu maps it with `mmap` and the guest draws into it. See
-[TOUCH.md](TOUCH.md) / `tools/fb2png.py` for reading it back.
+[TOUCH.md](TOUCH.md) / `emulator/runtime/fb2png.py` for reading it back.
 
 ## Blocker 1 — frozen splash: `mq_open("ui")` = EMFILE
 
@@ -132,7 +132,7 @@ don't run init, so:
    `LOCAL_IMG_ANIM=1`. So a throwaway boot creates the DB, then we set `LOCAL_IMG_ANIM=0`, then
    boot for real.
 
-`scripts/10_setup_env.sh` does both automatically. (The language choice and this flag then
+`emulator/scripts/10_setup_env.sh` does both automatically. (The language choice and this flag then
 persist in the `/work` volume.)
 
 The first-boot **language wizard** is gated on the same DB: it shows only while `LANGUAGE` is
@@ -146,7 +146,7 @@ any valid value picks the language and skips the wizard; `10_setup_env.sh` prese
 
 With the main menu reached, opening **Browse files** showed an empty `/tmp/sdcard`. The card
 is emulated as a **real FAT block device**, not a bind: `10_setup_env.sh` builds a FAT image
-from `./sdcard`, exposes it as real nodes `/dev/mmcblk0` + `/dev/mmcblk0p1` (`mknod b 7 <loop
+from `./emulator/sdcard`, exposes it as real nodes `/dev/mmcblk0` + `/dev/mmcblk0p1` (`mknod b 7 <loop
 minor>` — a symlink to `/dev/loopN` can't be resolved from inside the guest's chroot), and
 mounts it at `/tmp/sdcard`. Yet the browser stayed empty.
 
@@ -190,7 +190,7 @@ mount is retained. See [NETWORK.md](NETWORK.md).
 
 ## What mq_player sends at boot
 
-Sniffing the `ui` queue (see `tools/uisniff.c`) shows the backend push these FiiO-Link
+Sniffing the `ui` queue (see `research/diagnostics/uisniff.c`) shows the backend push these FiiO-Link
 frames right after start (there is **no** explicit "show main" command — the transition is
 internal to `mq_ui` once the animation is gone):
 
@@ -211,7 +211,7 @@ See [PROTOCOL.md](PROTOCOL.md) for the frame format.
 
 `fb0` = 360×1080×4 (three 360×360 sub-buffers). `mq_ui` does **not** use `FBIOPAN_DISPLAY`;
 it alternates drawing to buf0/buf1, so the current screen is the **last-flushed** buffer
-(a static screen is not re-flushed, so the other buffer holds a stale frame). `tools/fb2png.py`
+(a static screen is not re-flushed, so the other buffer holds a stale frame). `emulator/runtime/fb2png.py`
 emits every sub-buffer and prints each one's non-black pixel count. For the actual latest
 buffer, use the shim's `emu/fb-live` byte (0/1; 255 = no observation yet), also consumed by
 the viewer. Higher pixel count is only a heuristic, not evidence of recency. Pixels are

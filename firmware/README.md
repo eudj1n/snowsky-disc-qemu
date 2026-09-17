@@ -55,7 +55,7 @@ index order (0000…0084)**, reassemble `rootfs.squashfs`:
 - sha256: `b479e159db5134325819b5f6e5a54388f3adefae373a4ee60680f02d5dcf0bb8`
 - compression: LZO squashfs
 
-`scripts/00_extract_rootfs.sh` does exactly this and verifies the sha256, then
+`emulator/scripts/00_extract_rootfs.sh` does exactly this and verifies the sha256, then
 `unsquashfs` unpacks it to `/work/rootfs`.
 
 ## Device facts

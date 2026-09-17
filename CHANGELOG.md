@@ -43,6 +43,10 @@ Active firmware: **V2.57**. Local protocol research is finalized in
 
 ### Changed
 
+- Separate emulator, viewer, controller, firmware tooling and research into explicit
+  components. Keep root launch commands; media now lives in `emulator/sdcard/` and
+  Docker names use `snowsky-disc-qemu`.
+
 - Support one validated firmware on `2.x`; older versions remain historical
   snapshots without promised backports. Hosted integration now targets V2.57 only.
 - Keep immutable `v2.57` as a pre-release and `v2.40` as the historical stable

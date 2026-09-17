@@ -88,7 +88,7 @@ CI_SCENARIO=library-delete FW_VERSION=2.57 \
   bash ci/integration.sh /absolute/path/to/main_os/ota_v257
 ```
 
-`ci/library_delete_check.py` requires `CI_DISPOSABLE=1`, V2.57, exactly the three
+`tests/integration/library_delete_check.py` requires `CI_DISPOSABLE=1`, V2.57, exactly the three
 original generated CI files and no preexisting custom lists. It adds five tagged
 FLAC fixtures and tests all seven rows through direct and bridged HTTP, with
 TCP/WS used for selection, favorites, scans and state readback. HTTP mutations
@@ -138,7 +138,7 @@ and tshark reports no device-stream loss/retransmission/truncation. The owner
 confirmed that all supplied iOS checks used FiiO Control **4.6.0**. No 12100
 payload/settings reply was captured here, so the firmware version is not freshly
 established by this trace. Fixture hashes and frame references are retained in
-`tools/fixtures/fiio_control_ios_track_delete.json`; unrelated genre names are
+`controller/tests/fixtures/fiio_control_ios_track_delete.json`; unrelated genre names are
 omitted. Local reconstruction: `work/library-captures/delete1-*`.
 
 `IMG_6819` shows selected `Probe B1` inside `DISC Delete Album B`, a
@@ -253,7 +253,7 @@ needed for these cases. Favorite/custom-list side effects, reboot persistence,
 shared-file/current-track behavior and failure cases remain outside this physical
 capture. Their independent emulator evidence/limits are not broadened.
 
-Sanitized fixture: `tools/fixtures/fiio_control_ios_source_delete.json`, containing
+Sanitized fixture: `controller/tests/fixtures/fiio_control_ios_source_delete.json`, containing
 input hashes and frame references. It omits the owner's root-card contents,
 unrelated genres and full settings. Local reconstruction is ignored under
 `work/library-captures/delete2-*`. Two regressions cover positional deletion,

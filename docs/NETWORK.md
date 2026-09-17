@@ -21,8 +21,8 @@ Use Docker Engine **28.1+** and Compose **2.36+**. CI pins are in [CI.md](CI.md)
 docker compose up -d --build
 ./run.sh boot
 ./run.sh view
-python3 tools/fiio_link.py
-python3 tools/verify_network.py
+python3 -m controller.fiio_link
+python3 -m controller.diagnostics.verify_network
 docker compose --profile wsbridge up -d wsbridge  # optional WS diagnostics
 ./run.sh wscheck --control
 ```
@@ -52,7 +52,7 @@ Three independent gates were observed:
    `wlan0` or `eth1`. The standalone firmware `/sbin/ip addr show eth1` fails under
    this QEMU 7.2 with **Operation not supported**; the stock BusyBox `ip` applet works.
 
-`scripts/16_network.sh prepare` mirrors eth1's actual MAC/operstate into guest sysfs
+`emulator/scripts/16_network.sh prepare` mirrors eth1's actual MAC/operstate into guest sysfs
 and installs command wrappers. `announce` waits for the detector's startup log and
 re-announces the **same** Docker IPv4 address with `ip addr change … valid_lft forever
 preferred_lft forever`, then waits for both listeners. No interface down/up, new
@@ -62,14 +62,14 @@ The `ip` wrapper delegates the two read-only queries to `/bin/busybox ip`.
 ## Confinement and reproducibility
 
 This is still a **privileged development container**, not a security boundary for
-untrusted firmware. `guest_run()` in `scripts/lib.sh` uses the Dockerfile's
+untrusted firmware. `guest_run()` in `emulator/scripts/lib.sh` uses the Dockerfile's
 `util-linux`/`setpriv` to remove NET_ADMIN, SYS_TIME, SYS_BOOT, SYS_MODULE and SYS_RAWIO
 from the guest bounding/effective capability sets and enables no-new-privileges.
 This applies to the normal boot, first-boot priming, GDB and touch diagnostic launchers,
 including child commands. SYS_ADMIN remains for the existing SD mount workflow.
 
 The stock network-up path launches OTA helpers/NTP and executes `hwclock -w` every
-21 seconds. `scripts/guest-command.sh` blocks those commands and guest network
+21 seconds. `emulator/scripts/guest-command.sh` blocks those commands and guest network
 configuration tools; original executables are preserved at `/emu/original-commands/`.
 Wrappers are installed atomically without following BusyBox symlinks. No utilities
 were installed ad hoc in the image. Dockerfile checks `setpriv` and `ip` availability.
@@ -81,9 +81,9 @@ release tracking issues; it does not enable the guest OTA installer.
 Read-only live state/capability check (never writes `/proc/PID/mem`):
 
 ```sh
-docker exec diskos-qemu python3 /repo/tools/probe_network.py
-docker exec diskos-qemu python3 /repo/tools/probe_keys.py
-docker exec diskos-qemu ip route
+docker exec snowsky-disc-qemu python3 -m research.diagnostics.probe_network
+docker exec snowsky-disc-qemu python3 -m research.diagnostics.probe_keys
+docker exec snowsky-disc-qemu ip route
 ```
 
 ## Wire checks and controls
@@ -105,10 +105,10 @@ placing files on the SD. Screenshots are in [STATUS.md](STATUS.md).
 Temporary Auto update fixture, generated with the Dockerfile's SoX dependency:
 
 ```sh
-docker exec diskos-qemu bash /repo/scripts/media_fixture.sh add
+docker exec snowsky-disc-qemu bash /repo/tests/fixtures/media_fixture.sh add
 ./run.sh boot
-# Inspect the app and run tools/fiio_link.py; do not press Update now for the auto test.
-docker exec diskos-qemu bash /repo/scripts/media_fixture.sh remove
+# Inspect the app and run controller/fiio_link.py; do not press Update now for the auto test.
+docker exec snowsky-disc-qemu bash /repo/tests/fixtures/media_fixture.sh remove
 ./run.sh boot
 ```
 
@@ -124,20 +124,20 @@ allowing the firmware's hotplug handler to remount the emulated card.
 See [SETTINGS.md](SETTINGS.md) and the [media-library investigation](MEDIA_LIBRARY.md)
 before relying on Auto update in the emulator.
 
-`tools/fiio_link.py` uses only Python's standard library, defaults to localhost and
+`controller/fiio_link.py` uses only Python's standard library, defaults to localhost and
 handles fragmented/coalesced frames. Lengths count UTF-8 **bytes**. It decodes the
 nested JSON string in `now_playing.song`. Stock firmware sometimes sends no 0202
 reply before a track is selected or after its state is cleared; the CLI reports
 that timeout separately instead of claiming playback metadata exists.
 
 ```sh
-python3 tools/fiio_link.py --volume 118  # absolute logical volume, 0..120
-python3 tools/fiio_link.py --play-pause # selected track only
-python3 tools/fiio_link.py --play-all   # start all indexed local songs
+python3 -m controller.fiio_link --volume 118  # absolute logical volume, 0..120
+python3 -m controller.fiio_link --play-pause # selected track only
+python3 -m controller.fiio_link --play-all   # start all indexed local songs
 # Open a test track first. This writes volume (then restores it) and toggles twice:
-python3 tools/verify_network.py --control
+python3 -m controller.diagnostics.verify_network --control
 # Or select the indexed library over TCP; final test state is paused:
-python3 tools/verify_network.py --control --start-library
+python3 -m controller.diagnostics.verify_network --control --start-library
 ```
 
 Confirmed command routing, without sweeping arbitrary setters:
@@ -190,11 +190,11 @@ image changes were made in this investigation.
 Reproduce the **read-only** inspection and wire probe:
 
 ```sh
-docker exec diskos-qemu python3 /repo/tools/inspect_http_routes.py
-python3 tools/probe_websocket.py --port 12113
-python3 tools/probe_websocket.py --port 12113 --path /__unmapped_probe__
+docker exec snowsky-disc-qemu python3 -m research.diagnostics.inspect_http_routes
+python3 -m controller.diagnostics.probe_websocket --port 12113
+python3 -m controller.diagnostics.probe_websocket --port 12113 --path /__unmapped_probe__
 # Intentionally exits 1 for stock V2.40, which returns 200 instead of upgrading:
-python3 tools/probe_websocket.py --port 12113 --require-upgrade
+python3 -m controller.diagnostics.probe_websocket --port 12113 --require-upgrade
 ```
 
 The route inspector uses ELF PT_LOAD mappings, not a guessed address offset; its

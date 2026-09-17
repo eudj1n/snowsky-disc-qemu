@@ -1,0 +1,215 @@
+"""Viewer settings and scoped emulated peripherals; no firmware memory writes."""
+import os
+from pathlib import Path
+import socket
+import stat
+import subprocess
+import threading
+import time
+
+from emulator.runtime.keys import BRIGHTNESS
+from firmware.profile import identify_player
+
+
+class Peripherals:
+    def __init__(self, device):
+        self.device = device
+        self.root = device.root
+        self.lock = threading.RLock()
+        self.operation = None
+        self.error = None
+        self.profile_key = None
+        self.profile = None
+
+    def _profile(self):
+        binary = self.root / 'usr/bin/mq_player'
+        info = binary.stat()
+        key = (info.st_dev, info.st_ino, info.st_size, info.st_mtime_ns)
+        if key != self.profile_key:
+            self.profile = identify_player(binary.read_bytes())
+            self.profile_key = key
+        return self.profile
+
+    def _pid(self):
+        self._profile()
+        pids = []
+        for pid in self.device.processes():
+            try:
+                if Path(f'/proc/{pid}/comm').read_text().strip() == 'mq_player' and \
+                        b'/usr/bin/mq_player' in Path(f'/proc/{pid}/cmdline').read_bytes().split(b'\0'):
+                    pids.append(pid)
+            except FileNotFoundError:
+                continue
+        if len(pids) != 1:
+            raise ValueError('Player is not ready')
+        return pids[0]
+
+    def snapshot(self):
+        try:
+            brightness = int((self.root / BRIGHTNESS).read_bytes().split(b'\0', 1)[0])
+        except (OSError, ValueError):
+            brightness = None
+        active = self.root / 'dev/mmcblk0p1'
+        saved = self.root / 'emu/sd-mmcblk0p1'
+        return dict(brightness=brightness, sd_available=active.is_block_device() or saved.is_block_device(),
+                    sd_inserted=active.is_block_device(),
+                    usb_connected=self._usb_connected(), peripheral_transition=self.operation,
+                    peripheral_error=self.error)
+
+    def _usb_connected(self):
+        try:
+            return (self.root / 'emu/usb-connected').read_text().strip() == '1'
+        except FileNotFoundError:
+            return False
+
+    def set_usb(self, connected):
+        if type(connected) is not bool:
+            raise ValueError('Expected connected boolean')
+        with self.device.lock, self.lock:
+            if self.device.transition or self.operation:
+                raise ValueError('Wait for the current operation')
+            path = self.root / 'emu/usb-connected'
+            path.parent.mkdir(parents=True, exist_ok=True)
+            # The ADC shim polls this byte. Avoid a transient empty file between
+            # truncate/write being interpreted as a cable removal.
+            with path.open('r+b' if path.exists() else 'wb') as marker:
+                marker.write(b'1' if connected else b'0')
+            # V2.57's shim reports sink-role/ADC power detection from this byte;
+            # only guest sysfs, never host USB gadget/role-switch events.
+            battery = self.root / 'sys/class/power_supply/cw221X-bat/status'
+            if battery.is_file():
+                battery.write_text('Charging\n' if connected else 'Discharging\n')
+            self.error = None
+
+    def _listener(self):
+        pid = self._pid()
+        if not any(row.split()[1:3] == ['15', str(pid)] for row in
+                   Path('/proc/net/netlink').read_text().splitlines()[1:]):
+            raise ValueError('SD listener is not ready')
+        return pid
+
+    def _event(self, action):
+        pid = self._listener()
+        payload = (f'{action}@/devices/platform/mmc/mmcblk0\0ACTION={action}\0'
+                   'SUBSYSTEM=block\0DEVNAME=mmcblk0\0').encode()
+        with socket.socket(socket.AF_NETLINK, socket.SOCK_DGRAM, 15) as channel:
+            channel.bind((0, 0))
+            channel.sendto(payload, (pid, 0))
+
+    def _mounted(self, path):
+        return subprocess.run(['mountpoint', '-q', str(path)]).returncode == 0
+
+    def set_sd(self, inserted):
+        if type(inserted) is not bool:
+            raise ValueError('Expected inserted boolean')
+        with self.device.lock, self.lock:
+            if self.device.transition or self.operation:
+                raise ValueError('Wait for the current operation')
+            self._profile()
+            if self.snapshot()['sd_inserted'] == inserted:
+                return
+            if not self.snapshot()['sd_available']:
+                raise ValueError('No emulated SD card')
+            self.operation = 'Inserting SD card…' if inserted else 'Ejecting SD card…'
+            self.error = None
+            threading.Thread(target=self._sd, args=(inserted,), daemon=True).start()
+
+    def _sd(self, inserted):
+        try:
+            # Power transitions use this same lock at request time. The operation
+            # marker also blocks HTTP buttons until the card state has settled.
+            with self.device.lock:
+                active = [self.root / ('dev/' + n) for n in ('mmcblk0', 'mmcblk0p1')]
+                saved = [self.root / ('emu/sd-' + p.name) for p in active]
+                self.root.joinpath('emu').mkdir(exist_ok=True)
+                source, target = (saved, active) if inserted else (active, saved)
+                identities = set()
+                for old, new in zip(source, target):
+                    info = old.lstat()
+                    if not stat.S_ISBLK(info.st_mode) or os.major(info.st_rdev) != 7:
+                        raise ValueError('SD node does not belong to an emulated loop device')
+                    if new.exists() or new.is_symlink():
+                        raise ValueError('SD target node already exists')
+                    identities.add(info.st_rdev)
+                if len(identities) != 1:
+                    raise ValueError('Mismatched SD device nodes')
+                card_image = self.root.parent / 'sdcard.img'
+                if inserted:
+                    # mount/umount can mark a loop AUTOCLEAR. Once the last
+                    # mount disappears, its number can be reused by another
+                    # container. Reattach THIS image and recreate its aliases;
+                    # never operate on the device number stored at ejection.
+                    loop = subprocess.check_output(['losetup', '--find', '--show', '--nooverlap',
+                                                    str(card_image)], text=True, timeout=5).strip()
+                    info = Path(loop).stat()
+                    if not stat.S_ISBLK(info.st_mode) or os.major(info.st_rdev) != 7:
+                        raise ValueError('Expected a loop device for this SD image')
+                    for node in saved:
+                        replacement = node.with_suffix('.new')
+                        os.mknod(replacement, stat.S_IFBLK | 0o644, info.st_rdev)
+                        replacement.replace(node)
+                else:
+                    loop_ids = {Path(line.split(':', 1)[0]).stat().st_rdev for line in
+                                subprocess.check_output(['losetup', '-j', str(card_image)],
+                                                        text=True, timeout=5).splitlines()}
+                    if not identities <= loop_ids:
+                        raise ValueError('SD node does not belong to this emulated image')
+                if self.device.running():
+                    self._listener()
+                if inserted:
+                    # The stock add handler owns the first mount. Pre-mounting
+                    # here races its cleanup of the mountpoint directory.
+                    self._move_nodes(saved, active)
+                    subprocess.run(['bash', '-lc', 'source /repo/emulator/scripts/lib.sh; sd_probe'],
+                                   env={**os.environ, 'ROOTFS': str(self.root)}, check=True, timeout=15)
+                    if self.device.running():
+                        self._event('add')
+                        self._wait_mount(True)
+                    self._mount_sd()
+                else:
+                    # Stock cleanup uses rm -rf even after a failed umount.
+                    # First unmount our image WITHOUT force/lazy flags; if busy,
+                    # fail before notifying stock firmware. Never expose mounted
+                    # media to that cleanup path.
+                    self._unmount_sd(identities)
+                    if self.device.running():
+                        self._event('remove')
+                    self._move_nodes(active, saved)
+        except (OSError, ValueError, subprocess.SubprocessError) as exc:
+            self.error = str(exc)
+        finally:
+            self.operation = None
+
+    def _mount_sd(self):
+        subprocess.run(['bash', '-lc', 'source /repo/emulator/scripts/lib.sh; sd_mount'],
+                       env={**os.environ, 'ROOTFS': str(self.root)}, check=True, timeout=30)
+
+    def _unmount_sd(self, identities):
+        for mount in (self.root / 'tmp/sdcard', Path('/tmp/sdcard')):
+            if self._mounted(mount):
+                if mount.stat().st_dev not in identities:
+                    raise ValueError('Mount does not belong to this emulated SD card')
+                try:
+                    subprocess.run(['umount', str(mount)], check=True, timeout=5, capture_output=True)
+                except subprocess.CalledProcessError as exc:
+                    raise ValueError('SD card is busy; stop playback and retry') from exc
+
+    def _wait_mount(self, mounted):
+        deadline = time.monotonic() + 10
+        while time.monotonic() < deadline:
+            if self._mounted(self.root / 'tmp/sdcard') == mounted:
+                return
+            time.sleep(.1)
+        raise ValueError('Player did not finish mounting' if mounted else 'SD card is busy; stop playback and retry')
+
+    @staticmethod
+    def _move_nodes(source, target):
+        moved = []
+        try:
+            for old, new in zip(source, target):
+                old.rename(new)
+                moved.append((old, new))
+        except OSError:
+            for old, new in reversed(moved):
+                new.rename(old)
+            raise

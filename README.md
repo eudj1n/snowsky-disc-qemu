@@ -57,7 +57,7 @@ Download and unpack the official firmware first:
 git clone https://github.com/eudj1n/snowsky-disc-qemu.git
 cd snowsky-disc-qemu
 
-# Put your music in ./sdcard before setup.
+# Put your music in ./emulator/sdcard before setup.
 # Point to the unpacked main-OS chunk directory, not the ZIP or its parent.
 ./run.sh up /path/to/SNOWSKY_DISC_update_.../main_os/ota_v257
 ./run.sh boot
@@ -73,7 +73,7 @@ firmware processes and writes screen captures to `shots/`.
 Inside the stock UI, open **Browse files** to select your music. Use
 **Settings → Update media lib → Update now** to populate the indexed library.
 Normal boot remounts the card; it does not generate an SD-insertion auto-scan event.
-After changing files in `./sdcard`, run `./run.sh boot` again to rebuild the emulated
+After changing files in `./emulator/sdcard`, run `./run.sh boot` again to rebuild the emulated
 card from that folder. Guest-only card changes are replaced during this setup.
 
 <details>
@@ -88,7 +88,7 @@ card from that folder. Guest-only card changes are replaced during this setup.
 ./run.sh down             # Remove containers; keep the extracted-rootfs volume.
 ```
 
-The pipeline lives in `scripts/`; `run.sh` is its host entry point.
+The pipeline lives in `emulator/scripts/`; `run.sh` is its host entry point.
 `compose.yaml` defines the container and localhost port mappings.
 For direct Compose setup, copy `.env.example` to `.env`, set `OTA_DIR`, then run
 `./run.sh up` and `./run.sh boot`.
@@ -99,7 +99,7 @@ For direct Compose setup, copy `.env.example` to `.env`, set `OTA_DIR`, then run
 <summary><b>FiiO Link and the optional WebSocket bridge</b></summary>
 
 The emulator publishes FiiO Link TCP on **127.0.0.1:12100** and direct stock HTTP on
-**127.0.0.1:12113**. Try `python3 tools/fiio_link.py` for a read-only host query.
+**127.0.0.1:12113**. Try `python3 -m controller.fiio_link` for a read-only host query.
 UDP 12101 is also mapped locally; this alone does not relay LAN discovery.
 For a trusted-phone test, an [opt-in host LAN bridge](docs/DISCOVERY.md) adds
 discovery and stock TCP/HTTP forwarding with an explicit IP allowlist and time
@@ -185,7 +185,7 @@ Keep `FW_VERSION=2.40` in `.env` for an existing V2.40 rootfs. Switching the ver
 setting does not migrate an extracted rootfs; mismatches are rejected.
 
 To use V2.57 separately, set `FW_VERSION=2.57` and a distinct `WORK_VOLUME`, such as
-`diskos-work-v257`, in `.env`. Run `./run.sh up` with the V2.57 OTA directory, then
+`snowsky-disc-work-v257`, in `.env`. Run `./run.sh up` with the V2.57 OTA directory, then
 `./run.sh boot`. This preserves the previous work volume.
 
 </details>
@@ -202,11 +202,11 @@ and [CHANGELOG.md](CHANGELOG.md).
 
 | Area | Start here | Source |
 | --- | --- | --- |
-| **Emulator** | [How it works](docs/EMULATION.md) · [Current results](docs/STATUS.md) | `run.sh`, `scripts/`, `shim/`, `docker/` |
-| **Viewer** | [Viewer guide](docs/VIEWER.md) · [Touch](docs/TOUCH.md) · [Buttons](docs/KEYS.md) | `tools/stream.py`, `tools/*.js`, `assets/` |
-| **Media** | [Audio](docs/AUDIO.md) · [Library](docs/MEDIA_LIBRARY.md) · [Settings](docs/SETTINGS.md) | `sdcard/`, `tools/audio.py` |
-| **Connectivity** | [Network](docs/NETWORK.md) · [Protocol](docs/PROTOCOL.md) · [WebSocket](docs/WEBSOCKET.md) · [Opt-in phone LAN bridge](docs/DISCOVERY.md) | `tools/fiio_link.py`, `tools/ws_bridge.py`, `tools/lan_bridge.py` |
-| **Firmware research** | [Acquisition](firmware/README.md) · [Porting](docs/PORTING.md) · [Reverse engineering](docs/RE.md) | `firmware/`, `ghidra/` |
+| **Emulator** | [How it works](docs/EMULATION.md) · [Current results](docs/STATUS.md) | `run.sh`, `emulator/scripts/`, `emulator/shims/`, `docker/` |
+| **Viewer** | [Viewer guide](docs/VIEWER.md) · [Touch](docs/TOUCH.md) · [Buttons](docs/KEYS.md) | `viewer/server.py`, `viewer/static/*.js`, `viewer/assets/` |
+| **Media** | [Audio](docs/AUDIO.md) · [Library](docs/MEDIA_LIBRARY.md) · [Settings](docs/SETTINGS.md) | `emulator/sdcard/`, `emulator/runtime/audio.py` |
+| **Connectivity** | [Network](docs/NETWORK.md) · [Protocol](docs/PROTOCOL.md) · [WebSocket](docs/WEBSOCKET.md) · [Opt-in phone LAN bridge](docs/DISCOVERY.md) | `controller/fiio_link.py`, `controller/bridge/ws_bridge.py`, `controller/bridge/lan_bridge.py` |
+| **Firmware research** | [Acquisition](firmware/README.md) · [Porting](docs/PORTING.md) · [Reverse engineering](docs/RE.md) | `firmware/`, `research/ghidra/` |
 | **Contributing** | [CI](docs/CI.md) · [Agent instructions](AGENTS.md) | `ci/`, `.github/workflows/` |
 
 ## License & scope

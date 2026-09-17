@@ -2,7 +2,7 @@
 
 How to reverse-engineer the Snowsky Disc firmware binaries (`mq_player`, `mq_ui`) and extend
 the emulator — written so a **new firmware version** can be re-analysed the same way. Tooling
-setup lives in [../ghidra/README.md](../ghidra/README.md); this page is the method + the findings
+setup lives in [../research/ghidra/README.md](../research/ghidra/README.md); this page is the method + the findings
 per direction.
 
 Addresses/layouts below are **V2.40 observations**, not portable constants. For a
@@ -27,8 +27,8 @@ evidence report separate; do not replace V2.40's pins while investigating anothe
 
 ## Workflow (headless Ghidra)
 
-Environment and the one-time arm64-decompiler build are in [../ghidra/README.md](../ghidra/README.md).
-Once a project has `mq_player`/`mq_ui` imported+analysed, iterate with the scripts in `ghidra/`:
+Environment and the one-time arm64-decompiler build are in [../research/ghidra/README.md](../research/ghidra/README.md).
+Once a project has `mq_player`/`mq_ui` imported+analysed, iterate with the scripts in `research/ghidra/`:
 
 - **`DecFuncs.java <addr…>`** — decompile the function containing each address.
 - **`DecAt.java <addr…>`** — same, but if the address is only a *label* (auto-analysis didn't
@@ -41,9 +41,9 @@ Typical trace: find a string → `RefsTo` the string addr → decompile the refe
 follow function pointers with `RefsTo`+`DecAt` → find the gate/flag with `RefsTo` on the global.
 
 **Runtime instrumentation (do this before patching a state machine).** Static decompilation alone
-whack-a-moles hardware state machines — read the live values with GDB. `scripts/gdb_probe.sh
+whack-a-moles hardware state machines — read the live values with GDB. `research/diagnostics/gdb_probe.sh
 <gdb-cmd-file>` boots `mq_ui` + `mq_player` under qemu's gdbstub and attaches `gdb-multiarch`
-(arch `mips:isa32r2`, LE). Example `ghidra/probe_out_device.gdb` watches the audio output route:
+(arch `mips:isa32r2`, LE). Example `research/ghidra/probe_out_device.gdb` watches the audio output route:
 it prints `ctx = *(0x832214)` and `ctx+0x58` at `set_out_device`, showing the value go **0
 (NO_OUT_DEV) → 6 (I2S3_OUT)** once card discovery succeeds — the observation that distinguishes
 "route never selected" from "format rejected". This is how the audio blocker was actually
@@ -54,7 +54,7 @@ understood (belatedly); reach for it first on the remaining directions.
 See [KEYS.md](KEYS.md) for the corrected mapping, implementation, tests and fidelity limits.
 Earlier log-based interpretations of play/pause, menu navigation and power were wrong.
 
-Full chain (V2.40), all via [../ghidra/README.md](../ghidra/README.md) scripts:
+Full chain (V2.40), all via [../research/ghidra/README.md](../research/ghidra/README.md) scripts:
 
 ```
 /dev/input/event0 (name "x2000_key", opened O_RDWR)
@@ -87,7 +87,7 @@ Headless it stays 0 (set only by `FUN_004e847c` = `*(char*)(cmd+0x10)` from an I
 command, and inside settings-apply `FUN_004e3658` — neither fires under emulation), so keys are
 read but dropped.
 
-**✅ Enabled by a one-instruction patch** (`scripts/patch_keys.sh`, run from `10_setup_env.sh`):
+**✅ Enabled by a one-instruction patch** (`emulator/scripts/patch_keys.sh`, run from `10_setup_env.sh`):
 the guard loads the flag with `lbu v0,65(s2)` at `0x004de70c` (file off `0xDE70C`); patch it to
 `li v0,1` (`0x24020001`) so the flag always reads 1 and the `beqz` at `0x004de720` is never taken.
 `s2` (the struct base, set at `0x004de708`) stays valid for the handler's other fields. The
@@ -96,8 +96,8 @@ script matches the exact guard bytes (anchor `addiu s2,v0,-5760` = `80e95224`, t
 
 Inject the codes into `event0` (16-byte `input_event`, `type=EV_KEY`, value 1 then 0).
 These are **already-classified gesture codes**: the reader does not classify a 120 ms
-press as single/double/long. The viewer now classifies gestures in `tools/keys.js` and
-delivers them through `POST /button` / `tools/keys.py`, preserving stock assignments.
+press as single/double/long. The viewer now classifies gestures in `viewer/static/keys.js` and
+delivers them through `POST /button` / `emulator/runtime/keys.py`, preserving stock assignments.
 `fbshim` handles the volume GPIO levels and touch/LCD sleep ioctls; setup supplies the
 brightness path. Holds and screen sleep/wake now work. Viewer Power uses a guest-only
 host lifecycle, not dangerous event `0x108`. See [KEYS.md](KEYS.md) before extending it.
@@ -114,7 +114,7 @@ dispatch above was confirmed.
 
 Local CS43131 playback uses **tinyalsa** (`pcm_open`/`pcm_write`), captured by `tinyshim.c`.
 The missing prerequisite was card discovery: `get_i2s3_pcm_device` (`FUN_0047670c`) expects
-`x2000 - x2000` in `/proc/asound/cards`. Redirecting that read to `shim/asound.cards` lets
+`x2000 - x2000` in `/proc/asound/cards`. Redirecting that read to `emulator/shims/asound.cards` lets
 `set_out_device` (`FUN_00474f84`) choose **I2S3_OUT=6**, hw:0,3, through normal firmware logic.
 No audio binary patches are required.
 
@@ -130,8 +130,8 @@ Corrected active V2.40 path: `http_server_thread` `FUN_004b9720` listens on 1210
 callback `FUN_004b9d38` uses the 16-entry table `006c7a50`, with no WebSocket route.
 Bundled dashboard `FUN_004b2820` / `mg_dash_authenticate` is **not** this listener's router.
 Device control is auth-free FiiO Link TCP. Native WS support is an emulator adapter,
-not a stock authentication unlock. Reproduce with `tools/inspect_http_routes.py` and
-`tools/probe_websocket.py`; startup networking is `scripts/16_network.sh`.
+not a stock authentication unlock. Reproduce with `research/diagnostics/inspect_http_routes.py` and
+`controller/diagnostics/probe_websocket.py`; startup networking is `emulator/scripts/16_network.sh`.
 See [WEBSOCKET.md](WEBSOCKET.md) and [NETWORK.md](NETWORK.md).
 
 ## Direction: touch / UI ✅
@@ -142,7 +142,7 @@ bridge is [VIEWER.md](VIEWER.md).
 
 ## Re-analysing a new firmware version
 
-1. Inventory the input using `tools/firmware_inventory.py`; keep a separate record and
+1. Inventory the input using `firmware/tools/firmware_inventory.py`; keep a separate record and
    work volume. Do **not** overwrite V2.40's rootfs pin. See [PORTING.md](PORTING.md).
 2. Import `mq_player`/`mq_ui` into a separate version-named Ghidra project and analyse
    (addresses/layouts may shift); record exact stock ELF hashes before any patch.

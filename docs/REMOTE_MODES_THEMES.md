@@ -35,7 +35,7 @@ The user's iOS 4.6.0 PCAP now confirms this exact cycle on physical V2.57: each
 `0657` setter receives a matching `a607` notification, with no getter needed to
 trigger the notification. All four transitions use one TCP connection. See the
 [packet evidence](FIIO_CONTROL_APP.md#ios-raw-tcp-capture-2026-09-15) and
-[wire fixture](../tools/fixtures/fiio_control_ios_460_modes.json). USB/AirPlay audio
+[wire fixture](../controller/tests/fixtures/fiio_control_ios_460_modes.json). USB/AirPlay audio
 operation is still outside what the trace establishes.
 
 Other values occur in the shared handler, including modes absent from the DISC app.
@@ -69,12 +69,12 @@ the app then sends `06d3` values **3 → 2 → 1 → 0 → 4**, each followed by
 of the screenshot's LDAC sound-quality preference. These are preference changes,
 not evidence of headphone negotiation or achieved bitrate. See
 [capture details](FIIO_CONTROL_APP.md#ios-codec-capture-2026-09-15) and the
-[regression fixture](../tools/fixtures/fiio_control_ios_460_codecs.json).
+[regression fixture](../controller/tests/fixtures/fiio_control_ios_460_codecs.json).
 
 ## Lock-screen HTTP
 
 Both `GET` and `POST` use **`/image/lock_screen/`**. This is distinct from V2.57's
-general `/image/<SD path>` upload. `tools/fiio_theme.py` supplies read, full custom
+general `/image/<SD path>` upload. `controller/fiio_theme.py` supplies read, full custom
 PNG upload/activation, and stock-theme selection helpers.
 
 GET headers:
@@ -128,7 +128,7 @@ RGB is three integer bytes, flags are booleans, styles are `default/0`,
 `default/1`, `default/2`, `clock/0`. Style does not implicitly change overlays.
 
 ```python
-from fiio_theme import update_system_lock_screen
+from controller.fiio_theme import update_system_lock_screen
 
 saved = update_system_lock_screen(http, 1, alpha=49, color=(255, 169, 169))
 saved = update_system_lock_screen(http, 1, show_date=False)
@@ -230,7 +230,7 @@ PNGs. The custom alias is empty. There is no final readback or custom upload in
 this trace, so it does not extend the custom mutation guarantees above.
 
 See [app evidence](FIIO_CONTROL_APP.md#ios-460-observed-http-2026-09-15) and the
-[metadata fixture](../tools/fixtures/fiio_control_ios_460_themes.json). Its regression
+[metadata fixture](../controller/tests/fixtures/fiio_control_ios_460_themes.json). Its regression
 test brings the passing firmware-free suite to 165 Python tests and 23 JavaScript
 tests, with shell checks and four shim builds. The subsequent raw TCP capture
 confirms the mode app frames above; the later codec capture confirms all five
@@ -238,9 +238,9 @@ codec preferences as documented above.
 
 ## Reproduction
 
-`ci/modes_themes_check.py`, called by `ci/integration.sh`, runs modes/codecs over
-TCP and WS, then themes over direct and proxied HTTP. `tools/test_fiio_theme.py`
-and `tools/test_fiio_settings.py` cover wire values, metadata encoding, complete
+`tests/integration/modes_themes_check.py`, called by `ci/integration.sh`, runs modes/codecs over
+TCP and WS, then themes over direct and proxied HTTP. `controller/tests/test_fiio_theme.py`
+and `controller/tests/test_fiio_settings.py` cover wire values, metadata encoding, complete
 selection readback and invalid-input rejection.
 
 Focused V2.57 theme acceptance (no unrelated media/mode/power tests):

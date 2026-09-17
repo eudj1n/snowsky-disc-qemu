@@ -85,10 +85,10 @@ Addresses below apply only to the fingerprinted V2.57 `mq_player`:
 - Even the stop path returns through the normal scanner end: `469184` sends
   `a60a/0005` and clears stop. There is no separate cancellation result here.
 
-Reproduce with `ghidra/DecAt.java` at these entries and `RefsTo.java` for the flag;
-see [Ghidra instructions](../ghidra/README.md). Keep binaries and raw outputs ignored.
+Reproduce with `research/ghidra/DecAt.java` at these entries and `RefsTo.java` for the flag;
+see [Ghidra instructions](../research/ghidra/README.md). Keep binaries and raw outputs ignored.
 
-`ci/scan_cancel_check.py` creates 1024 deterministic one-second silent WAVs in a
+`tests/integration/scan_cancel_check.py` creates 1024 deterministic one-second silent WAVs in a
 new directory on the **disposable guest SD**, in addition to the three standard
 fixtures. It first builds a complete index, then tests each transport: idle cancel,
 cancel after observed progress, partial TCP/HTTP/SQLite agreement, flag cleanup,

@@ -21,7 +21,7 @@ The temporary audio fixture is not part of the repository.
 ## Idle / USB-power checkpoint, 2026-09-16
 
 `18-usb-power-clock.png` is an unmodified 360×360 V2.57 guest framebuffer,
-selected using `emu/fb-live` by `ci/idle_check.py`. It shows the stock clock
+selected using `emu/fb-live` by `tests/integration/idle_check.py`. It shows the stock clock
 lockscreen after 310 seconds paused with simulated USB power and a local Power
 gesture to make the screen visible again. Playback metadata comes from the
 generated `CI Album` fixture, not the owner's media. The picture itself does not

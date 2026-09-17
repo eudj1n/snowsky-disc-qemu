@@ -5,25 +5,25 @@ V2.40 and V2.57 `mq_player` builds. Addresses live in the `diagnostics` section 
 `firmware/v<version>.json`. Selection uses the full stock SHA-256 after normalizing
 only the existing permitted key-enable instruction; version labels alone are insufficient.
 Unknown binaries and an explicitly mismatched `--version` fail before memory is opened.
-The legacy `ghidra/probe_out_device.gdb` is V2.40-specific and is not part of this port.
+The legacy `research/ghidra/probe_out_device.gdb` is V2.40-specific and is not part of this port.
 
 ## Environment and commands
 
 The repository Dockerfile supplies Python, MIPS binutils and gdb-multiarch. Build it
-on a new computer with `docker build -t diskos-qemu-ci docker`; normal runtime setup
+on a new computer with `docker build -t snowsky-disc-qemu-ci docker`; normal runtime setup
 uses `./run.sh up ...`. These probes need no additional Python packages or Ghidra.
 Memory probes run inside the emulator container and require one running player:
 
 ```sh
-docker exec diskos-qemu python3 /repo/tools/probe_keys.py
-docker exec diskos-qemu python3 /repo/tools/probe_network.py
-docker exec diskos-qemu python3 /repo/tools/inspect_http_routes.py
+docker exec snowsky-disc-qemu python3 -m research.diagnostics.probe_keys
+docker exec snowsky-disc-qemu python3 -m research.diagnostics.probe_network
+docker exec snowsky-disc-qemu python3 -m research.diagnostics.inspect_http_routes
 # Optional explicit version/root; a wrong version is an error, never a fallback:
-docker exec diskos-qemu python3 /repo/tools/probe_keys.py --version 2.57 --rootfs /work/rootfs
+docker exec snowsky-disc-qemu python3 -m research.diagnostics.probe_keys --version 2.57 --rootfs /work/rootfs
 # Offline route inspection also works on the host:
-python3 tools/inspect_http_routes.py /path/to/mq_player --version 2.57
+python3 -m research.diagnostics.inspect_http_routes /path/to/mq_player --version 2.57
 # Offline TCP admission table; reviewed only for active V2.57:
-python3 tools/inspect_link_commands.py /path/to/mq_player --version 2.57
+python3 -m research.diagnostics.inspect_link_commands /path/to/mq_player --version 2.57
 ```
 
 `player_memory.py` restricts process discovery to the selected chroot and matches

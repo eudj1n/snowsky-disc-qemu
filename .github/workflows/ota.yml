@@ -29,11 +29,11 @@ jobs:
           persist-credentials: false
       - name: Test catalog handling
         run: |
-          python3 -B -m unittest discover -s tools -p test_check_ota.py -v
-          python3 -B -m unittest discover -s tools -p test_notify_ota.py -v
+          python3 -B -m unittest firmware.tests.test_check_ota -v
+          python3 -B -m unittest firmware.tests.test_notify_ota -v
       - name: Read stock OTA catalog
         id: ota
-        run: python3 -B tools/check_ota.py
+        run: python3 -B -m firmware.tools.check_ota
       - name: Open release tracking issue
         if: steps.ota.outputs.newer_release_available == 'true'
         env:
@@ -43,4 +43,4 @@ jobs:
           OTA_CURRENT_RECOVERY: ${{ steps.ota.outputs.current_recovery }}
           OTA_LATEST_VERSION: ${{ steps.ota.outputs.latest_version }}
           OTA_LATEST_RECOVERY: ${{ steps.ota.outputs.latest_recovery }}
-        run: python3 -B tools/notify_ota.py
+        run: python3 -B -m firmware.tools.notify_ota

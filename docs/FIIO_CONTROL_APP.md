@@ -84,7 +84,7 @@ Inputs: `2026-09-16-231820.pcap` / `.har` and `IMG_6822.PNG`–`IMG_6825.PNG`.
 FiiO Control 4.6.0 is owner-confirmed; fresh Link `a501` at frame 1287 reports
 `soc_version: 257`. TCP reassembly shows the handshake and initial read commands
 `0501`, `0607`, `0627`, `0639`, `0202`, `0629`, `0628`; no color-setting Link
-command is observed. [Sanitized fixture](../tools/fixtures/fiio_control_ios_system_theme_colors.json).
+command is observed. [Sanitized fixture](../controller/tests/fixtures/fiio_control_ios_system_theme_colors.json).
 
 All **14 HTTP exchanges** match HAR by paired request method, semantic headers,
 status and request/response body hashes. Relevant TCP bytes are contiguous and
@@ -143,7 +143,7 @@ Owner supplied `2026-09-16-230929.pcap` and `.har`, labelled **Background
 opacity**, with the actual order **100 → 49 → 0 → 100**. This differs from the
 requested custom-image walkthrough: all requests target **system slot 1,
 FIIO Sheep**, not the custom slot. App 4.6.0 is owner-confirmed; no fresh firmware
-version is present. [Sanitized fixture](../tools/fixtures/fiio_control_ios_system_theme_opacity.json).
+version is present. [Sanitized fixture](../controller/tests/fixtures/fiio_control_ios_system_theme_opacity.json).
 
 All seven HTTP exchanges match HAR (methods, semantic request headers, request
 and response body hashes). Relevant TCP payloads are contiguous, untruncated,
@@ -191,7 +191,7 @@ emulated physical repaint. Custom-slot opacity rendering remains unobserved.
 Inputs: `2026-09-16-173912.har` and matching `.pcap`, captured by the owner on
 physical DISC. Surge HAR creator: iOS 5.22.0. App/firmware versions were not
 newly confirmed. Source hashes and sanitized fields are in the
-[regression fixture](../tools/fixtures/fiio_control_ios_custom_theme_save.json).
+[regression fixture](../controller/tests/fixtures/fiio_control_ios_custom_theme_save.json).
 Raw captures and PNG bodies are not committed.
 
 Of 17 HAR entries, 14 target DISC HTTP 12103, all `/image/lock_screen/`:
@@ -241,7 +241,7 @@ but every custom save here uses `default/0`. These system values are leads, not
 validation of the other custom styles or their visual-thumbnail mapping. Alpha
 never changes; the two color sliders' individual semantics remain unobserved.
 
-Validation: all five `tools/test_fiio_theme.py` tests pass, including synthetic
+Validation: all five `controller/tests/test_fiio_theme.py` tests pass, including synthetic
 full-image saves for the four captured metadata states and long-alias rejection.
 The container firmware-free suite passed: **259 Python / 23 JavaScript tests**,
 shell checks and four shim builds. No runtime/helper change or physical write by
@@ -252,7 +252,7 @@ separately above, not reported as a fresh firmware run.
 ### Physical custom-style save (2026-09-16)
 
 Inputs: `2026-09-16-174708.har` / `.pcap`, continuation of the physical DISC
-walkthrough. The [sanitized fixture](../tools/fixtures/fiio_control_ios_custom_theme_styles.json)
+walkthrough. The [sanitized fixture](../controller/tests/fixtures/fiio_control_ios_custom_theme_styles.json)
 records source hashes, request times, styles and flags without image bytes or
 addresses. Versions were not newly confirmed by these files.
 
@@ -405,7 +405,7 @@ do not combine them into the current library trace.
 ### Physical genre flow (2026-09-16)
 
 Inputs: `2026-09-16-185016.pcap` and `.har`, supplied for the previously requested
-physical genre workflow. Firmware 257 is confirmed by fresh settings; app version 4.6.0 is confirmed retrospectively by the owner. [Sanitized fixture](../tools/fixtures/fiio_control_ios_genres.json)
+physical genre workflow. Firmware 257 is confirmed by fresh settings; app version 4.6.0 is confirmed retrospectively by the owner. [Sanitized fixture](../controller/tests/fixtures/fiio_control_ios_genres.json)
 contains source hashes and frame references; raw captures/artwork stay outside Git.
 
 - PCAP has 13 device HTTP requests versus 3 in HAR. Browsing proceeds through
@@ -580,9 +580,9 @@ there is **no subsequent GET** proving the final active state. No custom image
 upload, mode/codec command or library reset is present. The custom GET has an empty
 alias; this agrees with the previously observed emulator behavior.
 
-The curated [fixture](../tools/fixtures/fiio_control_ios_460_themes.json) retains
+The curated [fixture](../controller/tests/fixtures/fiio_control_ios_460_themes.json) retains
 only the two selections' protocol metadata and source hash. A regression test in
-`tools/test_fiio_theme.py` compares generated POST headers and empty bodies with
+`controller/tests/test_fiio_theme.py` compares generated POST headers and empty bodies with
 these actual iOS requests. Images, personal cover artwork and raw HARs are omitted.
 The expanded firmware-free suite passed: **165 Python tests, 23 JavaScript tests**,
 shell checks and four shim builds.
@@ -672,7 +672,7 @@ state for the missing snapshot. Other notifications are `a824/0000` and paired
 Mode response values validate our existing wire mapping on physical DISC, but
 do not prove USB audio enumeration or AirPlay audio playback.
 
-The [curated fixture](../tools/fixtures/fiio_control_ios_460_modes.json) retains
+The [curated fixture](../controller/tests/fixtures/fiio_control_ios_460_modes.json) retains
 handshake, mode requests/replies, disabled PEQ and a subset of capability metadata.
 The app uses lowercase hex length digits (`000c`); our encoder uses uppercase
 (`000C`). Tests normalize header case only, preserving payload bytes.
@@ -727,7 +727,7 @@ setter receives a matching notification without a new `06d4` getter. The final
 an outgoing request. Response delays range from about 44 to 821 ms in this trace;
 do not treat that sample as a universal timeout bound.
 
-The [curated fixture](../tools/fixtures/fiio_control_ios_460_codecs.json) preserves
+The [curated fixture](../controller/tests/fixtures/fiio_control_ios_460_codecs.json) preserves
 both initial reads and all five transitions, with original hex case. The regression
 test compares our TCP/WS setters with parsed app frames and decodes every physical
 reply. Existing mappings need no runtime change. Actual negotiated Bluetooth codec,
@@ -782,7 +782,7 @@ with complete Content-Length bodies:
 
 This shows the stock app combining HTTP catalog/cover retrieval with TCP track
 selection and playback/favorite notifications. Catalog contents and cover artwork
-remain private. The [fixture](../tools/fixtures/fiio_control_ios_460_playback.json)
+remain private. The [fixture](../controller/tests/fixtures/fiio_control_ios_460_playback.json)
 retains actual commands, deltas and position values; full snapshots replace song
 metadata and queue size with synthetic values and recalculate frame lengths.
 Tests cover decoding the nested song, Boolean favorite transitions, repeated
@@ -853,7 +853,7 @@ by the supplied ordering; their displayed 00:00 time is later than this trace.
 See the [icon/behavior table](REMOTE_CONTROL.md#commands). End-of-track/list
 behavior is described from stock code analysis, not exercised by this capture.
 
-The [fixture](../tools/fixtures/fiio_control_ios_460_seek_modes.json) retains exact
+The [fixture](../controller/tests/fixtures/fiio_control_ios_460_seek_modes.json) retains exact
 seek/mode/toggle/delta/position frames and a minimal initial-state summary, with no
 song metadata or images. iOS seek payloads use lowercase hex; client comparisons
 normalize case only for these numeric commands. Regression coverage compares
@@ -912,7 +912,7 @@ required. The later [emulator checks](REMOTE_CONTROL.md#validated-current-queue-
 compare Russian, absent and arbitrary labels and introduce a guarded dedicated
 helper; generic `play_index()` still rejects type 0.
 
-The [fixture](../tools/fixtures/fiio_control_ios_460_queue.json) retains exact queue
+The [fixture](../controller/tests/fixtures/fiio_control_ios_460_queue.json) retains exact queue
 selection/navigation commands and HTTP request metadata. Catalog text and song
 identities are synthetic; snapshots are reduced to the fields needed to compare
 row positions and source types. Raw album/track names, artwork and unrelated phone

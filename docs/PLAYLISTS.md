@@ -27,11 +27,11 @@ playlist positions; track additions/removals may change selection bounds/order.
 Both `Client` and `WSClient` expose:
 
 ```python
-# Run from the repository with PYTHONPATH=tools python3.
+# Run from the repository with python3.
 # http and link must connect to the SAME physical device or emulated guest.
 # Example local direct endpoints; the guest must already be running.
-from fiio_http import HTTPClient
-from fiio_link import Client
+from controller.fiio_http import HTTPClient
+from controller.fiio_link import Client
 
 http = HTTPClient(port=12113)
 with Client() as link:
@@ -84,11 +84,11 @@ All addresses are from the fingerprinted V2.57 `mq_player` build:
   before the normal playback selector `423160`. Network positions are not these
   internal IDs; mapping belongs to stock firmware.
 
-Reproduce with `ghidra/DecAt.java` at those function entries; see
-[Ghidra instructions](../ghidra/README.md). Keep binaries, projects and raw
+Reproduce with `research/ghidra/DecAt.java` at those function entries; see
+[Ghidra instructions](../research/ghidra/README.md). Keep binaries, projects and raw
 decompilation under ignored `work/`. Do not reuse the addresses on other builds.
 
-`ci/playlists_check.py` is a disposable generated-media scenario. It deliberately
+`tests/integration/playlists_check.py` is a disposable generated-media scenario. It deliberately
 creates a gap between playlist position and SQLite `LIST_ID`, checks selected
 metadata and HTTP queue order/mark, exercises rename/add/remove and position shifts,
 and checks rejection of stale/empty/out-of-range selectors. It leaves playback
