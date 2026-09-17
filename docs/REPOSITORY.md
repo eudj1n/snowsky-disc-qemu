@@ -15,6 +15,7 @@ This is one repository and one shared Docker toolchain, with no new service.
 | `firmware/profile.py`, `firmware/v*.json`, `firmware/tools/` | Reviewed profiles/fingerprints, acquisition, extraction, OTA and inventory tools | Native extraction tools where needed |
 | `research/ghidra/`, `research/diagnostics/` | Ghidra, ELF tables, GDB and process-memory inspection | Firmware profiles; emulator process helpers for live memory probes |
 | `research/browser/` | Experimental TinyEMU/WASM runtime, local bundle builder and browser UI | Reviewed firmware preparation/shims; pinned public TinyEMU, Linux and QEMU inputs; separate build image |
+| `research/diskos/` | Historical, unsupported source-built diskOS UI preview and isolated launcher | Pinned upstream source; legacy V2.40 runtime and emulator helpers; no supported-profile promotion |
 | `tests/integration/`, `tests/fixtures/` | Cross-component acceptance and generated media | The components under test |
 | `ci/` | Test discovery, disposable Compose orchestration and cleanup | Test implementations under `tests/` |
 
@@ -63,6 +64,12 @@ The [browser experiment](BROWSER.md) has a separate shell entry point:
 downloaded inputs, generated images and served firmware remain in ignored
 `work/browser-disc/`. It is maintained as experimental research on `2.x` and
 does not start through the normal `run.sh`, viewer or Compose services.
+
+The [historical diskOS preview](DISKOS_PREVIEW.md) preserves its own Compose file,
+`bash research/diskos/build.sh /absolute/path/to/diskos` builder, and in-container
+`bash /repo/research/diskos/boot.sh` launcher. Generated outputs and adapted upstream
+sources stay in ignored `work/diskos-preview/`. Its preserved V2.40 results do not
+extend the support policy or require recurring firmware integration gates.
 
 The controller can be copied and imported without the emulator, rootfs, Docker,
 profiles or memory tooling. `controller.tests.test_isolation` verifies that

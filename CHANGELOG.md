@@ -14,6 +14,8 @@ Active firmware: **V2.57**. Local protocol research is finalized in
 
 ### Added
 
+- Preserved the historical, unsupported diskOS UI experiment with isolated build/run
+  helpers, recorded V2.40 results and criteria for revisiting its status. [Preview](docs/DISKOS_PREVIEW.md).
 - Experimental local browser execution of DISC through TinyEMU/WebAssembly,
   with a separate build workflow, live screen, taps, swipe navigation, Back and screen sleep/wake controls. [Prototype](docs/BROWSER.md).
 - Remote playback, seeking, play modes, favorites and guarded queue selection,
