@@ -1,4 +1,8 @@
-# diskOS on V2.40
+# diskOS on V2.40 — historical findings
+
+This report records the earlier V2.40 build investigation; it is not a statement
+about the current upstream release or supported project firmware. The separate
+[UI preview experiment](DISKOS_PREVIEW.md) is preserved with historical, unsupported status.
 
 [diskOS](https://github.com/b0hemia/diskos) is the community custom firmware this project is
 groundwork for. We ran its build pipeline (`diskos-installer` 1.0.0) against the stock **V2.40**
@@ -66,6 +70,7 @@ a warm UI handoff after stock startup, not the hardware installer/cold-boot path
   issue. V2.57 and hardware installation are not validated by this experiment.
 
 The installer size cap in [upstream issue #1](https://github.com/b0hemia/diskos/issues/1)
-does not apply to loading the UI in an extracted emulator rootfs. Build scripts,
-launcher and detailed reproduction remain in the
-[experimental branch](https://github.com/eudj1n/snowsky-disc-qemu/blob/codex/diskos-emulator/docs/DISKOS_PREVIEW.md).
+does not apply to loading the UI in an extracted emulator rootfs. Build scripts and the
+launcher are preserved under `research/diskos/`; the
+[preview report](DISKOS_PREVIEW.md) records reproduction, limitations and the
+conditions for revisiting its historical/unsupported status.

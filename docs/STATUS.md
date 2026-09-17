@@ -43,6 +43,15 @@ are not implemented. An observed lockscreen SIGBUS remains unisolated; the next
 milestone is navigation and sleep/wake/unlock stability. The Docker emulator
 results above do not establish browser-runtime acceptance.
 
+### Historical diskOS preview
+
+The [unsupported diskOS experiment](DISKOS_PREVIEW.md) is preserved under
+`research/diskos/`. Historical V2.40 results include UI navigation, library scan
+and verified WAV/PCM playback; same-track selection after restart and font
+coverage remain recorded limitations. Its migration to the current source
+layout does not constitute fresh runtime acceptance. The report defines the
+upstream fixes and local validation needed to return to active experimental status.
+
 ### Current visual evidence
 
 | Main menu | Local playback | Clock lockscreen |

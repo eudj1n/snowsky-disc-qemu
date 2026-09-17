@@ -150,6 +150,18 @@ Audio, SD/media import and saved state are not connected; lockscreen stability
 remains an open research item. It has a separate build/run command under
 `research/browser/`. See the [reproduction guide and limitations](docs/BROWSER.md).
 
+## Historical experiment: diskOS UI preview
+
+The [unsupported diskOS preview](docs/DISKOS_PREVIEW.md) preserves a source-built
+UI running over the stock V2.40 backend. The 2026-09-13 experiment verified touch
+navigation, library scanning and WAV playback with PCM comparison. Its build
+helpers and isolated launcher live in `research/diskos/`; known playback/font
+limitations and the original source revision are recorded in the report.
+
+This is historical evidence, with no ongoing support or current-firmware claim.
+It can return to active experimental status after upstream fixes and support for
+the project's current firmware are reviewed and validated locally.
+
 ## Controller
 
 **Control a physical SNOWSKY DISC or the emulator through the same network APIs.**
@@ -272,6 +284,7 @@ source layout, dependency boundaries and test locations.
 | **Controller** | [Capabilities](docs/DISC_CAPABILITIES.md) · [Network](docs/NETWORK.md) · [Protocol](docs/PROTOCOL.md) · [WebSocket](docs/WEBSOCKET.md) · [Opt-in phone LAN bridge](docs/DISCOVERY.md) | `controller/fiio_link.py`, `controller/bridge/ws_bridge.py`, `controller/bridge/lan_bridge.py` |
 | **Firmware research** | [Acquisition](firmware/README.md) · [Porting](docs/PORTING.md) · [Reverse engineering](docs/RE.md) | `firmware/`, `research/ghidra/` |
 | **Browser experiment** | [Build, results and next milestone](docs/BROWSER.md) | `research/browser/`, `research/tests/test_browser_*.js` |
+| **Historical diskOS experiment** | [Preview results, limitations and status](docs/DISKOS_PREVIEW.md) | `research/diskos/` |
 | **Contributing** | [CI](docs/CI.md) · [Agent instructions](AGENTS.md) | `ci/`, `.github/workflows/` |
 
 ## License & scope
