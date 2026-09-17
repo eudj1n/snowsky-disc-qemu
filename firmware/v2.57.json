@@ -200,6 +200,7 @@
     "queue",
     "queue-reads",
     "settings",
+    "peq",
     "themes",
     "preferences",
     "playlists",

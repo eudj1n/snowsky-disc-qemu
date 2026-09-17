@@ -6,11 +6,25 @@ from unittest.mock import Mock, AsyncMock
 
 from controller.fiio_link import Client, Frames, frame
 from controller.fiio_ws import WSClient
-from controller.fiio_settings import (SETTINGS, SETTING_FIELDS, GAIN_LABELS, FILTER_LABELS,
+from controller.fiio_settings import (SETTINGS, SETTING_FIELDS, GAIN_LABELS, FILTER_LABELS, EQ_LABELS,
                            setting_command, setting_value, peq_payload, peq_value)
 
 
 class SettingTests(unittest.IsolatedAsyncioTestCase):
+    def test_device_eq_labels_use_network_values_without_guessed_bypass(self):
+        expected = [(255, 'Off'), (0, 'Jazz'), (2, 'Rock'), (4, 'R&B'),
+                    (6, 'HIP-HOP'), (1, 'Pop'), (3, 'Dance'), (5, 'Classical'),
+                    (8, 'Retro'), (9, 'Sibilance attenuation 1'),
+                    (10, 'Sibilance attenuation 2')]
+        self.assertEqual(list(EQ_LABELS.items())[:11], expected)
+        self.assertEqual(set(EQ_LABELS), set(SETTINGS['eq_type'][2]))
+        for value, name in expected + [(160 + i, f'USER{i + 1}') for i in range(10)]:
+            self.assertEqual(EQ_LABELS[value], name)
+            self.assertEqual(setting_command('eq_type', value), ('0690', f'{value:04X}'))
+        for unknown in (7, 254):
+            with self.assertRaises(ValueError):
+                setting_command('eq_type', unknown)
+
     async def test_all_filter_rows_match_physical_ios_capture_and_restore(self):
         observed = json.loads((Path(__file__).parent / 'fixtures' /
                                'fiio_control_ios_filters.json').read_text())

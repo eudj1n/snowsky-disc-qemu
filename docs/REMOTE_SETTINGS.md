@@ -42,16 +42,18 @@ dB and physical filter response are not inferred from numeric values.
 EQ network **255 = off**, **160..169 = user presets 1..10**. Those user presets map
 to database `EQ_TYPE` **11..20**. Other observed mappings (network → database):
 `0→1, 1→5, 2→2, 3→6, 4→3, 5→7, 6→4, 8→8, 9→9, 10→10`.
-Acceptance exercises off/current restoration and first user preset, not every preset.
+The original settings acceptance exercises off/current restoration and the first
+user preset. The expanded investigation has its own [PEQ scenario](PEQ.md).
+`EQ_LABELS` maps the verified stock device names to these **network** values.
 
 The owner's physical-app screenshots additionally show **BYPASS** as a separate
 tile from Off, device versus local PEQ Save destinations, Auto EQ and local/
 retrieval/catalog tabs. Their wire mappings/workflows are not established; do not
 alias BYPASS to 255 or claim Auto EQ from the existing band setter. See the
 [screen audit](FIIO_CONTROL_APP.md#genre-hierarchy-batch-actions-and-peq-third-batch-2026-09-16).
-The owner deferred this larger PEQ investigation to
-[issue #9](https://github.com/eudj1n/snowsky-disc-qemu/issues/9); no new PEQ capture
-or implementation is required by the current library audit.
+The owner resumed [issue #9](https://github.com/eudj1n/snowsky-disc-qemu/issues/9)
+on 2026-09-17; see the [static contract, focused tests and capture sequence](PEQ.md).
+App Save, BYPASS and Auto EQ remain unverified until their respective captures.
 
 ## Gain and filter labels (V2.57)
 

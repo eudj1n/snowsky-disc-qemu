@@ -9,7 +9,7 @@ export FW_VERSION="${FW_VERSION:-$(cat firmware/active-version)}"
 CI_SCENARIO="${CI_SCENARIO:-full}"
 CI_IDLE_PHASE="${CI_IDLE_PHASE:-all}"
 case "$CI_IDLE_PHASE" in all|quiet|power|usb) ;; *) echo 'Unknown CI_IDLE_PHASE' >&2; exit 2;; esac
-case "$CI_SCENARIO" in full|queue|queue-reads|settings|themes|preferences|playlists|library|library-delete|scan-cancel|library-reset|track-end|formats|discovery|idle|idle-usb) ;; *) echo 'Unknown CI_SCENARIO' >&2; exit 2;; esac
+case "$CI_SCENARIO" in full|queue|queue-reads|settings|peq|themes|preferences|playlists|library|library-delete|scan-cancel|library-reset|track-end|formats|discovery|idle|idle-usb) ;; *) echo 'Unknown CI_SCENARIO' >&2; exit 2;; esac
 export EMU_IMAGE="${EMU_IMAGE:-snowsky-disc-qemu-ci}"
 profile() { docker run --rm --network none -v "$PWD:/repo:ro" "$EMU_IMAGE" python3 -B -m firmware.profile "$@" --version "$FW_VERSION"; }
 profile require-scenario "$CI_SCENARIO"
@@ -93,6 +93,10 @@ if [ "$CI_SCENARIO" = track-end ]; then
 fi
 if [ "$CI_SCENARIO" = formats ]; then
   compose exec -T emu python3 -B -m tests.integration.formats_check
+  exit 0
+fi
+if [ "$CI_SCENARIO" = peq ]; then
+  compose exec -T emu python3 -B -m tests.integration.peq_check
   exit 0
 fi
 if [ "$CI_SCENARIO" = library-delete ]; then
