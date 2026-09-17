@@ -22,14 +22,14 @@ clients, the protocol inspector or bridge verification.
 | `12100` / `8080` | Existing direct TCP client / device viewer, unchanged |
 
 ```sh
-docker compose up -d --build    # recreate emu's port mapping; retain diskos-work
+docker compose up -d --build    # recreate emu's port mapping; retain snowsky-disc-work
 ./run.sh boot
 ./run.sh view                  # restart the viewer after container recreation
 docker compose --profile wsbridge up -d wsbridge  # explicit opt-in
 ./run.sh wscheck               # compare settings/library with independent direct TCP
 ./run.sh wscheck --control     # volume test + start indexed library + leave paused
-python3 tools/probe_websocket.py --require-upgrade  # host 12103: valid 101
-python3 tools/probe_websocket.py --port 12113       # direct stock: 200, websocket=false
+python3 -m controller.diagnostics.probe_websocket --require-upgrade  # host 12103: valid 101
+python3 -m controller.diagnostics.probe_websocket --port 12113       # direct stock: 200, websocket=false
 ```
 
 For a fresh workspace, first obtain/extract the OTA with `./run.sh up …` as in README.
@@ -50,9 +50,9 @@ when migrating. Port 12103 is unavailable while stopped; direct stock HTTP stays
 Standalone async client, using the dependency already installed in the container:
 
 ```sh
-docker compose --profile wsbridge exec -T wsbridge python3 -B /repo/tools/fiio_ws.py
+docker compose --profile wsbridge exec -T wsbridge python3 -B -m controller.fiio_ws
 docker compose --profile wsbridge logs --tail 30 wsbridge
-docker exec diskos-qemu python3 /repo/tools/probe_keys.py
+docker exec snowsky-disc-qemu python3 -m research.diagnostics.probe_keys
 ```
 
 ## Transport and application framing
@@ -155,8 +155,8 @@ Origin/Host rejection, invalid/oversized messages, unavailable upstream, HTTP pr
 and client timeout/queued-state behavior. Run the full suite **in the new image**:
 
 ```sh
-docker exec diskos-qemu python3 -B -m unittest discover -s /repo/tools -p 'test_*.py'
-node --test tools/test_keys.js tools/test_audio_browser.js
+docker exec snowsky-disc-qemu python3 -B -m unittest discover -s /repo -t /repo -p 'test_*.py'
+node --test viewer/tests/test_keys.js viewer/tests/test_audio_browser.js
 ```
 
 Without aiohttp installed on the host, its bridge tests are explicitly skipped there;

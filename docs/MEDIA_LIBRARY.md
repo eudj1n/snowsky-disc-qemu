@@ -63,7 +63,7 @@ The controlled comparison was:
 4. Run stock `blkid` again: the partition alias is now listed too.
 5. Send SD remove/add: the stock handler restores the guest mount, and scanning works.
 
-`scripts/lib.sh:sd_mount()` now performs that explicit partition query after
+`emulator/scripts/lib.sh:sd_mount()` now performs that explicit partition query after
 mounting. This prepares the stock discovery cache during setup/boot and existing
 remount operations. It does not synthesize filesystem information, alter library
 rows, or patch firmware. The scanner still requires a guest-visible mount source
@@ -91,7 +91,7 @@ were not exercised; do not infer that scanning runs while a PC owns the card.
 
 ## Reproducible acceptance
 
-`ci/storage_check.py --disposable` runs after the existing checks in the isolated
+`tests/integration/storage_check.py --disposable` runs after the existing checks in the isolated
 **V2.57** integration stack. It requires the generated CI fixture only, validates
 the firmware, and uses read-only UI memory snapshots matched to the binary's
 SHA-256, inode and ELF PT_LOAD mapping. Unknown versions are rejected; UI addresses

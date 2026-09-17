@@ -48,10 +48,10 @@ cannot replace a shim already loaded into a guest process.
 
 ## Implementation and verification
 
-- `tools/keys.js` classifies physical gestures. `tools/keys.py` injects their custom codes,
+- `viewer/static/keys.js` classifies physical gestures. `emulator/runtime/keys.py` injects their custom codes,
   maintains active-low volume GPIO state and manages guest-only power. Cancellation,
   lost focus, pointer loss and a 1.5 s server-side hold timeout prevent stuck keys.
-- `scripts/15_controls.sh` initializes GPIO, backlight, touch-controller and LCD stubs.
+- `emulator/scripts/15_controls.sh` initializes GPIO, backlight, touch-controller and LCD stubs.
   `fbshim.c` handles only the relevant GPIO/device ioctl requests; other pins retain
   their original failure behavior. The viewer blanks the screen at brightness 0 and
   rejects touchscreen actions until wake; physical media/volume controls remain available.
@@ -112,10 +112,10 @@ changing volume. A complete matrix of every track/position/gesture combination w
 Automated checks:
 
 ```sh
-python3 -m unittest discover -s tools -p 'test_*.py'
-node --test tools/test_keys.js tools/test_audio_browser.js
+python3 -m ci.unit
+node --test viewer/tests/test_keys.js viewer/tests/test_audio_browser.js
 # Read-only runtime state, inside the container (V2.40 addresses only):
-python3 /repo/tools/probe_keys.py
+python3 -m research.diagnostics.probe_keys
 ```
 
 16 Python and 7 JavaScript tests pass, including gesture timing, repeat cancellation,

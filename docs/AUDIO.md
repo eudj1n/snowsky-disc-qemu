@@ -1,6 +1,6 @@
 # Audio capture and browser playback
 
-Local playback works through the stock firmware decoder → tinyalsa → `shim/tinyshim.c`.
+Local playback works through the stock firmware decoder → tinyalsa → `emulator/shims/tinyshim.c`.
 No audio patches to `mq_player` are needed; the key-enable patch is unrelated.
 
 ```sh
@@ -36,7 +36,7 @@ CS43131 attenuation uses 0.5 dB steps and value 255 for digital mute, per the
 
 Verified live while paused: volume 115 → 114 → 115 gives gains
 0.37584 → 0.35481 → 0.37584. Browser graph wiring, gain updates and stopping queued audio
-when the guest powers off are covered by `tools/test_audio_browser.js`.
+when the guest powers off are covered by `viewer/tests/test_audio_browser.js`.
 Raw capture and WAV export remain pre-DAC samples: changing output gain does not rewrite
 the recording. This models digital volume, not the analog amplifier/output circuitry.
 
@@ -47,7 +47,7 @@ It extracts the card number from the second character of the matching line and u
 LinuxKit has no such card, so `set_out_device` (`FUN_00474f84`) left `ctx+0x58` at
 **0 = NO_OUT_DEV**, instead of **6 = I2S3_OUT**.
 
-The fix is `shim/asound.cards`, installed as `/etc/asound.cards`. The preload shim redirects
+The fix is `emulator/shims/asound.cards`, installed as `/etc/asound.cards`. The preload shim redirects
 only `fopen("/proc/asound/cards", ...)` to that file and forwards other paths to the guest
 libc's `fopen64`. No host procfs changes or firmware instruction patches are involved.
 The firmware discovers **hw:0,3** and selects its normal I2S3 route.
@@ -97,16 +97,16 @@ Capture integrity tests cover signed stereo, frame boundaries, growing captures,
 generations, and WAV's unsigned 8-bit convention:
 
 ```sh
-python3 -m unittest discover -s tools -p 'test_*.py'
+python3 -m ci.unit
 ```
 
-`tools/audio.py` exports a bounded WAV snapshot. `/audio.json` reports generation, format,
+`emulator/runtime/audio.py` exports a bounded WAV snapshot. `/audio.json` reports generation, format,
 and available bytes; `/audio.pcm?generation=…&offset=…` returns bounded, frame-aligned chunks
-and rejects stale generations. `tools/audio.js` converts PCM to float samples and schedules
+and rejects stale generations. `viewer/static/audio.js` converts PCM to float samples and schedules
 them in Web Audio. Timing depends on decoder cost and host load; the earlier blanket claim
 that qemu cannot play FLAC in real time was not established.
 
-Future firmware analysis: [RE.md](RE.md), [Ghidra tooling](../ghidra/README.md).
+Future firmware analysis: [RE.md](RE.md), [Ghidra tooling](../research/ghidra/README.md).
 
 ## Format coverage (validated) and remaining caveats
 

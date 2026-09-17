@@ -6,16 +6,18 @@
 #      docker compose up -d --build        (or ./run.sh up "$OTA_DIR", which also extracts+sets up)
 # 3. Drive the pipeline (extract / setup / boot / tap …) with ./run.sh — see README.md.
 #
-# emu idles (`sleep infinity`); ./run.sh execs its /repo/scripts/* pipeline.
+# emu idles (`sleep infinity`); ./run.sh execs its /repo/emulator/scripts/* pipeline.
 # Optional wsbridge profile: docker compose --profile wsbridge up -d
 # Separate unprivileged native service; no MIPS rootfs changes.
-# Opt-in phone LAN testing uses tools/lan_bridge.py on the host (docs/DISCOVERY.md).
+# Opt-in phone LAN testing uses controller/bridge/lan_bridge.py on the host (docs/DISCOVERY.md).
 # Keep these Docker publications loopback-only; no automatic LAN exposure.
+name: snowsky-disc-qemu
+
 services:
   emu:
     build: ./docker
-    image: ${EMU_IMAGE:-diskos-qemu}
-    container_name: ${EMU_CONTAINER_NAME:-diskos-qemu} # default expected by ./run.sh
+    image: ${EMU_IMAGE:-snowsky-disc-qemu}
+    container_name: ${EMU_CONTAINER_NAME:-snowsky-disc-qemu} # default expected by ./run.sh
     privileged: true                     # qemu-user needs binfmt_misc, POSIX mqueue, a large VA reservation
     command: sleep infinity
     environment:
@@ -33,8 +35,8 @@ services:
         interface_name: eth1             # stock wired path; requires Compose >= 2.36
     volumes:
       - ${OTA_DIR:?set OTA_DIR in .env (path to the firmware main_os/ota_v257 dir)}:/ota:ro
-      - ./:/repo                         # this repository (scripts, shim, tools)
-      - ${SD_DIR:-./sdcard}:/sdcard       # CI supplies an isolated generated library
+      - ./:/repo                         # this repository (all components)
+      - ${SD_DIR:-./emulator/sdcard}:/sdcard       # CI supplies an isolated generated library
       - work:/work                       # extracted rootfs + runtime state (persists across restarts)
     ports:
       # FiiO Link services the emulated device binds. Lets a host client
@@ -47,11 +49,11 @@ services:
 
   wsbridge:
     profiles: [wsbridge]
-    image: ${EMU_IMAGE:-diskos-qemu}
+    image: ${EMU_IMAGE:-snowsky-disc-qemu}
     pull_policy: never                   # reuse the image built by emu, not a registry image
     depends_on:
       - emu
-    command: ["python3", "-B", "/repo/tools/ws_bridge.py", "--listen", "0.0.0.0", "--upstream", "emu", "--http-port", "12103"]
+    command: ["python3", "-B", "-m", "controller.bridge.ws_bridge", "--listen", "0.0.0.0", "--upstream", "emu", "--http-port", "12103"]
     user: "65534:65534"
     read_only: true
     cap_drop: [ALL]
@@ -70,4 +72,4 @@ services:
 
 volumes:
   work:
-    name: ${WORK_VOLUME:-diskos-work} # CI must never reuse the interactive work volume
+    name: ${WORK_VOLUME:-snowsky-disc-work} # CI must never reuse the interactive work volume

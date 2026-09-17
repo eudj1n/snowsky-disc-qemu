@@ -2,7 +2,7 @@
 
 How to drive the emulated GUI by feeding synthetic touch events, derived from the
 decompiled LVGL input read-callback in `mq_ui` (`FUN_0055db8c` in V2.40,
-see `ghidra/`). Touch injection is also validated on V2.57; raw function addresses
+see `research/ghidra/`). Touch injection is also validated on V2.57; raw function addresses
 in this investigation are version-specific.
 
 ## Mechanism
@@ -35,7 +35,7 @@ single-touch one, and also plain absolute coords:
 | frame end | `EV_SYN SYN_REPORT(0)=0` (ignored, harmless) |
 
 Coordinate scaling in the callback is `lvgl_x = disp_w * rawX / 360`; at 360×360 it is the
-identity, so **the value you inject is the LVGL coordinate**. `tools/inject.py` emits a
+identity, so **the value you inject is the LVGL coordinate**. `emulator/runtime/inject.py` emits a
 robust press (MT position + tracking-id 0 **and** ABS_X/Y **and** BTN_TOUCH 1) and a matching
 release.
 
@@ -49,7 +49,7 @@ sees **no tap**. You must:
 inject press x y ; sleep ~1s (let LVGL poll the pressed state) ; inject release
 ```
 
-`scripts/30_tap.sh` does this.
+`emulator/scripts/30_tap.sh` does this.
 
 ## Gotcha 2 — coordinates are 180°-ROTATED vs. what you see
 
@@ -65,7 +65,7 @@ Example that reached the main screen: the 确定 (Confirm) button sits at the bo
 displayed ≈ (180, 315). Tapping it means injecting raw **(180, 44)**. Injecting at (180, 315)
 instead lands on the scrollable list and just scrolls it.
 
-`scripts/30_tap.sh <x> <y>` takes the **displayed** coordinate and flips it for you
+`emulator/scripts/30_tap.sh <x> <y>` takes the **displayed** coordinate and flips it for you
 (via `rot()` in `lib.sh`), so you pass what you see in the PNG.
 
 ## Gotcha 3 — press DURATION: click vs. long-press
@@ -87,9 +87,9 @@ So use `30_tap.sh` for buttons; for navigating into folders, inject a short (~0.
 ## Recipe
 
 ```sh
-# guests already booted (scripts/20_boot.sh) and sitting on the language screen:
-scripts/30_tap.sh 180 315     # tap Confirm (displayed coords) -> advances to main menu
-scripts/capture.sh main       # re-render the framebuffer
+# guests already booted (emulator/scripts/20_boot.sh) and sitting on the language screen:
+emulator/scripts/30_tap.sh 180 315     # tap Confirm (displayed coords) -> advances to main menu
+emulator/scripts/capture.sh main       # re-render the framebuffer
 ```
 
 Swipes (carousel) would need intermediate position events spread over time so LVGL samples

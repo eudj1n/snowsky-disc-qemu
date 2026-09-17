@@ -29,7 +29,7 @@ Static evidence in fingerprinted V2.57 `mq_player`:
 - MIPS uses its own socket constants: `socket(2,1,0)` here is datagram, not the
   native host's usual interpretation of numeric `SOCK_STREAM`.
 
-Reproduce static inspection with `ghidra/DecAt.java` and `RefsTo.java`; do not
+Reproduce static inspection with `research/ghidra/DecAt.java` and `RefsTo.java`; do not
 copy V2.40 addresses or commit extracted binaries/decompilation.
 
 ## Passive host observer
@@ -37,7 +37,7 @@ copy V2.40 addresses or commit extracted binaries/decompilation.
 ```sh
 # Choose the Mac/Linux interface on the phone/player's network, not a VPN.
 # macOS examples: route -n get default; ipconfig getifaddr en1
-python3 -B tools/fiio_discovery.py --interface <MAC_LAN_IPV4> --seconds 15
+python3 -B -m controller.fiio_discovery --interface <MAC_LAN_IPV4> --seconds 15
 ```
 
 The standard-library helper joins only the selected interface/group, recognizes
@@ -78,7 +78,7 @@ Desktop host networking also does not give a container direct access to host
 interfaces ([documented limitations](https://docs.docker.com/engine/network/drivers/host/#limitations)).
 We leave the existing network/confinement setup intact.
 
-`tools/lan_bridge.py` requires host Python **3.11+** (standard library only).
+`controller/bridge/lan_bridge.py` requires host Python **3.11+** (standard library only).
 It is an explicit, temporary **host process**, not firmware
 support or a WS adapter. It binds two TCP listeners on one chosen local IPv4:
 
@@ -119,7 +119,7 @@ An allowed phone can access the guest's actual SD contents while the bridge runs
 ```sh
 ./run.sh boot
 # Run on the HOST; no extra Python package or Docker image change is needed.
-python3 -B tools/lan_bridge.py \
+python3 -B -m controller.bridge.lan_bridge \
   --interface <MAC_LAN_IPV4> --allow-client <PHONE_IPV4> --seconds 900 \
   --acknowledge-unauthenticated-control
 ```

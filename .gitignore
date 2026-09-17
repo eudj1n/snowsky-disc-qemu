@@ -37,11 +37,11 @@ __pycache__/
 .env
 
 # SD card drop folder: keep the folder + docs, ignore the media the user drops in
-/sdcard/*
-!/sdcard/.gitkeep
-!/sdcard/README.md
+/emulator/sdcard/*
+!/emulator/sdcard/.gitkeep
+!/emulator/sdcard/README.md
 
-# Viewer skin: owner's original photo is committed; provenance in assets/README.md.
+# Viewer skin: owner's original photo is committed; provenance in viewer/assets/README.md.
 
 # JetBrains IDE
 .idea/

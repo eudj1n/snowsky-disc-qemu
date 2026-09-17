@@ -115,7 +115,7 @@ USB flag `83a768=1`; <100 clears it. The charger path additionally accesses
 `/dev/sgm41513`. The power loop directly tests the native flag, not the cable
 graphic or battery status string.
 
-`scripts/15_controls.sh` now creates these guest-only nodes for V2.57 and enables
+`emulator/scripts/15_controls.sh` now creates these guest-only nodes for V2.57 and enables
 the narrowly scoped `fbshim` ABI with `emu/usb-power-supported=1`. Legacy V2.40
 gets marker 0, not an unreviewed enablement. The shim supplies:
 
@@ -138,7 +138,7 @@ normally while the player stays powered.
 
 To use the updated shim in an existing interactive setup, run `./run.sh boot`
 and `./run.sh view`, then reload the page and click the USB connector at the
-bottom of the skin. As with any normal boot/setup, use the intended `sdcard/`
+bottom of the skin. As with any normal boot/setup, use the intended `emulator/sdcard/`
 contents. A page reload alone cannot update the shim in an already running
 guest. Clicking USB while the guest is stopped records cable state for the next
 explicit Power boot; it does not implement hardware power-on-by-cable.

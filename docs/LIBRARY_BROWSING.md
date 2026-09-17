@@ -124,7 +124,7 @@ a separate controller feature, not reproduction of an observed app action.
 
 Input: `2026-09-16-215831.pcap` / `.har`. The owner identifies the already
 created destination as `test2`. Source names and playlist names are replaced in
-[the fixture](../tools/fixtures/fiio_control_ios_album_batch_add.json); full
+[the fixture](../controller/tests/fixtures/fiio_control_ios_album_batch_add.json); full
 catalogs, artwork and raw captures remain outside Git. Fresh Link settings report
 DISC 257 / play mode 0; app 4.6.0 is retrospectively owner-confirmed.
 
@@ -180,7 +180,7 @@ The owner also reports renaming the playlist at the end. Fourteen HTTP exchanges
 match between PCAP and HAR, including all response-body hashes and the chunked
 add body. Device TCP directions are contiguous; no reported retransmission,
 loss or truncation on 12100/12103. Link contains startup queries only; all three
-mutations are HTTP. Sanitized [fixture](../tools/fixtures/fiio_control_ios_group_add_rename.json)
+mutations are HTTP. Sanitized [fixture](../controller/tests/fixtures/fiio_control_ios_group_add_rename.json)
 keeps source group counts and playlist readbacks, not personal track contents.
 
 | Request frame / seconds | Operation | Observable result |
@@ -255,7 +255,7 @@ The existing unsafe recursive `/file/` directory-batch path remains prohibited.
 Owner-provided `2026-09-16-185016.pcap` and `.har`, physical DISC; fresh `a501`
 reports firmware **257** and play mode **0**. App 4.6.0 is retrospectively owner-confirmed, not present in the wire metadata.
 Source hashes, packet references and sanitized requests are preserved in
-[the fixture](../tools/fixtures/fiio_control_ios_genres.json). Names in the fixture
+[the fixture](../controller/tests/fixtures/fiio_control_ios_genres.json). Names in the fixture
 are replacements, not the user's catalog. No artwork, IPs or full settings are committed.
 
 The HAR contains only **3** device HTTP exchanges; the PCAP contains **13**.
@@ -339,7 +339,7 @@ Owner supplied `2026-09-16-211747.pcap` / `.har` and
 album, then an artist's albums and a scoped album. The second presses Play all
 **inside a selected artist**, not on the root Artists page. Both handshakes and
 fresh `a501` replies report firmware 257 and play mode 0; app 4.6.0 is retrospectively owner-confirmed. Source hashes, packet references and anonymized requests are
-in [the fixture](../tools/fixtures/fiio_control_ios_folders_artists.json).
+in [the fixture](../controller/tests/fixtures/fiio_control_ios_folders_artists.json).
 
 PCAP and HAR contain the same 16 and 5 HTTP exchanges respectively; all response
 body hash multisets agree, including artwork (not committed). TCP directions on
@@ -395,7 +395,7 @@ Physical DISC and interactive guests were not changed by this analysis/testing.
 Input: `2026-09-16-213631.pcap` / `.har`; owner reports that root-tab Play all
 taps had no visible effect and the last action was inside a selected genre.
 Fresh handshake/settings identify DISC 257, play mode 0 and initially paused
-playback. App 4.6.0 is retrospectively owner-confirmed. The [sanitized fixture](../tools/fixtures/fiio_control_ios_root_play_all.json)
+playback. App 4.6.0 is retrospectively owner-confirmed. The [sanitized fixture](../controller/tests/fixtures/fiio_control_ios_root_play_all.json)
 retains every outgoing Link frame, relevant HTTP filters and later genre events.
 Tap times themselves are not present in PCAP; their attribution uses the owner's
 report, while navigation and the absence of commands are packet evidence.
@@ -525,14 +525,14 @@ All addresses below are from the full-fingerprint-verified V2.57 `mq_player`:
 - `4936b8` category GET; `493ee4` bulk add → `41aff8` category expansion.
 - `49484c` category DELETE; allowlist at `6cda34`, add mapping at `6cdc00`.
 
-Use [the Ghidra workflow](../ghidra/README.md), `DecAt.java` at these entries,
-and `tools/inspect_http_routes.py --version 2.57` against the extracted binary.
+Use [the Ghidra workflow](../research/ghidra/README.md), `DecAt.java` at these entries,
+and `research/diagnostics/inspect_http_routes.py --version 2.57` against the extracted binary.
 Keep binaries, projects, decompilation and raw logs in ignored `work/`.
 This host's cached scripts were compiled with Java 26; Java 21 rejected them.
 Using the matching Java 26 runtime resolved that local analysis issue.
 
 ```sh
-docker run --rm --network none -v "$PWD:/repo:ro" diskos-qemu-ci bash /repo/ci/test.sh
+docker run --rm --network none -v "$PWD:/repo:ro" snowsky-disc-qemu-ci bash /repo/ci/test.sh
 CI_SCENARIO=library FW_VERSION=2.57 bash ci/integration.sh /absolute/path/to/main_os/ota_v257
 ```
 

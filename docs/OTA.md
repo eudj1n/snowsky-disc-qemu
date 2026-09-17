@@ -13,7 +13,7 @@ It supplies a directory of package files; no ZIP download was found in this flow
 A CI downloader could consume rootfs chunks directly, without building a ZIP.
 
 The existing [firmware workflow](../.github/workflows/firmware.yml) still uses
-fixed ZIP URL secrets through [fetch_firmware.py](../tools/fetch_firmware.py).
+fixed ZIP URL secrets through [fetch_firmware.py](../firmware/tools/fetch_firmware.py).
 The separate [OTA check workflow](../.github/workflows/ota.yml) polls daily;
 it does not change the firmware integration input.
 
@@ -95,15 +95,15 @@ Asia/Aqtobe) and supports manual dispatch:
 
 ```sh
 gh workflow run ota.yml --ref 2.x
-python3 -B tools/check_ota.py
-python3 -B tools/check_ota.py --version 2.40
+python3 -B -m firmware.tools.check_ota
+python3 -B -m firmware.tools.check_ota --version 2.40
 ```
 
 The workflow runs the catalog tests, then queries the service from host Python.
 No Docker, firmware binaries, package downloads, uploaded artifacts, or custom
 secrets are needed. Each run produces a summary with the reviewed, offered,
 and highest advertised main-OS/recovery pairs. A newer advertised pair emits a
-GitHub warning and creates a tracking issue through [notify_ota.py](../tools/notify_ota.py),
+GitHub warning and creates a tracking issue through [notify_ota.py](../firmware/tools/notify_ota.py),
 using the job's built-in GitHub token with `issues: write`. The check remains
 successful when metadata and any required notification were handled; a failed
 issue API call fails the job and can be retried on the next run.

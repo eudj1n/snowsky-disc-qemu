@@ -5,8 +5,9 @@ Keep entries short and group related work; protocol details and validation evide
 belong in the linked documentation. Vendor notes live in `docs/firmware/<version>.md`.
 See [release and support policy](docs/PORTING.md).
 
-## [Unreleased]
+## [Current]
 
+Current development since the `v2.57` pre-release; not a published release.
 Active firmware: **V2.57**. Local protocol research is finalized in
 [issue #10](https://github.com/eudj1n/snowsky-disc-qemu/issues/10); see the
 [controller capability summary](docs/DISC_CAPABILITIES.md).
@@ -30,7 +31,8 @@ Active firmware: **V2.57**. Local protocol research is finalized in
   themes now support verified opacity, color, style and overlay edits.
   [Modes and themes](docs/REMOTE_MODES_THEMES.md).
 - Passive LAN discovery and an opt-in, time-limited bridge for one phone;
-  initial FiiO Control connection verified. [Discovery](docs/DISCOVERY.md).
+  FiiO Control on iPhone verified discovery, connection, emulator library access
+  and rediscovery after disconnect. [Compatibility and limits](docs/DISCOVERY.md).
 - USB-power emulation that inhibits stock idle shutdown, plus idle/reconnect
   checks. USB data/DAC is not emulated. [Power behavior](docs/IDLE_POWER.md).
 - CUE/DSF/DFF metadata and track-selection checks; native DSD output and SACD ISO
@@ -43,6 +45,9 @@ Active firmware: **V2.57**. Local protocol research is finalized in
 
 ### Changed
 
+- Separate emulator, viewer, controller, firmware tooling and research into explicit
+  components. Keep root launch commands; media now lives in `emulator/sdcard/` and
+  Docker names use `snowsky-disc-qemu`. [Source layout](docs/REPOSITORY.md).
 - Support one validated firmware on `2.x`; older versions remain historical
   snapshots without promised backports. Hosted integration now targets V2.57 only.
 - Keep immutable `v2.57` as a pre-release and `v2.40` as the historical stable
@@ -61,7 +66,7 @@ Active firmware: **V2.57**. Local protocol research is finalized in
 
 Detailed progress, limitations and follow-ups: [protocol research](docs/PROTOCOL_RESEARCH.md).
 
-## [2.57] — 2026-09-13
+## [2.57] — 2026-09-13 (pre-release)
 
 Main OS **257**, recovery **18**. Reclassified as an immutable **pre-release
 snapshot** on 2026-09-16; the tag and commit are unchanged. Entries below describe
@@ -132,5 +137,6 @@ installable vendor firmware package. Both CI workflows passed on `e3aab81`.
 
 See [STATUS.md](docs/STATUS.md) for current capabilities and evidence.
 
+[Current]: https://github.com/eudj1n/snowsky-disc-qemu/compare/v2.57...2.x
 [2.57]: https://github.com/eudj1n/snowsky-disc-qemu/compare/v2.40...v2.57
 [v2.40]: https://github.com/eudj1n/snowsky-disc-qemu/releases/tag/v2.40

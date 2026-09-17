@@ -184,8 +184,8 @@ removes that test file, and reindexes back to the three original fixtures. No
 synthetic SD event or screen tap is needed for this explicit scan.
 
 ```python
-from fiio_http import HTTPClient
-from fiio_link import Client
+from controller.fiio_http import HTTPClient
+from controller.fiio_link import Client
 
 http = HTTPClient('PLAYER_IP', 12103)
 print(http.directory('/tmp/sdcard'))
@@ -198,16 +198,16 @@ with Client('PLAYER_IP') as link:
     # Consume events until a60a/0005, then refresh the catalog.
 ```
 
-Read-only CLI: `python3 tools/fiio_http.py --host PLAYER_IP --port 12103 --catalog custom`.
+Read-only CLI: `python3 -m controller.fiio_http --host PLAYER_IP --port 12103 --catalog custom`.
 For local emulation the client defaults to `127.0.0.1:12113`.
 
 ## Reproduction / static references
 
-`ci/http_check.py` is wired into `ci/integration.sh`; it runs only against disposable
-fixtures. `tools/test_fiio_http.py` tests actual HTTP framing, binary bodies, Unicode,
+`tests/integration/http_check.py` is wired into `ci/integration.sh`; it runs only against disposable
+fixtures. `controller/tests/test_fiio_http.py` tests actual HTTP framing, binary bodies, Unicode,
 position ranges, malformed replies, path bounds and no retry after uncertain writes.
 
-Reproduce route discovery with `tools/inspect_http_routes.py` and a fingerprinted
+Reproduce route discovery with `research/diagnostics/inspect_http_routes.py` and a fingerprinted
 stock binary. V2.57 handlers: directory GET `48ba5c`, POST `48bc98`, delete file
 `48bfd0`, audio upload `48c574`, progress `48c3cc`, category GET `4936b8`, category
 DELETE `49484c`, playlist command `4939c4`, add-to-list `493ee4`, image upload `48e46c`.

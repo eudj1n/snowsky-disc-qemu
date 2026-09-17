@@ -20,7 +20,7 @@ gesture shortcuts are available in the collapsed **Debug** section.
 They duplicate touch swipes and are not needed for normal use.
 
 `DEVICE_BOOT_SCRIPT` in `.env` optionally selects the script invoked by viewer
-Power when the guest is off. Leave it empty for the usual `/repo/scripts/20_boot.sh`.
+Power when the guest is off. Leave it empty for the usual `/repo/emulator/scripts/20_boot.sh`.
 An override is an absolute path inside the container, executed by Bash with the
 selected `ROOTFS` and the existing 90-second startup timeout. Recreate the container
 and restart the viewer after changing it. This does not change `./run.sh boot`.
@@ -60,7 +60,7 @@ mount before preparing the helper mount. Cyrillic filenames and media hashes are
 checked across repeated cycles in disposable integration tests. Insertion follows the
 stock auto-scan gates described in [MEDIA_LIBRARY.md](MEDIA_LIBRARY.md).
 An ejected card stays out across viewer/guest restarts; a full setup rebuilds it from
-`./sdcard`. Host `./run.sh boot` includes that setup, so it also refreshes the card
+`./emulator/sdcard`. Host `./run.sh boot` includes that setup, so it also refreshes the card
 from the host folder and replaces guest-only card changes. Viewer Power-on alone
 does not rebuild it. The host media directory itself is never ejected or modified.
 Each PCM session replaces the recording; `./run.sh audio` saves a WAV to `shots/audio.wav`.
@@ -68,7 +68,7 @@ See [AUDIO.md](AUDIO.md) for limits and verification.
 
 ## How it works
 
-`tools/stream.py` runs inside the container (wrapped by `scripts/40_stream.sh`, launched
+`viewer/server.py` runs inside the container (wrapped by `viewer/scripts/40_stream.sh`, launched
 detached by `./run.sh view`) and serves:
 
 | route | purpose |
@@ -151,13 +151,13 @@ left→right back gesture are just server-side interpolated swipes, one click ea
 
 ## Device skin (the "cool" look)
 
-If a skin PNG is present (repo `assets/skin.png`, else `/work/skin.png`), the page shows the
+If a skin PNG is present (repo `viewer/assets/skin.png`, else `/work/skin.png`), the page shows the
 photo with the live round screen overlaid on the glass. Align the circle to your image live:
 open **Debug → ⊹ align**, then **Alt+arrows** to move / **+/-** to resize (Shift = bigger step) — the
 readout shows the exact `SKIN_CX / SKIN_CY / SKIN_D`. Those can also be passed as query params
-(`/?cx=0.5&cy=0.5&d=0.7`) or env vars to `scripts/40_stream.sh`; defaults live in `tools/stream.py`.
+(`/?cx=0.5&cy=0.5&d=0.7`) or env vars to `viewer/scripts/40_stream.sh`; defaults live in `viewer/server.py`.
 A PNG with a **transparent hole** over the screen gives the cleanest result. Without a skin the
-viewer falls back to a plain framed round screen. See `assets/README.md`.
+viewer falls back to a plain framed round screen. See `viewer/assets/README.md`.
 
 Physical buttons are **44px translucent pink circles over the skin**: Power on the
 top edge, Play/pause at the upper right, volume at the two ends of the right rocker.
@@ -168,7 +168,7 @@ directly without hovering. Button names remain available to assistive technology
 The transparent positioning layer does not intercept touches on the round screen.
 Without a skin, the same buttons become a labelled row, with no duplicate handlers.
 
-Hotspot centers use per-button CSS `--x`/`--y` percentages in `tools/stream.py` for the
+Hotspot centers use per-button CSS `--x`/`--y` percentages in `viewer/static/index.html` for the
 committed photo (Power 84.4/3, Play 98/14.8, Volume up 98/28.5, down 98/51.5; headphones 15.6/99, USB 50/98.5, SD 80/98.5).
 They resize with the photo; replacing it requires adjusting these coordinates as
 well as screen alignment. Closing Debug cancels alignment mode. Reduced-motion

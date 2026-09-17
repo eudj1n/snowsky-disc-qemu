@@ -151,7 +151,7 @@ no more `0202` queries. Thus the trace proves asynchronous full snapshots and
 deltas during playback, not that a fresh `0202` query succeeds in that state.
 No firmware patch or new handshake is needed to receive these pushes. See
 [capture details](FIIO_CONTROL_APP.md#ios-playback-and-favorites-capture-2026-09-15)
-and the [sanitized fixture](../tools/fixtures/fiio_control_ios_460_playback.json).
+and the [sanitized fixture](../controller/tests/fixtures/fiio_control_ios_460_playback.json).
 
 ## Data schemas for the remote
 
@@ -182,7 +182,7 @@ indices are zero-based. Next's full snapshot arrives about 1.73 s after the comm
 with old-track ticks in between: do not infer completion from a write or a tick.
 
 See [capture details](FIIO_CONTROL_APP.md#ios-current-queue-capture-2026-09-16)
-and the [sanitized fixture](../tools/fixtures/fiio_control_ios_460_queue.json).
+and the [sanitized fixture](../controller/tests/fixtures/fiio_control_ios_460_queue.json).
 
 ### Validated current-queue helper
 
@@ -214,7 +214,7 @@ These are protocol/state behaviors, not proof that the physical player crashes.
 They provide one reproducible cause of a silent `0202`; they do not establish why
 the user's earlier captures started in that state.
 
-`ci/queue_check.py` exercises both TCP/direct HTTP and WS/proxied HTTP, restores the
+`tests/integration/queue_check.py` exercises both TCP/direct HTTP and WS/proxied HTTP, restores the
 original play mode and leaves playback paused. `CI_SCENARIO=queue` runs it with
 fresh-empty checks in an isolated generated-media stack. The full integration
 pipeline runs the populated-queue checks after existing remote-control acceptance.
@@ -256,7 +256,7 @@ table entry `0082d510`; its `0105` entry `0082d410` points to `0041c540` and
 `0406` entry `0082d508` points to `0041c620`. These values were read through the
 ELF segment mapping from the disposable guest's binary.
 
-`ci/queue_reads_check.py` checks `04260008` and `0426000C0000` with bounded waits,
+`tests/integration/queue_reads_check.py` checks `04260008` and `0426000C0000` with bounded waits,
 then verifies settings and HTTP queue on the same connection. It also checks all
 five modes with repeated `0105` reads, ensuring pause and selected track remain
 unchanged, and covers queue replacement. `CI_SCENARIO=queue-reads` additionally
@@ -372,9 +372,9 @@ reply does not prevent this HTTP functionality.
 
 ## Reproduce and evidence
 
-`ci/remote_control.py` runs the same acceptance scenario over TCP and the optional
+`tests/integration/remote_control.py` runs the same acceptance scenario over TCP and the optional
 WS bridge, inside the disposable integration stack. It requires the three generated
-tracks from `ci/fixture.py`: one Unicode WAV plus two tagged FLACs. All carry the
+tracks from `tests/fixtures/fixture.py`: one Unicode WAV plus two tagged FLACs. All carry the
 same deterministic waveform, retaining the byte-exact PCM check. The stock UI scans
 them; tests do not fabricate song database rows or modify firmware memory.
 
@@ -391,9 +391,9 @@ and select addresses by full binary fingerprint.
 bash ci/integration.sh /absolute/path/to/main_os/ota_v257
 FW_VERSION=2.40 bash ci/integration.sh /absolute/path/to/main_os/ota_v240
 # Manual commands, e.g. on an explicitly selected physical device:
-python3 tools/fiio_link.py --host PLAYER_IP --play-index 0 --list-type 3 --name 'Album name'
-python3 tools/fiio_link.py --host PLAYER_IP --seek-ms 15000
-python3 tools/fiio_link.py --host PLAYER_IP --next
+python3 -m controller.fiio_link --host PLAYER_IP --play-index 0 --list-type 3 --name 'Album name'
+python3 -m controller.fiio_link --host PLAYER_IP --seek-ms 15000
+python3 -m controller.fiio_link --host PLAYER_IP --next
 ```
 
 Manual CLI output is a snapshot, not an acceptance assertion: transitions can
@@ -420,7 +420,7 @@ Local validation completed on 2026-09-15:
 ### Static V2.57 routes
 
 The fingerprinted `work/re257/mq_player` matches `firmware/v2.57.json`. Decompile
-with existing `ghidra/DecAt.java` / `DecFuncs.java`; retain derived output ignored.
+with existing `research/ghidra/DecAt.java` / `DecFuncs.java`; retain derived output ignored.
 
 | Tag | Wrapper / callback | Local handler |
 |---|---|---|

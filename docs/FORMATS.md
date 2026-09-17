@@ -80,7 +80,7 @@ Addresses below are for the fingerprinted V2.57 `mq_player` only:
   and a separate `AudioCodecOpen` path for other sources, including DSD files.
   That branch establishes a research entry point, not tested SACD ISO support.
 
-Reproduce with `ghidra/DecAt.java` and `RefsTo.java`; keep binaries/projects/raw
+Reproduce with `research/ghidra/DecAt.java` and `RefsTo.java`; keep binaries/projects/raw
 decompilation ignored. No firmware binary, database or shim patch is involved.
 
 ## Fixtures and reproduction
@@ -90,7 +90,7 @@ CI_SCENARIO=formats FW_VERSION=2.57 CI_LOGS="$PWD/work/formats-check" \
   bash ci/integration.sh /absolute/path/to/main_os/ota_v257
 ```
 
-`ci/formats_fixture.py` writes deterministic original test patterns. DSF has
+`tests/fixtures/formats_fixture.py` writes deterministic original test patterns. DSF has
 4096-byte per-channel blocks with zero-padded tails, an exact sample count and
 an ID3 metadata offset; DFF uses big-endian sized chunks and stereo DSD data.
 Layout references are the primary [FFmpeg DSF reader](https://github.com/FFmpeg/FFmpeg/blob/master/libavformat/dsfdec.c)
@@ -102,7 +102,7 @@ FFprobe is an optional inspection tool, not a new emulator/CI dependency:
 
 ```sh
 # The parent must exist; the generator refuses to overwrite its fixture folder.
-python3 -B ci/formats_fixture.py /path/to/ignored/test-parent
+python3 -B -m tests.fixtures.formats_fixture /path/to/ignored/test-parent
 ffprobe -v error -show_format -show_streams '/path/to/ignored/test-parent/Formats CI Ё/Pattern.dsf'
 ```
 

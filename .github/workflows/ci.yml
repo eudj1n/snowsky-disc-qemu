@@ -29,6 +29,6 @@ jobs:
       - name: Validate Compose
         run: OTA_DIR=/tmp/unused docker compose config --quiet
       - name: Build pinned toolchain
-        run: docker build --tag diskos-qemu-ci docker
+        run: docker build --tag snowsky-disc-qemu-ci docker
       - name: Python, JavaScript, shell syntax and MIPS shims
-        run: docker run --rm --network none --volume "$PWD:/repo:ro" diskos-qemu-ci bash /repo/ci/test.sh
+        run: docker run --rm --network none --volume "$PWD:/repo:ro" snowsky-disc-qemu-ci bash /repo/ci/test.sh

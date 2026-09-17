@@ -6,7 +6,7 @@ The real stock interface, media library and audio decoder run under `qemu-user`.
 Browse an SD card, play a track, navigate by touch and operate the player's buttons
 without a physical device.
 
-[Quick start](#run-the-emulator) · [Browser viewer](#viewer) · [Source releases](https://github.com/eudj1n/snowsky-disc-qemu/releases) · [Validation & screenshots](docs/STATUS.md)
+[Quick start](#run-the-emulator) · [Viewer](#viewer) · [Controller](#controller) · [FiiO Control compatibility](#fiio-control-compatibility) · [Source releases](https://github.com/eudj1n/snowsky-disc-qemu/releases) · [Validation & screenshots](docs/STATUS.md)
 
 <table>
   <tr>
@@ -23,12 +23,15 @@ without a physical device.
 
 *Actual V2.57 emulator captures ([capture details](docs/images/README.md)). The browser viewer adds the device skin and interactive controls shown below.*
 
-Two parts work together:
+Three components share one repository:
 
 - **Emulator** — runs the original MIPS firmware in Docker, provides the device interfaces
   it needs, and makes its UI, storage, audio and local protocol available for testing.
 - **Viewer** — a browser interface to the running emulator, with a live screen,
   touch gestures, physical controls, sound and peripheral simulation.
+- **Controller** — Python clients for playback, library and settings over the
+  player's network APIs. Works with a physical DISC or the emulator; direct
+  device control needs no Docker or firmware files.
 
 ## Emulator
 
@@ -57,7 +60,7 @@ Download and unpack the official firmware first:
 git clone https://github.com/eudj1n/snowsky-disc-qemu.git
 cd snowsky-disc-qemu
 
-# Put your music in ./sdcard before setup.
+# Put your music in ./emulator/sdcard before setup.
 # Point to the unpacked main-OS chunk directory, not the ZIP or its parent.
 ./run.sh up /path/to/SNOWSKY_DISC_update_.../main_os/ota_v257
 ./run.sh boot
@@ -73,7 +76,7 @@ firmware processes and writes screen captures to `shots/`.
 Inside the stock UI, open **Browse files** to select your music. Use
 **Settings → Update media lib → Update now** to populate the indexed library.
 Normal boot remounts the card; it does not generate an SD-insertion auto-scan event.
-After changing files in `./sdcard`, run `./run.sh boot` again to rebuild the emulated
+After changing files in `./emulator/sdcard`, run `./run.sh boot` again to rebuild the emulated
 card from that folder. Guest-only card changes are replaced during this setup.
 
 <details>
@@ -88,38 +91,10 @@ card from that folder. Guest-only card changes are replaced during this setup.
 ./run.sh down             # Remove containers; keep the extracted-rootfs volume.
 ```
 
-The pipeline lives in `scripts/`; `run.sh` is its host entry point.
+The pipeline lives in `emulator/scripts/`; `run.sh` is its host entry point.
 `compose.yaml` defines the container and localhost port mappings.
 For direct Compose setup, copy `.env.example` to `.env`, set `OTA_DIR`, then run
 `./run.sh up` and `./run.sh boot`.
-
-</details>
-
-<details>
-<summary><b>FiiO Link and the optional WebSocket bridge</b></summary>
-
-The emulator publishes FiiO Link TCP on **127.0.0.1:12100** and direct stock HTTP on
-**127.0.0.1:12113**. Try `python3 tools/fiio_link.py` for a read-only host query.
-UDP 12101 is also mapped locally; this alone does not relay LAN discovery.
-For a trusted-phone test, an [opt-in host LAN bridge](docs/DISCOVERY.md) adds
-discovery and stock TCP/HTTP forwarding with an explicit IP allowlist and time
-limit. Default startup stays localhost-only; the stock APIs have no password.
-
-An optional native WebSocket-to-TCP adapter provides **12103** and a read-only
-protocol inspector:
-
-```sh
-docker compose --profile wsbridge up -d wsbridge
-./run.sh wscheck --control  # Verify TCP/WS control; leaves playback paused.
-# Inspector: http://localhost:12103/bridge/
-docker compose --profile wsbridge stop wsbridge
-```
-
-The bridge is an explicit adapter to the stock service. It runs as a separate,
-optional container. Disconnect the inspector before using another control client:
-the stock TCP service accepts one client at a time.
-See [network setup](docs/NETWORK.md), [WebSocket bridge](docs/WEBSOCKET.md),
-and [protocol reference](docs/PROTOCOL.md).
 
 </details>
 
@@ -162,6 +137,79 @@ V2.57, preventing idle power-off while connected (no USB data/DAC). See
 removal performs an actual guest unmount and refuses a busy card. These behaviors
 and setup options are covered in the **[viewer guide](docs/VIEWER.md)**.
 
+## Controller
+
+**Control a physical SNOWSKY DISC or the emulator through the same network APIs.**
+The `controller/` Python package provides FiiO Link TCP and HTTP clients, an
+optional WebSocket client, discovery tools and bridges. Direct TCP/HTTP control
+uses Python's standard library and runs independently of the emulator and viewer.
+The WebSocket client and WebSocket bridge additionally require `aiohttp`.
+
+| Area | Available helpers |
+| --- | --- |
+| **Playback** | Track selection, play/pause, seeking, modes, favorites and guarded queue selection. |
+| **Library** | Track, artist, album and genre catalogs; folder browsing, file transfer and custom playlists. |
+| **Settings** | Volume, gain, filters, channel balance, basic PEQ, work modes and codec preferences. |
+| **Lock screen** | Custom image uploads and supported system/custom theme metadata. |
+
+See the **[controller capability summary](docs/DISC_CAPABILITIES.md)** for verified
+operations, firmware limits and remaining research.
+
+From the repository root, query settings, tracks and current playback without
+changing them:
+
+```sh
+# Running emulator (localhost TCP 12100).
+python3 -m controller.fiio_link
+
+# Physical DISC: replace the example address with your player's LAN address.
+python3 -m controller.fiio_link --host 192.168.1.50
+```
+
+The stock TCP service accepts one client at a time; disconnect FiiO Control or
+another controller before querying it. Physical-device HTTP uses port 12103;
+the emulator's direct stock HTTP endpoint is localhost port 12113.
+
+<details>
+<summary><b>FiiO Link and the optional WebSocket bridge</b></summary>
+
+An optional WebSocket-to-TCP adapter provides **localhost:12103** and a read-only
+protocol inspector for the emulator:
+
+```sh
+docker compose --profile wsbridge up -d wsbridge
+./run.sh wscheck --control  # Verify TCP/WS control; leaves playback paused.
+# Inspector: http://localhost:12103/bridge/
+docker compose --profile wsbridge stop wsbridge
+```
+
+The bridge is an explicit adapter to the stock service. It runs as a separate,
+optional container. Disconnect the inspector before using another control client:
+the stock TCP service accepts one client at a time.
+See [network setup](docs/NETWORK.md), [WebSocket bridge](docs/WEBSOCKET.md),
+and [protocol reference](docs/PROTOCOL.md).
+
+</details>
+
+## FiiO Control compatibility
+
+**FiiO Control on iPhone can discover and connect to the emulator through the
+optional host LAN bridge.** In the manual test on 2026-09-16, the app discovered
+the host, connected, opened the emulator's media library and found it again after
+a confirmed disconnect. The owner reports FiiO Control **4.6.0** for these tests;
+the emulator runs DISC **V2.57**.
+
+The [LAN bridge setup](docs/DISCOVERY.md) forwards the stock TCP/HTTP services and
+announces the emulator on a trusted LAN. It requires an explicit phone IP allowlist
+and a time limit because the stock APIs have no authentication. Normal startup
+remains localhost-only. The tested phone connection uses TCP/HTTP directly.
+
+This verifies discovery, connection and library access. Full app coverage,
+background reconnect and Android interoperability remain unvalidated. Captures
+from FiiO Control connected to a **physical DISC** additionally document playback,
+library, settings and theme workflows; their evidence and implementation status
+are recorded separately in the [FiiO Control research](docs/FIIO_CONTROL_APP.md).
+
 ## Firmware support & development
 
 **Active development: V2.57 on `2.x`.** We support one firmware at a time: the
@@ -171,7 +219,7 @@ An OTA announcement alone does not replace the working version.
 
 V2.40's runtime profile is still selectable during the transition; its removal
 from current code is a separate task. The historical `v2.40` release is retained.
-The existing `v2.57` is a Pre-release snapshot; the eventual stable V2.57 release
+The existing `v2.57` is a **pre-release snapshot**; the eventual stable V2.57 release
 will use a new name such as `v2.57-r1`. Hosted firmware CI runs only active V2.57.
 
 A daily [OTA monitor](docs/OTA.md) creates one tracking Issue for each newly detected
@@ -185,7 +233,7 @@ Keep `FW_VERSION=2.40` in `.env` for an existing V2.40 rootfs. Switching the ver
 setting does not migrate an extracted rootfs; mismatches are rejected.
 
 To use V2.57 separately, set `FW_VERSION=2.57` and a distinct `WORK_VOLUME`, such as
-`diskos-work-v257`, in `.env`. Run `./run.sh up` with the V2.57 OTA directory, then
+`snowsky-disc-work-v257`, in `.env`. Run `./run.sh up` with the V2.57 OTA directory, then
 `./run.sh boot`. This preserves the previous work volume.
 
 </details>
@@ -200,13 +248,16 @@ and [CHANGELOG.md](CHANGELOG.md).
 
 ## Documentation & source map
 
+See [repository components and Python entry points](docs/REPOSITORY.md) for the
+source layout, dependency boundaries and test locations.
+
 | Area | Start here | Source |
 | --- | --- | --- |
-| **Emulator** | [How it works](docs/EMULATION.md) · [Current results](docs/STATUS.md) | `run.sh`, `scripts/`, `shim/`, `docker/` |
-| **Viewer** | [Viewer guide](docs/VIEWER.md) · [Touch](docs/TOUCH.md) · [Buttons](docs/KEYS.md) | `tools/stream.py`, `tools/*.js`, `assets/` |
-| **Media** | [Audio](docs/AUDIO.md) · [Library](docs/MEDIA_LIBRARY.md) · [Settings](docs/SETTINGS.md) | `sdcard/`, `tools/audio.py` |
-| **Connectivity** | [Network](docs/NETWORK.md) · [Protocol](docs/PROTOCOL.md) · [WebSocket](docs/WEBSOCKET.md) · [Opt-in phone LAN bridge](docs/DISCOVERY.md) | `tools/fiio_link.py`, `tools/ws_bridge.py`, `tools/lan_bridge.py` |
-| **Firmware research** | [Acquisition](firmware/README.md) · [Porting](docs/PORTING.md) · [Reverse engineering](docs/RE.md) | `firmware/`, `ghidra/` |
+| **Emulator** | [How it works](docs/EMULATION.md) · [Current results](docs/STATUS.md) | `run.sh`, `emulator/scripts/`, `emulator/shims/`, `docker/` |
+| **Viewer** | [Viewer guide](docs/VIEWER.md) · [Touch](docs/TOUCH.md) · [Buttons](docs/KEYS.md) | `viewer/server.py`, `viewer/static/*.js`, `viewer/assets/` |
+| **Media** | [Audio](docs/AUDIO.md) · [Library](docs/MEDIA_LIBRARY.md) · [Settings](docs/SETTINGS.md) | `emulator/sdcard/`, `emulator/runtime/audio.py` |
+| **Controller** | [Capabilities](docs/DISC_CAPABILITIES.md) · [Network](docs/NETWORK.md) · [Protocol](docs/PROTOCOL.md) · [WebSocket](docs/WEBSOCKET.md) · [Opt-in phone LAN bridge](docs/DISCOVERY.md) | `controller/fiio_link.py`, `controller/bridge/ws_bridge.py`, `controller/bridge/lan_bridge.py` |
+| **Firmware research** | [Acquisition](firmware/README.md) · [Porting](docs/PORTING.md) · [Reverse engineering](docs/RE.md) | `firmware/`, `research/ghidra/` |
 | **Contributing** | [CI](docs/CI.md) · [Agent instructions](AGENTS.md) | `ci/`, `.github/workflows/` |
 
 ## License & scope
