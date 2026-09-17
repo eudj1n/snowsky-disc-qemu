@@ -11,7 +11,7 @@ This is one repository and one shared Docker toolchain, with no new service.
 | --- | --- | --- |
 | `emulator/scripts/`, `emulator/shims/`, `emulator/runtime/` | Guest setup, boot/stop, SD/network stubs, physical input, framebuffer and PCM | Shared `firmware.profile`; native tools from `docker/` |
 | `viewer/server.py`, `viewer/static/`, `viewer/assets/` | HTTP/SSE presentation, browser input/audio, device photo | Emulator runtime adapter; no controller transport |
-| `controller/` | Physical-device TCP/HTTP/WS clients, discovery, optional bridges and network diagnostics | Python standard library; `aiohttp` for WS/bridges; no emulator, firmware or research imports |
+| `controller/` | Physical-device TCP/HTTP/WS clients, discovery, optional bridges and network diagnostics | Python standard library; `aiohttp` for WS client/bridge; no emulator, firmware or research imports |
 | `firmware/profile.py`, `firmware/v*.json`, `firmware/tools/` | Reviewed profiles/fingerprints, acquisition, extraction, OTA and inventory tools | Native extraction tools where needed |
 | `research/ghidra/`, `research/diagnostics/` | Ghidra, ELF tables, GDB and process-memory inspection | Firmware profiles; emulator process helpers for live memory probes |
 | `tests/integration/`, `tests/fixtures/` | Cross-component acceptance and generated media | The components under test |
@@ -59,7 +59,7 @@ sourced emulator scripts also support an explicit `REPO` override.
 The controller can be copied and imported without the emulator, rootfs, Docker,
 profiles or memory tooling. `controller.tests.test_isolation` verifies that
 boundary in a separate Python process. For direct TCP/HTTP control the standard
-library is sufficient; the optional WS client and bridges require `aiohttp`.
+library is sufficient; the optional WS client and WS bridge require `aiohttp`.
 
 ## Local names and data
 

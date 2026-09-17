@@ -16,7 +16,7 @@ remain in [RE.md](RE.md) and [research/ghidra/README.md](../research/ghidra/READ
 Keep development on `2.x`, using short-lived task branches where useful. Do not fork
 the entire emulator for every minor firmware. Firmware-based immutable tags preserve
 validated snapshots; `v2.40-r1` means an emulator revision against the same firmware.
-Add an Unreleased changelog entry with each meaningful change, then move it into the
+Add a Current changelog entry with each meaningful change, then move it into the
 release entry when the exact commit passes the release gates. Vendor announcements
 must never become "working" emulator features just by copying their changelog.
 
