@@ -23,6 +23,17 @@ from research.disc_assistant.library.search.typesense import signature
 
 
 class InterpreterTests(unittest.IsolatedAsyncioTestCase):
+    async def test_russian_past_track_alias_preserves_titles_and_guards(self):
+        ru = InterpretationContext('ru')
+        for phrase in ('прошлый', 'Прошлый трек'):
+            self.assertEqual(await interpret_request(phrase, ru), ControlIntent('previous'))
+        for phrase in ('не прошлый', 'прошлый и пауза', 'прошлый год'):
+            with self.assertRaises(ValueError):
+                await interpret_request(phrase, ru)
+        with self.assertRaises(ValueError):
+            await interpret_request('прошлый', InterpretationContext('en'))
+        self.assertEqual(await interpret_request('Включи трек Прошлый', ru), Intent('Прошлый', 'track'))
+
     async def test_observed_russian_stt_variant_is_a_whole_control_not_a_global_rewrite(self):
         ru = InterpretationContext('ru')
         for phrase in ('следующий трак', 'Следующий   трак'):

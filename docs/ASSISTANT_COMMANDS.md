@@ -158,7 +158,7 @@ highlighted in this first theme; each result uses its status color.
 ## Music requests
 
 Russian play prefixes: `включи`, `играй`, `запусти`. `хватит` means stop;
-`назад` selects the preceding queue row, and `вперед` / `вперёд` mean next.
+`назад`, `прошлый` and `прошлый трек` select the preceding queue row, and `вперед` / `вперёд` mean next.
 The observed Whisper spelling `следующий трак` is accepted as a complete Russian
 next command. There is no global `трак` → `трек` rewrite: music references and raw
 transcripts retain their original text.
@@ -203,7 +203,7 @@ returns the intent offline; `ask 'Pause'` connects to the device.
 | `Resume` / `Продолжи` | Toggle only from confirmed paused; already playing sends nothing |
 | `Stop`, `Stop music` / `Стоп`, `Останови музыку` | Pause while preserving position and native queue; report this explicitly, not as hardware stop |
 | `Next`, `Next track` / `Следующий`, `Следующий трек`, `Следующий трак` | Send stock next once and observe the actual result |
-| `Previous`, `Previous track` / `Предыдущий`, `Предыдущий трек` | Select the preceding row of the fresh native queue, regardless of elapsed time; first row is a no-op |
+| `Previous`, `Previous track` / `Предыдущий`, `Предыдущий трек`, `Прошлый`, `Прошлый трек` | Select the preceding row of the fresh native queue, regardless of elapsed time; first row is a no-op |
 
 Neither interface has an Assistant-managed continuation executor: `Stop` reports assistant
 continuation as inactive. It does not clear the native queue, seek to zero or

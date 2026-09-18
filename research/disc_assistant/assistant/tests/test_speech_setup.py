@@ -1,5 +1,6 @@
 """Installer preserves device settings and verifies all downloaded bytes."""
 from contextlib import redirect_stdout
+from dataclasses import replace
 import hashlib
 import io
 import json
@@ -99,8 +100,49 @@ class SpeechSetupTests(unittest.TestCase):
         self.assertEqual(config.speech['backend'], 'server')
         self.assertTrue(config.services['speech'])
         self.assertEqual(set(config.tts['models']), {'ru', 'en'})
+        self.assertTrue(config.tts['models']['ru'].endswith('ru_RU-irina-medium.onnx'))
+        voices = json.loads((self.root / 'data/speech/piper/voices.json').read_text())
+        self.assertEqual(voices['ru'], '/models/ru_RU-irina-medium.onnx')
         self.assertFalse(any('up' in call.args[0] for call in run.call_args_list))
         self.assertFalse(any(call.args[0]['file'] == 'ggml-small.bin' for call in download.call_args_list))
+
+    def test_voice_upgrade_preserves_installed_whisper_and_recreates_only_changed_mapping(self):
+        try:
+            import tomlkit
+        except ImportError:
+            self.skipTest('optional setup --all config editor')
+        model = self.root / 'ggml-small.bin'
+        model.write_bytes(b'operator installed STT model')
+        with self.path.open('a') as stream:
+            stream.write(f'[speech]\nmodel="{model}"\n')
+        directory = self.root / 'data/speech/piper'
+        directory.mkdir(parents=True)
+        (directory / 'voices.json').write_text('{"ru":"/models/ru_RU-denis-medium.onnx"}')
+        before = speech_setup.environment(load(self.path))
+        with patch.object(speech_setup, 'download') as download, patch.object(speech_setup.subprocess, 'run'), \
+                patch.object(launcher, 'environment', return_value={}), redirect_stdout(io.StringIO()):
+            speech_setup.install(self.path)
+            first = speech_setup.environment(load(self.path))
+            speech_setup.install(self.path)
+        config = load(self.path)
+        self.assertEqual(config.speech['model'], str(model))
+        self.assertEqual(model.read_bytes(), b'operator installed STT model')
+        self.assertTrue(all(c.args[0]['file'].startswith('piper/') for c in download.call_args_list))
+        self.assertNotEqual(before['DISC_PIPER_VOICES_SHA256'], first['DISC_PIPER_VOICES_SHA256'])
+        self.assertEqual(first, speech_setup.environment(config))
+
+    def test_whisper_selection_preserves_custom_models_and_requires_explicit_replacement(self):
+        config = load(self.path)
+        custom = self.root / 'custom.bin'
+        custom.write_bytes(b'custom model')
+        config = replace(config, speech={'model': str(custom)})
+        self.assertEqual(speech_setup.selected_whisper(config, None), (custom, None))
+        self.assertEqual(speech_setup.selected_whisper(config, 'small')[1], 'ggml-small.bin')
+        custom.unlink()
+        with self.assertRaisesRegex(ValueError, 'Configured Whisper model is missing'):
+            speech_setup.selected_whisper(config, None)
+        config = replace(config, speech={'model': str(self.root / 'ggml-small.bin')})
+        self.assertEqual(speech_setup.selected_whisper(config, None)[1], 'ggml-small.bin')
 
     def test_external_service_is_not_silently_managed(self):
         with self.assertRaises(ValueError):
@@ -113,3 +155,9 @@ class SpeechSetupTests(unittest.TestCase):
         install.assert_called_once_with(self.path.resolve(), model='small')
         self.assertEqual(run.call_count, 2)
         self.assertTrue(run.call_args.args[0][-1].endswith('requirements-speech.txt'))
+
+    def test_launcher_does_not_implicitly_select_base(self):
+        with patch.object(launcher.subprocess, 'run'), patch.object(launcher, 'initialize'), \
+                patch.object(speech_setup, 'install') as install:
+            self.assertEqual(launcher.main(['--config', str(self.path), 'setup', '--all']), 0)
+        install.assert_called_once_with(self.path.resolve(), model=None)

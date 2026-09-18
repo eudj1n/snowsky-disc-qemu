@@ -26,7 +26,8 @@ itself never connects to a player or starts containers.
 
 1. Creates/reuses the prototype venv; installs runtime and optional speech setup/
    sample-conversion dependencies. Generates missing config/search credentials.
-2. Downloads multilingual Whisper **base**, Piper **RU Denis medium** and
+2. Preserves an installed Whisper model (uses multilingual **base** on a fresh
+   configuration), and downloads Piper **RU Irina medium** and
    **EN Alba medium**, their ONNX configuration and model cards. URLs use fixed
    repository revisions and every asset has a checked SHA-256 in
    [`models.json`](../research/disc_assistant/assistant/voice/services/models.json).
@@ -42,10 +43,13 @@ To choose the larger multilingual model explicitly:
 ./research/disc_assistant/run.sh setup --all --whisper-model small
 ```
 
-Base is the default desktop smoke-test option, not a quality recommendation.
+Base is the default for a configuration without a selected model, not a quality
+recommendation. An existing installed model/path is preserved unless
+`--whisper-model` explicitly selects a replacement. If a configured base/small file
+is missing, setup downloads the same variant into managed storage. A missing custom
+model requires restoring the file or explicitly selecting a replacement.
 See [the measured base/small comparison](ASSISTANT_VOICE.md). Repeating setup
-reuses verified model bytes, preserves search keys and updates the configured
-model choice. A checksum mismatch stops installation rather than overwriting
+reuses verified model bytes and preserves search keys. A checksum mismatch stops installation rather than overwriting
 unknown local files. First installation needs network access, image-build time
 and disk space; subsequent command processing is local. Models/cards live under
 `<storage.data_dir>/speech`, outside Git. Setup is not a complete transitive
@@ -54,6 +58,16 @@ lockfile: OS image tags and package dependency resolution can still change.
 `setup` without `--all` retains the lightweight text-only setup. Offline NLU
 training/embedding experiments are separate optional environments and are not
 installed by this runtime command.
+
+### Upgrade the Russian voice
+
+The managed RU voice changed from Denis to **Irina** on 2026-09-19. Stop the web
+process, update the checkout, run `setup --all`, then `web --bootstrap`. Existing
+Whisper selection is preserved; EN Alba is unchanged. The old Denis assets are
+retained locally. A hash of the voice mapping participates in the Piper container
+configuration so Compose recreates the resident worker when its voices change;
+ordinary unchanged starts do not reload it. No STT or pronunciation rules are
+changed by selecting this voice.
 
 ## Download certificates
 
@@ -156,16 +170,25 @@ and must not alter frozen speech evaluation inputs silently.
 
 [Piper](https://github.com/OHF-Voice/piper1-gpl) is GPL-3.0; its dependency license
 is distinct from the repository's MIT code. The pinned model cards identify
-[Denis data as CC0](https://huggingface.co/rhasspy/piper-voices/blob/c10ece1aade47bb51c153c893d14e5bf8e5b7117/ru/ru_RU/denis/medium/MODEL_CARD)
+[Irina data license as Unknown](https://huggingface.co/rhasspy/piper-voices/blob/c10ece1aade47bb51c153c893d14e5bf8e5b7117/ru/ru_RU/irina/medium/MODEL_CARD)
 and [Alba data as CC BY 4.0](https://huggingface.co/rhasspy/piper-voices/blob/c10ece1aade47bb51c153c893d14e5bf8e5b7117/en/en_GB/alba/medium/MODEL_CARD).
 These cards also describe fine-tuning ancestry. Dataset labels alone are not a
 blanket license conclusion for every artifact. Preserve downloaded cards and
 review engine, dependencies, model lineage and attribution before distributing
 a hardware/product image. A separate process does not remove license obligations.
 
+## Irina checkpoint, 2026-09-19
+
+The voice migration and previous-track aliases pass **339 prototype tests**.
+A real managed install preserved the existing Whisper path and produced an Irina
+response at 22,050 Hz, with matching pinned voice/config hashes and a nonsilent
+PCM payload. The explicit CLI sample was converted to 16 kHz with provenance.
+Listening preference and music-name pronunciation remain human checks; this does
+not replace or rewrite the earlier Denis sample results below.
+
 ## Validation checkpoint, 2026-09-18
 
-A clean `/tmp` configuration completed `setup --all`; both Docker healthchecks
+The initial Denis/Alba bundle in a clean `/tmp` configuration completed `setup --all`; both Docker healthchecks
 passed on macOS arm64. Real RU/EN Piper responses returned nonsilent 22,050 Hz WAV.
 A web Pause against the synthetic DISC peer was confirmed, followed by successful
 Piper WAV delivery, with exactly one device write. Browser inspection also verified Resume and `Reply played`.

@@ -88,7 +88,8 @@ For the current web runtime, use [common speech setup](ASSISTANT_TTS.md):
 
 This installs the ordinary runtime, model assets and CPU Docker services. Web
 uses Whisper Server only. Optional `--whisper-model small` selects the larger
-model; base is the default smoke-test choice. Piper supplies RU/EN replies and
+model explicitly; otherwise setup preserves an installed model and uses base only
+for a fresh configuration. Piper supplies RU/EN replies and
 sample generation; its native audio is explicitly converted to 16 kHz for saved
 STT sample files. No host CMake build is needed for the managed stack.
 

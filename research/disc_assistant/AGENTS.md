@@ -35,8 +35,10 @@ public/LAN serving, arbitrary slash commands or filesystem upload paths. Browser
 recording is bounded PCM capture, explicit stop/submit/cancel; no VAD/wake word.
 Web always uses Whisper Server; one-shot CLI can retain its configured CLI
 backend. `setup --all` installs the optional managed speech stack and pinned
-base/Denis/Alba models outside Git; `web --bootstrap` starts speech and search.
-Piper replies honor response.speak and explicit per-tab sound opt-in. Delivery
+Whisper/Irina/Alba models outside Git; `web --bootstrap` starts speech and search.
+Setup preserves an installed Whisper model unless explicitly replaced. Piper
+voice-map hashes trigger worker recreation on voice changes (Irina replaced Denis
+on 2026-09-19). Piper replies honor response.speak and explicit per-tab sound opt-in. Delivery
 failure never changes/replays a command; cache and journal preserve voice hashes.
 `voice/text.py` is the identity TTS-only preparation hook; do not add blanket
 transliteration or change frozen samples without a separate pronunciation study.

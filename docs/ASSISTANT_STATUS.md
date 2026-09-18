@@ -4,6 +4,26 @@ This is the short continuation index. [The roadmap](ASSISTANT.md) preserves
 historical decisions; [MVP acceptance](ASSISTANT_MVP.md) defines completion.
 Conversation and local experiments do not replace device evidence.
 
+## Russian voice and previous-track alias, 2026-09-19
+
+The managed RU voice is now **Piper Irina medium**, at the owner's request; EN Alba
+is unchanged. Model/config/card checksums stay pinned to the same voice repository
+revision. `setup --all` preserves an installed Whisper model unless explicitly
+replaced with `--whisper-model`; missing known base/small variants retain their
+variant, and missing custom models fail explicitly. A voice-map hash makes Compose
+recreate the resident Piper worker when voices change. Update with web stopped:
+`setup --all`, then `web --bootstrap`. Previous model assets remain on disk.
+
+Russian `прошлый` / `прошлый трек` now mean the existing guarded previous-track
+operation. Negations, compound input and music titles retain their boundaries.
+Irina's model card reports an unknown dataset license; product redistribution
+clarification remains open, as documented in the TTS guide.
+
+**339 prototype tests pass**. Real Irina synthesis returned nonsilent 22,050 Hz
+PCM (saved STT sample converted to 16 kHz) with the expected voice/config hashes.
+The isolated install retained its previous Whisper path. No physical-player
+command or subjective pronunciation-quality acceptance is claimed by this check.
+
 ## Observed Russian STT spelling, 2026-09-19
 
 The owner reports the microphone flow generally works, with better perceived

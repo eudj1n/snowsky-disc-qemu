@@ -148,9 +148,10 @@ def main(argv=None):
         if args.command == 'setup':
             setup_parser = argparse.ArgumentParser(prog='run.sh setup')
             setup_parser.add_argument('--all', action='store_true')
-            setup_parser.add_argument('--whisper-model', choices=('base', 'small'), default='base')
+            setup_parser.add_argument('--whisper-model', choices=('base', 'small'),
+                                      help='explicitly replace the STT model; otherwise preserve the configured model')
             setup_args = setup_parser.parse_args(args.arguments)
-            if not setup_args.all and '--whisper-model' in args.arguments:
+            if not setup_args.all and setup_args.whisper_model is not None:
                 raise ValueError('--whisper-model requires setup --all')
             subprocess.run([sys.executable, '-m', 'pip', 'install', '-r',
                             str(PACKAGE / 'assistant/requirements.txt')], check=True, cwd=ROOT)

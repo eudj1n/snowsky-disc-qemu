@@ -24,6 +24,9 @@ services:
       retries: 24
   piper:
     image: disc-assistant-piper:1.4.2
+    # A bind-mounted voices.json edit alone does not recreate a resident worker.
+    labels:
+      disc.assistant.voices: ${DISC_PIPER_VOICES_SHA256:-unconfigured}
     build:
       context: .
       dockerfile: piper.Dockerfile

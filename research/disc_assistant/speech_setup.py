@@ -12,7 +12,7 @@ import urllib.request
 from research.disc_assistant.assistant.config import load
 
 SERVICES = Path(__file__).parent / 'assistant/voice/services'
-VOICES = {'ru': 'ru_RU-denis-medium', 'en': 'en_GB-alba-medium'}
+VOICES = {'ru': 'ru_RU-irina-medium', 'en': 'en_GB-alba-medium'}
 
 
 def download_context():
@@ -74,25 +74,41 @@ def compose(*args):
 
 def environment(config):
     root = config.data_dir / 'speech'
+    voices = root / 'piper/voices.json'
     return {**os.environ, 'DISC_WHISPER_MODEL': str(Path(config.speech.get('model', root / 'ggml-base.bin')).expanduser()),
-            'DISC_PIPER_DIR': str(root / 'piper')}
+            'DISC_PIPER_DIR': str(root / 'piper'),
+            'DISC_PIPER_VOICES_SHA256': sha256(voices) if voices.is_file() else 'unconfigured'}
 
 
-def install(config_path, *, model='base'):
+def selected_whisper(config, model):
+    """An omitted model option preserves an installed model, including custom builds."""
+    if model is None and config.speech.get('model'):
+        installed = Path(config.speech['model']).expanduser()
+        if installed.is_file():
+            return installed, None
+        known = {'ggml-base.bin': 'base', 'ggml-small.bin': 'small'}
+        model = known.get(installed.name)
+        if model is None:
+            raise ValueError('Configured Whisper model is missing; restore it or explicitly choose --whisper-model base|small')
+    model = model or 'base'
     if model not in ('base', 'small'):
         raise ValueError('choose multilingual base or small')
+    return config.data_dir / 'speech' / f'ggml-{model}.bin', f'ggml-{model}.bin'
+
+
+def install(config_path, *, model=None):
     import tomlkit
     config = load(config_path)
+    whisper_path, whisper_download = selected_whisper(config, model)
     subprocess.run(['docker', 'info'], check=True, stdout=subprocess.DEVNULL, timeout=30)
     root = config.data_dir / 'speech'
     root.mkdir(parents=True, exist_ok=True)
     for entry in json.loads((SERVICES / 'models.json').read_text()):
-        if entry['file'].startswith('piper/') or entry['file'] == f'ggml-{model}.bin':
+        if entry['file'].startswith('piper/') or entry['file'] == whisper_download:
             download(entry, root)
     voices = {locale: '/models/' + name + '.onnx' for locale, name in VOICES.items()}
-    (root / 'piper/voices.json').write_text(json.dumps(voices, indent=2) + '\n')
     # Build before updating the user's configuration. No service/device is started here.
-    env = {**os.environ, 'DISC_WHISPER_MODEL': str(root / f'ggml-{model}.bin'), 'DISC_PIPER_DIR': str(root / 'piper')}
+    env = {**os.environ, 'DISC_WHISPER_MODEL': str(whisper_path), 'DISC_PIPER_DIR': str(root / 'piper')}
     subprocess.run(compose('build'), check=True, env=env)
     from research.disc_assistant.launcher import compose_command, environment as search_environment
     subprocess.run(compose_command('pull', 'typesense'), check=True, env=search_environment(config))
@@ -102,7 +118,7 @@ def install(config_path, *, model='base'):
         if section not in document:
             document[section] = tomlkit.table()
     document['speech'].update(backend='server', server_url='http://127.0.0.1:18119/inference',
-                              model=str(root / f'ggml-{model}.bin'))
+                              model=str(whisper_path))
     document['tts'].update(backend='piper', server_url='http://127.0.0.1:18121/synthesize', timeout=30)
     document['tts']['models'] = {locale: str(root / 'piper' / (voice + '.onnx')) for locale, voice in VOICES.items()}
     document['services']['speech'] = True
@@ -120,7 +136,15 @@ def install(config_path, *, model='base'):
         finally:
             temporary.unlink(missing_ok=True)
         print(f'Original config preserved: {backup}')
-    print('Speech installed: Whisper Server + Piper (RU Denis / EN Alba).')
+    voice_path = root / 'piper/voices.json'
+    temporary = voice_path.with_name('voices.json.part-' + secrets.token_hex(6))
+    try:
+        temporary.write_text(json.dumps(voices, indent=2) + '\n')
+        temporary.replace(voice_path)
+    finally:
+        temporary.unlink(missing_ok=True)
+    print(f'Whisper model: {whisper_path}')
+    print('Speech installed: Whisper Server + Piper (RU Irina / EN Alba).')
     print('Start everything: run.sh web --bootstrap. Models and licenses stay outside Git.')
 
 
