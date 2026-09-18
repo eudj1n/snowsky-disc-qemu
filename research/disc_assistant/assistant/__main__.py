@@ -95,6 +95,8 @@ def main(argv=None, *, interpreter=None, transcriber=None, synthesizer=None):
     samples.add_argument('--corpus')
     check = sub.add_parser('speech-check', help='evaluate generated samples without device access or preference changes')
     check.add_argument('directory')
+    check.add_argument('--catalog', action='store_true', help='evaluate best matches against the current catalog without execution')
+    check.add_argument('--expectations', help='explicit selection targets for saved samples (requires --catalog)')
     for name, help_text in [('rank', 'explain ranked candidates without playback'),
                             ('ask', 'play the best match or control current playback')]:
         command = sub.add_parser(name, help=help_text)

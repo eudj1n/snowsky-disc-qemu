@@ -8,7 +8,7 @@ See the [prototype guide](../README.md) for commands and limitations.
 - `store.py`: SQLite schema 1, snapshot-scoped internal IDs, literal source
   observations, atomic snapshot/index publication and concurrent-import guards.
 - `search/typesense.py`: official async SDK adapter, versioned search projection,
-  title/artist/album/explicit aliases, per-document import checks, matched-field
+  title/artist/album/explicit and projected spellings, per-document import checks, matched-field
   evidence and stale-index rejection.
 - `tests/`: synthetic fixtures and firmware-free component tests.
 
@@ -43,3 +43,10 @@ Common recording labels also remain explicit query constraints across locales:
 `Включи Linkin Park — Numb live` requires a live edition even in Russian mode.
 Locale-specific version phrases extend those shared labels. A missing requested
 edition is not silently replaced with a studio recording.
+
+Search spelling projection lives in `transliteration.toml` and `transliteration.py`.
+The current table folds Cyrillic to Latin for matching; it does not assert phonetic
+or ISO transliteration equivalence. Exact source metadata is unchanged. The table
+fingerprint participates in schema-v2 index signatures. After changing it, restart
+the process and rebuild the index; add paired spelling/collision tests before
+extending the table. This Library utility has no dependency on command locales.

@@ -765,3 +765,33 @@ language-switch case in each locale; both retain music-name/reference mismatches
 This is one sequential pass, not a controlled latency or human-speech benchmark.
 See the [comparison evidence and interpretation limits](ASSISTANT_VOICE.md#recorded-acceptance).
 No runtime code, user configuration or physical-player state changed.
+
+## Catalog speech evaluation and matching increment, 2026-09-18
+
+Implemented `speech-check --catalog` with explicit expected selections and separate
+transcription, interpretation and selection outcomes. It pins one catalog/index
+and performs no device operations. Existing sample manifests accept a separate
+expectation overlay; bundled new corpora include synthetic target metadata.
+
+Lexical-v3 adds data-defined Cyrillic transliteration, catalog-backed fuzzy artist
+boundaries and conservative recovery of fused artist/title spellings. Literal
+names outrank aliases/projected spellings. The projection covers artist/title/album
+spellings and fingerprints the table. Rebuild using `/index` once after upgrading;
+no catalog rescan is needed solely for this change. STT transcripts are preserved.
+See [commands](ASSISTANT_COMMANDS.md) and [evaluation](ASSISTANT_VOICE.md#catalog-selection-evaluation).
+
+At the owner's request, the next language-understanding work now compares intent
+embeddings, phonetic/name matching, Typesense hybrid and Natural Language Search,
+and a small trained intent classifier. This comparison moves ahead of microphone
+work; optional semantic retrieval no longer waits for lyrics enrichment in M5.
+[The research plan](ASSISTANT_NLU_RESEARCH.md) defines provider boundaries,
+held-out evaluation, rejection, model/snapshot provenance and deployment criteria.
+These model-backed approaches are planned, not enabled. Hand-authored aliases
+remain an optional baseline, not the assumed final solution.
+
+Validation: 224 prototype tests and disposable real Typesense/synthetic-device
+acceptance pass. Fixed music samples give 0/8 correct selections for archived
+lexical-v2, 2/8 for lexical-v3 without aliases, and 7/8 with aliases tuned to these
+observations. Those eight decisions reuse four WAVs across base/small and a
+seven-row synthetic catalog; they do not establish generalization. See the
+[recorded catalog comparison](ASSISTANT_VOICE.md#recorded-catalog-comparison).

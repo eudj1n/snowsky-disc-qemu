@@ -29,6 +29,9 @@ class SearchTests(unittest.IsolatedAsyncioTestCase):
         docs = self.collection.documents.import_.call_args.args[0]
         self.assertEqual(docs[0]['artist_aliases'], ['линкин парк'])
         self.assertEqual(docs[0]['title'], 'Numb')
+        self.assertEqual(docs[4]['title_aliases'], ['tishina'])
+        self.assertEqual(docs[4]['artist_aliases'], ['artist e'])
+        self.assertEqual(docs[4]['album_aliases'], ['albom'])
         self.assertEqual(head['generation'], head['index_generation'])
         self.collection.delete.assert_not_called()
 

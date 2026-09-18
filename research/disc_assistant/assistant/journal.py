@@ -16,6 +16,7 @@ from research.disc_assistant.assistant.database import connect
 from research.disc_assistant.assistant.languages import load_languages, normalized
 from research.disc_assistant.library.store import StaleSnapshot
 from research.disc_assistant.library.versions import metadata_markers
+from research.disc_assistant.library.transliteration import fingerprint as transliteration_fingerprint
 from research.disc_assistant.assistant.responses import Responses
 from research.disc_assistant.assistant.providers import ProviderUnavailable, InvalidProviderResult
 from research.disc_assistant.assistant.interpreter import UnsupportedCommand
@@ -87,7 +88,7 @@ def outcome(result):
             'outcome', 'state', 'fresh_position', 'metadata_equivalent_rows', 'assistant_continuation',
             'device_stop_semantics', 'enabled', 'source', 'reused', 'generation', 'index_generation',
             'track_count', 'locale', 'mode', 'error_type', 'requested', 'previous', 'confirmation', 'response', 'timing',
-            'passed', 'total', 'sample_count') if k in result}
+            'passed', 'total', 'sample_count', 'selection_passed', 'selection_total', 'interpretation_passed') if k in result}
     if result.get('status') in ('not_sent', 'uncertain'):
         safe['failure_category'] = result['status']
     if 'mode_change' in result:
@@ -173,6 +174,7 @@ class Trace:
             self.journal.prune()
             rules = asdict(load_languages((self.config.locale,)))
             context = {'locale': self.config.locale, 'command_rules_version': 'literal-v2',
+                       'matching_policy': 'lexical-v3', 'transliteration_sha256': transliteration_fingerprint(),
                        'language_rules_sha256': hashlib.sha256(json.dumps(rules, sort_keys=True).encode()).hexdigest(),
                        'metadata_markers_sha256': hashlib.sha256(json.dumps(metadata_markers().phrases).encode()).hexdigest(),
                        'selection_policy': 'automatic-best-match', 'continuous_context': self.config.continuous_context,

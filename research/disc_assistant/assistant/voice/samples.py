@@ -11,6 +11,7 @@ from research.disc_assistant.assistant.speech import InvalidSpeech, NoSpeech, Sp
 from research.disc_assistant.assistant.voice.backends import transcribe_file, synthesize_text
 from research.disc_assistant.assistant.voice.files import audio_details, load_audio, resolve_path
 from research.disc_assistant.assistant.languages import normalized
+from research.disc_assistant.assistant.voice.catalog_evaluation import CatalogEvaluation, music_case, validate_targets
 
 CORPORA = Path(__file__).parent / 'samples'
 
@@ -113,8 +114,26 @@ async def speech_command(config, args, trace, *, transcriber=None, synthesizer=N
     cases = validate_cases(manifest, config.locale)
     if manifest.get('status') != 'complete':
         raise ValueError('sample generation is incomplete; generate into a new directory')
+    if getattr(args, 'catalog', False):
+        overlay = read_json(resolve_path(args.expectations)) if args.expectations else None
+        targets = validate_targets(cases, overlay, config.locale)
+        async with CatalogEvaluation(config, targets, trace) as catalog:
+            result = await evaluate(config, directory, cases, trace, transcriber, interpreter, catalog)
+            catalog.verify()
+            result['catalog'] = {key: catalog.head[key] for key in
+                                 ('generation', 'index_generation', 'index_signature', 'track_count')}
+            result['scope'] = 'catalog selection preview; no device access or command execution'
+            return result
+    if getattr(args, 'expectations', None):
+        raise ValueError('--expectations requires --catalog')
+    return await evaluate(config, directory, cases, trace, transcriber, interpreter)
+
+
+async def evaluate(config, directory, cases, trace, transcriber, interpreter, catalog=None):
     results = []
     for case in cases:
+        if catalog is not None:
+            catalog.verify()
         if case.get('file') != case['id'] + '.wav':
             raise ValueError('invalid sample filename')
         audio = load_audio(directory / case['file'], max_seconds=config.speech.get('max_seconds', 30))
@@ -124,13 +143,24 @@ async def speech_command(config, args, trace, *, transcriber=None, synthesizer=N
         try:
             transcript = await transcribe_file(config, directory / case['file'], trace, provider=transcriber)
             actual = await interpretation(transcript['command_text'], config, trace, interpreter)
-            results.append({'id': case['id'], 'passed': comparable(actual) == comparable(case['expected']),
+            matched = comparable(actual) == comparable(case['expected'])
+            row = {'id': case['id'], 'passed': matched, 'interpretation_match': matched,
+                            'transcription_match': comparable(transcript['command_text']) == comparable(case['text']),
                             'text': transcript['text'], 'expected': case['expected'], 'actual': actual,
-                            'transcription_ms': transcript['transcription_ms']})
+                            'transcription_ms': transcript['transcription_ms'],
+                            'failed_stage': None if matched else 'interpretation'}
+            if catalog is not None and music_case(case):
+                row.update(await catalog.evaluate(case, actual))
+            results.append(row)
         except (NoSpeech, InvalidSpeech, SpeechUnavailable) as exc:
-            results.append({'id': case['id'], 'passed': False, 'error_type': type(exc).__name__})
+            results.append({'id': case['id'], 'passed': False, 'failed_stage': 'transcription',
+                            'error_type': type(exc).__name__})
         trace.event('sample_result', results[-1])
     passed = sum(row['passed'] for row in results)
+    music_ids = {case['id'] for case in cases if music_case(case)}
     return {'status': 'evaluated' if passed == len(results) else 'evaluation_failed',
             'passed': passed, 'total': len(results), 'cases': results,
+            'interpretation_passed': sum(row.get('interpretation_match', False) for row in results),
+            'selection_passed': sum(row['passed'] for row in results if row['id'] in music_ids) if catalog else None,
+            'selection_total': len(music_ids) if catalog else None,
             'scope': 'interpretation only; no catalog lookup, settings changes or device access'}

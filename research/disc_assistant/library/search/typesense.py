@@ -4,13 +4,14 @@ import json
 from uuid import uuid4
 
 from research.disc_assistant.library.store import StaleSnapshot
+from research.disc_assistant.library.transliteration import projected_aliases, fingerprint
 
-SCHEMA_VERSION = 1
-FIELDS = ['title', 'artist', 'album', 'title_aliases', 'artist_aliases']
+SCHEMA_VERSION = 2
+FIELDS = ['title', 'artist', 'album', 'title_aliases', 'artist_aliases', 'album_aliases']
 
 
 def signature(aliases, server):
-    value = json.dumps([SCHEMA_VERSION, aliases, server], sort_keys=True, ensure_ascii=False)
+    value = json.dumps([SCHEMA_VERSION, fingerprint(), aliases, server], sort_keys=True, ensure_ascii=False)
     return hashlib.sha256(value.encode()).hexdigest()
 
 
@@ -37,8 +38,9 @@ class Search:
             raise ValueError('no catalog snapshot; run sync first')
         documents = store.documents(generation)
         for doc in documents:
-            doc['artist_aliases'] = self.aliases.get('artists', {}).get(doc['artist'], [])
-            doc['title_aliases'] = self.aliases.get('titles', {}).get(doc['title'], [])
+            doc['album_aliases'] = projected_aliases(doc['album'], [])
+            doc['artist_aliases'] = projected_aliases(doc['artist'], self.aliases.get('artists', {}).get(doc['artist'], []))
+            doc['title_aliases'] = projected_aliases(doc['title'], self.aliases.get('titles', {}).get(doc['title'], []))
         # Random per attempt: no in-place updates and no exposed partial collections.
         name = 'disc_prototype_' + uuid4().hex
         collection = self.client.collections[name]
@@ -74,7 +76,7 @@ class Search:
         fields = list(fields) if fields is not None else FIELDS
         if not fields or any(field not in FIELDS for field in fields):
             raise ValueError('unsupported search fields')
-        weights = dict(zip(FIELDS, (6, 5, 2, 4, 3)))
+        weights = dict(zip(FIELDS, (6, 5, 2, 4, 3, 1)))
         head = store.verify_index(device, self.signature)
         reply = await self.client.collections[head['collection']].documents.search({
             'q': query.strip(), 'query_by': ','.join(fields), 'query_by_weights': ','.join(str(weights[f]) for f in fields),

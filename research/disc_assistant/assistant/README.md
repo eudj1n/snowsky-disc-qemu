@@ -11,7 +11,7 @@ See the [prototype guide](../README.md) for setup, commands and acceptance, and 
 | `preferences.py` | Versioned Assistant SQLite settings; one persistent locale and speech policy with atomic legacy migration, override/reset and effective configuration |
 | `config.py`, `config.example.toml` | Explicit device/search/storage configuration and aliases |
 | `interpreter.py`, `intents.py` | Replaceable text/context interpretation, literal grammar and validated intentions |
-| `resolver.py`, `ranking.py` | Catalog name resolution and explained ranking of interpreted music requests |
+| `resolver.py`, `matching.py`, `ranking.py` | Catalog name resolution and explained ranking of interpreted music requests |
 | `providers.py`, `speech.py` | Provider identity and independent asynchronous STT/TTS/capture/output contracts |
 | `responses.py`, `locales/replies/*.toml` | Shared localized feedback, speech policy, template validation and reserved dialogue contract |
 | `languages.py`, `locales/*.toml` | Validated language dictionaries; one active command/target/version dictionary and language-switch aliases |
@@ -24,7 +24,7 @@ See the [prototype guide](../README.md) for setup, commands and acceptance, and 
 | `terminal.py` | `prompt_toolkit` editing, journal-backed recall, language-aware completion, configurable colors and screen clearing |
 | `requirements.txt` | Python runtime pins: official Typesense async SDK, aiohttp and prompt_toolkit |
 | `compose.yaml`, `.env.example` | Independent local Typesense service |
-| `voice/` | Bounded WAV input, local whisper.cpp STT and macOS say TTS, synthetic corpora and interpretation evaluation |
+| `voice/` | Bounded WAV input, local whisper.cpp STT and macOS say TTS, synthetic corpora and interpretation/catalog-selection evaluation |
 | `tests/` | Configuration, CLI and session tests |
 
 The application asks [library](../library/README.md) for persistence/search and

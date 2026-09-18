@@ -174,7 +174,7 @@ page_size = 2
                 print('PASS: controller transports -> paginated import -> SQLite -> SDK index', flush=True)
                 queries = [('Numb', 3), ('Linkin Park Numb', 2), ('Linkn Park Numb', 2),
                            ('линкин парк намб', 2), ('Meteora Numb', 1), ('Тишина', 1),
-                           ('Cue entry', 2), ('Linkin Park DefinitelyMissing', 0)]
+                           ('Cue entry', 2), ('tishina', 1), ('albom tishina', 1), ('Linkin Park DefinitelyMissing', 0)]
                 for query, expected in queries:
                     found = cli('search', query)
                     assert found['found'] == expected, (query, found)

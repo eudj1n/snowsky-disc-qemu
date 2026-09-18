@@ -1,15 +1,14 @@
 """Deterministic lexical ranking. No invented history, likes or confidence values."""
-from difflib import SequenceMatcher
 import re
+from dataclasses import asdict
 
 from research.disc_assistant.assistant.intents import Intent, normalized, names
 from research.disc_assistant.assistant.languages import load_languages
 from research.disc_assistant.library.store import StaleSnapshot
 from research.disc_assistant.library.versions import with_query_markers
 from research.disc_assistant.assistant.resolver import infer
-
-def words(value):
-    return re.findall(r'[^\W_]+', normalized(value))
+from research.disc_assistant.assistant.matching import similarity, words, exact_name, strong_match
+from research.disc_assistant.library.transliteration import fold
 
 
 def versions(value, rules):
@@ -27,20 +26,6 @@ def base_title(value, rules):
     if len(parts) == 2 and versions(parts[1], rules):
         value = parts[0]
     return ' '.join(value.split())
-
-
-def similarity(query, canonical, aliases=()):
-    q = ' '.join(words(query))
-    best = (0.0, 'none')
-    for value, label in [(canonical, 'literal'), *((a, 'alias') for a in aliases)]:
-        candidate = ' '.join(words(value))
-        if not q or not candidate:
-            continue
-        score = 1.0 if q == candidate else SequenceMatcher(None, q, candidate, autojunk=False).ratio()
-        if score > best[0]:
-            best = (score, label if score == 1 else 'fuzzy_' + label)
-    return best
-
 
 
 def score_tracks(intent, documents, aliases, rules=None):
@@ -115,12 +100,15 @@ async def rank(config, store, search, intent, *, trace=None):
                                       'artist_count': len({d['artist'] for d in documents})})
     intent = infer(intent, documents, config.aliases)
     if trace:
-        from dataclasses import asdict
         trace.event('intent_resolved', asdict(intent))
     if intent.artist is not None:
-        known = {d['artist'] for d in documents if normalized(intent.artist)
-                 in names(d['artist'], config.aliases.get('artists', {}))}
+        known = {d['artist'] for d in documents if exact_name(intent.artist, d['artist'],
+                 config.aliases.get('artists', {}).get(d['artist'], []))}
         if known:
+            # A literal canonical name wins over an alias shared with another artist.
+            strengths = {artist: similarity(intent.artist, artist,
+                         config.aliases.get('artists', {}).get(artist, []))[0] for artist in known}
+            known = {artist for artist in known if strengths[artist] == max(strengths.values())}
             documents = [d for d in documents if d['artist'] in known]
     else:
         known = set()
@@ -139,8 +127,8 @@ async def rank(config, store, search, intent, *, trace=None):
         # Exact/base-title/alias matches across the whole SQLite snapshot are not
         # subject to the search engine's top-k limit. Fuzzy retrieval is bounded.
         exact = [r for r in score_tracks(intent, documents, config.aliases, rules)
-                 if r['evidence']['title_similarity'] == 1 and
-                 (intent.artist is None or r['evidence']['artist_similarity'] == 1)]
+                 if strong_match(r['evidence']['title_match']) and
+                 (intent.artist is None or strong_match(r['evidence']['artist_match']))]
         if trace:
             trace.event('local_track_matches', {'exact_track_count': len(exact),
                                                'typesense_needed': not bool(exact)})
@@ -148,10 +136,11 @@ async def rank(config, store, search, intent, *, trace=None):
             candidates.extend(exact)
         else:
             query = (intent.artist + ' ' + intent.title) if intent.artist is not None else intent.query
+            query = fold(query)
             if trace:
                 trace.event('search_query', {'query': query, 'limit': 50})
             response = await search.search(store, config.device_key, query, limit=50,
-                                           fields=('title', 'artist', 'title_aliases', 'artist_aliases', 'album'))
+                                           fields=('title', 'artist', 'title_aliases', 'artist_aliases', 'album', 'album_aliases'))
             if trace:
                 trace.search(response, phase='retrieval')
             if response['generation'] != head['generation']:
@@ -169,7 +158,7 @@ async def rank(config, store, search, intent, *, trace=None):
         raise StaleSnapshot('catalog or index changed during ranking; repeat the command')
     candidates = ordered(candidates)
     return {'status': 'ranked' if candidates else 'not_found', 'query': intent.query,
-            'intent': intent.kind, 'generation': head['generation'], 'device': config.device_key,
+            'intent': intent.kind, 'resolved_intent': asdict(intent), 'generation': head['generation'], 'device': config.device_key,
             'retrieval': retrieval, 'candidates': candidates[:10],
             'candidate_count': len(candidates), 'candidates_truncated': len(candidates) > 10,
-            'ranking_policy': 'lexical-v2; scores are not probabilities; no history/likes'}
+            'ranking_policy': 'lexical-v3; scores are not probabilities; no history/likes'}

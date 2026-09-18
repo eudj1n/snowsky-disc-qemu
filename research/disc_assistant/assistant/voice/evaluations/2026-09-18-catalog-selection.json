@@ -1,0 +1,1237 @@
+{
+  "date": "2026-09-18",
+  "scope": "Synthetic seven-row catalog; no device access; identical existing WAVs",
+  "methodology": "One native STT pass per model/locale without aliases, then replay those same transcripts for all ranking variants. Alias-tuned results are in-sample diagnostics, not generalization. Strict interpretation/reference agreement is reported separately.",
+  "baseline_commit": "744490e",
+  "catalog": [
+    {
+      "title": "Numb",
+      "artist": "Linkin Park",
+      "album": "Meteora",
+      "ordinal": 0
+    },
+    {
+      "title": "Numb",
+      "artist": "Linkin Park",
+      "album": "Live",
+      "ordinal": 1
+    },
+    {
+      "title": "Numb",
+      "artist": "Other Artist",
+      "album": "Other Album",
+      "ordinal": 2
+    },
+    {
+      "title": "In the End",
+      "artist": "Linkin Park",
+      "album": "Hybrid Theory",
+      "ordinal": 3
+    },
+    {
+      "title": "Тишина",
+      "artist": "Артист Ё",
+      "album": "Альбом",
+      "ordinal": 4
+    },
+    {
+      "title": "Cue entry",
+      "artist": "Cue Artist",
+      "album": "Cue Album",
+      "ordinal": 5
+    },
+    {
+      "title": "Cue entry",
+      "artist": "Cue Artist",
+      "album": "Cue Album",
+      "ordinal": 6
+    }
+  ],
+  "native_runs": [
+    {
+      "model": "base",
+      "model_sha256": "60ed5bc3dd14eea856493d334349b405782ddcaf0028d4b5df4088345fba2efe",
+      "locale": "ru",
+      "passed": 4,
+      "total": 6,
+      "selection_passed": 1,
+      "selection_total": 2,
+      "interpretation_passed": 3,
+      "cases": [
+        {
+          "id": "pause",
+          "passed": true,
+          "interpretation_match": true,
+          "transcription_match": true,
+          "text": "Пауза.",
+          "expected": {
+            "status": "recognized",
+            "intent": {
+              "action": "pause"
+            }
+          },
+          "actual": {
+            "status": "recognized",
+            "intent": {
+              "action": "pause"
+            }
+          },
+          "transcription_ms": 465.453,
+          "failed_stage": null,
+          "audio_sha256": "5ebc7df7c59c76ebe094401c61c634f481b3677b143d5a3d8f5c2e5d34899412"
+        },
+        {
+          "id": "next",
+          "passed": true,
+          "interpretation_match": true,
+          "transcription_match": true,
+          "text": "Следующий трек.",
+          "expected": {
+            "status": "recognized",
+            "intent": {
+              "action": "next"
+            }
+          },
+          "actual": {
+            "status": "recognized",
+            "intent": {
+              "action": "next"
+            }
+          },
+          "transcription_ms": 327.0,
+          "failed_stage": null,
+          "audio_sha256": "326f037cae4516b66bcaad4be7efa918afd8616c8c12e53bb475f6594a241e05"
+        },
+        {
+          "id": "artist",
+          "passed": true,
+          "interpretation_match": false,
+          "transcription_match": false,
+          "text": "включи лингин парк",
+          "expected": {
+            "status": "recognized",
+            "intent": {
+              "query": "Linkin Park",
+              "kind": "auto",
+              "artist": null,
+              "title": null
+            }
+          },
+          "actual": {
+            "status": "recognized",
+            "intent": {
+              "query": "лингин парк",
+              "kind": "auto",
+              "artist": null,
+              "title": null
+            }
+          },
+          "transcription_ms": 348.897,
+          "failed_stage": null,
+          "selection": {
+            "kind": "artist",
+            "artist": "Linkin Park",
+            "score": 89.0909,
+            "evidence": {
+              "artist_similarity": 0.8909,
+              "artist_match": "fuzzy_transliterated_literal"
+            }
+          },
+          "expected_selection": {
+            "kind": "artist",
+            "artist": "Linkin Park"
+          },
+          "retrieval": {
+            "source": "typesense",
+            "found": 3,
+            "truncated": false
+          },
+          "candidate_count": 3,
+          "ranking_policy": "lexical-v3; scores are not probabilities; no history/likes",
+          "search_ranking_ms": 26.041,
+          "audio_sha256": "8b0cd0cc5b92f58637a97f88d5de94e32ee87f7ca8e40575137811651d553ef9"
+        },
+        {
+          "id": "track",
+          "passed": false,
+          "interpretation_match": false,
+          "transcription_match": false,
+          "text": "включи лингин парбнамп",
+          "expected": {
+            "status": "recognized",
+            "intent": {
+              "query": "Linkin Park Numb",
+              "kind": "auto",
+              "artist": null,
+              "title": null
+            }
+          },
+          "actual": {
+            "status": "recognized",
+            "intent": {
+              "query": "лингин парбнамп",
+              "kind": "auto",
+              "artist": null,
+              "title": null
+            }
+          },
+          "transcription_ms": 361.237,
+          "failed_stage": "retrieval",
+          "selection": null,
+          "expected_selection": {
+            "kind": "track",
+            "artist": "Linkin Park",
+            "title": "Numb",
+            "album": "Meteora"
+          },
+          "retrieval": {
+            "source": "typesense",
+            "found": 0,
+            "truncated": false
+          },
+          "candidate_count": 0,
+          "ranking_policy": "lexical-v3; scores are not probabilities; no history/likes",
+          "search_ranking_ms": 9.701,
+          "audio_sha256": "a7aa7a2e6121ae3ac275ea61dc350cb2c55b6f101f3ac79f381b81aa663894d8"
+        },
+        {
+          "id": "language",
+          "passed": false,
+          "interpretation_match": false,
+          "transcription_match": false,
+          "text": "переключи из Зыкна английский.",
+          "expected": {
+            "status": "recognized",
+            "intent": {
+              "locale": "en"
+            }
+          },
+          "actual": {
+            "status": "unrecognized"
+          },
+          "transcription_ms": 366.445,
+          "failed_stage": "interpretation",
+          "audio_sha256": "4aa685909e9f215c655bc49f3c4deeee47dc87f3b91c8c7671250d068b3b48cf"
+        },
+        {
+          "id": "other",
+          "passed": true,
+          "interpretation_match": true,
+          "transcription_match": true,
+          "text": "Сегодня хорошая погода.",
+          "expected": {
+            "status": "unrecognized"
+          },
+          "actual": {
+            "status": "unrecognized"
+          },
+          "transcription_ms": 327.884,
+          "failed_stage": null,
+          "audio_sha256": "29596a04789b7be2c3641aa09959664830b645f9f9525b475bf844a42d2614a3"
+        }
+      ]
+    },
+    {
+      "model": "base",
+      "model_sha256": "60ed5bc3dd14eea856493d334349b405782ddcaf0028d4b5df4088345fba2efe",
+      "locale": "en",
+      "passed": 3,
+      "total": 6,
+      "selection_passed": 0,
+      "selection_total": 2,
+      "interpretation_passed": 3,
+      "cases": [
+        {
+          "id": "pause",
+          "passed": false,
+          "interpretation_match": false,
+          "transcription_match": false,
+          "text": "cause.",
+          "expected": {
+            "status": "recognized",
+            "intent": {
+              "action": "pause"
+            }
+          },
+          "actual": {
+            "status": "unrecognized"
+          },
+          "transcription_ms": 373.225,
+          "failed_stage": "interpretation",
+          "audio_sha256": "7e4866fcb8aa99c9db38193c9d9a27dd27d081ec78d7a3d13af55d8171f890dc"
+        },
+        {
+          "id": "next",
+          "passed": true,
+          "interpretation_match": true,
+          "transcription_match": true,
+          "text": "Next track.",
+          "expected": {
+            "status": "recognized",
+            "intent": {
+              "action": "next"
+            }
+          },
+          "actual": {
+            "status": "recognized",
+            "intent": {
+              "action": "next"
+            }
+          },
+          "transcription_ms": 310.255,
+          "failed_stage": null,
+          "audio_sha256": "ac5e5f44260c911e9ac7aafb2a1ae3c9444765ef2b247b92dea138c72378c315"
+        },
+        {
+          "id": "artist",
+          "passed": false,
+          "interpretation_match": false,
+          "transcription_match": false,
+          "text": "Play Lincoln Park.",
+          "expected": {
+            "status": "recognized",
+            "intent": {
+              "query": "Linkin Park",
+              "kind": "auto",
+              "artist": null,
+              "title": null
+            }
+          },
+          "actual": {
+            "status": "recognized",
+            "intent": {
+              "query": "Lincoln Park",
+              "kind": "auto",
+              "artist": null,
+              "title": null
+            }
+          },
+          "transcription_ms": 317.395,
+          "failed_stage": "retrieval",
+          "selection": null,
+          "expected_selection": {
+            "kind": "artist",
+            "artist": "Linkin Park"
+          },
+          "retrieval": {
+            "source": "typesense",
+            "found": 0,
+            "truncated": false
+          },
+          "candidate_count": 0,
+          "ranking_policy": "lexical-v3; scores are not probabilities; no history/likes",
+          "search_ranking_ms": 22.16,
+          "audio_sha256": "6a34de297c24ca94ce712439cb51f70220abf4c98641a3b65f0a20441051abc2"
+        },
+        {
+          "id": "track",
+          "passed": false,
+          "interpretation_match": false,
+          "transcription_match": false,
+          "text": "Play Lincoln Park NOM.",
+          "expected": {
+            "status": "recognized",
+            "intent": {
+              "query": "Linkin Park Numb",
+              "kind": "auto",
+              "artist": null,
+              "title": null
+            }
+          },
+          "actual": {
+            "status": "recognized",
+            "intent": {
+              "query": "Lincoln Park NOM",
+              "kind": "auto",
+              "artist": null,
+              "title": null
+            }
+          },
+          "transcription_ms": 327.233,
+          "failed_stage": "retrieval",
+          "selection": null,
+          "expected_selection": {
+            "kind": "track",
+            "artist": "Linkin Park",
+            "title": "Numb",
+            "album": "Meteora"
+          },
+          "retrieval": {
+            "source": "typesense",
+            "found": 0,
+            "truncated": false
+          },
+          "candidate_count": 0,
+          "ranking_policy": "lexical-v3; scores are not probabilities; no history/likes",
+          "search_ranking_ms": 13.928,
+          "audio_sha256": "a3d521e8376cb3c544c67d3842bf3f9884eb506551f2dfe7d8e81fa56d0b7364"
+        },
+        {
+          "id": "language",
+          "passed": true,
+          "interpretation_match": true,
+          "transcription_match": true,
+          "text": "Switch Language to Russian.",
+          "expected": {
+            "status": "recognized",
+            "intent": {
+              "locale": "ru"
+            }
+          },
+          "actual": {
+            "status": "recognized",
+            "intent": {
+              "locale": "ru"
+            }
+          },
+          "transcription_ms": 313.554,
+          "failed_stage": null,
+          "audio_sha256": "264c85bdf5143d5e3136d4d3dce04a4ee0402575bfed86dc77267e041e22808d"
+        },
+        {
+          "id": "other",
+          "passed": true,
+          "interpretation_match": true,
+          "transcription_match": true,
+          "text": "The weather is nice today.",
+          "expected": {
+            "status": "unrecognized"
+          },
+          "actual": {
+            "status": "unrecognized"
+          },
+          "transcription_ms": 320.308,
+          "failed_stage": null,
+          "audio_sha256": "311b24e19ea9c820b909c8cd7f791e52c88f2ba7d735d3767490e39e7bb65566"
+        }
+      ]
+    },
+    {
+      "model": "small",
+      "model_sha256": "1be3a9b2063867b937e64e2ec7483364a79917e157fa98c5d94b5c1fffea987b",
+      "locale": "ru",
+      "passed": 5,
+      "total": 6,
+      "selection_passed": 1,
+      "selection_total": 2,
+      "interpretation_passed": 4,
+      "cases": [
+        {
+          "id": "pause",
+          "passed": true,
+          "interpretation_match": true,
+          "transcription_match": true,
+          "text": "Пауза!",
+          "expected": {
+            "status": "recognized",
+            "intent": {
+              "action": "pause"
+            }
+          },
+          "actual": {
+            "status": "recognized",
+            "intent": {
+              "action": "pause"
+            }
+          },
+          "transcription_ms": 1303.158,
+          "failed_stage": null,
+          "audio_sha256": "5ebc7df7c59c76ebe094401c61c634f481b3677b143d5a3d8f5c2e5d34899412"
+        },
+        {
+          "id": "next",
+          "passed": true,
+          "interpretation_match": true,
+          "transcription_match": true,
+          "text": "Следующий трек.",
+          "expected": {
+            "status": "recognized",
+            "intent": {
+              "action": "next"
+            }
+          },
+          "actual": {
+            "status": "recognized",
+            "intent": {
+              "action": "next"
+            }
+          },
+          "transcription_ms": 960.478,
+          "failed_stage": null,
+          "audio_sha256": "326f037cae4516b66bcaad4be7efa918afd8616c8c12e53bb475f6594a241e05"
+        },
+        {
+          "id": "artist",
+          "passed": true,
+          "interpretation_match": false,
+          "transcription_match": false,
+          "text": "Включи Линкин Парк.",
+          "expected": {
+            "status": "recognized",
+            "intent": {
+              "query": "Linkin Park",
+              "kind": "auto",
+              "artist": null,
+              "title": null
+            }
+          },
+          "actual": {
+            "status": "recognized",
+            "intent": {
+              "query": "Линкин Парк",
+              "kind": "auto",
+              "artist": null,
+              "title": null
+            }
+          },
+          "transcription_ms": 1026.023,
+          "failed_stage": null,
+          "selection": {
+            "kind": "artist",
+            "artist": "Linkin Park",
+            "score": 98.0,
+            "evidence": {
+              "artist_similarity": 0.98,
+              "artist_match": "transliterated_literal"
+            }
+          },
+          "expected_selection": {
+            "kind": "artist",
+            "artist": "Linkin Park"
+          },
+          "retrieval": {
+            "source": "sqlite",
+            "truncated": false
+          },
+          "candidate_count": 1,
+          "ranking_policy": "lexical-v3; scores are not probabilities; no history/likes",
+          "search_ranking_ms": 2.244,
+          "audio_sha256": "8b0cd0cc5b92f58637a97f88d5de94e32ee87f7ca8e40575137811651d553ef9"
+        },
+        {
+          "id": "track",
+          "passed": false,
+          "interpretation_match": false,
+          "transcription_match": false,
+          "text": "Включи Линкин Паркнамп.",
+          "expected": {
+            "status": "recognized",
+            "intent": {
+              "query": "Linkin Park Numb",
+              "kind": "auto",
+              "artist": null,
+              "title": null
+            }
+          },
+          "actual": {
+            "status": "recognized",
+            "intent": {
+              "query": "Линкин Паркнамп",
+              "kind": "auto",
+              "artist": null,
+              "title": null
+            }
+          },
+          "transcription_ms": 1112.49,
+          "failed_stage": "retrieval",
+          "selection": null,
+          "expected_selection": {
+            "kind": "track",
+            "artist": "Linkin Park",
+            "title": "Numb",
+            "album": "Meteora"
+          },
+          "retrieval": {
+            "source": "typesense",
+            "found": 0,
+            "truncated": false
+          },
+          "candidate_count": 0,
+          "ranking_policy": "lexical-v3; scores are not probabilities; no history/likes",
+          "search_ranking_ms": 24.632,
+          "audio_sha256": "a7aa7a2e6121ae3ac275ea61dc350cb2c55b6f101f3ac79f381b81aa663894d8"
+        },
+        {
+          "id": "language",
+          "passed": true,
+          "interpretation_match": true,
+          "transcription_match": true,
+          "text": "Переключи язык на английский.",
+          "expected": {
+            "status": "recognized",
+            "intent": {
+              "locale": "en"
+            }
+          },
+          "actual": {
+            "status": "recognized",
+            "intent": {
+              "locale": "en"
+            }
+          },
+          "transcription_ms": 984.24,
+          "failed_stage": null,
+          "audio_sha256": "4aa685909e9f215c655bc49f3c4deeee47dc87f3b91c8c7671250d068b3b48cf"
+        },
+        {
+          "id": "other",
+          "passed": true,
+          "interpretation_match": true,
+          "transcription_match": true,
+          "text": "Сегодня хорошая погода.",
+          "expected": {
+            "status": "unrecognized"
+          },
+          "actual": {
+            "status": "unrecognized"
+          },
+          "transcription_ms": 954.737,
+          "failed_stage": null,
+          "audio_sha256": "29596a04789b7be2c3641aa09959664830b645f9f9525b475bf844a42d2614a3"
+        }
+      ]
+    },
+    {
+      "model": "small",
+      "model_sha256": "1be3a9b2063867b937e64e2ec7483364a79917e157fa98c5d94b5c1fffea987b",
+      "locale": "en",
+      "passed": 4,
+      "total": 6,
+      "selection_passed": 0,
+      "selection_total": 2,
+      "interpretation_passed": 4,
+      "cases": [
+        {
+          "id": "pause",
+          "passed": true,
+          "interpretation_match": true,
+          "transcription_match": true,
+          "text": "Pause",
+          "expected": {
+            "status": "recognized",
+            "intent": {
+              "action": "pause"
+            }
+          },
+          "actual": {
+            "status": "recognized",
+            "intent": {
+              "action": "pause"
+            }
+          },
+          "transcription_ms": 1111.274,
+          "failed_stage": null,
+          "audio_sha256": "7e4866fcb8aa99c9db38193c9d9a27dd27d081ec78d7a3d13af55d8171f890dc"
+        },
+        {
+          "id": "next",
+          "passed": true,
+          "interpretation_match": true,
+          "transcription_match": true,
+          "text": "Next track.",
+          "expected": {
+            "status": "recognized",
+            "intent": {
+              "action": "next"
+            }
+          },
+          "actual": {
+            "status": "recognized",
+            "intent": {
+              "action": "next"
+            }
+          },
+          "transcription_ms": 871.33,
+          "failed_stage": null,
+          "audio_sha256": "ac5e5f44260c911e9ac7aafb2a1ae3c9444765ef2b247b92dea138c72378c315"
+        },
+        {
+          "id": "artist",
+          "passed": false,
+          "interpretation_match": false,
+          "transcription_match": false,
+          "text": "Play Lincoln Park.",
+          "expected": {
+            "status": "recognized",
+            "intent": {
+              "query": "Linkin Park",
+              "kind": "auto",
+              "artist": null,
+              "title": null
+            }
+          },
+          "actual": {
+            "status": "recognized",
+            "intent": {
+              "query": "Lincoln Park",
+              "kind": "auto",
+              "artist": null,
+              "title": null
+            }
+          },
+          "transcription_ms": 909.641,
+          "failed_stage": "retrieval",
+          "selection": null,
+          "expected_selection": {
+            "kind": "artist",
+            "artist": "Linkin Park"
+          },
+          "retrieval": {
+            "source": "typesense",
+            "found": 0,
+            "truncated": false
+          },
+          "candidate_count": 0,
+          "ranking_policy": "lexical-v3; scores are not probabilities; no history/likes",
+          "search_ranking_ms": 25.242,
+          "audio_sha256": "6a34de297c24ca94ce712439cb51f70220abf4c98641a3b65f0a20441051abc2"
+        },
+        {
+          "id": "track",
+          "passed": false,
+          "interpretation_match": false,
+          "transcription_match": false,
+          "text": "Play Linkin Park Nom",
+          "expected": {
+            "status": "recognized",
+            "intent": {
+              "query": "Linkin Park Numb",
+              "kind": "auto",
+              "artist": null,
+              "title": null
+            }
+          },
+          "actual": {
+            "status": "recognized",
+            "intent": {
+              "query": "Linkin Park Nom",
+              "kind": "auto",
+              "artist": null,
+              "title": null
+            }
+          },
+          "transcription_ms": 933.716,
+          "failed_stage": "retrieval",
+          "selection": null,
+          "expected_selection": {
+            "kind": "track",
+            "artist": "Linkin Park",
+            "title": "Numb",
+            "album": "Meteora"
+          },
+          "retrieval": {
+            "source": "typesense",
+            "found": 0,
+            "truncated": false
+          },
+          "candidate_count": 0,
+          "ranking_policy": "lexical-v3; scores are not probabilities; no history/likes",
+          "search_ranking_ms": 7.268,
+          "audio_sha256": "a3d521e8376cb3c544c67d3842bf3f9884eb506551f2dfe7d8e81fa56d0b7364"
+        },
+        {
+          "id": "language",
+          "passed": true,
+          "interpretation_match": true,
+          "transcription_match": true,
+          "text": "Switch language to Russian.",
+          "expected": {
+            "status": "recognized",
+            "intent": {
+              "locale": "ru"
+            }
+          },
+          "actual": {
+            "status": "recognized",
+            "intent": {
+              "locale": "ru"
+            }
+          },
+          "transcription_ms": 915.05,
+          "failed_stage": null,
+          "audio_sha256": "264c85bdf5143d5e3136d4d3dce04a4ee0402575bfed86dc77267e041e22808d"
+        },
+        {
+          "id": "other",
+          "passed": true,
+          "interpretation_match": true,
+          "transcription_match": true,
+          "text": "The weather is nice today.",
+          "expected": {
+            "status": "unrecognized"
+          },
+          "actual": {
+            "status": "unrecognized"
+          },
+          "transcription_ms": 1023.443,
+          "failed_stage": null,
+          "audio_sha256": "311b24e19ea9c820b909c8cd7f791e52c88f2ba7d735d3767490e39e7bb65566"
+        }
+      ]
+    }
+  ],
+  "ranking_variants": [
+    {
+      "policy": "lexical-v2",
+      "aliases": {},
+      "passed": 0,
+      "total": 8,
+      "cases": [
+        {
+          "model": "base",
+          "locale": "ru",
+          "id": "artist",
+          "text": "включи лингин парк",
+          "selection": null,
+          "passed": false,
+          "retrieval": {
+            "source": "typesense",
+            "found": 0,
+            "truncated": false
+          }
+        },
+        {
+          "model": "base",
+          "locale": "ru",
+          "id": "track",
+          "text": "включи лингин парбнамп",
+          "selection": null,
+          "passed": false,
+          "retrieval": {
+            "source": "typesense",
+            "found": 0,
+            "truncated": false
+          }
+        },
+        {
+          "model": "base",
+          "locale": "en",
+          "id": "artist",
+          "text": "Play Lincoln Park",
+          "selection": null,
+          "passed": false,
+          "retrieval": {
+            "source": "typesense",
+            "found": 0,
+            "truncated": false
+          }
+        },
+        {
+          "model": "base",
+          "locale": "en",
+          "id": "track",
+          "text": "Play Lincoln Park NOM",
+          "selection": null,
+          "passed": false,
+          "retrieval": {
+            "source": "typesense",
+            "found": 0,
+            "truncated": false
+          }
+        },
+        {
+          "model": "small",
+          "locale": "ru",
+          "id": "artist",
+          "text": "Включи Линкин Парк",
+          "selection": null,
+          "passed": false,
+          "retrieval": {
+            "source": "typesense",
+            "found": 0,
+            "truncated": false
+          }
+        },
+        {
+          "model": "small",
+          "locale": "ru",
+          "id": "track",
+          "text": "Включи Линкин Паркнамп",
+          "selection": null,
+          "passed": false,
+          "retrieval": {
+            "source": "typesense",
+            "found": 0,
+            "truncated": false
+          }
+        },
+        {
+          "model": "small",
+          "locale": "en",
+          "id": "artist",
+          "text": "Play Lincoln Park",
+          "selection": null,
+          "passed": false,
+          "retrieval": {
+            "source": "typesense",
+            "found": 0,
+            "truncated": false
+          }
+        },
+        {
+          "model": "small",
+          "locale": "en",
+          "id": "track",
+          "text": "Play Linkin Park Nom",
+          "selection": null,
+          "passed": false,
+          "retrieval": {
+            "source": "typesense",
+            "found": 0,
+            "truncated": false
+          }
+        }
+      ]
+    },
+    {
+      "policy": "lexical-v3",
+      "aliases": {},
+      "passed": 2,
+      "total": 8,
+      "cases": [
+        {
+          "model": "base",
+          "locale": "ru",
+          "id": "artist",
+          "text": "включи лингин парк",
+          "selection": {
+            "kind": "artist",
+            "artist": "Linkin Park",
+            "score": 89.0909,
+            "evidence": {
+              "artist_similarity": 0.8909,
+              "artist_match": "fuzzy_transliterated_literal"
+            }
+          },
+          "passed": true,
+          "retrieval": {
+            "source": "typesense",
+            "found": 3,
+            "truncated": false
+          }
+        },
+        {
+          "model": "base",
+          "locale": "ru",
+          "id": "track",
+          "text": "включи лингин парбнамп",
+          "selection": null,
+          "passed": false,
+          "retrieval": {
+            "source": "typesense",
+            "found": 0,
+            "truncated": false
+          }
+        },
+        {
+          "model": "base",
+          "locale": "en",
+          "id": "artist",
+          "text": "Play Lincoln Park",
+          "selection": null,
+          "passed": false,
+          "retrieval": {
+            "source": "typesense",
+            "found": 0,
+            "truncated": false
+          }
+        },
+        {
+          "model": "base",
+          "locale": "en",
+          "id": "track",
+          "text": "Play Lincoln Park NOM",
+          "selection": null,
+          "passed": false,
+          "retrieval": {
+            "source": "typesense",
+            "found": 0,
+            "truncated": false
+          }
+        },
+        {
+          "model": "small",
+          "locale": "ru",
+          "id": "artist",
+          "text": "Включи Линкин Парк",
+          "selection": {
+            "kind": "artist",
+            "artist": "Linkin Park",
+            "score": 98.0,
+            "evidence": {
+              "artist_similarity": 0.98,
+              "artist_match": "transliterated_literal"
+            }
+          },
+          "passed": true,
+          "retrieval": {
+            "source": "sqlite",
+            "truncated": false
+          }
+        },
+        {
+          "model": "small",
+          "locale": "ru",
+          "id": "track",
+          "text": "Включи Линкин Паркнамп",
+          "selection": null,
+          "passed": false,
+          "retrieval": {
+            "source": "typesense",
+            "found": 0,
+            "truncated": false
+          }
+        },
+        {
+          "model": "small",
+          "locale": "en",
+          "id": "artist",
+          "text": "Play Lincoln Park",
+          "selection": null,
+          "passed": false,
+          "retrieval": {
+            "source": "typesense",
+            "found": 0,
+            "truncated": false
+          }
+        },
+        {
+          "model": "small",
+          "locale": "en",
+          "id": "track",
+          "text": "Play Linkin Park Nom",
+          "selection": null,
+          "passed": false,
+          "retrieval": {
+            "source": "typesense",
+            "found": 0,
+            "truncated": false
+          }
+        }
+      ]
+    },
+    {
+      "policy": "lexical-v3-explicit-aliases",
+      "aliases": {
+        "artists": {
+          "Linkin Park": [
+            "Lincoln Park"
+          ]
+        },
+        "titles": {
+          "Numb": [
+            "Nom",
+            "намп"
+          ]
+        }
+      },
+      "passed": 7,
+      "total": 8,
+      "cases": [
+        {
+          "model": "base",
+          "locale": "ru",
+          "id": "artist",
+          "text": "включи лингин парк",
+          "selection": {
+            "kind": "artist",
+            "artist": "Linkin Park",
+            "score": 89.0909,
+            "evidence": {
+              "artist_similarity": 0.8909,
+              "artist_match": "fuzzy_transliterated_literal"
+            }
+          },
+          "passed": true,
+          "retrieval": {
+            "source": "typesense",
+            "found": 3,
+            "truncated": false
+          }
+        },
+        {
+          "model": "base",
+          "locale": "ru",
+          "id": "track",
+          "text": "включи лингин парбнамп",
+          "selection": null,
+          "passed": false,
+          "retrieval": {
+            "source": "typesense",
+            "found": 0,
+            "truncated": false
+          }
+        },
+        {
+          "model": "base",
+          "locale": "en",
+          "id": "artist",
+          "text": "Play Lincoln Park",
+          "selection": {
+            "kind": "artist",
+            "artist": "Linkin Park",
+            "score": 99.0,
+            "evidence": {
+              "artist_similarity": 0.99,
+              "artist_match": "alias"
+            }
+          },
+          "passed": true,
+          "retrieval": {
+            "source": "sqlite",
+            "truncated": false
+          }
+        },
+        {
+          "model": "base",
+          "locale": "en",
+          "id": "track",
+          "text": "Play Lincoln Park NOM",
+          "selection": {
+            "kind": "track",
+            "track_id": "cf1cd8c29ccd441dbf448ec28716b5ed:0",
+            "title": "Numb",
+            "artist": "Linkin Park",
+            "album": "Meteora",
+            "score": 99.0,
+            "evidence": {
+              "title_similarity": 0.99,
+              "title_match": "alias",
+              "artist_similarity": 0.99,
+              "artist_match": "alias",
+              "requested_versions": [],
+              "version_markers": [],
+              "unrequested_version_penalty": 0
+            }
+          },
+          "passed": true,
+          "retrieval": {
+            "source": "sqlite",
+            "truncated": false
+          }
+        },
+        {
+          "model": "small",
+          "locale": "ru",
+          "id": "artist",
+          "text": "Включи Линкин Парк",
+          "selection": {
+            "kind": "artist",
+            "artist": "Linkin Park",
+            "score": 98.0,
+            "evidence": {
+              "artist_similarity": 0.98,
+              "artist_match": "transliterated_literal"
+            }
+          },
+          "passed": true,
+          "retrieval": {
+            "source": "sqlite",
+            "truncated": false
+          }
+        },
+        {
+          "model": "small",
+          "locale": "ru",
+          "id": "track",
+          "text": "Включи Линкин Паркнамп",
+          "selection": {
+            "kind": "track",
+            "track_id": "cf1cd8c29ccd441dbf448ec28716b5ed:0",
+            "title": "Numb",
+            "artist": "Linkin Park",
+            "album": "Meteora",
+            "score": 99.25,
+            "evidence": {
+              "title_similarity": 0.99,
+              "title_match": "alias",
+              "artist_similarity": 1.0,
+              "artist_match": "literal",
+              "requested_versions": [],
+              "version_markers": [],
+              "unrequested_version_penalty": 0
+            }
+          },
+          "passed": true,
+          "retrieval": {
+            "source": "sqlite",
+            "truncated": false
+          }
+        },
+        {
+          "model": "small",
+          "locale": "en",
+          "id": "artist",
+          "text": "Play Lincoln Park",
+          "selection": {
+            "kind": "artist",
+            "artist": "Linkin Park",
+            "score": 99.0,
+            "evidence": {
+              "artist_similarity": 0.99,
+              "artist_match": "alias"
+            }
+          },
+          "passed": true,
+          "retrieval": {
+            "source": "sqlite",
+            "truncated": false
+          }
+        },
+        {
+          "model": "small",
+          "locale": "en",
+          "id": "track",
+          "text": "Play Linkin Park Nom",
+          "selection": {
+            "kind": "track",
+            "track_id": "cf1cd8c29ccd441dbf448ec28716b5ed:0",
+            "title": "Numb",
+            "artist": "Linkin Park",
+            "album": "Meteora",
+            "score": 99.25,
+            "evidence": {
+              "title_similarity": 0.99,
+              "title_match": "alias",
+              "artist_similarity": 1.0,
+              "artist_match": "literal",
+              "requested_versions": [],
+              "version_markers": [],
+              "unrequested_version_penalty": 0
+            }
+          },
+          "passed": true,
+          "retrieval": {
+            "source": "sqlite",
+            "truncated": false
+          }
+        }
+      ]
+    }
+  ],
+  "engine": {
+    "name": "whisper.cpp",
+    "version": "1.9.4",
+    "gpu": false,
+    "temperature_fallback": false
+  },
+  "platform": {
+    "system": "Darwin",
+    "release": "26.6",
+    "architecture": "arm64"
+  },
+  "tts": {
+    "name": "macos_say",
+    "rate": 175,
+    "voices": {
+      "ru": "Milena",
+      "en": "Samantha"
+    }
+  },
+  "limitations": [
+    "Four distinct synthetic music WAVs, each recognized by two models; eight decisions are not independent human recordings.",
+    "Seven-row synthetic catalog, not the owner library.",
+    "Alias tuning uses observed outputs from these same samples; no held-out generalization claim.",
+    "Model-backed semantic, phonetic and natural-language providers have not been evaluated."
+  ]
+}

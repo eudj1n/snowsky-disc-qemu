@@ -2,11 +2,78 @@
   "version": 1,
   "locale": "ru",
   "cases": [
-    {"id": "pause", "text": "Пауза", "expected": {"status": "recognized", "intent": {"action": "pause"}}},
-    {"id": "next", "text": "Следующий трек", "expected": {"status": "recognized", "intent": {"action": "next"}}},
-    {"id": "artist", "text": "Включи Linkin Park", "expected": {"status": "recognized", "intent": {"query": "Linkin Park", "kind": "auto", "artist": null, "title": null}}},
-    {"id": "track", "text": "Включи Linkin Park Numb", "expected": {"status": "recognized", "intent": {"query": "Linkin Park Numb", "kind": "auto", "artist": null, "title": null}}},
-    {"id": "language", "text": "Переключи язык на английский", "expected": {"status": "recognized", "intent": {"locale": "en"}}},
-    {"id": "other", "text": "Сегодня хорошая погода", "expected": {"status": "unrecognized"}}
+    {
+      "id": "pause",
+      "text": "Пауза",
+      "expected": {
+        "status": "recognized",
+        "intent": {
+          "action": "pause"
+        }
+      }
+    },
+    {
+      "id": "next",
+      "text": "Следующий трек",
+      "expected": {
+        "status": "recognized",
+        "intent": {
+          "action": "next"
+        }
+      }
+    },
+    {
+      "id": "artist",
+      "text": "Включи Linkin Park",
+      "expected": {
+        "status": "recognized",
+        "intent": {
+          "query": "Linkin Park",
+          "kind": "auto",
+          "artist": null,
+          "title": null
+        }
+      },
+      "selection": {
+        "kind": "artist",
+        "artist": "Linkin Park"
+      }
+    },
+    {
+      "id": "track",
+      "text": "Включи Linkin Park Numb",
+      "expected": {
+        "status": "recognized",
+        "intent": {
+          "query": "Linkin Park Numb",
+          "kind": "auto",
+          "artist": null,
+          "title": null
+        }
+      },
+      "selection": {
+        "kind": "track",
+        "artist": "Linkin Park",
+        "title": "Numb",
+        "album": "Meteora"
+      }
+    },
+    {
+      "id": "language",
+      "text": "Переключи язык на английский",
+      "expected": {
+        "status": "recognized",
+        "intent": {
+          "locale": "en"
+        }
+      }
+    },
+    {
+      "id": "other",
+      "text": "Сегодня хорошая погода",
+      "expected": {
+        "status": "unrecognized"
+      }
+    }
   ]
 }

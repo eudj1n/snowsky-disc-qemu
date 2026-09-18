@@ -35,6 +35,7 @@ activation is unnecessary. `ask` starts the best match without a choice dialogue
 | `./research/disc_assistant/run.sh synthesize TEXT --output FILE.wav` | Generate a WAV and provenance sidecar through TTS | None; no speaker output |
 | `./research/disc_assistant/run.sh speech-samples DIR [--corpus JSON]` | Generate synthetic inputs for the active locale in a new directory | None |
 | `./research/disc_assistant/run.sh speech-check DIR` | Check transcripts against expected intentions; nonzero exit on mismatches | None; no settings changes |
+| `./research/disc_assistant/run.sh speech-check DIR --catalog [--expectations FILE]` | Evaluate selected music separately from STT/intent agreement | None; pinned catalog/index only |
 | `./research/disc_assistant/run.sh help` | Show usage | None |
 
 `search` accepts `--limit N` (1–50). `rank` and `ask` accept one quoted string.
@@ -245,10 +246,17 @@ Common recording labels also remain explicit query constraints across locales:
 Locale-specific version phrases extend those shared labels. A missing requested
 edition is not silently replaced with a studio recording.
 
-## Ranking: lexical-v2
+## Ranking: lexical-v3
 
-Version 2 separates metadata version markers from the active command locale;
-weights and automatic best-match policy are unchanged.
+Version 3 adds Cyrillic spelling projection and catalog-backed artist boundaries.
+Literal names score above aliases (factor 0.99) and transliteration (factor 0.98,
+combined for projected aliases). Scores after resolution describe the resolved
+reference, not STT confidence; `resolved_intent` and debug traces expose that step.
+Fuzzy artist prefixes require similarity at least 0.90 and a 0.08 margin over
+competing artists/boundaries. Missing spaces require both names to be supported
+by catalog metadata or explicit aliases. Arbitrary suffixes are not discarded.
+Version constraints and the automatic best-match policy remain.
+Rebuild the search projection with `/index` after upgrading.
 
 Scores are explainable heuristics, **not probabilities**. Quality needs evaluation
 on a fixed personal-library query set.
@@ -256,7 +264,7 @@ on a fixed personal-library query set.
 | Factor | Policy |
 | --- | --- |
 | Explicit known artist | Exclude other artists |
-| Exact names/aliases | Check the complete SQLite snapshot, outside the search top-k limit |
+| Exact names/aliases/transliteration | Check the complete SQLite snapshot, outside the search top-k limit |
 | Artist/title pair | 75% title similarity, 25% artist similarity |
 | Single track or artist | Normalized word similarity using `SequenceMatcher` |
 | Typos | Retrieve up to 50 Typesense candidates with token dropping disabled; minimum title similarity 0.60, or title 0.55 + artist 0.72 for a pair; artist-only minimum 0.80 |

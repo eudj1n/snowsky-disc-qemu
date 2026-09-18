@@ -111,7 +111,7 @@ class RankingTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(events['local_matches']['exact_artist_count'], 0)
         self.assertEqual(events['local_matches']['artist_candidate_count'], 0)
         self.assertEqual(events['local_track_matches']['exact_track_count'], 0)
-        self.assertEqual(events['search_query']['query'], 'Макс Корж')
+        self.assertEqual(events['search_query']['query'], 'maks korzh')
         self.assertEqual(events['retrieval_filtered']['found'], 0)
         trace.reset_mock()
         self.search.search.reset_mock()
@@ -137,3 +137,44 @@ class RankingTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(ordinary[0]['track_id'], 's:0')
         remaster = ordered(score_tracks(Intent('Numb remastered', 'track'), docs, {}, load_languages(('en',))))
         self.assertEqual([c['track_id'] for c in remaster], ['s:1'])
+
+    async def test_projected_names_and_fuzzy_artist_boundary_without_aliases(self):
+        self.config.aliases = {}
+        for phrase, artist, title in [('Play Линкин Парк', 'Linkin Park', None),
+                ('Play Linkn Park Numb', 'Linkin Park', 'Numb'),
+                ('Play track Artist E - Tishina', 'Артист Ё', 'Тишина')]:
+            result = await self.ranked(phrase)
+            self.assertEqual(result['candidates'][0]['artist'], artist)
+            self.assertEqual(result['candidates'][0].get('title'), title)
+        self.search.search.assert_not_called()
+
+    async def test_fused_names_require_explicit_catalog_backed_suffix(self):
+        from research.disc_assistant.assistant.resolver import infer
+        docs = self.store.documents(self.head['generation'])
+        aliases = {'titles': {'Numb': ['намп']}}
+        intent = infer(Intent('Линкин Паркнамп'), docs, aliases)
+        self.assertEqual((intent.artist, intent.title), ('Linkin Park', 'намп'))
+        unknown = Intent('Линкин Паркcompletelyunknown')
+        self.assertEqual(infer(unknown, docs, aliases), Intent(unknown.query, 'track'))
+
+    def test_literal_name_beats_alias_collision_and_fuzzy_boundary_tie_abstains(self):
+        from research.disc_assistant.assistant.ranking import score_artists
+        from research.disc_assistant.assistant.resolver import infer
+        docs = [{'id': 's:0', 'artist': 'Linkin Park', 'title': 'Numb', 'album': 'A'},
+                {'id': 's:1', 'artist': 'Lincoln Park', 'title': 'Numb', 'album': 'B'}]
+        rows = ordered(score_artists(Intent('Lincoln Park'), docs,
+                                     {'artists': {'Linkin Park': ['Lincoln Park']}}))
+        self.assertEqual(rows[0]['artist'], 'Lincoln Park')
+        docs[1]['artist'] = 'Linken Park'
+        intent = Intent('Linkn Park Numb')
+        self.assertEqual(infer(intent, docs, {}), intent)
+
+    async def test_alias_cannot_leak_other_artist_into_explicit_canonical_scope(self):
+        self.config.aliases = {'artists': {'Other Artist': ['Linkin Park']}}
+        result = await self.ranked('Play Linkin Park - Numb')
+        self.assertEqual({c['artist'] for c in result['candidates']}, {'Linkin Park'})
+
+    async def test_unresolved_fused_suffix_does_not_launch_whole_artist(self):
+        self.config.aliases = {}
+        result = await self.ranked('Включи Линкин Паркнамп')
+        self.assertEqual(result['candidates'], [])

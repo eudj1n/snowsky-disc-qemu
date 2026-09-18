@@ -148,7 +148,8 @@ def main(argv=None):
         if not config_path.is_file():
             raise ValueError(f'config missing: {config_path}; run setup or pass --config PATH')
         config = load(config_path)
-        needs_search = args.command in ('up', 'index', 'search', 'rank', 'ask')
+        needs_search = args.command in ('up', 'index', 'search', 'rank', 'ask') or (
+            args.command == 'speech-check' and '--catalog' in args.arguments)
         env = dict(os.environ)
         if needs_search:
             try:

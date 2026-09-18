@@ -13,7 +13,7 @@ samples through the same `SpeechSynthesizer` interface reserved for future repli
 | STT | Local `whisper.cpp` CLI adapter, explicit model, timeout/cancellation, model fingerprint | Resident model/server, GPU tuning, remote provider, music vocabulary hints |
 | TTS | Local macOS `say` adapter, configured voices, WAV and provenance sidecar | Portable Pi/Linux engine, automatic response synthesis and speaker delivery |
 | Integration | `transcribe`, `rank --audio`, `ask --audio`, equivalent console commands | Questions, confirmations and dialogue |
-| Evaluation | RU/EN synthetic corpora, interpretation comparisons, mismatch reports | Human/noisy recordings, catalog selection evaluation, physical-player speech acceptance |
+| Evaluation | RU/EN synthetic corpora, separate interpretation and catalog-selection checks | Human/noisy recordings, physical-player speech acceptance |
 
 There is no automatic model download, provider fallback, audio playback or audio
 retention in the command journal. `ask --audio` is an explicit playback/control
@@ -178,11 +178,11 @@ evaluated as a complete corpus. Checks verify file hashes and the active locale.
 `speech-check` returns JSON and exits 1 on any mismatch/provider error, 0 only when
 every case passes. Redirect stdout to retain a report; debug events go to stderr.
 
-The report compares validated intentions, normalizing case/whitespace in string
+Without `--catalog`, the report compares validated intentions, normalizing case/whitespace in string
 fields. It does not require exact transcription punctuation, use the expected text
 as a recognition prompt, access a media catalog, execute commands or apply settings.
 Music reference fields must match the authored expectation; equivalent music
-selection through catalog aliases needs a separate ranking evaluation. Actual
+selection is measured separately with `--catalog` (below). Actual
 recognized text, expected/actual intent and STT timing remain visible per case.
 Synthetic voices exercise the pipeline; these scores do not measure human speech
 accuracy or prove suitability for unattended operation.
@@ -233,3 +233,86 @@ size and modification time within the process; historical journals are unchanged
 of it. Before automatic replies, add a delivery layer that checks `speak`, manages
 interruptions and records synthesis separately from actual playback. Microphone,
 TTS output, online engines, dialogues and Pi deployment remain separate milestones.
+
+## Catalog selection evaluation
+
+`speech-check DIR --catalog` adds read-only catalog resolution, retrieval and
+ranking after STT and interpretation. It requires a current Typesense projection
+and an explicit target for every music case. It never opens a device connection,
+executes controls or changes language in response to a sample. As with other CLI
+commands, the explicit global `--language CODE` option persists the test locale.
+
+```sh
+./research/disc_assistant/run.sh index
+./research/disc_assistant/run.sh --language ru speech-check /tmp/disc-samples-ru --catalog
+```
+
+New bundled corpora include `selection` on music cases. For existing WAV manifests,
+use an overlay rather than regenerating audio or editing hashes:
+
+```sh
+./research/disc_assistant/run.sh --language ru speech-check /tmp/disc-samples-ru --catalog \
+  --expectations research/disc_assistant/assistant/voice/samples/ru-selections.json
+```
+
+Overlay shape:
+
+```json
+{"version":1,"locale":"ru","selections":{
+  "artist":{"kind":"artist","artist":"Linkin Park"},
+  "track":{"kind":"track","artist":"Linkin Park","title":"Numb","album":"Meteora"}
+}}
+```
+
+The bundled target is the synthetic `Meteora` recording. For a real catalog,
+author a separate overlay with the intended actual album, or `null` for explicitly
+expected absence. Do not derive targets from the search's selected result. Target
+matching normalizes case/whitespace only; aliases cannot change the expected
+identity. Identical artist/title/album duplicates remain metadata-equivalent,
+not proven identical audio or permanent track IDs.
+
+Reports separate `transcription_match`, `interpretation_match` and music
+`selection_passed/selection_total`. In catalog mode each music case passes when
+its selection agrees, even when its recognized spelling differs. Non-music cases
+still compare intentions. Aggregate `passed/total` therefore combines command
+interpretation and music selection; it is not STT accuracy. Per-case
+`failed_stage` identifies transcription errors, rejected/non-music interpretation,
+search errors, empty retrieval or wrong/filtered ranking. It identifies where
+agreement failed, not the root cause of a recognition error. STT and search/rank
+milliseconds are separate; raw text, actual intent and selected evidence remain
+visible. A changing catalog/index aborts the run to avoid mixed generations.
+
+The transliterated projection is schema version 2. **Run `/index` or `run.sh index`
+once after this upgrade**; an otherwise unchanged library does not need `/sync`.
+Changes to aliases or the transliteration table also invalidate the index.
+
+Next experiments now include semantic intent matching, phonetic/embedding name
+retrieval and optional intent-classifier training. See
+[the comparison plan and acceptance criteria](ASSISTANT_NLU_RESEARCH.md).
+
+### Recorded catalog comparison
+
+The [catalog selection report](../research/disc_assistant/assistant/voice/evaluations/2026-09-18-catalog-selection.json)
+uses the same saved WAVs, native whisper.cpp base/small and seven synthetic catalog
+rows, including other-artist, live and duplicate distractors. After native STT,
+the identical transcripts are replayed against the archived lexical-v2 commit
+and both lexical-v3 configurations, each with its own rebuilt index.
+
+| Search policy | Correct music selections |
+| --- | --- |
+| Archived lexical-v2, no aliases | 0/8 |
+| Lexical-v3, no aliases | 2/8 |
+| Lexical-v3 with explicit observed aliases | 7/8 |
+
+These are four distinct music WAVs evaluated with two STT models, not eight
+independent recordings. The experimental aliases are `Lincoln Park` for
+`Linkin Park`, and `Nom`/`намп` for `Numb`; they are recorded in the report and
+were **not added to user configuration or default runtime rules**. Base's fused
+Russian `лингин парбнамп` remains unresolved. Without the title alias, small's
+`Линкин Паркнамп` is rejected rather than launching the whole artist.
+
+Small resolves all four music cases only in the alias-tuned comparison; this
+is in-sample tuning, not general voice accuracy. It motivates the broader model
+comparison instead of indefinitely adding transcript-specific aliases.
+Validation: **224 prototype tests** and disposable real Typesense/SDK plus
+synthetic-device acceptance pass. No physical player was used.

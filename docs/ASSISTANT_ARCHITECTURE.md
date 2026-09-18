@@ -141,7 +141,8 @@ recognizes recording conventions such as `Live` and `Remastered` even when Russi
 is active. The locale's version phrases describe requested constraints; they also
 extend metadata recognition for localized labels. No sync/reindex is needed for a
 locale switch. Lexical version markers remain heuristics, not recording identity. This behavior
-is recorded as `lexical-v2`; journal context also pins the metadata-marker hash.
+is recorded as `lexical-v3`; journal context pins metadata-marker and
+transliteration hashes. The search signature also pins spelling projection.
 
 Common recording labels also remain explicit query constraints across locales:
 `Включи Linkin Park — Numb live` requires a live edition even in Russian mode.
@@ -203,3 +204,11 @@ human-speech latency/quality evaluation remain future work.
 
 Dialogue stays disabled: `interactive` is false and `dialogue.enabled=true` is
 rejected. These interfaces do not add questions, pending confirmations or choices.
+
+## Pending learned providers
+
+The [NLU comparison plan](ASSISTANT_NLU_RESEARCH.md) separates intent classification
+and slot extraction from catalog name recovery and descriptive search. Candidate
+implementations include a composite Interpreter, Typesense hybrid retrieval and
+a validated Natural Language Search adapter. They share existing typed intent,
+snapshot and guarded execution boundaries; none is currently enabled.
