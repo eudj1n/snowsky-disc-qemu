@@ -8,11 +8,13 @@ See the [prototype guide](../README.md) for setup, commands and acceptance, and 
 | --- | --- |
 | `__main__.py` | `start`, `listen`, `language`, `response`, `locales`, `history`, `sync`, `status`, `queue`, `index`, `search`, `rank`, `ask`; JSON output and errors |
 | `database.py`, `journal.py` | Schema migrations, bounded request/decision events, retention, inspection/export/clear |
-| `preferences.py` | Versioned Assistant SQLite settings; persistent command languages and response policy, override/reset and effective configuration |
+| `preferences.py` | Versioned Assistant SQLite settings; one persistent locale and speech policy with atomic legacy migration, override/reset and effective configuration |
 | `config.py`, `config.example.toml` | Explicit device/search/storage configuration and aliases |
-| `intents.py`, `ranking.py` | Bilingual play grammar and explained best-match ranking |
+| `interpreter.py`, `intents.py` | Replaceable text/context interpretation, literal grammar and validated intentions |
+| `resolver.py`, `ranking.py` | Catalog name resolution and explained ranking of interpreted music requests |
+| `providers.py`, `speech.py` | Provider identity and independent asynchronous STT/TTS/capture/output contracts |
 | `responses.py`, `locales/replies/*.toml` | Shared localized feedback, speech policy, template validation and reserved dialogue contract |
-| `languages.py`, `locales/*.toml` | Validated language dictionaries; merged literal command/target/version phrases |
+| `languages.py`, `locales/*.toml` | Validated language dictionaries; one active command/target/version dictionary and language-switch aliases |
 | `playback.py` | Serialized, fresh Controller selection and playback-state verification |
 | `device.py`, `controls.py` | Application ownership and intent adapters over Controller controls; Assistant Stop policy |
 | `queue.py` | Controller queue adapter; Assistant continuous-context opt-in |
@@ -74,12 +76,12 @@ The owner deferred dialogue/confirmation: `ask` launches the best result; `rank`
 shows the same ordering without playback. See the
 [command table](../../../docs/ASSISTANT_COMMANDS.md).
 
-`[language].enabled = ["ru", "en"]` is the default in the user configuration.
-`/language` (or one-shot `language`) saves an override in `assistant.sqlite3`
-for later sessions; `reset` removes it and restores TOML defaults. The dictionaries support mixed commands such as `Play песню Numb`. Add a language
-file and enable its code to extend forms for existing semantics. Unknown keys or
-conflicting meanings fail configuration validation. Music-name aliases remain
-separate. See the [dictionary format](../../../docs/ASSISTANT_COMMANDS.md#language-dictionaries).
+`[language].locale = "ru"` is the initial default. `/language CODE` and startup
+`--language CODE` persist one locale for both interpretation and responses.
+`/language reset` stores the configured default. Old language lists migrate using
+their first entry. Literal language-switch commands use the same settings handler.
+Music names remain unrestricted; metadata version markers are independent of the
+interaction locale. See the [architecture](../../../docs/ASSISTANT_ARCHITECTURE.md).
 
 The reusable device core is now in [Controller](../../../docs/CONTROLLER_API.md):
 receiver/reconnect, scan/state reduction, pagination, controls, mode readback and
@@ -93,7 +95,7 @@ Every traced result includes a `response` object with `code`, nullable localized
 `text`, `language`, `speak` and reserved `interactive: false`. Console and one-shot
 commands share the policy; the journal records the generated reply and template
 provenance. Defaults are Russian replies and speech eligibility for problems only.
-`/response language en` and `/response mode all` persist independently of `/language`.
+`/language en` changes input/output together; `/response mode all` changes speech eligibility.
 No audio or dialogue is implemented. See the [response contract](../../../docs/ASSISTANT_RESPONSES.md).
 
 Community locales consist of command and response TOML catalogs. Follow the

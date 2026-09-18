@@ -8,19 +8,19 @@ from string import Formatter
 import tomllib
 import unicodedata
 
-from research.disc_assistant.assistant.languages import LOCALES, SECTIONS, load_languages
+from research.disc_assistant.assistant.languages import DEFAULT_LOCALE, LOCALES, SECTIONS, load_languages
 
 REPLIES = LOCALES / 'replies'
-DEFAULT_LANGUAGE = 'ru'
+DEFAULT_LANGUAGE = DEFAULT_LOCALE
 MODES = ('none', 'errors', 'all')
 MAX_TEXT_LENGTH = 2000  # Matches the journal's retained string bound.
 # This contract describes meanings and allowed parameters, never locale-specific text.
 MESSAGE_FIELDS = {
     **{key: frozenset() for key in (
         'command.completed', 'command.not_sent', 'command.uncertain', 'command.interrupted',
-        'command.unrecognized', 'command.error', 'search.unavailable', 'search.no_match',
+        'command.unrecognized', 'command.unsupported', 'command.error', 'search.unavailable', 'search.no_match',
         'catalog.stale', 'preferences.invalid', 'playback.paused', 'playback.already_paused',
-        'playback.resumed', 'playback.already_playing', 'playback.stopped', 'playback.restarted')},
+        'language.changed', 'interpreter.unavailable', 'interpreter.invalid', 'playback.resumed', 'playback.already_playing', 'playback.stopped', 'playback.restarted')},
     'playback.started': frozenset(('title', 'artist')),
     'playback.track_changed': frozenset(('title', 'artist')),
 }
@@ -71,8 +71,14 @@ def available_reply_languages(*, directory=REPLIES):
     return sorted(path.stem for path in Path(directory).glob('*.toml'))
 
 
-def validate_response_preferences(language, mode):
+def validate_locale(language):
+    load_languages((language,))
     load_reply_locale(language)
+    return language
+
+
+def validate_response_preferences(language, mode):
+    validate_locale(language)
     if mode not in MODES:
         raise ValueError('response mode must be none, errors or all')
     return {'language': language, 'mode': mode}
@@ -92,7 +98,6 @@ def validate_locales(codes=(), *, directory=LOCALES):
                 raise ValueError(f'{code}: incomplete {section} dictionary')
         raw = load_reply_locale(code, directory=directory / 'replies')
         result.append(dict(raw['locale'], response_count=len(raw['messages'])))
-    load_languages(codes, directory=directory)  # Catch cross-locale phrase conflicts too.
     return {'locales': result, 'status': 'validated'}
 
 
@@ -116,11 +121,16 @@ def message_for(result, command, failure=None):
     if status == 'error':
         code = {'unrecognized_or_invalid_command': 'command.unrecognized',
                 'invalid_preference': 'preferences.invalid',
+                'unsupported_command': 'command.unsupported',
+                'interpreter_unavailable': 'interpreter.unavailable',
+                'invalid_interpretation': 'interpreter.invalid',
                 'search_unavailable_or_invalid': 'search.unavailable',
                 'stale_index_or_catalog': 'catalog.stale'}.get(failure, 'command.error')
         return code, {}, True
     if status == 'not_found':
         return 'search.no_match', {}, True
+    if result.get('action') == 'set_language' and status == 'confirmed':
+        return 'language.changed', {}, False
     if command != 'ask':
         return 'system.no_message', {}, False
     action = result.get('action')
@@ -173,7 +183,7 @@ class Responses:
 
 
 def attach_response(config, result, *, command='ask', source='interactive', failure=None):
-    return Responses(config.response_language, config.response_mode).attach(
+    return Responses(config.locale, config.response_mode).attach(
         result, command=command, source=source, failure=failure)
 
 

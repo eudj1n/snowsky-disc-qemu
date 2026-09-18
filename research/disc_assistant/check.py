@@ -180,10 +180,10 @@ page_size = 2
                     assert found['found'] == expected, (query, found)
                     assert all(candidate['match'] for candidate in found['candidates']), found
                     print(f'PASS: {query!r}: {expected} candidates', flush=True)
-                ranked = cli('rank', 'Включи линкин парк намб')
+                ranked = cli('--language', 'ru', 'rank', 'Включи линкин парк намб')
                 assert ranked['candidates'][0]['album'] == 'Meteora', ranked
                 assert link.mutations == 0
-                fuzzy = cli('rank', 'Play Linkin Park - Numbb')
+                fuzzy = cli('--language', 'en', 'rank', 'Play Linkin Park - Numbb')
                 assert fuzzy['retrieval']['source'] == 'typesense', fuzzy
                 assert fuzzy['candidates'][0]['album'] == 'Meteora', fuzzy
                 for phrase, kind, album in [
@@ -192,7 +192,7 @@ page_size = 2
                         ('Включи Linkin Park', 'artist', None),
                         ('Play Cue entry', 'track', 'Cue Album')]:
                     previous = link.mutations
-                    playing = cli('ask', phrase)
+                    playing = cli('--language', 'ru' if phrase.startswith('Включи') else 'en', 'ask', phrase)
                     assert playing['status'] == 'playing', playing
                     assert playing['selected']['kind'] == kind
                     if album:
@@ -211,14 +211,14 @@ page_size = 2
                 cli('sync')
                 key = env.pop('TYPESENSE_API_KEY')
                 try:
-                    assert cli('rank', 'Пауза')['status'] == 'planned'
+                    assert cli('--language', 'ru', 'rank', 'Пауза')['status'] == 'planned'
                     assert cli('queue')['queue']['total'] == 2
                     for phrase, expected in [('Пауза', 'confirmed'), ('Pause', 'already_satisfied'),
                                              ('Resume', 'confirmed'), ('Продолжи', 'already_satisfied'),
                                              ('Next track', 'confirmed'), ('Предыдущий трек', 'confirmed'),
                                              ('Stop', 'confirmed'), ('Стоп', 'already_satisfied')]:
                         previous = link.mutations
-                        result = cli('ask', phrase)
+                        result = cli('--language', 'en' if phrase[0].isascii() else 'ru', 'ask', phrase)
                         assert result['status'] == expected, result
                         assert link.mutations == previous + (expected == 'confirmed')
                     print('PASS: state-aware controls without search key/current index; repeated pause/resume/stop send nothing', flush=True)
@@ -227,7 +227,7 @@ page_size = 2
                 cli('index')
                 config.write_text(config.read_text() + '\n[playback]\ncontinuous_context=true\n')
                 previous = link.mutations
-                continuous = cli('ask', 'Play Linkin Park')
+                continuous = cli('--language', 'en', 'ask', 'Play Linkin Park')
                 assert continuous['mode_change']['status'] == 'confirmed', continuous
                 assert continuous['queue']['continuation'] == 'wrap_queue'
                 assert link.mutations == previous + 2
@@ -256,7 +256,7 @@ page_size = 2
                 accepts, handshakes = link.accepts, link.handshakes
                 console = subprocess.run([sys.executable, '-m', 'research.disc_assistant.assistant',
                     '--config', str(config), 'start'], cwd=ROOT, env=env, text=True, capture_output=True,
-                    input='/sync\n/rank Play Linkin Park\nPlay Linkin Park\nPause\nResume\n/queue\n/status\n/exit\n', timeout=90)
+                    input='/language en\n/sync\n/rank Play Linkin Park\nPlay Linkin Park\nPause\nResume\n/queue\n/status\n/exit\n', timeout=90)
                 assert console.returncode == 0, console.stderr
                 assert '"status": "error"' not in console.stdout, console.stdout
                 assert '"status": "uncertain"' not in console.stdout, console.stdout

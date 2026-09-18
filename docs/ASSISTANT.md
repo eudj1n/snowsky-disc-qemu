@@ -2,11 +2,14 @@
 
 Checkpoint: **2026-09-18**. The desktop prototype in
 [research/disc_assistant](../research/disc_assistant/README.md) now includes catalog
-import, SQLite snapshots, Typesense search, bilingual text commands, explained
+import, SQLite snapshots, Typesense search, single-locale text commands (Russian or English), explained
 ranking and bounded Controller playback. `rank` previews the ordering; `ask`
 automatically launches the best candidate. The owner explicitly deferred a
 choice/confirmation dialogue. Voice, listening history and a browser UI remain
 unimplemented. See the [command table](ASSISTANT_COMMANDS.md).
+The [interpreter, speech and locale architecture](ASSISTANT_ARCHITECTURE.md) is now
+implemented. It supersedes the merged-language/separate-response policy recorded
+in the historical increments below.
 The current device contract is [DISC capabilities](DISC_CAPABILITIES.md).
 
 ## Goal and first deliverable
@@ -106,14 +109,14 @@ must be explicit. Tests use synthetic or sanitized fixtures.
 
 ### Assistant preferences
 
-Implemented on 2026-09-18: `assistant.sqlite3` alongside `library.sqlite3` owns a
-versioned `settings(key, value_json, updated_at)` table. Its first setting is
-`language.enabled`. Console `/language` and one-shot `language` show/set it;
-`reset` deletes the override. Precedence is saved value, TOML, built-in default.
-Selection is scoped to the application data directory, not the device UI locale.
-Invalid selections are rejected before persistence and the previous value survives.
-Console parsing/ranking updates immediately; new CLI sessions read the same value.
-An open console reloads external changes when `/language` is invoked or on restart.
+`assistant.sqlite3` alongside `library.sqlite3` owns the versioned
+`settings(key, value_json, updated_at)` table. It stores one `language.locale` and
+an independent `response.mode`. Input interpretation and responses use the same
+locale; startup `--language`, `/language` and a natural language-switch intention
+share the persistent setting. Initial defaults are saved on first startup too.
+Migration prefers the first legacy input language over the old response language.
+See [precedence and migration](ASSISTANT_ARCHITECTURE.md#migration-and-storage).
+Settings are scoped to the data directory; invalid changes preserve old values.
 
 Keep infrastructure configuration (device endpoints, storage paths, search secrets)
 in TOML/environment. Add future mutable preferences through validated named keys
@@ -237,12 +240,12 @@ ranking preferences and optional dialogue context. The first action allowlist is
 play artist or play recording. An LLM is optional; neither a parser nor a model
 should generate unchecked protocol frames or arbitrary executable operations.
 
-Implemented language forms live in separate `assistant/locales/ru.toml` and
-`en.toml` files. `[language].enabled` merges literal command, target and version
-phrases; the default enables both, including mixed-language requests. Conflicting
-meanings fail validation. Adding forms for existing semantics requires no parser
-change; new actions still require implementation. See the
-[language configuration](ASSISTANT_COMMANDS.md#language-dictionaries).
+The rules interpreter loads the active `assistant/locales/<locale>.toml`.
+`interpret(text, context)` returns a validated music, control or language intention;
+local-model/remote implementations can use the same contract. The resolver and
+ranker consume that intention without parsing again. Metadata version conventions
+are recognized independently of the interaction locale. See the
+[architecture contract](ASSISTANT_ARCHITECTURE.md) and [locale guide](ASSISTANT_LOCALES.md).
 
 For artist playback, use guarded `play_artist(artist, http=http)`. For a recording
 in a named artist album, resolve fresh rows and use
@@ -277,7 +280,7 @@ after the button-driven pipeline. Test wake-word misses and false activations wi
 music playing. The computer does not automatically receive a clean reference copy
 of DISC's audio for echo cancellation.
 
-### Device language and bilingual commands
+### Device language and the interaction locale
 
 Read-only static verification on **2026-09-17**, against the fingerprint-matched
 V2.57 `mq_player`, found no usable language getter in the reviewed network paths:
@@ -311,13 +314,12 @@ after boot. No language-switch experiment or physical-device network check is
 claimed; filesystem access inside the emulator is not physical-device API access.
 
 Consequently, device locale is **unknown through the supported remote contract**.
-Keep assistant UI/reply language and accepted command languages independent of it.
-The command parser accepts both `Включи Linkin Park` and `Play Linkin Park`,
-mapping them to the same intent. Test both text variants and mixed Russian/English
-speech; do not force an English-only model based on a presumed device locale.
-Choose assistant UI language explicitly or from the host/browser preference with
-a user override. A future verified device-locale getter may supply a default,
-but must not restrict accepted command languages.
+Keep the Assistant interaction locale independent of it.
+`Включи Linkin Park` in Russian mode and `Play Linkin Park` in English mode map
+to the same intention. Test both locales and foreign music names within speech; do not force an English-only model based on a presumed device locale.
+Choose one interaction locale explicitly; persist it for command interpretation,
+responses and future speech-provider context. A future verified device-locale getter may supply a default,
+but must not silently override the saved interaction locale.
 
 ### Device session rules
 
@@ -632,6 +634,9 @@ prototype suite pass.
 
 ## Localized response increment, 2026-09-18
 
+Historical checkpoint: the later interpreter refactor below replaces independent
+input/response languages with a single locale.
+
 Implemented a common response layer for console and one-shot requests. Results
 retain their operation evidence and add `response.code/text/language/speak/interactive`.
 Confirmed, already-satisfied, uncertain, not-sent, interrupted and invalid requests
@@ -659,3 +664,37 @@ Validation: 173 prototype tests pass, including contributed-locale loading,
 response policies, CLI/console/journal parity, preference recovery and template
 validation. Disposable acceptance with synthetic TCP/HTTP peers and real
 Typesense also passes. No firmware or physical-device behavior was changed.
+
+
+## Interpreter and single-locale refactor, 2026-09-18
+
+Implemented an asynchronous interpreter protocol, a local rules backend and a
+common validation boundary for injected local/remote providers. Interpretation
+runs once; catalog resolution and ranking consume its typed result. The launcher
+no longer interprets text. Connection generation is pinned before interpretation
+so a slow backend cannot dispatch a stale request after reconnect.
+
+Input and response language now share one persisted locale. `/language CODE`,
+`--language CODE` and natural language switching update the same setting; success
+is acknowledged in the new locale. Legacy settings/configuration have a defined
+migration path; old files and journal records are not rewritten. `/response` retains
+only speech mode. Music names and recording-version metadata stay independent of
+command language. Community locale catalogs now include language-switch syntax.
+
+Added independent STT, TTS, microphone capture and audio-output protocols with
+explicit audio formats, locale/request context and provider identity. There are no
+concrete speech or remote-model backends, automatic fallbacks or dialogue changes.
+See [ASSISTANT_ARCHITECTURE.md](ASSISTANT_ARCHITECTURE.md) for the current contract.
+
+Next: language-specific ranking/interpretation evaluation, then a concrete
+microphone/transcription adapter using these boundaries. Physical acceptance,
+TTS delivery, dialogue and recommendations remain separate increments.
+
+
+Validation: 192 prototype tests pass. Disposable real-Typesense/synthetic-player
+acceptance passes; a real launcher smoke check verifies durable `--language`,
+natural switching and rejection of another locale's command syntax. Tests cover
+provider substitution, invalid output, unavailability/cancellation, single-pass
+interpretation, reconnect rejection, settings migration and independent metadata
+version labels. Controller and firmware code are unchanged; no microphone,
+external-model or physical speech acceptance is claimed.

@@ -12,8 +12,14 @@ from research.disc_assistant.assistant import controls
 from research.disc_assistant.assistant.__main__ import main
 from research.disc_assistant.assistant.config import Config
 from research.disc_assistant.assistant.device import ObservedSocket, PlaybackClient
-from research.disc_assistant.assistant.intents import ControlIntent, Intent, parse
+from research.disc_assistant.assistant.intents import ControlIntent, Intent, parse as parse_text
 from research.disc_assistant.assistant.tests.test_playback import FakeClient
+
+from research.disc_assistant.assistant.languages import load_languages
+
+def parse(text, rules=None):
+    # Low-level grammar comparisons explicitly exercise both dictionaries.
+    return parse_text(text, rules or load_languages(('ru', 'en')))
 
 
 class ControlsTests(unittest.TestCase):
@@ -143,7 +149,7 @@ class ControlsTests(unittest.TestCase):
                 patch('research.disc_assistant.assistant.__main__.create_client') as search, \
                 patch('research.disc_assistant.assistant.__main__.control', return_value={'status': 'confirmed'}) as control, \
                 patch.dict('os.environ', {}, clear=True), redirect_stdout(io.StringIO()) as out:
-            self.assertEqual(main(['--config', str(path), 'rank', 'Pause']), 0)
+            self.assertEqual(main(['--config', str(path), 'rank', 'Пауза']), 0)
             self.assertEqual(json.loads(out.getvalue())['status'], 'planned')
             control.assert_not_called()
             self.assertEqual(main(['--config', str(path), 'ask', 'Пауза']), 0)

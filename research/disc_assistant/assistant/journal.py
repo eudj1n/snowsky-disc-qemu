@@ -1,4 +1,5 @@
 """Bounded request/decision journal. Evidence collection, never a replay queue."""
+import asyncio
 from dataclasses import asdict
 from contextlib import contextmanager
 from datetime import datetime, timedelta, timezone
@@ -13,7 +14,10 @@ from uuid import uuid4
 from research.disc_assistant.assistant.database import connect
 from research.disc_assistant.assistant.languages import load_languages, normalized
 from research.disc_assistant.library.store import StaleSnapshot
+from research.disc_assistant.library.versions import metadata_markers
 from research.disc_assistant.assistant.responses import Responses
+from research.disc_assistant.assistant.providers import ProviderUnavailable, InvalidProviderResult
+from research.disc_assistant.assistant.interpreter import UnsupportedCommand
 
 
 class JournalWriteError(RuntimeError):
@@ -71,7 +75,7 @@ def outcome(result):
     safe = {k: result[k] for k in ('status', 'operation_id', 'mutation_attempted', 'action',
             'outcome', 'state', 'fresh_position', 'metadata_equivalent_rows', 'assistant_continuation',
             'device_stop_semantics', 'enabled', 'source', 'reused', 'generation', 'index_generation',
-            'track_count', 'error_type', 'requested', 'previous', 'confirmation', 'response') if k in result}
+            'track_count', 'locale', 'mode', 'error_type', 'requested', 'previous', 'confirmation', 'response') if k in result}
     if result.get('status') in ('not_sent', 'uncertain'):
         safe['failure_category'] = result['status']
     if 'mode_change' in result:
@@ -146,7 +150,7 @@ class Trace:
         self.id, self.stage = uuid4().hex, 'input'
         self.journal = None
         self.started = time.monotonic()
-        self.responses = Responses(config.response_language, config.response_mode)
+        self.responses = Responses(config.locale, config.response_mode)
 
     def __enter__(self):
         if not self.config.journal_enabled:
@@ -154,9 +158,10 @@ class Trace:
         self.journal = Journal(self.config)
         try:
             self.journal.prune()
-            rules = asdict(load_languages(self.config.languages))
-            context = {'languages': list(self.config.languages), 'parser_version': 'literal-v1',
+            rules = asdict(load_languages((self.config.locale,)))
+            context = {'locale': self.config.locale, 'command_rules_version': 'literal-v2',
                        'language_rules_sha256': hashlib.sha256(json.dumps(rules, sort_keys=True).encode()).hexdigest(),
+                       'metadata_markers_sha256': hashlib.sha256(json.dumps(metadata_markers().phrases).encode()).hexdigest(),
                        'selection_policy': 'automatic-best-match', 'continuous_context': self.config.continuous_context,
                        'response': self.responses.context()}
             with durable_write(self.journal.db):
@@ -211,11 +216,17 @@ class Trace:
             if exc is not None and self.journal is not None:
                 exc.request_id = self.id
             if exc is not None and not isinstance(exc, JournalWriteError):
-                if isinstance(exc, StaleSnapshot):
+                if isinstance(exc, ProviderUnavailable):
+                    category = 'interpreter_unavailable'
+                elif isinstance(exc, InvalidProviderResult):
+                    category = 'invalid_interpretation'
+                elif isinstance(exc, UnsupportedCommand):
+                    category = 'unsupported_command'
+                elif isinstance(exc, StaleSnapshot):
                     category = 'stale_index_or_catalog'
-                elif isinstance(exc, (KeyboardInterrupt, SystemExit)):
+                elif isinstance(exc, (KeyboardInterrupt, SystemExit, asyncio.CancelledError)):
                     category = 'interrupted'
-                elif self.stage in ('input', 'parse'):
+                elif self.stage in ('input', 'parse', 'interpretation_started', 'interpretation'):
                     category = 'unrecognized_or_invalid_command'
                 elif self.stage == 'preference':
                     category = 'invalid_preference'

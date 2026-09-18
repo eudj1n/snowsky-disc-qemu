@@ -10,8 +10,8 @@ from research.disc_assistant.assistant.config import load
 from research.disc_assistant.assistant.session import sync
 from research.disc_assistant.assistant.ranking import rank
 from research.disc_assistant.assistant.playback import execute, device_lock
-from research.disc_assistant.assistant.intents import parse, ControlIntent
-from research.disc_assistant.assistant.languages import load_languages
+from research.disc_assistant.assistant.intents import ControlIntent, LanguageIntent
+from research.disc_assistant.assistant.interpreter import InterpretationContext, interpret_request
 from research.disc_assistant.assistant.preferences import effective_config, language_command, response_command
 from research.disc_assistant.assistant.journal import Trace, history_command, outcome
 from research.disc_assistant.assistant.responses import Responses, attach_response, exception_result, validate_locales
@@ -33,7 +33,7 @@ def status(config, store):
     return head
 
 
-async def search_command(config, store, args, trace):
+async def search_command(config, store, args, trace, intent=None):
     trace.catalog(store)
     trace.event('search', {'command': args.command, 'query': getattr(args, 'text', getattr(args, 'query', ''))})
     key = os.environ.get(config.api_key_env, '')
@@ -45,7 +45,7 @@ async def search_command(config, store, args, trace):
         if args.command == 'index':
             return await search.build(store, config.device_key)
         if args.command in ('ask', 'rank'):
-            ranking = await rank(config, store, search, args.text, trace=trace)
+            ranking = await rank(config, store, search, intent, trace=trace)
             trace.search(ranking)
             if args.command == 'rank' or not ranking['candidates']:
                 return ranking
@@ -61,16 +61,17 @@ async def search_command(config, store, args, trace):
         await client.api_call.aclose()
 
 
-def main(argv=None):
+def main(argv=None, *, interpreter=None):
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--config', required=True, help='path to a TOML configuration')
+    parser.add_argument('--language', help='select and persist one interaction locale at startup')
     parser.add_argument('--source', choices=('cli', 'scheduled'), help='request origin; scheduled is explicit for cron')
     sub = parser.add_subparsers(dest='command', required=True)
     sub.add_parser('listen', help='persistent interactive console; existing catalog/index')
     sub.add_parser('start', help='connect, sync, index and enter the persistent console')
-    language = sub.add_parser('language', help='show/set saved command languages, or reset to TOML defaults')
+    language = sub.add_parser('language', help='show/set the saved interaction locale, or reset to TOML defaults')
     language.add_argument('languages', nargs='*')
-    response = sub.add_parser('response', help='show/set saved response language and speech policy')
+    response = sub.add_parser('response', help='show/set saved speech policy')
     response.add_argument('arguments', nargs='*')
     sub.add_parser('locales', help='validate installed command and response locales')
     history = sub.add_parser('history', help='inspect/export/prune/clear the local request journal')
@@ -92,19 +93,21 @@ def main(argv=None):
         config = load(args.config)
         base_config = config
         if args.command == 'history':
-            config = effective_config(config)
+            config = effective_config(config, language=args.language)
             print(json.dumps(attach_response(config, history_command(config, args.arguments),
                 command='history', source=args.source or 'cli'), ensure_ascii=False, indent=2))
             return 0
         if args.command in ('listen', 'start'):
             from research.disc_assistant.assistant.console import run
-            return run(config, bootstrap=args.command == 'start', source=args.source or 'interactive')
-        if args.command not in ('language', 'response'):
-            config = effective_config(config)
-        elif not (args.command == 'response' and args.arguments == ['reset']):
-            # Preference recovery must not load a broken command-language override.
-            current = response_command(base_config)
-            config = replace(config, response_language=current['language'], response_mode=current['mode'])
+            return run(config, bootstrap=args.command == 'start', source=args.source or 'interactive',
+                       interpreter=interpreter, language=args.language)
+        try:
+            config = effective_config(config, language=args.language)
+        except ValueError:
+            recovery = ((args.command == 'language' and args.languages == ['reset']) or
+                        (args.command == 'response' and args.arguments == ['reset']))
+            if not recovery:
+                raise
         text = getattr(args, 'text', getattr(args, 'query', args.command))
         if args.command == 'language':
             text = 'language ' + ' '.join(args.languages)
@@ -112,31 +115,33 @@ def main(argv=None):
             text = 'response ' + ' '.join(args.arguments)
         with Trace(config, args.command, text, source=args.source or 'cli') as trace:
             trace.event('parse', {})
-            intent = parse(args.text, load_languages(config.languages)) if args.command in ('ask', 'rank') else None
-            if intent:
-                trace.intent(intent)
-            if args.command == 'language':
-                trace.event('preference', {'name': 'language.enabled'})
-                result = language_command(base_config, args.languages)
+            intent = (asyncio.run(interpret_request(args.text, InterpretationContext(config.locale),
+                        interpreter=interpreter, trace=trace)) if args.command in ('ask', 'rank') else None)
+            if args.command == 'language' or (isinstance(intent, LanguageIntent) and args.command == 'ask'):
+                trace.event('preference', {'name': 'language.locale'})
+                result = language_command(base_config, [intent.locale] if isinstance(intent, LanguageIntent) else args.languages)
+                config = replace(config, locale=result['locale'])
+                trace.responses = Responses(config.locale, config.response_mode)
+                trace.event('locale_changed', trace.responses.context())
             elif args.command == 'response':
-                trace.event('preference', {'name': 'response.preferences'})
+                trace.event('preference', {'name': 'response.mode'})
                 result = response_command(base_config, args.arguments)
-                config = replace(config, response_language=result['language'], response_mode=result['mode'])
-                trace.responses = Responses(config.response_language, config.response_mode)
+                config = replace(config, locale=result['locale'], response_mode=result['mode'])
+                trace.responses = Responses(config.locale, config.response_mode)
                 trace.event('response_preferences', trace.responses.context())
             elif args.command == 'locales':
                 result = validate_locales()
             elif args.command == 'queue':
                 trace.event('execution_started', {'action': 'queue', 'read_only': True})
                 result = observe_queue(config)
-            elif isinstance(intent, ControlIntent):
+            elif isinstance(intent, (ControlIntent, LanguageIntent)):
                 if args.command == 'rank':
-                    result = {'status': 'planned', 'action': intent.action, 'requires_search': False}
+                    result = {'status': 'planned', 'action': intent.action if isinstance(intent, ControlIntent) else 'set_language', 'requires_search': False}
                 else:
                     trace.event('execution_started', {'action': intent.action})
                     result = control(config, intent)
             else:
-                result = run_catalog_command(config, args, trace)
+                result = run_catalog_command(config, args, trace, intent)
             trace.finish(result)
         print(json.dumps(result, ensure_ascii=False, indent=2))
         return 1 if result.get('status') in ('not_sent', 'uncertain') else 0
@@ -156,7 +161,7 @@ def main(argv=None):
         return 1
 
 
-def run_catalog_command(config, args, trace):
+def run_catalog_command(config, args, trace, intent=None):
     with Store(config.data_dir) as store:
         if args.command == 'sync':
             trace.event('execution_started', {'action': 'sync', 'read_only': True})
@@ -165,7 +170,7 @@ def run_catalog_command(config, args, trace):
         elif args.command == 'status':
             result = status(config, store)
         else:
-            result = asyncio.run(search_command(config, store, args, trace))
+            result = asyncio.run(search_command(config, store, args, trace, intent))
     return result
 
 

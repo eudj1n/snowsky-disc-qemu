@@ -19,17 +19,40 @@ class ControlIntent:
     action: str
 
 
+@dataclass(frozen=True)
+class LanguageIntent:
+    locale: str
+
+
+def language_target(text, rules):
+    from research.disc_assistant.assistant.responses import available_reply_languages, load_reply_locale
+    names = dict(rules.language_names)
+    for code in available_reply_languages():
+        try:
+            metadata = load_reply_locale(code)['locale']
+        except ValueError:
+            continue  # /locales diagnoses unrelated incomplete contributions.
+        for name in (code, metadata['name'], metadata['native_name']):
+            names.setdefault(normalized(name), code)
+    code = names.get(normalized(text))
+    if code is None:
+        raise ValueError('unknown language name; use /language CODE')
+    return code
+
+
 def parse(text, rules=None):
     if not isinstance(text, str) or not 1 <= len(text) <= 1000 or any(ord(c) < 32 for c in text):
         raise ValueError('command must contain 1..1000 characters without control characters')
     rules = rules if rules is not None else load_languages()
     for phrase, action in rules.commands:
-        if action != 'play' and normalized(text) == phrase:
+        if action not in ('play', 'set_language') and normalized(text) == phrase:
             return ControlIntent(action)
     match = rules.prefix('commands', unicodedata.normalize('NFC', text).strip())
     if not match:
         raise ValueError('supported play prefixes: ' + ', '.join(phrase for phrase, _ in rules.commands))
-    _, query = match
+    action, query = match
+    if action == 'set_language':
+        return LanguageIntent(language_target(query, rules))
     kind = 'auto'
     explicit = rules.prefix('targets', query)
     if explicit:

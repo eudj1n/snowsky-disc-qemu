@@ -62,12 +62,11 @@ opens a text console. Enter commands directly, without `ask` or shell quotes:
 
 ```text
 local-disc-emulator> /device
-local-disc-emulator> /language ru en
-local-disc-emulator> /response language ru
+local-disc-emulator> /language ru
 local-disc-emulator> /response mode errors
 local-disc-emulator> Включи Linkin Park - Numb
 local-disc-emulator> Пауза
-local-disc-emulator> Resume
+local-disc-emulator> Продолжи
 local-disc-emulator> /queue
 local-disc-emulator> /status
 local-disc-emulator> /exit
@@ -82,12 +81,21 @@ existing process ownership lock is scoped to that directory.
 Use `./research/disc_assistant/run.sh listen` to open the same console with the
 existing snapshot/index, without Docker startup or automatic sync/index. This is
 text input; microphone capture is not implemented yet. `/help` lists console
-commands. `/language ru` or `/language en` selects command dictionaries and saves
-the choice for later sessions; `/language ru en` enables both, and `/language reset`
-restores TOML defaults. `/response` independently saves response language and
-speech policy (`none`, `errors`, `all`); defaults are `ru` and `errors`. Debug JSON
-includes reply text even when `speak` is false. No speech synthesis or dialogue
-runs yet. `/locales` checks installed catalogs. `/sync` refreshes the catalog; `/index` rebuilds search after changes.
+commands. `/language ru` or `/language en` selects one language for commands and
+responses and saves it for later sessions. `/language reset` stores the configured
+default. Natural commands such as `Переключи язык на английский` use the same
+handler. `/response mode none|errors|all` controls future speech eligibility only.
+No speech synthesis or dialogue runs yet. `/locales` checks installed catalogs.
+`/sync` refreshes the catalog; `/index` rebuilds search after changes.
+
+To explicitly select and persist English at startup:
+
+```sh
+./research/disc_assistant/run.sh --language en listen
+```
+
+See [architecture and migration](../../docs/ASSISTANT_ARCHITECTURE.md) for interpreter,
+speech provider and single-locale contracts. Music metadata remains multilingual.
 
 The terminal uses `prompt_toolkit`: Up/Down recall, Ctrl-R history search, Tab
 completion, history suggestions accepted with Right, and Ctrl-L or `/clear` to
@@ -135,8 +143,8 @@ or automatic replay of a failed cron command.
 ./research/disc_assistant/run.sh index
 ./research/disc_assistant/run.sh search 'Linkin Park Numb'
 ./research/disc_assistant/run.sh search 'линкин парк намб' --limit 5
-./research/disc_assistant/run.sh rank 'Включи линкин парк намб'
-./research/disc_assistant/run.sh ask 'Включи линкин парк намб'
+./research/disc_assistant/run.sh --language ru rank 'Включи линкин парк намб'
+./research/disc_assistant/run.sh --language ru ask 'Включи линкин парк намб'
 ```
 
 `up` starts the separate local `disc-assistant` Typesense stack and waits up to
@@ -185,12 +193,12 @@ not a live Typesense health check. Commands return JSON; failures exit nonzero.
 Controls and queue observation bypass search and catalog storage:
 
 ```sh
-./research/disc_assistant/run.sh rank 'Pause'
-./research/disc_assistant/run.sh ask 'Пауза'
-./research/disc_assistant/run.sh ask 'Resume'
-./research/disc_assistant/run.sh ask 'Next track'
-./research/disc_assistant/run.sh ask 'Previous track'
-./research/disc_assistant/run.sh ask 'Stop'
+./research/disc_assistant/run.sh --language en rank 'Pause'
+./research/disc_assistant/run.sh --language ru ask 'Пауза'
+./research/disc_assistant/run.sh --language en ask 'Resume'
+./research/disc_assistant/run.sh --language en ask 'Next track'
+./research/disc_assistant/run.sh --language en ask 'Previous track'
+./research/disc_assistant/run.sh --language en ask 'Stop'
 ./research/disc_assistant/run.sh queue
 ```
 
@@ -232,12 +240,13 @@ The SQLite file is `library.sqlite3` under `[storage].data_dir`, defaulting to:
 - Windows: `%LOCALAPPDATA%/disc-hub/prototype/`.
 
 Assistant preferences live alongside the catalog in `assistant.sqlite3`, in a
-versioned `settings(key, value_json, updated_at)` table. Currently the saved key is
-`language.enabled`. It applies to the application data directory, across devices
+versioned `settings(key, value_json, updated_at)` table. The canonical settings are
+`language.locale` and `response.mode`. Legacy split-language settings migrate
+atomically, preferring the first old input language over the old response locale. It applies to the application data directory, across devices
 and configs using that directory; use different directories for independent
-profiles. Saved values override TOML defaults. Device endpoints, credentials and
+profiles. Saved values override TOML defaults; `--language CODE` overrides and persists locale. Device endpoints, credentials and
 operational limits remain in TOML/environment, not in this preferences table.
-One-shot `run.sh language [CODES|reset]` manages the same setting without search
+One-shot `run.sh language [CODE|reset]` manages the same setting without search
 or a device connection. An already-open console reloads external changes through
 `/language` or on restart. Catalog sync/index rebuilding does not erase preferences.
 Back up both SQLite databases; language selection does not create a catalog. Schema 2 additionally stores the
@@ -308,7 +317,7 @@ proof of completed listening or a queue of commands to replay.
 ```
 
 One-shot `run.sh history` has the same commands. For cron attribution, run
-`run.sh --source scheduled ask 'Pause'`. Collection defaults to enabled with
+`run.sh --source scheduled --language en ask 'Pause'`. Collection defaults to enabled with
 90-day retention and 10,000 completed requests. Configure `[journal].enabled`,
 `retention_days` and `max_requests` in TOML. Restart the console after config/code
 updates. See the [journal contract](../../docs/ASSISTANT_HISTORY.md) for migration,
@@ -348,7 +357,8 @@ The owner subsequently confirmed successful `sync → index → search` against
 the physical player. The read-only slice is ready for the next implementation
 step. On 2026-09-18, `rank`/`ask` added bilingual commands, deterministic lexical
 ranking and fresh Controller playback checks. Command/target/version phrases now
-live in per-language TOML dictionaries, merged using `[language].enabled`
+live in per-language TOML dictionaries; the later architecture increment selects
+one `[language].locale` for input and output
 (default `["ru", "en"]`); the 97-test checkpoint covered controls,
 queue observations and partial mode/selection failures. A
 read-only alias query on the existing physical-library snapshot resolved correctly.
@@ -392,6 +402,6 @@ separate acceptance work. No physical playback was exercised by this increment.
 The prototype suite is intentionally run explicitly; `ci/unit.py` has not been
 changed to discover this experimental directory. Before promotion, register its
 component tests in shared CI, broaden physical-catalog coverage and establish
-resource/ranking baselines, implement retention and decide the stable storage/API
+resource/ranking baselines and decide the stable storage/API
 contract. Then move the reviewed assistant/library components and update imports,
 entry points, docs and CI together. Promotion does not require splitting repositories.

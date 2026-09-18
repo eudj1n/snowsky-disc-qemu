@@ -1,5 +1,6 @@
 # Literal phrases, not regular expressions. Semantic keys are defined in Python.
 [commands]
+set_language = ["switch language to"]
 play = ["play"]
 pause = ["pause"]
 resume = ["resume"]
@@ -20,3 +21,7 @@ demo = ["demo"]
 karaoke = ["karaoke"]
 cover = ["cover"]
 remaster = ["remaster", "remastered"]
+
+[language_names]
+ru = ["russian"]
+en = ["english"]

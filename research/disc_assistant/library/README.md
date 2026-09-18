@@ -30,3 +30,16 @@ these cached positions as playback selectors or a score as calibrated confidence
 Runtime data belongs outside the checkout; this package stores only source code
 and synthetic tests. Production promotion will move reviewed modules and their
 component tests together, with explicit CI registration.
+
+
+Recording edition markers live in `version_markers.toml` and `versions.py`.
+Their recognition is independent of the Assistant interaction locale; English
+Live/Remastered labels remain visible when Russian commands are active. Locale
+query-version phrases may extend this vocabulary. These are lexical conventions,
+not authoritative recording identity or quality metadata.
+
+
+Common recording labels also remain explicit query constraints across locales:
+`Включи Linkin Park — Numb live` requires a live edition even in Russian mode.
+Locale-specific version phrases extend those shared labels. A missing requested
+edition is not silently replaced with a studio recording.

@@ -29,16 +29,17 @@ Existing fields such as `operation_id`, `state`, `mutation_attempted` and
 | --- | --- |
 | `code` | Stable, language-independent meaning; consumers must not parse translated text |
 | `text` | Plain localized text, or `null` when no user-facing message is appropriate |
-| `language` | Explicit Assistant response locale; independent of command dictionaries and player UI |
+| `language` | The active interaction locale, shared with input; independent of player UI |
 | `speak` | Whether a future audio adapter should speak this response; not evidence of audio delivery |
 | `interactive` | Reserved for future dialogue; always `false` in this implementation |
 
 `system.no_message` has `text: null`, `speak: false` and no translation template.
 Successful maintenance/inspection commands use it, including `/help`, `/status`,
-`/queue`, `/language`, `/response`, `/history`, `/sync`, `/index` and `/rank`.
+`/queue`, `/response`, `/history`, `/sync`, `/index` and `/rank`.
 Their diagnostic payloads remain available. Unrecognized commands, no matches and
 failures have localized messages. Debug help and technical diagnostics remain
-English; the response locale changes the user-facing `response.text` only.
+English; the active locale governs command interpretation and user-facing `response.text`.
+Successful language changes receive confirmation in the new locale.
 
 Console and one-shot CLI requests use the same response policy. JSON includes the
 text even when `speak` is false. TTY help/clear/exit retain their existing presentation;
@@ -52,7 +53,7 @@ exporting history does not reinsert requests.
 
 ```text
 /response
-/response language en
+/language en
 /response mode none
 /response mode errors
 /response mode all
@@ -62,7 +63,7 @@ exporting history does not reinsert requests.
 Equivalent offline commands:
 
 ```sh
-./research/disc_assistant/run.sh response language en
+./research/disc_assistant/run.sh language en
 ./research/disc_assistant/run.sh response mode errors
 ./research/disc_assistant/run.sh response reset
 ```
@@ -74,31 +75,33 @@ Equivalent offline commands:
 | `all` | Every nonempty user response, including successful playback controls |
 
 `scheduled` and `startup` sources always have `speak: false`, regardless of mode.
-Use `run.sh --source scheduled ask "Pause"` for an explicitly scheduled request.
+Use `run.sh --source scheduled --language en ask "Pause"` for an explicitly scheduled request.
 `interactive` describes dialogue behavior, **not** the interactive console source.
 
-The initial defaults are Russian responses and `errors` mode. They can be set in
+The initial defaults are Russian interaction and `errors` mode. They can be set in
 TOML:
 
 ```toml
 [language]
-enabled = ["ru", "en"]
+locale = "en"
 
 [response]
-language = "en"
 mode = "errors"
 
 [dialogue]
 enabled = false
 ```
 
-`/response` saves one `response.preferences` JSON object in the existing
-`assistant.sqlite3` settings table, independently of `language.enabled`.
-Precedence is saved settings, then TOML, then defaults. Scope is the application
-data directory, not the player. No database migration, library sync or index
-rebuild is needed. Invalid values preserve existing settings. `response reset`
-can remove a corrupt saved response value. An open console reloads response
-preferences when `/response` is invoked; TOML changes require restart.
+`/response` saves `response.mode` in the existing Assistant settings table.
+Language is stored once as `language.locale`; `/language` updates input and output
+together. `/response reset` restores the configured speech mode and preserves locale.
+Saved values override TOML; startup `--language CODE` overrides and persists locale.
+Invalid values preserve settings. Older split-language settings migrate atomically;
+see [architecture and migration](ASSISTANT_ARCHITECTURE.md).
+
+Preferences are scoped to the application data directory. No library sync or
+index rebuild is needed. An open console reloads preferences through settings
+commands; TOML changes require restart. `/response language` is no longer supported.
 
 Setting `dialogue.enabled = true` is rejected explicitly. The reserved field does
 not enable questions, choices, confirmations, pending requests or extra player
@@ -125,7 +128,8 @@ context. Preference-change events record the newly selected template context.
 This records generation/eligibility only, not display or playback delivery.
 History made before this increment remains readable without response fields.
 
-A future voice adapter can consume `text`, `language` and `speak`; it will need its
+The [speech provider contracts](ASSISTANT_ARCHITECTURE.md#speech-provider-contracts)
+are now defined. A future voice adapter can consume `text`, `language` and `speak`; it will need its
 own delivery/cancellation events. Future dialogue support must add a request-bound
 pending state, expiry and explicit transitions before any response can set
 `interactive: true`. A boolean alone is not a dialogue state machine.

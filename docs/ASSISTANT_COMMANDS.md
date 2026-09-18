@@ -13,9 +13,9 @@ activation is unnecessary. `ask` starts the best match without a choice dialogue
 | `./research/disc_assistant/run.sh setup` | Prepare the environment, config and private search key; preserve existing settings | None |
 | `./research/disc_assistant/run.sh start` | Start Typesense, connect, sync/index, then open the persistent text console | Read only until a playback command is entered |
 | `./research/disc_assistant/run.sh history [ARGS]` | Inspect, export, prune or clear the local request journal | None; offline |
-| `./research/disc_assistant/run.sh response [ARGS]` | Show/set response language, speech policy, or reset defaults | None; offline |
-| `./research/disc_assistant/run.sh locales` | Validate installed locale pairs and merged phrases | None; offline |
-| `./research/disc_assistant/run.sh language [CODES\|reset]` | Show/set saved command dictionaries, or reset to TOML defaults | None; offline |
+| `./research/disc_assistant/run.sh response [ARGS]` | Show/set speech policy, or reset its default | None; offline |
+| `./research/disc_assistant/run.sh locales` | Validate each installed locale pair | None; offline |
+| `./research/disc_assistant/run.sh language [CODE\|reset]` | Show/set one interaction locale, or reset to the TOML default | None; offline |
 | `./research/disc_assistant/run.sh listen` | Open the persistent console with existing data; no Docker startup or automatic sync/index | Initial handshake and state reads |
 | `./research/disc_assistant/run.sh up` | Start local Typesense and await readiness | None |
 | `./research/disc_assistant/run.sh down` | Stop Typesense, retaining its index volume | None |
@@ -24,9 +24,9 @@ activation is unnecessary. `ask` starts the best match without a choice dialogue
 | `./research/disc_assistant/run.sh queue` | Read all native queue pages, selected mark and play mode | Read only; no search/index dependency |
 | `./research/disc_assistant/run.sh index` | Rebuild Typesense from SQLite | None |
 | `./research/disc_assistant/run.sh search 'Linkin Park Numb'` | Search metadata and show candidates | None |
-| `./research/disc_assistant/run.sh rank 'Play Linkin Park — Numb'` | Explain ranking or a control intent | None |
-| `./research/disc_assistant/run.sh ask 'Play Linkin Park — Numb'` | Select the best candidate, check fresh rows, dispatch once and verify playback | Starts playback |
-| `./research/disc_assistant/run.sh ask 'Pause'` | Execute a state-aware control | See the control table below |
+| `./research/disc_assistant/run.sh --language en rank 'Play Linkin Park — Numb'` | Explain ranking or a control intent | None |
+| `./research/disc_assistant/run.sh --language en ask 'Play Linkin Park — Numb'` | Select the best candidate, check fresh rows, dispatch once and verify playback | Starts playback |
+| `./research/disc_assistant/run.sh --language en ask 'Pause'` | Execute a state-aware control | See the control table below |
 | `./research/disc_assistant/run.sh test` | Run prototype unit tests | None |
 | `./research/disc_assistant/run.sh check` | Exercise real CLI/controller/SDK against disposable Typesense and a synthetic player | No physical device used |
 | `./research/disc_assistant/run.sh help` | Show usage | None |
@@ -35,7 +35,7 @@ activation is unnecessary. `ask` starts the best match without a choice dialogue
 Default configuration is `~/disc-assistant.toml`; override it with:
 
 ```sh
-./research/disc_assistant/run.sh --config /absolute/path/disc.toml ask 'Play Linkin Park'
+./research/disc_assistant/run.sh --config /absolute/path/disc.toml --language en ask 'Play Linkin Park'
 ```
 
 Physical DISC uses its LAN IP, TCP **12100**, HTTP **12103**, and reviewed firmware
@@ -57,9 +57,9 @@ The key is a user-assigned namespace, not a discovered hardware identity.
 | `/history [ARGS]` | Inspect recent requests, `show ID`, `export PATH`, `prune`, or `clear --yes`; see [history](ASSISTANT_HISTORY.md) |
 | `/help` | List text and maintenance commands |
 | `/clear` | Clear the terminal screen; keep input history, journal and playback |
-| `/response [language CODE\|mode none\|errors\|all\|reset]` | Show/set saved response language and speech policy; see [responses](ASSISTANT_RESPONSES.md) |
-| `/locales` | Validate installed command/response catalogs and their merged phrases |
-| `/language [CODES\|reset]` | Show/set saved command dictionaries immediately; `reset` restores TOML defaults |
+| `/response [mode none\|errors\|all\|reset]` | Show/set saved speech policy; see [responses](ASSISTANT_RESPONSES.md) |
+| `/locales` | Validate each installed command/response catalog |
+| `/language [CODE\|reset]` | Show/set the input/output locale immediately; `reset` stores the TOML default |
 | `/status` | Show connection generation, latest playback observations and local catalog/index state |
 | `/device` | Show the current configuration key, host, TCP/HTTP ports and cached session state; also works while disconnected |
 | `/connect` | Enable connection/reconnection asynchronously; inspect `/status` for readiness |
@@ -78,8 +78,8 @@ Ctrl-D on an empty input or `/exit` closes the session. Ctrl-C during an operati
 still exits without replaying any possible device write. `/help` renders readable
 multiline text. Other operation results retain their JSON format.
 
-Completion covers slash commands, `/language` codes, `/response` locales/modes, `/history` subcommands and
-command phrases from the enabled TOML dictionaries. It follows `/language` changes
+Completion covers slash commands, `/language` codes, `/response` modes, `/history` subcommands and
+command phrases from the active locale dictionary. It follows `/language` changes
 immediately. Music-library completion is deferred; completion does not query or
 control the player. Suggestions never execute without Enter.
 
@@ -150,6 +150,7 @@ player's UI language. Automatic transliteration is not implemented.
 
 ## Playback controls
 
+Use the forms for the active locale (`/language en` or `/language ru`).
 These work without Typesense, a search key or a catalog/index. `rank 'Pause'`
 returns the intent offline; `ask 'Pause'` connects to the device.
 
@@ -175,80 +176,65 @@ See the [playback contract](ASSISTANT_PLAYBACK.md).
 
 ## Language dictionaries
 
-Literal forms live in [`ru.toml`](../research/disc_assistant/assistant/locales/ru.toml)
-and [`en.toml`](../research/disc_assistant/assistant/locales/en.toml). User config:
+The application uses one active locale for command interpretation, user responses
+and future speech provider context. Russian and English are installed; the default
+is Russian. Music names and aliases remain unrestricted by locale.
 
 ```toml
 [language]
-enabled = ["ru", "en"]
+locale = "ru"
 ```
-
-The TOML value supplies the default. An explicit selection is available without
-restarting the console:
 
 ```text
-/language          # Show enabled, configured and available languages and source.
-/language ru       # Accept Russian command forms only.
-/language en       # Accept English command forms only.
-/language ru en    # Merge both dictionaries.
-/language reset    # Remove the saved override and restore the loaded TOML default.
+/language          # Show/reload the saved locale and available codes.
+/language ru       # Russian commands and responses.
+Переключи язык на английский
+Switch language to Russian
+/language reset    # Store the configured TOML default.
 ```
 
-Comments above explain the examples; enter only the command itself. For scripts:
+Both natural changes and `/language` use the same preference handler. Confirmation
+uses the new locale. `/rank Switch language to Russian` (while English is active)
+is a preview and does not save the change. `/language ru en` is no longer supported;
+`/response language` is replaced by `/language`. Speech policy stays under `/response mode`.
 
 ```sh
+./research/disc_assistant/run.sh --language en listen
 ./research/disc_assistant/run.sh language ru
-./research/disc_assistant/run.sh language
 ./research/disc_assistant/run.sh language reset
 ```
 
-The selection applies immediately to console parsing and ranking and persists
-across sessions, including one-shot `ask`/`rank`. Precedence is saved preference,
-then TOML, then the bilingual default. Invalid/missing dictionaries and duplicate
-codes fail without replacing the previous selection. `/language` also reloads a
-preference changed by another process; otherwise an already-open console keeps
-its selection until restart. TOML edits require restart.
+The startup flag is persisted. Saved `language.locale` wins over TOML when no flag
+is supplied. Initial defaults are persisted too, independently of request journaling.
+Old input lists migrate using their first entry; old separate response language is
+used only without an input selection. See the full [migration contract](ASSISTANT_ARCHITECTURE.md#migration-and-storage).
 
-This selects command dictionaries (including their version phrases), not the
-player's UI language or a metadata-language filter. Artist/title text may still
-use any language. `/language` and other slash commands stay available in every
-selection. User responses have a separate `/response language CODE` preference;
-technical help remains English. Microphone recognition is not implemented.
-No sync or index rebuild is required.
+Literal command/target/version phrases live in `assistant/locales/<code>.toml`.
+Language-switch prefixes use `commands.set_language`; optional `language_names`
+map locale codes to names spoken in the current language. Locale codes and installed
+English/native display names are also recognized as language targets. Prefixes use
+longest match; controls match whole phrases. No general sentence parsing or inflection
+is implied. Slash commands are available independently of the locale.
 
-The bilingual setting is also the default for older configs. Dictionaries merge, allowing mixed
-requests such as `Play песню Numb`. `search` continues accepting arbitrary text.
-For a community contribution, add complete command and response catalogs following
-[the locale guide](ASSISTANT_LOCALES.md). This partial command example illustrates
-the phrase format:
+Recording metadata markers such as Live/Remastered are recognized independently
+of input locale. Requested version phrases use the active dictionary; the library's
+metadata marker table additionally prevents a locale change from hiding known
+live/remastered labels. Personal artist/title aliases remain separate.
 
-```toml
-[commands]
-play = ["mets", "mets moi"]
-pause = ["pause"]
-[targets]
-artist = ["artiste"]
-track = ["la chanson"]
-[versions]
-live = ["en concert"]
-```
+For a new locale, follow the [contribution guide](ASSISTANT_LOCALES.md). Full
+command/response catalogs need no runtime Python registry edit. The independent
+[interpreter and speech contracts](ASSISTANT_ARCHITECTURE.md) allow later local or
+remote engines without changing the execution pipeline.
 
-Values are literal phrases, not regular expressions. Longest play/target prefixes
-win; controls match the entire phrase. Identical forms with the same meaning
-merge. Conflicting meanings within a section, unknown keys and invalid files fail
-validation. Language order does not establish precedence. Semantic keys are
-`commands.play/pause/resume/stop/next/previous`, `targets.artist/track`, and
-`versions.live/remix/acoustic/instrumental/demo/karaoke/cover/remaster`.
-New forms need no parser changes; new actions require Python implementation.
-This is a bounded phrase grammar, not general sentence parsing or inflection.
+Common recording labels also remain explicit query constraints across locales:
+`Включи Linkin Park — Numb live` requires a live edition even in Russian mode.
+Locale-specific version phrases extend those shared labels. A missing requested
+edition is not silently replaced with a studio recording.
 
-Version phrases apply to both queries and metadata. Keep English enabled for
-English tags such as Live/Remastered alongside Russian commands. Music-name
-aliases remain in `aliases.artists/titles`, separate from command forms.
-Dictionary edits apply on the next CLI invocation or console restart without
-`sync`/`index`.
+## Ranking: lexical-v2
 
-## Ranking: lexical-v1
+Version 2 separates metadata version markers from the active command locale;
+weights and automatic best-match policy are unchanged.
 
 Scores are explainable heuristics, **not probabilities**. Quality needs evaluation
 on a fixed personal-library query set.

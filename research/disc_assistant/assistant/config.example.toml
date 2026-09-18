@@ -18,15 +18,13 @@ protocol = "http"
 api_key_env = "TYPESENSE_API_KEY"
 
 [language]
-# Merge literal command and version phrases from assistant/locales/<code>.toml.
-# Defaults when no saved /language preference exists; /language reset restores them.
-# Omit this section to default to both languages.
-enabled = ["ru", "en"]
+# One language for command interpretation, responses and future speech adapters.
+# Saved locale overrides this default; --language CODE selects and persists it.
+# /language reset restores this configured default. Music names remain unrestricted.
+locale = "ru"
 
 [response]
-# Independent of accepted command languages and device UI language.
-# Saved /response settings override these defaults; /response reset restores them.
-language = "ru"
+# Speech eligibility only. Response language always follows [language].locale.
 mode = "errors" # none: no speech; errors: problems only; all: every nonempty reply.
 
 [dialogue]

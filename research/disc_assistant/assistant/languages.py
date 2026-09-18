@@ -1,14 +1,15 @@
-"""Merge literal language dictionaries into the supported command semantics."""
+"""Validated literal dictionaries; the application selects one interaction locale."""
 from dataclasses import dataclass
 from pathlib import Path
 import re
 import tomllib
 import unicodedata
 
-DEFAULT_LANGUAGES = ('ru', 'en')
+DEFAULT_LOCALE = 'ru'
+DEFAULT_LANGUAGES = (DEFAULT_LOCALE,)
 LOCALES = Path(__file__).with_name('locales')
 SECTIONS = {
-    'commands': {'play', 'pause', 'resume', 'stop', 'next', 'previous'},
+    'commands': {'play', 'pause', 'resume', 'stop', 'next', 'previous', 'set_language'},
     'targets': {'artist', 'track'},
     'versions': {'live', 'remix', 'acoustic', 'instrumental', 'demo', 'karaoke', 'cover', 'remaster'},
 }
@@ -28,11 +29,12 @@ class LanguageRules:
     commands: tuple[tuple[str, str], ...]
     targets: tuple[tuple[str, str], ...]
     versions: tuple[tuple[str, str], ...]
+    language_names: tuple[tuple[str, str], ...] = ()
 
     def prefix(self, section, text):
         """Return semantic key and untouched remainder; longest phrase wins."""
         for phrase, meaning in getattr(self, section):
-            if section == 'commands' and meaning != 'play':
+            if section == 'commands' and meaning not in ('play', 'set_language'):
                 continue
             match = re.fullmatch(literal_pattern(phrase) + r'\s+(.+)', text, re.IGNORECASE)
             if match:
@@ -60,8 +62,8 @@ def load_languages(enabled=DEFAULT_LANGUAGES, *, directory=LOCALES):
     if (not isinstance(enabled, (list, tuple)) or not enabled
             or any(not isinstance(code, str) or not re.fullmatch(r'[a-z]{2,3}(?:-[a-z0-9]+)*', code)
                    for code in enabled) or len(set(enabled)) != len(enabled)):
-        raise ValueError('language.enabled must be a nonempty list of unique language codes')
-    merged = {section: {} for section in SECTIONS}
+        raise ValueError('language dictionaries require unique, nonempty locale codes')
+    merged = {section: {} for section in (*SECTIONS, 'language_names')}
     for code in enabled:
         path = Path(directory) / (code + '.toml')
         try:
@@ -69,10 +71,11 @@ def load_languages(enabled=DEFAULT_LANGUAGES, *, directory=LOCALES):
                 raw = tomllib.load(stream)
         except (OSError, ValueError) as exc:
             raise ValueError(f'cannot load language {code}: {exc}') from exc
-        if not raw or set(raw) - SECTIONS.keys():
+        if not raw or set(raw) - merged.keys():
             raise ValueError(f'{code}: unknown or empty language sections')
         for section, table in raw.items():
-            if not isinstance(table, dict) or set(table) - SECTIONS[section]:
+            if (not isinstance(table, dict) or (section != 'language_names' and set(table) - SECTIONS[section])
+                    or (section == 'language_names' and any(not re.fullmatch(r'[a-z]{2,3}(?:-[a-z0-9]+)*', key) for key in table))):
                 raise ValueError(f'{code}: unknown meanings in [{section}]')
             for meaning, phrases in table.items():
                 if not isinstance(phrases, list) or not phrases:

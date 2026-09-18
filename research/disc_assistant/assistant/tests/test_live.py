@@ -25,7 +25,7 @@ class LiveTests(unittest.TestCase):
         self.server = Server()
         self.addCleanup(self.server.close)
         self.config = Config('synthetic', '127.0.0.1', self.server.server_address[1], 1,
-                             Path(self.tmp.name), '127.0.0.1', 1, 'http', 'UNSET_SEARCH_KEY', {}, timeout=.3)
+                             Path(self.tmp.name), '127.0.0.1', 1, 'http', 'UNSET_SEARCH_KEY', {}, timeout=.3, locale='en')
 
     def session(self):
         session = DeviceSession(self.config, backoff=.02, health_interval=.1)

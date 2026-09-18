@@ -110,6 +110,7 @@ def wait_ready(config, timeout=45):
 def main(argv=None):
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--config', default=os.environ.get('DISC_ASSISTANT_CONFIG', '~/disc-assistant.toml'))
+    parser.add_argument('--language', help='select and persist one interaction locale')
     parser.add_argument('--source', choices=('cli', 'scheduled'))
     parser.add_argument('command', choices=('setup', 'up', 'down', 'start', 'listen', 'language', 'response', 'locales', 'history', 'sync', 'status', 'queue', 'index', 'search', 'rank', 'ask', 'test', 'check'))
     parser.add_argument('arguments', nargs=argparse.REMAINDER)
@@ -119,6 +120,11 @@ def main(argv=None):
         config_path = Path(os.environ.get('DISC_ASSISTANT_CALLER_DIR', os.getcwd())) / config_path
     config_path = config_path.resolve()
     try:
+        if args.language:
+            from research.disc_assistant.assistant.responses import validate_locale
+            validate_locale(args.language)
+            if args.command in ('setup', 'up', 'down', 'test', 'check'):
+                raise ValueError('--language applies to application commands, such as start/listen/ask')
         if args.command not in ('search', 'rank', 'ask', 'language', 'response', 'history') and args.arguments:
             raise ValueError('unexpected arguments; see run.sh help')
         if args.command == 'setup':
@@ -139,16 +145,6 @@ def main(argv=None):
             raise ValueError(f'config missing: {config_path}; run setup or pass --config PATH')
         config = load(config_path)
         needs_search = args.command in ('up', 'index', 'search', 'rank', 'ask')
-        if args.command in ('rank', 'ask') and len(args.arguments) == 1:
-            from research.disc_assistant.assistant.intents import parse, ControlIntent
-            from research.disc_assistant.assistant.languages import load_languages
-            from research.disc_assistant.assistant.preferences import effective_config
-            config = effective_config(config)
-            try:
-                needs_search = not isinstance(parse(args.arguments[0], load_languages(config.languages)), ControlIntent)
-            except ValueError:
-                # Let the application journal rejected natural-language input.
-                needs_search = False
         env = dict(os.environ)
         if needs_search:
             try:
@@ -177,7 +173,8 @@ def main(argv=None):
             return 0
         return subprocess.run([sys.executable, '-m', 'research.disc_assistant.assistant',
                                '--config', str(config_path),
-                               *(['--source', args.source] if args.source else []), args.command, *args.arguments],
+                               *(['--source', args.source] if args.source else []),
+                               *(['--language', args.language] if args.language else []), args.command, *args.arguments],
                               cwd=ROOT, env=env).returncode
     except KeyboardInterrupt:
         return 130

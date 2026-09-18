@@ -7,15 +7,15 @@ venv_python="$prototype_dir/assistant/.venv/bin/python"
 
 if [[ ${1:-help} == help || ${1:-} == --help || ${1:-} == -h ]]; then
     cat <<'HELP'
-Usage: research/disc_assistant/run.sh [--config PATH] [--source cli|scheduled] COMMAND [ARGS]
+Usage: research/disc_assistant/run.sh [--config PATH] [--source cli|scheduled] [--language CODE] COMMAND [ARGS]
 
   setup          Install dependencies; create missing config and private search key
   up             Start local Typesense and wait for readiness
   down           Stop local Typesense, preserving its volume
   start          Start Typesense, connect, sync/index, then keep an interactive console
   listen         Persistent console using existing catalog/index; no Docker startup
-  language [CODES|reset]  Show/set saved command languages (installed locale codes)
-  response [ARGS] Show/set reply language CODE, mode none|errors|all, or reset
+  language [CODE|reset]   Show/set one saved interaction locale
+  response [ARGS] Show/set speech mode none|errors|all, or reset
   locales        Validate installed command and response locales
   history [ARGS] View recent requests; show ID, export PATH, prune, clear --yes
   sync           Read the selected DISC catalog into SQLite
@@ -44,8 +44,8 @@ launcher_args=("$@")
 argument_index=0
 while (( argument_index < ${#launcher_args[@]} )); do
     case "${launcher_args[$argument_index]}" in
-        --config|--source) argument_index=$((argument_index + 2)) ;;
-        --config=*|--source=*) argument_index=$((argument_index + 1)) ;;
+        --config|--source|--language) argument_index=$((argument_index + 2)) ;;
+        --config=*|--source=*|--language=*) argument_index=$((argument_index + 1)) ;;
         *) command_name="${launcher_args[$argument_index]}"; break ;;
     esac
 done

@@ -15,7 +15,6 @@ from prompt_toolkit.shortcuts import clear
 from prompt_toolkit.styles import Style
 
 from research.disc_assistant.assistant.journal import console_history, recallable
-from research.disc_assistant.assistant.languages import LOCALES
 from research.disc_assistant.assistant.responses import MODES, available_reply_languages
 
 COMMANDS = ('/connect', '/disconnect', '/device', '/status', '/queue', '/sync', '/index',
@@ -41,19 +40,13 @@ class CommandCompleter(Completer):
         text = document.text_before_cursor.lstrip()
         prefix = text
         if text.startswith('/language '):
-            parts = text.split(' ')
-            prefix = parts[-1]
-            chosen = parts[1:-1]
-            options = [p.stem for p in sorted(LOCALES.glob('*.toml')) if p.stem not in chosen]
-            if not any(chosen):
-                options.append('reset')
+            prefix = text[len('/language '):]
+            options = available_reply_languages() + ['reset']
         elif text.startswith('/response '):
             parts = text[len('/response '):].split(' ')
             prefix = parts[-1]
             if len(parts) == 1:
-                options = ('language', 'mode', 'reset')
-            elif len(parts) == 2 and parts[0] == 'language':
-                options = available_reply_languages()
+                options = ('mode', 'reset')
             elif len(parts) == 2 and parts[0] == 'mode':
                 options = MODES
             else:

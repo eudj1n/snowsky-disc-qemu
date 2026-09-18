@@ -101,37 +101,37 @@ class ResponseTests(unittest.TestCase):
                 ('stale_index_or_catalog', 'catalog.stale'), ('execution_error', 'command.error')):
             self.assertEqual(self.reply({'status': 'error'}, failure=category)['code'], code)
 
-    def test_preferences_survive_restart_and_do_not_change_command_languages(self):
-        self.assertEqual(response_command(self.config)['source'], 'config')
-        self.assertFalse(self.config.data_dir.exists())
+    def test_locale_and_speech_policy_survive_restart_and_reset_independently(self):
+        self.assertEqual(response_command(self.config)['source'], 'saved')
+        self.assertTrue(self.config.data_dir.exists())
         original = self.path.read_bytes()
         language_command(self.config, ['ru'])
-        response_command(self.config, ['language', 'en'])
+        language_command(self.config, ['en'])
         response_command(self.config, ['mode', 'all'])
         config = effective_config(load(self.path))
-        self.assertEqual((config.response_language, config.response_mode, config.languages), ('en', 'all', ('ru',)))
+        self.assertEqual((config.locale, config.response_mode), ('en', 'all'))
         self.assertEqual(self.path.read_bytes(), original)
         response_command(self.config, ['reset'])
         self.assertEqual(effective_config(self.config).response_mode, 'errors')
-        self.assertEqual(effective_config(self.config).languages, ('ru',))
+        self.assertEqual(effective_config(self.config).locale, 'en')
 
     def test_invalid_preferences_do_not_replace_saved_values_and_corruption_is_resettable(self):
-        response_command(self.config, ['language', 'en'])
+        language_command(self.config, ['en'])
         for args in (['mode', 'yes'], ['language', '../en'], ['language', 'xx'], ['unknown']):
             with self.subTest(args=args), self.assertRaises(ValueError):
                 response_command(self.config, args)
-            self.assertEqual(response_command(self.config)['language'], 'en')
+            self.assertEqual(language_command(self.config)['locale'], 'en')
         with Preferences(self.config.data_dir) as preferences:
             with preferences.db:
-                preferences.db.execute("UPDATE settings SET value_json='broken' WHERE key='response.preferences'")
+                preferences.db.execute("UPDATE settings SET value_json='broken' WHERE key='response.mode'")
         with self.assertRaisesRegex(ValueError, 'response reset'):
             effective_config(self.config)
         status, result = self.invoke('response', 'reset')
         self.assertEqual(status, 0)
-        self.assertEqual(result['language'], 'ru')
+        self.assertEqual(result['locale'], 'en')
 
     def test_cli_preference_commands_use_saved_reply_language_even_for_invalid_settings(self):
-        self.invoke('response', 'language', 'en')
+        self.invoke('language', 'en')
         self.assertEqual(self.invoke('language')[1]['response']['language'], 'en')
         code, result = self.invoke('response', 'mode', 'invalid')
         self.assertEqual(code, 1)
@@ -146,18 +146,18 @@ class ResponseTests(unittest.TestCase):
             with self.subTest(section=section), self.assertRaises(ValueError):
                 load(self.path)
         self.path.write_text(base + '[response]\nlanguage="en"\nmode="none"\n[dialogue]\nenabled=false\n')
-        self.assertEqual(load(self.path).response_language, 'en')
+        self.assertEqual(load(self.path).locale, 'en')
         self.assertFalse(load(self.path).dialogue_enabled)
 
     def test_console_and_cli_share_reply_and_journal_template_provenance(self):
         app = Application(self.config)
-        app.request('/response language en')
+        app.request('/language en')
         app.request('/response mode all')
         control = {'status': 'confirmed', 'action': 'pause', 'mutation_attempted': True}
         app.device_call = Mock(return_value=dict(control))
-        console_result = app.request('Пауза')
+        console_result = app.request('Pause')
         with patch.object(cli, 'control', return_value=dict(control)) as device:
-            code, cli_result = self.invoke('ask', 'Пауза')
+            code, cli_result = self.invoke('ask', 'Pause')
         self.assertEqual(code, 0)
         device.assert_called_once()
         self.assertEqual(console_result['response'], cli_result['response'])
@@ -167,11 +167,11 @@ class ResponseTests(unittest.TestCase):
             self.assertEqual(record['outcome']['response'], result['response'])
             self.assertEqual(record['context']['response'], Responses('en', 'all').context())
         reopened = Application(self.config)
-        self.assertEqual(reopened.config.response_language, 'en')
-        self.assertEqual(reopened.request('/response reset')['response']['language'], 'ru')
+        self.assertEqual(reopened.config.locale, 'en')
+        self.assertEqual(reopened.request('/language reset')['response']['language'], 'ru')
 
     def test_errors_are_localized_and_journaled_without_raw_exception_text(self):
-        response_command(self.config, ['language', 'en'])
+        language_command(self.config, ['en'])
         app = Application(self.config)
         with self.assertRaises(ValueError) as caught:
             app.request('unrecognized-private-marker')
@@ -233,8 +233,8 @@ class ResponseTests(unittest.TestCase):
             {'status': 'confirmed', 'action': 'pause'}, command='ask', source='cli')['response']
         self.assertEqual(reply['text'], 'Lecture en pause.')
         with patch('research.disc_assistant.assistant.terminal.available_reply_languages', return_value=['fr']):
-            completions = CommandCompleter(lambda: load_languages()).get_completions(Document('/response language '), None)
-            self.assertEqual([item.text for item in completions], ['fr'])
+            completions = CommandCompleter(lambda: load_languages()).get_completions(Document('/language '), None)
+            self.assertEqual([item.text for item in completions], ['fr', 'reset'])
 
     def test_expanded_text_is_bounded_to_journal_retention(self):
         directory = self.contributed()

@@ -16,7 +16,7 @@ marked `scheduled` requests, and automatic `startup` preparation.
 | Evidence | Fields and meaning |
 | --- | --- |
 | Input | Original text, normalized copy, command, source, device namespace, session/request IDs, UTC time |
-| Parsing | Enabled command languages, parser version, hash of the actual language rules, parsed intent/parameters and resolved artist/title intent |
+| Parsing | Active locale, command-rule version/hash, metadata-marker hash, interpreter provider/version/execution type and status, validated intention and catalog-resolved artist/title intent |
 | Search context | Snapshot/index generation, collection and index signature (including the alias/config fingerprint); actual fuzzy query when used |
 | Retrieval | Up to 10 candidates with metadata, snapshot identity/provenance, matched tokens and search scores; returned/found counts and truncation flag |
 | Ranking | Up to 10 ranked candidates, scores/reasons, ranking policy and retrieval method; exact SQLite matches do not invent a Typesense query |
@@ -93,7 +93,7 @@ The same operations are available without a device or search connection:
 ./research/disc_assistant/run.sh history show REQUEST_ID
 ./research/disc_assistant/run.sh history export /absolute/path/history.jsonl
 ./research/disc_assistant/run.sh history clear --yes
-./research/disc_assistant/run.sh --source scheduled ask 'Pause'
+./research/disc_assistant/run.sh --source scheduled --language en ask 'Pause'
 ```
 
 Put global `--config`/`--source` options before the command. Scheduled origin must
@@ -137,7 +137,7 @@ not establish dislike. Recommendation features and listening aggregates are late
 work; this increment provides their request-side evidence.
 
 The subsequent [shared Controller API](CONTROLLER_API.md) extraction is now
-implemented. Language preferences, command journals, ranking and recommendation
+implemented. The single interaction locale, command journals, ranking and recommendation
 policy remain in Assistant; device session/state behavior is reusable independently.
 
 Validation covers schema migration, malformed commands, source attribution,
@@ -151,3 +151,11 @@ The 2026-09-18 firmware-free checks passed 142 prototype tests and the shared
 313 Python / 37 JavaScript tests. The disposable real-Typesense/synthetic-player
 acceptance passed request/search/selection/outcome persistence across process
 exit, rejected commands, scheduled attribution, export and clear.
+
+
+The [architecture refactor](ASSISTANT_ARCHITECTURE.md) adds interpretation provider
+identity/status events and records one active locale per request. Rules and model
+providers share the validated intention boundary. Language-change events retain the
+new response-template context while the request context retains the input locale.
+Old bilingual/split-response journal records are historical and are not rewritten.
+Startup locale/speech preferences persist even with request journaling disabled.

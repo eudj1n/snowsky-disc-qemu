@@ -2,9 +2,14 @@ from pathlib import Path
 import tempfile
 import unittest
 
-from research.disc_assistant.assistant.intents import Intent, parse
+from research.disc_assistant.assistant.intents import Intent, parse as parse_text
 from research.disc_assistant.assistant.languages import load_languages
 from research.disc_assistant.assistant.ranking import score_tracks
+
+
+def parse(text, rules=None):
+    # Low-level grammar comparisons explicitly exercise both dictionaries.
+    return parse_text(text, rules or load_languages(('ru', 'en')))
 
 
 class LanguageTests(unittest.TestCase):

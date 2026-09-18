@@ -2,9 +2,11 @@
 from difflib import SequenceMatcher
 import re
 
-from research.disc_assistant.assistant.intents import Intent, parse, normalized, names
+from research.disc_assistant.assistant.intents import Intent, normalized, names
 from research.disc_assistant.assistant.languages import load_languages
 from research.disc_assistant.library.store import StaleSnapshot
+from research.disc_assistant.library.versions import with_query_markers
+from research.disc_assistant.assistant.resolver import infer
 
 def words(value):
     return re.findall(r'[^\W_]+', normalized(value))
@@ -40,36 +42,20 @@ def similarity(query, canonical, aliases=()):
     return best
 
 
-def infer(intent, documents, aliases):
-    if intent.kind != 'auto' or intent.artist is not None:
-        return intent
-    artists = sorted({d['artist'] for d in documents})
-    q = normalized(intent.query)
-    entries = [(alias, artist) for artist in artists for alias in names(artist, aliases.get('artists', {}))]
-    if any(q == alias for alias, _ in entries):
-        return Intent(intent.query, 'artist')
-    # An exact standalone title takes precedence over a coincidental artist prefix.
-    if any(q in names(d['title'], aliases.get('titles', {})) for d in documents):
-        return Intent(intent.query, 'track')
-    prefixes = [alias for alias, _ in entries if q.startswith(alias + ' ')]
-    if prefixes:
-        prefix = max(prefixes, key=lambda a: (len(a), a))
-        return Intent(intent.query, 'track', prefix, q[len(prefix):].strip())
-    return intent
-
 
 def score_tracks(intent, documents, aliases, rules=None):
     rules = rules if rules is not None else load_languages()
+    metadata_rules = with_query_markers(rules.versions)
     ranked = []
     requested_title = intent.title if intent.title is not None else intent.query
-    requested_versions, query_core = rules.version_parts(clean_title(requested_title))
+    requested_versions, query_core = metadata_rules.version_parts(clean_title(requested_title))
     for doc in documents:
-        edition = versions(doc['title'], rules) | versions(doc['album'], rules)
+        edition = versions(doc['title'], metadata_rules) | versions(doc['album'], metadata_rules)
         if requested_versions and not requested_versions <= edition:
             continue
         title_score, title_match = similarity(clean_title(requested_title), clean_title(doc['title']),
                                              aliases.get('titles', {}).get(doc['title'], []))
-        base_score, base_match = similarity(query_core or requested_title, base_title(doc['title'], rules),
+        base_score, base_match = similarity(query_core or requested_title, base_title(doc['title'], metadata_rules),
                                            aliases.get('titles', {}).get(doc['title'], []))
         if base_score > title_score:
             title_score, title_match = base_score, 'base_' + base_match
@@ -118,11 +104,13 @@ def ordered(candidates):
         int(c['track_id'].rsplit(':', 1)[1]) if c['kind'] == 'track' else -1))
 
 
-async def rank(config, store, search, text, *, trace=None):
-    rules = load_languages(config.languages)
+async def rank(config, store, search, intent, *, trace=None):
+    if type(intent) is not Intent:
+        raise TypeError('rank requires an interpreted music Intent')
+    rules = load_languages((config.locale,))
     head = store.verify_index(config.device_key, search.signature)
     documents = store.documents(head['generation'])
-    intent = infer(parse(text, rules), documents, config.aliases)
+    intent = infer(intent, documents, config.aliases)
     if trace:
         from dataclasses import asdict
         trace.event('intent_resolved', asdict(intent))
@@ -164,4 +152,4 @@ async def rank(config, store, search, text, *, trace=None):
             'intent': intent.kind, 'generation': head['generation'], 'device': config.device_key,
             'retrieval': retrieval, 'candidates': candidates[:10],
             'candidate_count': len(candidates), 'candidates_truncated': len(candidates) > 10,
-            'ranking_policy': 'lexical-v1; scores are not probabilities; no history/likes'}
+            'ranking_policy': 'lexical-v2; scores are not probabilities; no history/likes'}

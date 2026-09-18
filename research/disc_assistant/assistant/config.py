@@ -5,7 +5,7 @@ from pathlib import Path
 import sys
 import tomllib
 
-from research.disc_assistant.assistant.languages import DEFAULT_LANGUAGES, load_languages
+from research.disc_assistant.assistant.languages import load_languages
 from research.disc_assistant.assistant.responses import DEFAULT_LANGUAGE, validate_response_preferences
 
 
@@ -25,13 +25,12 @@ class Config:
     timeout: int = 8
     max_tracks: int = 100000
     max_requests: int = 10000
-    languages: tuple[str, ...] = DEFAULT_LANGUAGES
+    locale: str = DEFAULT_LANGUAGE
     continuous_context: bool = False
     journal_enabled: bool = True
     journal_retention_days: int = 90
     journal_max_requests: int = 10000
     terminal: dict = field(default_factory=dict)
-    response_language: str = DEFAULT_LANGUAGE
     response_mode: str = 'errors'
     dialogue_enabled: bool = False
 
@@ -64,7 +63,7 @@ def load(path):
                'typesense': {'host', 'port', 'protocol', 'api_key_env'},
                'sync': {'page_size', 'timeout', 'max_tracks', 'max_requests'},
                'aliases': {'artists', 'titles'},
-               'language': {'enabled'},
+               'language': {'locale', 'enabled'},
                'response': {'language', 'mode'},
                'dialogue': {'enabled'},
                'playback': {'continuous_context'},
@@ -77,7 +76,12 @@ def load(path):
             raise ValueError(f'invalid or unknown options in [{section}]')
     device, storage, search, sync = (raw.get(k, {}) for k in ('device', 'storage', 'typesense', 'sync'))
     aliases = raw.get('aliases', {})
-    languages = load_languages(raw.get('language', {}).get('enabled', DEFAULT_LANGUAGES)).enabled
+    language = raw.get('language', {})
+    legacy = language.get('enabled')
+    if legacy is not None and 'locale' not in language:
+        legacy = load_languages(legacy).enabled
+    locale = (language['locale'] if 'locale' in language else
+              legacy[0] if legacy else raw.get('response', {}).get('language', DEFAULT_LANGUAGE))
     continuous = raw.get('playback', {}).get('continuous_context', False)
     if type(continuous) is not bool:
         raise ValueError('playback.continuous_context must be a boolean')
@@ -86,7 +90,7 @@ def load(path):
     if type(journal_enabled) is not bool:
         raise ValueError('journal.enabled must be a boolean')
     response = raw.get('response', {})
-    response = validate_response_preferences(response.get('language', DEFAULT_LANGUAGE), response.get('mode', 'errors'))
+    response = validate_response_preferences(locale, response.get('mode', 'errors'))
     dialogue = raw.get('dialogue', {}).get('enabled', False)
     if dialogue is not False:
         raise ValueError('dialogue.enabled must be false; dialogue is not implemented')
@@ -125,7 +129,7 @@ def load(path):
         number(sync.get('page_size', 200), 'page_size', 1, 200),
         number(sync.get('timeout', 8), 'timeout', 1, 120),
         number(sync.get('max_tracks', 100000), 'max_tracks', 1, 1000000),
-        number(sync.get('max_requests', 10000), 'max_requests', 2, 100000), languages, continuous,
+        number(sync.get('max_requests', 10000), 'max_requests', 2, 100000), locale, continuous,
         journal_enabled, number(journal.get('retention_days', 90), 'journal.retention_days', 1, 3650),
         number(journal.get('max_requests', 10000), 'journal.max_requests', 1, 1000000), terminal,
-        response['language'], response['mode'], dialogue)
+        response['mode'], dialogue)

@@ -42,9 +42,9 @@ class ConfigSessionTests(unittest.TestCase):
             load(self.path)
 
     def test_language_defaults_selection_and_validation(self):
-        self.assertEqual(self.config.languages, ('ru', 'en'))
+        self.assertEqual(self.config.locale, 'ru')
         self.path.write_text(self.base + '[language]\nenabled=["en"]')
-        self.assertEqual(load(self.path).languages, ('en',))
+        self.assertEqual(load(self.path).locale, 'en')
         for enabled in ('[]', '"ru"', '["ru", "ru"]', '["zz"]'):
             self.path.write_text(self.base + '[language]\nenabled=' + enabled)
             with self.subTest(enabled=enabled), self.assertRaises(ValueError):

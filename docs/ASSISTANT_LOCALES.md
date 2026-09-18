@@ -2,7 +2,7 @@
 
 New locales for existing command meanings and user responses require TOML files,
 not Python registry edits. Files are discovered by name. The contributor validator
-checks completeness, phrase conflicts and template parameters before a locale is
+checks completeness, within-locale phrase conflicts and template parameters before a locale is
 used with a device.
 
 ## Add a locale
@@ -18,8 +18,7 @@ used with a device.
    new locale explicitly. Restart a running console after installing/editing files.
 
 Use a lowercase language tag: `fr`, `de`, `pt-br`, for example. It must match both
-filenames and `[locale].code`. Do not add a locale to the bilingual defaults merely
-to install it. A contribution should contain both complete files, with no English
+filenames and `[locale].code`. Installing a locale does not change the active locale. A contribution should contain both complete files, with no English
 placeholder translations unless the wording is intentionally shared.
 
 Example response metadata:
@@ -33,6 +32,7 @@ native_name = "Français"
 [messages]
 "playback.paused" = "Lecture en pause."
 "playback.started" = "Lecture de {title} — {artist}."
+"language.changed" = "La langue est maintenant le français."
 ```
 
 This fragment illustrates the format; copy and translate the **entire** reference
@@ -45,7 +45,7 @@ are required by the contributor validator:
 
 | Table | Keys |
 | --- | --- |
-| `commands` | `play`, `pause`, `resume`, `stop`, `next`, `previous` |
+| `commands` | `play`, `pause`, `resume`, `stop`, `next`, `previous`, `set_language` |
 | `targets` | `artist`, `track` |
 | `versions` | `live`, `remix`, `acoustic`, `instrumental`, `demo`, `karaoke`, `cover`, `remaster` |
 
@@ -55,16 +55,27 @@ The current grammar requires whitespace between play/target prefixes and the
 music query. Write and test natural forms that fit this grammar; languages needing
 other segmentation or inflection require an explicit parser enhancement.
 
-Within a table, one normalized phrase cannot map to different meanings. Identical
-phrases with identical meanings merge across locales. Language order gives no
-precedence. The validator also checks the selected locales as one merged set.
-Version markers apply to queries and track metadata; retain English alongside a
-local language when English version labels should be recognized.
+Within a table, one normalized phrase cannot map to different meanings. The
+application loads one locale at a time; each contributed locale is validated
+independently. It does not need to share a combined grammar with other locales.
+The locale version phrases express query constraints. Common metadata labels are
+recognized separately through `library/version_markers.toml`, regardless of input locale.
 
 Artist/title aliases belong to user configuration, not the command dictionary.
 Do not translate music metadata or add device protocol values to locale files.
 Existing internal parser tests may use partial dictionaries, but a contributed
 locale must cover the full supported vocabulary.
+
+Optional `[language_names]` entries map target locale codes to names in the current
+language, for example `en = ["anglais"]` in French. `commands.set_language` supplies
+the switching prefix, such as `change la langue en`. Codes and installed English/native
+display names work as targets without extra registry entries. Keep names unambiguous;
+adding a translated name for a new target to existing locales is optional.
+
+Common recording labels also remain explicit query constraints across locales:
+`Включи Linkin Park — Numb live` requires a live edition even in Russian mode.
+Locale-specific version phrases extend those shared labels. A missing requested
+edition is not silently replaced with a studio recording.
 
 ## Response template rules
 
@@ -98,7 +109,7 @@ From the repository root, after the prototype's normal `run.sh setup`:
 ```sh
 # No config, device connection, search server or credentials required.
 research/disc_assistant/assistant/.venv/bin/python -m research.disc_assistant.assistant.responses
-# Validate a specific locale and its intended multilingual combination.
+# Validate a specific locale, or several independent locale pairs.
 research/disc_assistant/assistant/.venv/bin/python -m research.disc_assistant.assistant.responses fr
 research/disc_assistant/assistant/.venv/bin/python -m research.disc_assistant.assistant.responses ru en fr
 # Prototype regression suite, including synthetic local network fixtures.
@@ -118,15 +129,14 @@ multiword forms and a localized success/uncertain response. These tests should u
 synthetic data and require no physical player. The completeness test automatically includes all installed
 locales; no runtime Python change is needed.
 
-Enable input and output independently:
+Select one locale for both input and output:
 
 ```text
-/language ru en fr
-/response language fr
+/language fr
 /response mode errors
 ```
 
-Completion discovers the new filenames automatically. Changing response language
-does not restrict music metadata, change accepted command languages or switch the
-player UI. See the [response contract](ASSISTANT_RESPONSES.md) for persistence,
+Completion discovers the new filenames automatically. Changing locale updates
+commands and responses together. It does not restrict music metadata or switch
+the player UI. See the [response contract](ASSISTANT_RESPONSES.md) for persistence,
 speech eligibility and reserved dialogue semantics.

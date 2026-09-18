@@ -25,7 +25,7 @@ class JournalTests(unittest.TestCase):
         self.root = Path(self.tmp.name)
         self.path = self.root / 'config.toml'
         self.path.write_text(f'[device]\nkey="test"\nhost="127.0.0.1"\n'
-                             f'[storage]\ndata_dir="{self.root}/data"\n')
+                             f'[storage]\ndata_dir="{self.root}/data"\n[language]\nlocale="en"\n')
         self.config = load(self.path)
 
     def invoke(self, *args):
@@ -57,7 +57,7 @@ class JournalTests(unittest.TestCase):
                              'PRAGMA user_version=1;')
         with Journal(self.config) as journal:
             self.assertEqual(journal.db.execute('PRAGMA user_version').fetchone()[0], 2)
-        self.assertEqual(language_command(self.config)['enabled'], ['ru'])
+        self.assertEqual(language_command(self.config)['locale'], 'ru')
         self.assertFalse((self.config.data_dir / 'library.sqlite3').exists())
 
     def test_cli_invalid_command_is_recorded_before_parsing(self):
@@ -151,7 +151,7 @@ class JournalTests(unittest.TestCase):
 
     def test_console_and_cli_share_journal_and_console_session_id(self):
         app = Application(self.config)
-        app.request('/rank Пауза')
+        app.request('/rank Pause')
         with self.assertRaises(ValueError):
             app.request('неизвестная команда')
         rows = history_command(self.config)['requests']
@@ -233,7 +233,7 @@ class JournalTests(unittest.TestCase):
                 journal.db.execute("UPDATE requests SET started_at='2000-01-01T00:00:00+00:00',completed_at=NULL")
             self.assertEqual(journal.prune(), 2)
             self.assertEqual(journal.db.execute('SELECT count(*) FROM request_events').fetchone()[0], 0)
-        self.assertEqual(language_command(config)['enabled'], ['ru'])
+        self.assertEqual(language_command(config)['locale'], 'ru')
 
     def test_export_and_clear_preserve_preferences_and_refuse_overwrite(self):
         self.invoke('rank', 'Pause')
@@ -251,7 +251,7 @@ class JournalTests(unittest.TestCase):
             history_command(self.config, ['export', str(Path.cwd() / 'history.jsonl')])
         self.assertEqual(history_command(self.config, ['clear', '--yes'])['removed'], 1)
         self.assertEqual(history_command(self.config)['requests'], [])
-        self.assertEqual(language_command(self.config)['enabled'], ['ru'])
+        self.assertEqual(language_command(self.config)['locale'], 'ru')
 
     def test_write_failure_after_execution_never_reruns_callback(self):
         with self.assertRaisesRegex(JournalWriteError, 'do not replay'):

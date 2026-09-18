@@ -9,8 +9,9 @@ from uuid import uuid4
 
 from research.disc_assistant.assistant.config import Config
 from research.disc_assistant.assistant.controls import execute as control
-from research.disc_assistant.assistant.intents import ControlIntent, parse
+from research.disc_assistant.assistant.intents import ControlIntent, LanguageIntent
 from research.disc_assistant.assistant.languages import load_languages
+from research.disc_assistant.assistant.interpreter import InterpretationContext, interpret_request
 from research.disc_assistant.assistant.live import DeviceSession
 from research.disc_assistant.assistant.preferences import effective_config, language_command, response_command
 from research.disc_assistant.assistant.journal import Trace, history_command
@@ -24,9 +25,10 @@ from research.disc_assistant.library.store import Store
 
 HELP = '''Enter Play … / Включи …, Pause / Пауза, Resume / Продолжи, Stop / Стоп,
 Next track / Следующий трек, Previous track / Предыдущий трек.
+Commands use one active locale; /language CODE changes input and replies.
 /connect  /disconnect  /device  /status  /queue  /sync  /index
-/search TEXT  /rank TEXT  /language [CODES|reset]  /help  /clear  /exit
-/response [language CODE|mode none|errors|all|reset]  /locales
+/search TEXT  /rank TEXT  /language [CODE|reset]  /help  /clear  /exit
+/response [mode none|errors|all|reset]  /locales
 /history [LIMIT|show ID|export PATH|prune|clear --yes]
 Terminal: Up/Down history, Ctrl-R search, Tab completion, Right accepts a suggestion,
 Ctrl-L clears the screen, Ctrl-C cancels input, Ctrl-D on empty input exits.
@@ -36,10 +38,11 @@ Offline run.sh search/index/status remain available while this console is open.'
 
 
 class Application:
-    def __init__(self, config: Config, *, session_factory=DeviceSession, source='interactive'):
+    def __init__(self, config: Config, *, session_factory=DeviceSession, source='interactive', interpreter=None, language=None):
         self.base_config, self.session_factory = config, session_factory
-        self.config = effective_config(config)
-        self.rules = load_languages(self.config.languages)
+        self.config = effective_config(config, language=language)
+        self.interpreter = interpreter
+        self.rules = load_languages((self.config.locale,))
         self.session_id, self.source = uuid4().hex, source
 
     def __enter__(self):
@@ -72,7 +75,7 @@ class Application:
             return {'operation_id': operation_id, 'status': 'uncertain' if attempted else 'not_sent',
                     'mutation_attempted': attempted, 'reason': str(exc), 'error_type': type(exc).__name__}
 
-    async def search(self, command, text='', *, reuse=False, trace=None):
+    async def search(self, command, text='', *, intent=None, reuse=False, trace=None):
         if trace:
             trace.catalog(self.store)
             trace.event('search', {'command': command, 'query': text})
@@ -96,7 +99,7 @@ class Application:
                         pass
                 return await search.build(self.store, self.config.device_key)
             if command == 'rank':
-                result = await rank(self.config, self.store, search, text, trace=trace)
+                result = await rank(self.config, self.store, search, intent, trace=trace)
             else:
                 result = await search.search(self.store, self.config.device_key, text)
             if trace:
@@ -111,8 +114,8 @@ class Application:
         head['index_current'] = bool(head['generation'] and head['generation'] == head['index_generation']
                                     and head['index_signature'] == signature(self.config.aliases, server))
         return {'session': self.session.status(), 'library': head,
-                'language': {'enabled': list(self.config.languages)},
-                'response_preferences': {'language': self.config.response_language, 'mode': self.config.response_mode},
+                'language': {'locale': self.config.locale},
+                'response_preferences': {'mode': self.config.response_mode},
                 'dialogue': {'enabled': False}}
 
     def device(self):
@@ -136,6 +139,24 @@ class Application:
             trace.event('parse', {})
             return trace.finish(self._request(line, trace, reuse_index=reuse_index))
 
+    def interpret(self, text, trace):
+        playback = 'unknown'
+        if hasattr(self, 'session'):
+            observed = self.session.status().get('observation', {}).get('playback')
+            if observed in ('playing', 'paused', 'stopped'):
+                playback = observed
+        return asyncio.run(interpret_request(text, InterpretationContext(self.config.locale, playback),
+                                            interpreter=self.interpreter, trace=trace))
+
+    def language(self, arguments, trace):
+        trace.event('preference', {'name': 'language.locale'})
+        result = language_command(self.base_config, arguments)
+        self.config = replace(self.config, locale=result['locale'])
+        self.rules = load_languages((self.config.locale,))
+        trace.responses = Responses(self.config.locale, self.config.response_mode)
+        trace.event('locale_changed', trace.responses.context())
+        return result
+
     def _request(self, line, trace, *, reuse_index=False):
         line = line.strip()
         if not line:
@@ -144,27 +165,24 @@ class Application:
             command, _, text = line[1:].partition(' ')
             text = text.strip()
             if command == 'language':
-                trace.event('preference', {'name': 'language.enabled'})
-                result = language_command(self.base_config, text.split())
-                rules = load_languages(result['enabled'])
-                self.config = replace(self.config, languages=rules.enabled)
-                self.rules = rules
-                return result
+                return self.language(text.split(), trace)
             if command == 'response':
-                trace.event('preference', {'name': 'response.preferences'})
+                trace.event('preference', {'name': 'response.mode'})
                 result = response_command(self.base_config, text.split())
-                self.config = replace(self.config, response_language=result['language'], response_mode=result['mode'])
-                trace.responses = Responses(self.config.response_language, self.config.response_mode)
+                self.config = replace(self.config, locale=result['locale'], response_mode=result['mode'])
+                self.rules = load_languages((self.config.locale,))
+                trace.responses = Responses(self.config.locale, self.config.response_mode)
                 trace.event('response_preferences', trace.responses.context())
                 return result
             if command in ('search', 'rank'):
                 if not text:
                     raise ValueError(f'/{command} needs text')
                 if command == 'rank':
-                    intent = parse(text, self.rules)
-                    trace.intent(intent)
-                    if isinstance(intent, ControlIntent):
-                        return {'status': 'planned', 'action': intent.action, 'requires_search': False}
+                    intent = self.interpret(text, trace)
+                    if isinstance(intent, (ControlIntent, LanguageIntent)):
+                        return {'status': 'planned', 'action': intent.action if isinstance(intent, ControlIntent) else 'set_language',
+                                'requires_search': False}
+                    return asyncio.run(self.search(command, text, intent=intent, trace=trace))
                 return asyncio.run(self.search(command, text, trace=trace))
             if text:
                 raise ValueError(f'/{command} takes no arguments')
@@ -196,14 +214,18 @@ class Application:
                 trace.event('index', {})
                 return asyncio.run(self.search('index', reuse=reuse_index, trace=trace))
             raise ValueError('unknown console command; use /help')
-        intent = parse(line, self.rules)
-        trace.intent(intent)
+        # An online interpreter may take time: pin before interpretation, not after it.
+        generation = self.session.status()['generation'] if hasattr(self, 'session') else None
+        intent = self.interpret(line, trace)
+        if isinstance(intent, LanguageIntent):
+            return self.language([intent.locale], trace)
+        if generation is not None and generation != self.session.status()['generation']:
+            return {'status': 'not_sent', 'mutation_attempted': False, 'reason': 'session changed during interpretation'}
         if isinstance(intent, ControlIntent):
             trace.event('execution_started', {'action': intent.action})
             return self.device_call(lambda client: control(self.config, intent, shared=client))
         # Pin the request to the current connection BEFORE potentially slow search.
-        generation = self.session.status()['generation']
-        ranking = asyncio.run(self.search('rank', line, trace=trace))
+        ranking = asyncio.run(self.search('rank', line, intent=intent, trace=trace))
         if not ranking['candidates']:
             return ranking
         trace.select(ranking)
@@ -215,7 +237,7 @@ class Application:
         return self.device_call(execute)
 
 
-def run(config, *, bootstrap=False, input_fn=None, output=print, source='interactive'):
+def run(config, *, bootstrap=False, input_fn=None, output=print, source='interactive', interpreter=None, language=None):
     interactive_output = sys.stdin.isatty() and sys.stdout.isatty()
     terminal = None
     def write(text, role='result'):
@@ -233,7 +255,7 @@ def run(config, *, bootstrap=False, input_fn=None, output=print, source='interac
             else:
                 write(json.dumps(result, ensure_ascii=False, indent=2), role)
 
-    with Application(config, source=source) as app:
+    with Application(config, source=source, interpreter=interpreter, language=language) as app:
         if input_fn is None and interactive_output and os.environ.get('TERM') != 'dumb':
             from research.disc_assistant.assistant.terminal import Terminal
             terminal = Terminal(app.config, lambda: app.rules)

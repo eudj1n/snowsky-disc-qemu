@@ -2,10 +2,16 @@ import tempfile
 import unittest
 from unittest.mock import AsyncMock, Mock
 
-from research.disc_assistant.assistant.intents import parse, Intent
+from research.disc_assistant.assistant.intents import parse as parse_text, Intent
+from research.disc_assistant.assistant.languages import load_languages
 from research.disc_assistant.assistant.ranking import rank, score_tracks, ordered
 from research.disc_assistant.library.tests.helpers import TRACKS, ALIASES
 from research.disc_assistant.library.store import Store, StaleSnapshot
+
+
+def parse(text, rules=None):
+    # Low-level grammar comparisons explicitly exercise both dictionaries.
+    return parse_text(text, rules or load_languages(('ru', 'en')))
 
 
 class RankingTests(unittest.IsolatedAsyncioTestCase):
@@ -16,12 +22,12 @@ class RankingTests(unittest.IsolatedAsyncioTestCase):
         self.addCleanup(self.store.close)
         self.head = self.store.publish('test', TRACKS, {}, expected_generation=None)
         self.store.publish_index('test', self.head['generation'], 'index', 'sig')
-        self.config = Mock(device_key='test', aliases=ALIASES, languages=('ru', 'en'))
+        self.config = Mock(device_key='test', aliases=ALIASES, locale='en')
         self.search = Mock(signature='sig')
         self.search.search = AsyncMock(return_value={'generation': self.head['generation'], 'found': 0, 'candidates': []})
 
     async def ranked(self, text):
-        return await rank(self.config, self.store, self.search, text)
+        return await rank(self.config, self.store, self.search, parse(text))
 
     def test_bilingual_grammar_and_explicit_types(self):
         for phrase in ('Включи Linkin Park', 'Play Linkin Park', ' play   Linkin Park '):
@@ -75,12 +81,22 @@ class RankingTests(unittest.IsolatedAsyncioTestCase):
         with self.assertRaises(StaleSnapshot):
             await self.ranked('Play Linkin Park')
 
-    async def test_ranking_honors_configured_languages_and_mixed_version_request(self):
-        live = await self.ranked('Play трек Linkin Park - Numb концертная')
+    async def test_metadata_versions_are_independent_of_interaction_locale(self):
+        self.config.locale = 'ru'
+        intent = parse('Включи трек Linkin Park - Numb концертная', load_languages(('ru',)))
+        live = await rank(self.config, self.store, self.search, intent)
         self.assertEqual([c['album'] for c in live['candidates']], ['Live'])
-        self.config.languages = ('en',)
-        with self.assertRaises(ValueError):
-            await self.ranked('Включи Linkin Park')
+        ordinary = await rank(self.config, self.store, self.search, Intent('Linkin Park Numb'))
+        self.assertEqual(ordinary['candidates'][0]['album'], 'Meteora')
+        with self.assertRaises(TypeError):
+            await rank(self.config, self.store, self.search, 'Включи Numb')
+
+    async def test_foreign_edition_labels_remain_hard_constraints_in_russian_requests(self):
+        self.config.locale = 'ru'
+        for label, expected in [('live', ['Live']), ('remix', [])]:
+            intent = parse('Включи Linkin Park - Numb ' + label, load_languages(('ru',)))
+            result = await rank(self.config, self.store, self.search, intent)
+            self.assertEqual([c['album'] for c in result['candidates']], expected)
 
     async def test_unmatched_text_never_falls_back_to_artist_only(self):
         result = await self.ranked('Play Linkin Park TotallyMissing')
@@ -99,5 +115,5 @@ class RankingTests(unittest.IsolatedAsyncioTestCase):
                 {'id': 's:0', 'title': 'Numb', 'artist': 'Linkin Park', 'album': 'Meteora'}]
         ordinary = ordered(score_tracks(Intent('Numb', 'track'), docs, {}))
         self.assertEqual(ordinary[0]['track_id'], 's:0')
-        remaster = ordered(score_tracks(Intent('Numb remastered', 'track'), docs, {}))
+        remaster = ordered(score_tracks(Intent('Numb remastered', 'track'), docs, {}, load_languages(('en',))))
         self.assertEqual([c['track_id'] for c in remaster], ['s:1'])

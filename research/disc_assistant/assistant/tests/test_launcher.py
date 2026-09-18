@@ -82,11 +82,11 @@ class LauncherTests(unittest.TestCase):
             ready.assert_called_once()
             self.assertEqual(ready.call_args.args[0].search_port, 8123)
 
-    def test_control_commands_do_not_read_search_credentials(self):
+    def test_launcher_forwards_commands_when_search_credentials_are_unavailable(self):
         self.initialize()
         self.env_file.write_text('invalid secret file')
         with patch.object(launcher.subprocess, 'run', return_value=Mock(returncode=0)), \
-                patch.object(launcher, 'environment', side_effect=AssertionError('search key read')):
+                patch.object(launcher, 'environment', side_effect=ValueError('search key missing')):
             for command in ('ask', 'rank'):
                 self.assertEqual(launcher.main(['--config', str(self.config), command, 'Пауза']), 0)
 
