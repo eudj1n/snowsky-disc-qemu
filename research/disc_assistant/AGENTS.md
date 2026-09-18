@@ -20,7 +20,7 @@ See `../../docs/ASSISTANT_MVP.md` and
 [MVP issue #21](https://github.com/eudj1n/snowsky-disc-qemu/issues/21).
 
 Improvements/replacements of individual stages are follow-up tasks, not an endless
-expansion of this MVP: microphone/wake word, live TTS, learned selection, semantic
+expansion of this MVP: wake word, learned selection, semantic
 retrieval, fine-tuning, recommendations, dialogues and Raspberry Pi/hardware acceptance.
 Keep this prototype under research until a separate promotion/split decision.
 
@@ -33,7 +33,17 @@ and serves loopback port 8090. One worker owns application/SQLite; the existing
 Controller session receives events continuously. No queued/retried mutations,
 public/LAN serving, arbitrary slash commands or filesystem upload paths. Browser
 recording is bounded PCM capture, explicit stop/submit/cancel; no VAD/wake word.
-See `../../docs/ASSISTANT_WEB.md` for contracts and pending human acceptance.
+Web always uses Whisper Server; one-shot CLI can retain its configured CLI
+backend. `setup --all` installs the optional managed speech stack and pinned
+base/Denis/Alba models outside Git; `web --bootstrap` starts speech and search.
+Piper replies honor response.speak and explicit per-tab sound opt-in. Delivery
+failure never changes/replays a command; cache and journal preserve voice hashes.
+`voice/text.py` is the identity TTS-only preparation hook; do not add blanket
+transliteration or change frozen samples without a separate pronunciation study.
+See `../../docs/ASSISTANT_WEB.md` and `../../docs/ASSISTANT_TTS.md`.
+The owner reports physical microphone play/stop success; representative quantified
+RU/EN acceptance remains pending. Initial isolated-word Piper → base round trip
+misrecognized both commands; do not present this plumbing check as accuracy.
 
 ## Where to resume
 

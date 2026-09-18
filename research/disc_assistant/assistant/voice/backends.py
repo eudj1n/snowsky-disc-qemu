@@ -16,7 +16,7 @@ from research.disc_assistant.assistant.speech import (
     Audio, SpeechContext, SynthesisRequest, Transcription, InvalidSpeech, NoSpeech, SpeechUnavailable,
 )
 from research.disc_assistant.assistant.voice.files import (
-    audio_details, command_text, load_audio, wav_audio,
+    audio_details, command_text, load_audio, wav_audio, pcm_wav,
 )
 
 
@@ -171,7 +171,12 @@ async def synthesize_text(config, text, trace, *, provider=None):
     if (not isinstance(text, str) or not 1 <= len(text.strip()) <= 1000
             or any(ord(c) < 32 or ord(c) == 127 for c in text)):
         raise InvalidSpeech('synthesis text must contain 1..1000 characters without control characters')
-    provider = provider if provider is not None else MacOSSay(config.speech)
+    if provider is None:
+        if config.tts.get('backend') == 'piper':
+            from research.disc_assistant.assistant.voice.piper import PiperSynthesizer
+            provider = PiperSynthesizer(config.tts)
+        else:
+            provider = MacOSSay(config.speech)
     voice = provider.voice(config.locale) if isinstance(provider, MacOSSay) else None
     trace.event('synthesis_started', {'provider': asdict(provider.info), 'locale': config.locale, 'voice': voice})
     started = time.monotonic()
@@ -182,13 +187,18 @@ async def synthesize_text(config, text, trace, *, provider=None):
         raise
     except Exception as exc:
         raise SpeechUnavailable('speech synthesis unavailable') from exc
-    if type(result) is not Audio or (result.media_type, result.sample_rate, result.channels) != ('audio/wav', 16000, 1):
+    if type(result) is not Audio or (result.media_type, result.channels) != ('audio/wav', 1):
         raise InvalidSpeech('invalid synthesized audio')
-    wav_audio(result.data, max_seconds=config.speech.get('max_seconds', 30))
+    validated = pcm_wav(result.data, max_seconds=60)
+    if result.sample_rate != validated.sample_rate:
+        raise InvalidSpeech('synthesis sample-rate metadata mismatch')
     details = audio_details(result)
     if details['digital_silence']:
         raise InvalidSpeech('synthesizer returned digital silence')
     details['synthesis_ms'] = round((time.monotonic() - started) * 1000, 3)
     trace.event('synthesis', details)
-    return result, {'provider': asdict(provider.info), 'voice': voice,
-                    'rate': config.speech.get('rate', 175), 'locale': config.locale, **details}
+    settings = ({'voice': voice, 'rate': config.speech.get('rate', 175)}
+                if isinstance(provider, MacOSSay) else {})
+    if config.tts.get('backend') == 'piper' and hasattr(provider, 'evidence'):
+        settings.update(provider.evidence(config.locale))
+    return result, {'provider': asdict(provider.info), 'locale': config.locale, **settings, **details}

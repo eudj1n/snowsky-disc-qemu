@@ -7,7 +7,8 @@ used with a device.
 
 Speech adds three required reply keys: `speech.unavailable`, `speech.invalid` and
 `speech.no_speech`; copy their meanings from the current English catalog. To test
-a contributed locale with audio, configure its TTS voice and optional STT language
+a contributed locale with audio, configure its TTS voice (see
+[Piper voice mappings](ASSISTANT_TTS.md)) and optional STT language
 mapping, then add a synthetic corpus as described in
 [the speech guide](ASSISTANT_VOICE.md#reproducible-samples-and-evaluation).
 No engine-specific code belongs in the command/reply TOML dictionaries.

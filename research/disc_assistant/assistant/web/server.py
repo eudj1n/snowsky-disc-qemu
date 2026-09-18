@@ -2,6 +2,7 @@
 import asyncio
 from concurrent.futures import ThreadPoolExecutor
 from contextlib import suppress
+from dataclasses import replace
 import json
 from pathlib import Path
 import secrets
@@ -11,14 +12,15 @@ from aiohttp import web
 from research.disc_assistant.assistant.application import Application
 from research.disc_assistant.assistant.responses import exception_result, validate_locales
 from research.disc_assistant.assistant.voice.files import MAX_BYTES
+from research.disc_assistant.assistant.voice.replies import ReplySynthesizer, delivery_event
 
 STATIC = Path(__file__).with_name('static')
-ACTIONS = {'connect', 'disconnect', 'sync', 'index', 'queue', 'language'}
+ACTIONS = {'connect', 'disconnect', 'sync', 'index', 'queue', 'language', 'response'}
 RUNTIME = web.AppKey('runtime', object)
 
 
 class Runtime:
-    def __init__(self, config, *, factory=Application, language=None, bootstrap=False):
+    def __init__(self, config, *, factory=Application, language=None, bootstrap=False, synthesizer=None):
         self.config, self.factory = config, factory
         self.language, self.bootstrap = language, bootstrap
         self.pool = ThreadPoolExecutor(max_workers=1, thread_name_prefix='disc-web')
@@ -30,6 +32,9 @@ class Runtime:
         self.poller = None
         self.active = None
         self.service = None
+        self.synthesizer = synthesizer or ReplySynthesizer()
+        self.reply_busy = False
+        self.reply_id = None
 
     def publish(self, kind, value):
         event = {'type': kind, 'data': value}
@@ -55,7 +60,9 @@ class Runtime:
     def describe(self):
         return {**self.service.status(), 'device': self.service.device()['device'],
                 'locales': validate_locales()['locales'],
-                'max_seconds': self.service.config.speech.get('max_seconds', 30)}
+                'max_seconds': self.service.config.speech.get('max_seconds', 30),
+                'speech': {'backend': 'server', 'server_url': self.config.speech.get('server_url')},
+                'tts': {'backend': self.config.tts.get('backend', 'none')}}
 
     async def worker(self, fn):
         return await self.loop.run_in_executor(self.pool, fn)
@@ -108,6 +115,8 @@ class Runtime:
                     if locale not in {r['code'] for r in validate_locales()['locales']}:
                         raise ValueError('unknown locale')
                     suffix = ' ' + locale
+                if action == 'response':
+                    suffix = ' mode ' + payload['mode']
                 return self.service.request('/' + action + suffix)
             return self.service.input_request(text=payload.get('text'), audio=audio,
                                                mode=payload.get('mode', 'preview'))
@@ -118,6 +127,7 @@ class Runtime:
         try:
             result = await self.worker(lambda: self.dispatch(payload, audio))
             self.last_result = {'result': result}
+            self.reply_id = result.get('request_id')
             self.publish('result', self.last_result)
             self.snapshot = await self.worker(self.describe)
             return self.last_result
@@ -128,15 +138,48 @@ class Runtime:
     async def perform(self, payload, audio=None):
         if self.busy:
             raise web.HTTPConflict(text='Another request is running; no command was queued.')
+        self.reply_id = None  # Invalidate obsolete speech before accepting new work.
         self.busy = True
         self.publish('state', {**self.snapshot, 'busy': True})
         self.active = asyncio.create_task(self.finish(payload, audio))
         # Browser loss does not cancel/replay a possibly sent device operation.
         return await asyncio.shield(self.active)
 
+    async def reply(self, request_id):
+        if self.busy or self.reply_busy:
+            raise web.HTTPConflict(text='Speech or command processing is busy.')
+        if not request_id or request_id != self.reply_id or not self.last_result:
+            raise web.HTTPGone(text='Response is no longer current.')
+        result = self.last_result['result']
+        if not result.get('response', {}).get('speak'):
+            raise web.HTTPConflict(text='This response is silent.')
+        self.reply_busy = True
+        config = self.service.config
+        try:
+            await asyncio.to_thread(delivery_event, config, request_id, 'reply_synthesis_started', {})
+            audio, metadata = await asyncio.wait_for(self.synthesizer.synthesize(config, result),
+                                                     config.tts.get('timeout', 30))
+            await asyncio.to_thread(delivery_event, config, request_id, 'reply_synthesized', metadata)
+            if request_id != self.reply_id:
+                raise web.HTTPGone(text='Response was superseded; audio discarded.')
+            return web.Response(body=audio.data, content_type='audio/wav', headers={'X-Request-ID': request_id})
+        except web.HTTPException:
+            raise
+        except Exception as exc:
+            with suppress(Exception):
+                await asyncio.to_thread(delivery_event, config, request_id, 'reply_synthesis_failed',
+                                        {'error_type': type(exc).__name__})
+            raise web.HTTPServiceUnavailable(text='Speech unavailable. Command result is unchanged.')
+        finally:
+            self.reply_busy = False
 
-def create_app(config, *, port=8090, factory=Application, language=None, bootstrap=False):
-    runtime = Runtime(config, factory=factory, language=language, bootstrap=bootstrap)
+
+def create_app(config, *, port=8090, factory=Application, language=None, bootstrap=False, synthesizer=None):
+    # Web speech always uses the resident server. One-shot CLI retains its explicit backend.
+    speech = {**config.speech, 'backend': 'server',
+              'server_url': config.speech.get('server_url', 'http://127.0.0.1:18119/inference')}
+    config = replace(config, speech=speech)
+    runtime = Runtime(config, factory=factory, language=language, bootstrap=bootstrap, synthesizer=synthesizer)
     hosts = {f'127.0.0.1:{port}', f'localhost:{port}'}
 
     @web.middleware
@@ -155,7 +198,7 @@ def create_app(config, *, port=8090, factory=Application, language=None, bootstr
         response = await handler(request)
         response.headers.update({'Cache-Control': 'no-store', 'X-Content-Type-Options': 'nosniff',
                                  'Content-Security-Policy': "default-src 'self'; script-src 'self'; style-src 'self'; "
-                                 "connect-src 'self'; frame-ancestors 'none'; base-uri 'none'; form-action 'none'"})
+                                 "connect-src 'self'; media-src 'self' blob:; frame-ancestors 'none'; base-uri 'none'; form-action 'none'"})
         return response
 
     app = web.Application(middlewares=[boundary], client_max_size=MAX_BYTES)
@@ -193,12 +236,15 @@ def create_app(config, *, port=8090, factory=Application, language=None, bootstr
                                     or payload['action'] not in ACTIONS):
             raise web.HTTPBadRequest(text='Unsupported action.')
         if 'action' in payload:
-            allowed = {'action', 'locale'} if payload['action'] == 'language' else {'action'}
+            allowed = ({'action', 'locale'} if payload['action'] == 'language' else
+                       {'action', 'mode'} if payload['action'] == 'response' else {'action'})
             if set(payload) - allowed:
                 raise web.HTTPBadRequest(text='Do not combine administrative and natural commands.')
             if payload['action'] == 'language' and payload.get('locale') not in [
                     row['code'] for row in validate_locales()['locales']]:
                 raise web.HTTPBadRequest(text='Unknown locale.')
+            if payload['action'] == 'response' and payload.get('mode') not in ('none', 'errors', 'all'):
+                raise web.HTTPBadRequest(text='Unknown response mode.')
         elif (not isinstance(payload.get('text'), str) or len(payload['text']) > 1000
                 or payload.get('mode', 'preview') not in ('preview', 'execute')
                 or 'locale' in payload):
@@ -237,9 +283,21 @@ def create_app(config, *, port=8090, factory=Application, language=None, bootstr
             runtime.listeners.discard(queue)
         return response
 
+    async def reply(request):
+        # ID only: the browser cannot submit arbitrary synthesis text or replay commands.
+        return await runtime.reply(request.query.get('request_id'))
+
+    async def delivered(request):
+        request_id, outcome = request.query.get('request_id'), request.query.get('outcome')
+        if request_id != runtime.reply_id or outcome not in ('played', 'blocked', 'failed', 'cancelled'):
+            raise web.HTTPBadRequest(text='Invalid delivery report.')
+        await asyncio.to_thread(delivery_event, runtime.service.config, request_id, 'reply_playback',
+                                {'outcome': outcome, 'evidence': 'browser_reported'})
+        return web.json_response({'status': 'recorded'})
+
     async def asset(request):
         name = request.match_info.get('name', 'index.html')
-        if name not in {'index.html', 'app.js', 'audio.js', 'capture.js', 'style.css'}:
+        if name not in {'index.html', 'app.js', 'audio.js', 'capture.js', 'style.css', 'reply.js'}:
             raise web.HTTPNotFound()
         return web.FileResponse(STATIC / name)
 
@@ -249,6 +307,8 @@ def create_app(config, *, port=8090, factory=Application, language=None, bootstr
     app.router.add_get('/api/events', events)
     app.router.add_post('/api/command', command)
     app.router.add_post('/api/audio', audio)
+    app.router.add_post('/api/reply', reply)
+    app.router.add_post('/api/reply-status', delivered)
     return app
 
 

@@ -14,12 +14,14 @@ activation is unnecessary. `ask` starts the best match without a choice dialogue
 | Command | Behavior | Device effect |
 | --- | --- | --- |
 | `./research/disc_assistant/run.sh setup` | Prepare the environment, config and private search key; preserve existing settings | None |
+| `./research/disc_assistant/run.sh setup --all [--whisper-model base\|small]` | Install runtime, pinned speech models and Docker images; back up/update speech config | None |
+| `./research/disc_assistant/run.sh speech-up` / `speech-down` | Start/stop managed Whisper Server and Piper | None |
 | `./research/disc_assistant/run.sh start` | Start Typesense, connect, sync/index, then open the persistent text console | Read only until a playback command is entered |
 | `./research/disc_assistant/run.sh history [ARGS]` | Inspect, export, prune or clear the local request journal | None; offline |
 | `./research/disc_assistant/run.sh response [ARGS]` | Show/set speech policy, or reset its default | None; offline |
 | `./research/disc_assistant/run.sh locales` | Validate each installed locale pair | None; offline |
 | `./research/disc_assistant/run.sh language [CODE\|reset]` | Show/set one interaction locale, or reset to the TOML default | None; offline |
-| `./research/disc_assistant/run.sh web [--bootstrap] [--port 8090]` | Separate [browser interface](ASSISTANT_WEB.md), text and microphone; optional search startup/sync/index | Read only until an Execute request is submitted |
+| `./research/disc_assistant/run.sh web [--bootstrap] [--port 8090]` | Separate [browser interface](ASSISTANT_WEB.md), text and microphone; optional managed speech/search startup and sync/index | Read only until an Execute request is submitted |
 | `./research/disc_assistant/run.sh listen` | Open the persistent console with existing data; no Docker startup or automatic sync/index | Initial handshake and state reads |
 | `./research/disc_assistant/run.sh up` | Start local Typesense and await readiness | None |
 | `./research/disc_assistant/run.sh down` | Stop Typesense, retaining its index volume | None |

@@ -33,9 +33,12 @@
 </section>
 </div>
 <section class="panel result" aria-labelledby="result-title"><div class="section-heading"><h2 id="result-title">Last result</h2><span id="result-status" class="badge">No requests yet</span></div>
+<div class="speech-controls"><label><input type="checkbox" id="enable-replies"> Enable spoken replies on this browser</label>
+<div class="bar"><label for="response-mode">Speak</label><select id="response-mode"><option value="none">Nothing</option><option value="errors" selected>Errors only</option><option value="all">All available replies</option></select><button id="stop-reply">Stop voice</button></div>
+<p id="speech-status" class="hint" role="status">Spoken replies off · Piper plays through this computer</p></div>
 <p id="reply" aria-live="polite">Type or record a command to begin.</p>
 <dl><div><dt>Recognized speech</dt><dd id="transcript">—</dd></div><div><dt>Selection / action</dt><dd id="selection">—</dd></div><div><dt>Processing time</dt><dd id="timing">—</dd></div></dl>
 <details><summary>Response JSON</summary><pre id="json">{}</pre></details>
 <details><summary>Request trace</summary><pre id="trace">No events yet.</pre></details>
-</section><footer class="hint">Disc Assistant Web · closing this page does not stop music or disconnect the service.<br>Single-command recording · no wake word or spoken replies.</footer>
+</section><footer class="hint">Disc Assistant Web · closing this page does not stop music or disconnect the service.<br>Whisper Server input · Piper spoken replies · no wake word.</footer>
 </main></body></html>

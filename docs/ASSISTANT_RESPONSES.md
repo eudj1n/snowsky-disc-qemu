@@ -3,8 +3,8 @@
 Implemented in the research prototype. The Assistant adds localized user feedback
 to existing operation results; Controller remains responsible for device state and
 verified operations. File STT and explicit sample TTS now run through
-[speech adapters](ASSISTANT_VOICE.md); automatic response delivery and dialogue
-remain unimplemented.
+[speech adapters](ASSISTANT_VOICE.md). Optional [Piper browser delivery](ASSISTANT_TTS.md)
+is implemented; dialogue remains disabled.
 
 ## Response contract
 
@@ -32,7 +32,7 @@ Existing fields such as `operation_id`, `state`, `mutation_attempted` and
 | `code` | Stable, language-independent meaning; consumers must not parse translated text |
 | `text` | Plain localized text, or `null` when no user-facing message is appropriate |
 | `language` | The active interaction locale, shared with input; independent of player UI |
-| `speak` | Whether a future audio adapter should speak this response; not evidence of audio delivery |
+| `speak` | Whether an audio adapter may speak this response; not evidence of audio delivery |
 | `interactive` | Reserved for future dialogue; always `false` in this implementation |
 
 `system.no_message` has `text: null`, `speak: false` and no translation template.
@@ -131,10 +131,11 @@ This records generation/eligibility only, not display or playback delivery.
 History made before this increment remains readable without response fields.
 
 The [speech provider contracts](ASSISTANT_ARCHITECTURE.md#speech-provider-contracts)
-now have local file adapters. Explicit sample synthesis bypasses response policy;
-it does not claim that a response was spoken. A future delivery layer can consume
-`text`, `language` and `speak`; it will need its
-own delivery/cancellation events. Future dialogue support must add a request-bound
+now have file and resident-service adapters. Explicit sample synthesis bypasses
+response policy and does not claim that a reply was spoken. Web consumes `text`,
+`language` and `speak` through Piper, with separate synthesis and browser-reported
+playback events. Delivery failures never rewrite execution outcomes or trigger
+command retries. Future dialogue support must add a request-bound
 pending state, expiry and explicit transitions before any response can set
 `interactive: true`. A boolean alone is not a dialogue state machine.
 

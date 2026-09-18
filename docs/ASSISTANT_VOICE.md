@@ -1,4 +1,4 @@
-# File-based speech prototype
+# Speech input and file-based experiments
 
 Current browser entry point: [Disc Assistant Web](ASSISTANT_WEB.md) records a bounded
 microphone utterance and uses this same WAV/STT pipeline. Historical file-only
@@ -7,20 +7,22 @@ measurements below do not establish human microphone accuracy.
 Implemented on **2026-09-18** under `research/disc_assistant/`. This first speech
 slice accepts a WAV file, transcribes it locally, then uses the existing interpreter,
 ranking and guarded Controller execution. It also synthesizes reproducible input
-samples through the same `SpeechSynthesizer` interface reserved for future replies.
+samples through the same `SpeechSynthesizer` interface now used for Piper replies.
+The measurements below preserve the earlier macOS sample/model cohorts.
 
 ## Current scope
 
 | Area | Implemented | Still pending |
 | --- | --- | --- |
-| Input | Bounded PCM WAV files, explicit active locale, raw transcript and normalized command text | Microphone, resampling/compressed formats, streaming, wake word, voice activity detection |
-| STT | Local `whisper.cpp` CLI adapter, explicit model, timeout/cancellation, model fingerprint | GPU tuning, remote provider, human microphone acceptance |
-| TTS | Local macOS `say` adapter, configured voices, WAV and provenance sidecar | Portable Pi/Linux engine, automatic response synthesis and speaker delivery |
+| Input | Bounded files/browser microphone WAV, explicit locale, raw transcript and normalized command text | Compressed uploads, streaming, wake word, voice activity detection |
+| STT | Local `whisper.cpp` CLI and resident server; web always uses server; explicit model and bounded processing | GPU tuning, remote provider, human microphone acceptance |
+| TTS | Local Piper service/browser replies and macOS `say` file adapter, configured voices and provenance | Hardware/Pi performance and human voice-quality acceptance |
 | Integration | `transcribe`, `rank --audio`, `ask --audio`, equivalent console commands | Questions, confirmations and dialogue |
-| Evaluation | RU/EN synthetic corpora, separate interpretation and catalog-selection checks | Human/noisy recordings, physical-player speech acceptance |
+| Evaluation | RU/EN synthetic corpora, separate interpretation and catalog-selection checks | Quantified human/noisy recordings and physical-player speech acceptance |
 
-There is no automatic model download, provider fallback, audio playback or audio
-retention in the command journal. `ask --audio` is an explicit playback/control
+Runtime requests never download models or switch providers implicitly. The explicit
+`setup --all` installer downloads pinned assets. Browser reply playback is opt-in;
+raw audio is not retained in the command journal. `ask --audio` is an explicit playback/control
 request; `transcribe`, `rank` and `speech-check` do not dispatch device mutations.
 The persistent console still connects normally on startup, even for preview commands.
 
@@ -70,12 +72,29 @@ one handshake. No physical player or real microphone was used. **216 prototype
 tests pass**, covering speech validation, errors, cancellation, preview/execution,
 locale changes, reconnect protection, corpus checks and the existing text path.
 
-Next: evaluate representative human recordings and music-name matching, add a
-portable TTS adapter for Linux/Pi, then microphone capture and reply delivery.
+Current follow-up: evaluate representative human recordings and music-name
+pronunciation. Browser capture and Piper reply delivery are now implemented.
+The owner reports microphone play/stop working on a physical player; this does
+not replace the pending quantified RU/EN cohort.
 
 ## Install and configure
 
-Python dependencies are unchanged. The STT adapter invokes an external
+For the current web runtime, use [common speech setup](ASSISTANT_TTS.md):
+
+```sh
+./research/disc_assistant/run.sh setup --all
+./research/disc_assistant/run.sh web --bootstrap
+```
+
+This installs the ordinary runtime, model assets and CPU Docker services. Web
+uses Whisper Server only. Optional `--whisper-model small` selects the larger
+model; base is the default smoke-test choice. Piper supplies RU/EN replies and
+sample generation; its native audio is explicitly converted to 16 kHz for saved
+STT sample files. No host CMake build is needed for the managed stack.
+
+### Alternative manual CLI installation
+
+The lightweight CLI dependencies are unchanged. The STT adapter invokes an external
 [`whisper-cli`](https://github.com/ggml-org/whisper.cpp/tree/v1.9.4/examples/cli).
 The exercised build is **whisper.cpp v1.9.4**, CPU-only. The following source build
 requires Git, CMake and a C/C++ compiler. Run it outside this repository:

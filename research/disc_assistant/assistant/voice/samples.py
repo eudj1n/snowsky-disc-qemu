@@ -9,7 +9,7 @@ from research.disc_assistant.assistant.interpreter import InterpretationContext,
 from research.disc_assistant.assistant.providers import ProviderUnavailable, InvalidProviderResult
 from research.disc_assistant.assistant.speech import InvalidSpeech, NoSpeech, SpeechUnavailable
 from research.disc_assistant.assistant.voice.backends import transcribe_file, synthesize_text
-from research.disc_assistant.assistant.voice.files import audio_details, load_audio, resolve_path
+from research.disc_assistant.assistant.voice.files import audio_details, load_audio, resolve_path, stt_audio
 from research.disc_assistant.assistant.languages import normalized
 from research.disc_assistant.assistant.voice.catalog_evaluation import CatalogEvaluation, music_case, validate_targets
 
@@ -72,6 +72,10 @@ async def write_sample(config, text, path, trace, *, provider=None):
     if path.exists() or sidecar.exists():
         raise FileExistsError('synthesis output or metadata already exists; choose a new path')
     audio, metadata = await synthesize_text(config, text, trace, provider=provider)
+    if audio.sample_rate != 16000:
+        original = audio_details(audio)
+        audio = stt_audio(audio, max_seconds=config.speech.get('max_seconds', 30))
+        metadata.update(audio_details(audio), source_audio=original, resampler='soxr-HQ')
     metadata = {'version': 1, 'text': text, **metadata}
     path.parent.mkdir(parents=True, exist_ok=True)
     # Exclusive creation; never overwrite an existing recording or sidecar.

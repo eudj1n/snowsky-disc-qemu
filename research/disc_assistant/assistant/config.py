@@ -37,6 +37,8 @@ class Config:
     shadow: bool = False
     shadow_timeout_ms: int = 100
     structured: dict = field(default_factory=dict)
+    tts: dict = field(default_factory=dict)
+    services: dict = field(default_factory=dict)
 
 
 def default_data_dir():
@@ -62,7 +64,7 @@ def number(value, label, low, high):
 def load(path):
     with Path(path).open('rb') as stream:
         raw = tomllib.load(stream)
-    allowed = {'interpretation': {'shadow', 'shadow_timeout_ms'}, 'device': {'key', 'host', 'tcp_port', 'http_port'},
+    allowed = {'services': {'speech'}, 'tts': {'backend', 'server_url', 'models', 'timeout'}, 'interpretation': {'shadow', 'shadow_timeout_ms'}, 'device': {'key', 'host', 'tcp_port', 'http_port'},
                'storage': {'data_dir'},
                'structured': {'enabled', 'endpoint', 'model', 'model_path', 'timeout'},
                'typesense': {'host', 'port', 'protocol', 'api_key_env'},
@@ -116,6 +118,22 @@ def load(path):
         model_path = text(structured.get('model_path'), 'structured.model_path')
         if not Path(model_path).expanduser().is_absolute():
             raise ValueError('structured.model_path must be absolute')
+    services = raw.get('services', {})
+    if type(services.get('speech', False)) is not bool:
+        raise ValueError('services.speech must be a boolean')
+    tts = raw.get('tts', {})
+    if tts.get('backend', 'none') not in ('none', 'piper'):
+        raise ValueError('tts.backend must be none or piper')
+    number(tts.get('timeout', 30), 'tts.timeout', 1, 120)
+    if tts.get('backend') == 'piper':
+        from research.disc_assistant.assistant.local_service import endpoint
+        endpoint(tts.get('server_url'), '/synthesize')
+    if not isinstance(tts.get('models', {}), dict):
+        raise ValueError('tts.models must map locale to ONNX path')
+    for code, path in tts.get('models', {}).items():
+        locale_code(code)
+        if not Path(text(path, 'tts.models path')).expanduser().is_absolute():
+            raise ValueError('tts model paths must be absolute')
     terminal = raw.get('terminal', {})
     speech = raw.get('speech', {})
     if speech.get('backend', 'cli') not in ('cli', 'server') or type(speech.get('catalog_hints', False)) is not bool:
@@ -176,4 +194,4 @@ def load(path):
         number(sync.get('max_requests', 10000), 'max_requests', 2, 100000), locale, continuous,
         journal_enabled, number(journal.get('retention_days', 90), 'journal.retention_days', 1, 3650),
         number(journal.get('max_requests', 10000), 'journal.max_requests', 1, 1000000), terminal,
-        response['mode'], dialogue, speech, shadow, shadow_timeout, structured)
+        response['mode'], dialogue, speech, shadow, shadow_timeout, structured, tts, services)

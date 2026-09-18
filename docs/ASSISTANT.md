@@ -9,8 +9,10 @@ ranking and bounded Controller playback. `rank` previews the ordering; `ask`
 automatically launches the best candidate. The owner explicitly deferred a
 choice/confirmation dialogue. File-based voice input and synthetic sample generation
 are implemented. [Disc Assistant Web](ASSISTANT_WEB.md) now adds browser microphone
-capture and text input through the shared application service; human microphone
-acceptance, spoken reply delivery and listening history remain pending. See [voice setup and evaluation](ASSISTANT_VOICE.md)
+capture and text input through the shared application service. [Piper replies and
+common speech installation](ASSISTANT_TTS.md) are implemented; web uses Whisper
+Server. The owner reports microphone play/stop working on a physical player.
+Quantified human microphone acceptance and listening history remain pending. See [voice setup and evaluation](ASSISTANT_VOICE.md)
 and the [command table](ASSISTANT_COMMANDS.md).
 The [interpreter, speech and locale architecture](ASSISTANT_ARCHITECTURE.md) is now
 implemented. It supersedes the merged-language/separate-response policy recorded

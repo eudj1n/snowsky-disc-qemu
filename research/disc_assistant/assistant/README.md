@@ -27,7 +27,8 @@ See the [prototype guide](../README.md) for setup, commands and acceptance, and 
 | `terminal.py` | `prompt_toolkit` editing, journal-backed recall, language-aware completion, configurable colors and screen clearing |
 | `requirements.txt` | Python runtime pins: official Typesense async SDK, aiohttp and prompt_toolkit |
 | `compose.yaml`, `.env.example` | Independent local Typesense service |
-| `voice/` | Bounded WAV input, local whisper.cpp STT and macOS say TTS, synthetic corpora and interpretation/catalog-selection evaluation |
+| `voice/services/`, `requirements-speech.txt` | Optional pinned speech model manifest, Whisper/Piper Docker services, installer/conversion dependencies |
+| `voice/` | Bounded WAV input, Whisper CLI/server STT, Piper reply delivery and macOS say sample TTS, synthetic corpora and interpretation/catalog-selection evaluation |
 | `tests/` | Configuration, CLI and session tests |
 
 The application asks [library](../library/README.md) for persistence/search and
@@ -40,10 +41,11 @@ do not override its interpreter.
 
 The official [typesense-python](https://github.com/typesense/typesense-python)
 2.0.0 AsyncClient is used only by library search; its transport closes on CLI exit.
-Aiohttp is reserved for the future application's HTTP/WebSocket service and is
-used by disposable acceptance for readiness. This slice has no application server.
-Speech uses explicitly installed external executables/models; the Python dependency
-set is unchanged. See [file speech setup and limitations](../../../docs/ASSISTANT_VOICE.md).
+Aiohttp serves the web interface and bounded loopback speech adapters. Web always
+uses Whisper Server. `setup --all` installs the runtime and optional speech bundle;
+see [Piper and managed services](../../../docs/ASSISTANT_TTS.md). CLI/file STT may
+retain its explicit CLI backend. Piper runs in its own Python 3.11 container;
+optional host dependencies are only TOML editing and sample resampling.
 A transitive lockfile remains deferred.
 
 `run.sh start` starts Typesense, then opens one foreground application for

@@ -4,14 +4,34 @@ This is the short continuation index. [The roadmap](ASSISTANT.md) preserves
 historical decisions; [MVP acceptance](ASSISTANT_MVP.md) defines completion.
 Conversation and local experiments do not replace device evidence.
 
+## Resident speech and Piper delivery, 2026-09-18
+
+[Common setup and Piper replies](ASSISTANT_TTS.md) are implemented: `setup --all`
+installs runtime requirements, pinned Whisper/Piper models and Docker services;
+`web --bootstrap` starts them. Web always selects Whisper Server. RU/EN reply
+synthesis honors the saved speech policy and explicit browser sound opt-in;
+failures and browser-reported delivery are separate journal events, never command
+retries. TTS text preparation is an identity hook; automatic transliteration is
+deferred pending listening comparison.
+
+Clean installer/service health and real RU/EN Piper WAV output were verified.
+Web confirmed Pause against a synthetic peer and then returned Piper audio with
+one device write. Two isolated-word Piper → Whisper base checks both misrecognized
+the command; retain this limitation rather than treating plumbing as accuracy.
+Final verification: **330 prototype tests** plus both JavaScript capture/reply
+checks passed. Browser Resume against the synthetic peer reached `Reply played`;
+this is browser completion evidence, not a subjective audio-quality assessment.
+See the speech guide for evidence boundaries and dependency/model notices.
+
 ## Browser input, 2026-09-18
 
 [Disc Assistant Web](ASSISTANT_WEB.md) now provides a separate loopback interface
 in the viewer's visual style: text, bounded microphone capture, preview/execute,
 locale selection, live observation, response JSON and traces. CLI and web share
 `Application`; no viewer or emulator runtime dependency was added. Browser UI and
-synthetic HTTP/device checks are verified; human microphone/physical acceptance
-remain pending. **317 prototype tests** and JavaScript capture/encoding checks pass.
+synthetic HTTP/device checks are verified. The owner also reports microphone
+commands successfully played and stopped music on the physical player; quantified
+RU/EN acceptance remains pending. **317 prototype tests** and JavaScript capture/encoding checks pass.
 Start with `run.sh web --bootstrap` (close the CLI console first).
 
 ## Review follow-up, 2026-09-18
@@ -54,7 +74,7 @@ push after each. External review is input for comparison, not a specification.
 - Physical `my-player-text-v2`: 19 RU observations remain frozen. Resume at RU-21;
   RU-20 is the final locale switch. One rejection-only expectation is disputed
   because the text could be a recording title. No numeric MVP limits are agreed.
-- No learned execution, dialogue, compound planning, human microphone acceptance/wake-word,
+- No learned execution, dialogue, compound planning, quantified human microphone acceptance, wake-word,
   Raspberry Pi performance or physical audio quality is implied by these increments.
 - Personal data, reports, audio, models and firmware-derived images stay outside Git.
 

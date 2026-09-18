@@ -12,7 +12,9 @@ the same exclusive local ownership lock and keeps one device session. Do not run
 FiiO Control against the same single-client device at the same time.
 
 ```sh
-# Existing Python environment/config; start Typesense, sync and index, then serve.
+# Install the runtime, pinned models and service images once.
+./research/disc_assistant/run.sh setup --all
+# Edit the configured device, then start speech/search, sync/index and serve.
 ./research/disc_assistant/run.sh web --bootstrap
 # Open http://127.0.0.1:8090 in a browser on this computer.
 
@@ -22,8 +24,8 @@ FiiO Control against the same single-client device at the same time.
 ./research/disc_assistant/run.sh --config /absolute/path/player.toml web --port 8092
 ```
 
-Use `run.sh setup` on a new machine. This adapter adds no Python dependency:
-`aiohttp` is already installed. No npm build, CDN, browser speech service or
+Use [the common installer](ASSISTANT_TTS.md) on a new machine. `setup` without
+`--all` remains available for text-only use. The web adapter uses existing `aiohttp`. No npm build, CDN, browser speech service or
 microphone library is required. `--bootstrap` performs catalog preparation once;
 Sync library and Rebuild index remain available on the page. A failed preparation
 leaves playback controls usable, with the error in Last result.
@@ -31,7 +33,7 @@ leaves playback controls usable, with the error in Last result.
 The page identifies the configured device key and endpoint. Connect/Disconnect
 controls the persistent session; it does not stop music. Closing/reloading the
 page does not disconnect the service. Ctrl-C in the serving terminal shuts down
-the service and releases ownership, without stopping Typesense or music. An
+the service and releases ownership, without stopping Typesense, speech services or music. An
 accepted operation is allowed to finish before shutdown; uncertain writes are
 never replayed. The CLI and one-shot scheduled flows remain available separately.
 
@@ -58,11 +60,17 @@ payload, then uses the same STT/interpretation/ranking/execution pipeline as CLI
 file input. Digital-zero silence is rejected; background-noise or hallucination
 rejection is not a solved speech detector.
 
-Configure an installed multilingual Whisper model in `[speech]`, as described in
-[voice setup](ASSISTANT_VOICE.md). The existing CLI backend or explicit resident
-`whisper-server` is supported. The web service does not install/download/start a
-model. Resident mode avoids repeated model loads. Live spoken replies are not
-implemented; `response.speak` remains available in the result contract.
+Web **always uses Whisper Server**, including when the same configuration selects
+CLI STT for one-shot commands. There is no silent CLI fallback. `setup --all`
+configures the multilingual model, server endpoint and optional managed lifecycle.
+`web --bootstrap` starts the managed stack; plain `web` expects it to be running.
+See [speech services and Piper replies](ASSISTANT_TTS.md) for installation,
+RU/EN voices, saved response policy and browser sound opt-in.
+
+Enable **Enable spoken replies on this browser**, then select **All available
+replies** to hear successful controls as well as errors. The default saved policy
+is **Errors only**. Text remains visible regardless. Speech plays on this computer,
+not on DISC; Stop voice or a new recording cancels it. Dialogue remains disabled.
 
 Allow microphone access in the browser and, when requested, in OS privacy
 settings for that browser. Use `http://127.0.0.1:8090` or `http://localhost:8090`
@@ -88,8 +96,11 @@ HTTP endpoints:
 | `GET /api/events` | SSE observations (about once per second), bounded trace events and results |
 | `POST /api/command` | Natural text + mode, or an allowlisted UI action |
 | `POST /api/audio?mode=…` | Bounded WAV body; never an arbitrary filesystem path |
+| `POST /api/reply?request_id=…` | WAV for the current eligible response; no arbitrary text |
+| `POST /api/reply-status?request_id=…&outcome=…` | Browser-reported delivery evidence, separate from execution |
 
-UI actions are connect, disconnect, sync, index, queue and a validated locale.
+UI actions are connect, disconnect, sync, index, queue, a validated locale and
+response mode (`none`, `errors`, `all`).
 Natural text cannot invoke slash administration, exports or arbitrary file reads.
 The server binds only 127.0.0.1, validates Host/Origin/fetch site and requires the
 page token on POST. It provides no CORS, remote authentication or public API.
@@ -102,12 +113,13 @@ log. Detailed response JSON and request traces are collapsible on the page.
 
 Requests use journal source `web`; recognized text, intent/search evidence,
 outcome, model provenance and timing use the existing journal. Raw uploads are
-not retained. The CLI STT adapter may use its existing private temporary directory,
-removed on completion. Do not commit recordings, histories or personal reports.
+not retained. Whisper receives only validated WAV and the selected locale/catalog hints.
+Piper delivery events append to the request without changing its execution outcome. Do not commit recordings, histories or personal reports.
 
 ## Validation and remaining acceptance
 
-**317 prototype tests passed** after this increment. Automated checks cover synthetic DISC text preview/execution/idempotence, audio
+The original browser-input increment passed **317 prototype tests**. Current
+speech-service verification is recorded in [the checkpoint](ASSISTANT_STATUS.md). Automated checks cover synthetic DISC text preview/execution/idempotence, audio
 preview/execution, locale persistence, invalid input, cross-origin/token/host
 rejection, busy rejection, browser-loss completion without replay, device changes
 during recognition and SSE events. JavaScript checks cover PCM encoding, channel
@@ -116,11 +128,14 @@ mixing, duration limits and capture stop. Run:
 ```sh
 ./research/disc_assistant/run.sh test
 node research/disc_assistant/assistant/web/test_audio.mjs
+node research/disc_assistant/assistant/web/test_reply.mjs
 ```
 
 Browser inspection confirmed viewer-style rendering and Preview → Execute Pause
 against a synthetic peer, with the observed playback changing to paused. These
 checks do not establish microphone recognition quality or physical playback.
-A human microphone run remains pending: RU and EN separately, then compare the
-same recordings/model settings and actual device outcomes. No MVP error threshold
+The owner subsequently reported successful microphone commands that played and
+stopped music on a physical player. This is manual end-to-end evidence, not a
+quantified RU/EN cohort. A representative comparison of recordings, model settings
+and actual device outcomes remains pending. No MVP error threshold
 or Raspberry Pi performance claim follows from this implementation.

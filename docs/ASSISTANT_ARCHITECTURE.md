@@ -10,7 +10,7 @@ interpreters and speech engines have independent provider contracts.
 Typed text ------------------------+
                                    v
 WAV file --> Transcriber -> text -> Interpreter(text, context)
-Microphone (future) ------^
+Browser microphone ------^
                                    |
                            validated intention
                                    |
@@ -29,11 +29,11 @@ Microphone (future) ------^
                          speak? -> Synthesizer -> AudioOutput
 ```
 
-Text and WAV-file input, the rules interpreter and response generation run today.
-Local `whisper.cpp` and macOS `say` adapters implement the speech contracts; the
-latter generates explicit sample files. There is no microphone, external service,
-automatic reply playback or dialogue loop. See [file speech](ASSISTANT_VOICE.md)
-for setup, corpus evaluation and the measured recognition limitations.
+Text, WAV and browser microphone input use the same command pipeline. Web always
+uses resident Whisper Server; CLI can select CLI or server STT explicitly. Piper
+synthesizes eligible replies for browser playback; macOS `say` remains a file-sample
+adapter. [Speech services](ASSISTANT_TTS.md) are optional and independent of the
+Controller. Dialogue remains disabled.
 
 ## Interpretation
 
@@ -195,16 +195,16 @@ implicitly switch the application locale. Providers report `no_speech` separatel
 from failures and preserve cancellation. They share `ProviderInfo` and
 `ProviderUnavailable`; capture/output implementations remain independent of engines.
 
-The future response-delivery layer must check `response.speak` before synthesis, record
-synthesis and playback delivery separately, and cancel obsolete audio as needed.
-An audio failure cannot turn a confirmed device command into a playback failure or
-trigger a replay. Current code records generated text/eligibility only; it does
-not claim any audio was delivered. Concrete file adapters now run through
-`voice/backends.py`: local CLI STT and macOS file TTS, with validated WAV input,
-bounded subprocess execution and cancellation. `voice/samples.py` generates and
-evaluates explicit per-locale corpora without device commands. Portable TTS,
-format conversion, streaming, voice capability discovery and representative
-human-speech latency/quality evaluation remain future work.
+The web response-delivery layer checks `response.speak`, uses the response's locale
+and records synthesis and browser-reported playback separately. It cancels obsolete
+audio and never changes an execution outcome or retries a command after a delivery
+failure. Browser sound requires explicit user opt-in. Native TTS PCM rate is retained;
+explicit STT samples use recorded SoXR conversion to 16 kHz. The bounded cache keys
+include voice/config hashes and the TTS-only text preparation revision (currently
+identity). Search aliases and original response text are unaffected. See
+[Piper delivery](ASSISTANT_TTS.md) and [file evaluation](ASSISTANT_VOICE.md).
+Streaming, automatic voice discovery, dialogue and representative human speech
+quality/latency evaluation remain future work.
 
 Dialogue stays disabled: `interactive` is false and `dialogue.enabled=true` is
 rejected. These interfaces do not add questions, pending confirmations or choices.

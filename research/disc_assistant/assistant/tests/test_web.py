@@ -157,3 +157,68 @@ class WebTests(unittest.IsolatedAsyncioTestCase):
         response.close()
         self.assertEqual(self.peer.writes, 0)
         self.assertEqual(self.peer.accepts, 1)
+
+    async def test_web_forces_server_and_persists_reply_policy(self):
+        self.assertEqual(self.app[RUNTIME].config.speech['backend'], 'server')
+        self.assertEqual(self.config.speech.get('backend', 'cli'), 'cli')
+        await self.command(action='response', mode='all')
+        self.assertEqual(Application(self.config).config.response_mode, 'all')
+        response = await self.client.post('/api/command', json={'action': 'response', 'mode': 'invalid'}, headers=self.headers)
+        self.assertEqual(response.status, 400)
+
+    async def test_reply_failure_does_not_change_or_replay_completed_command(self):
+        runtime = self.app[RUNTIME]
+        runtime.synthesizer = Mock(synthesize=AsyncMock(side_effect=RuntimeError('fixture outage')))
+        await self.command(action='response', mode='all')
+        result = await self.command(text='Pause', mode='execute')
+        self.assertTrue(result['response']['speak'])
+        response = await self.client.post('/api/reply?request_id=' + result['request_id'], headers=self.headers)
+        self.assertEqual(response.status, 503)
+        self.assertEqual(runtime.last_result['result'], result)
+        self.assertEqual(self.peer.writes, 1)
+        record = history_command(self.config, ['show', result['request_id']])
+        self.assertEqual(record['status'], 'confirmed')
+        self.assertIn('reply_synthesis_failed', [event['phase'] for event in record['events']])
+        self.assertNotIn('fixture outage', json.dumps(record))
+
+    async def test_reply_requires_current_eligible_id_and_tracks_playback_separately(self):
+        from research.disc_assistant.assistant.speech import Audio
+        runtime = self.app[RUNTIME]
+        runtime.synthesizer = Mock(synthesize=AsyncMock(return_value=(Audio(wav(), 'audio/wav', 16000, 1), {'fixture': True})))
+        silent = await self.command(text='Pause', mode='execute')
+        response = await self.client.post('/api/reply?request_id=' + silent['request_id'], headers=self.headers)
+        self.assertEqual(response.status, 409)
+        runtime.synthesizer.synthesize.assert_not_called()
+        await self.command(action='response', mode='all')
+        result = await self.command(text='Resume', mode='execute')
+        response = await self.client.post('/api/reply?request_id=' + silent['request_id'], headers=self.headers)
+        self.assertEqual(response.status, 410)
+        response = await self.client.post('/api/reply?request_id=' + result['request_id'], headers=self.headers)
+        self.assertEqual(response.status, 200)
+        self.assertEqual(await response.read(), wav())
+        response = await self.client.post('/api/reply-status?request_id=' + result['request_id'] + '&outcome=played', headers=self.headers)
+        self.assertEqual(response.status, 200)
+        record = history_command(self.config, ['show', result['request_id']])
+        event = next(e for e in record['events'] if e['phase'] == 'reply_playback')
+        self.assertEqual(event['payload']['evidence'], 'browser_reported')
+        self.assertEqual(self.peer.writes, 2)
+
+    async def test_new_command_supersedes_inflight_speech(self):
+        from research.disc_assistant.assistant.speech import Audio
+        runtime = self.app[RUNTIME]
+        started, release = asyncio.Event(), asyncio.Event()
+        async def synthesize(config, result):
+            started.set()
+            await release.wait()
+            return Audio(wav(), 'audio/wav', 16000, 1), {}
+        runtime.synthesizer = Mock(synthesize=synthesize)
+        await self.command(action='response', mode='all')
+        first = await self.command(text='Pause', mode='execute')
+        reply = asyncio.create_task(runtime.reply(first['request_id']))
+        await started.wait()
+        await self.command(text='Resume', mode='execute')
+        release.set()
+        from aiohttp.web import HTTPGone
+        with self.assertRaises(HTTPGone):
+            await reply
+        self.assertEqual(self.peer.writes, 2)

@@ -1,0 +1,45 @@
+# Optional resident speech stack; never starts an emulator or binds the LAN.
+name: disc-assistant-speech
+services:
+  whisper:
+    image: disc-assistant-whisper:1.9.4
+    build:
+      context: .
+      dockerfile: whisper.Dockerfile
+    ports: ["127.0.0.1:18119:18119"]
+    volumes:
+      - type: bind
+        source: ${DISC_WHISPER_MODEL:?run setup --all first}
+        target: /models/whisper.bin
+        read_only: true
+        bind: {create_host_path: false}
+    read_only: true
+    tmpfs: ["/tmp:size=64m,mode=1777"]
+    cap_drop: [ALL]
+    security_opt: ["no-new-privileges:true"]
+    healthcheck:
+      test: ["CMD", "curl", "--fail", "http://127.0.0.1:18119/health"]
+      interval: 5s
+      timeout: 3s
+      retries: 24
+  piper:
+    image: disc-assistant-piper:1.4.2
+    build:
+      context: .
+      dockerfile: piper.Dockerfile
+    ports: ["127.0.0.1:18121:18121"]
+    volumes:
+      - type: bind
+        source: ${DISC_PIPER_DIR:?run setup --all first}
+        target: /models
+        read_only: true
+        bind: {create_host_path: false}
+    read_only: true
+    tmpfs: ["/tmp:size=64m,mode=1777"]
+    cap_drop: [ALL]
+    security_opt: ["no-new-privileges:true"]
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:18121/health', timeout=2)"]
+      interval: 5s
+      timeout: 3s
+      retries: 24

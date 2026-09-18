@@ -1,20 +1,26 @@
 import {Recorder} from './audio.js';
+import {ReplyPlayer} from './reply.js';
 const $ = id => document.getElementById(id);
 let token, state = {}, localBusy = false, recorder = null, recording = false, stream = null, traces = [];
 const notice = message => { $('notice').textContent = message; $('notice').hidden = !message; };
 const badge = (id, text) => { $(id).textContent = text; $(id).dataset.state = text; };
 const json = value => JSON.stringify(value, null, 2);
+const replies = new ReplyPlayer({token: () => token, status: message => { $('speech-status').textContent = message; }});
+$('enable-replies').onchange = async () => { await replies.enable($('enable-replies').checked); $('enable-replies').checked = replies.enabled; };
+$('stop-reply').onclick = () => { replies.stop(); $('speech-status').textContent = 'Reply stopped'; };
+$('response-mode').onchange = () => send('/api/command', json({action: 'response', mode: $('response-mode').value}));
 
 function controls() {
   const busy = localBusy || state.busy || !token;
   const locked = busy || !!recorder;
-  document.querySelectorAll('[data-action], #locale, #mode, #text, #microphone, #refresh-mics').forEach(el => { el.disabled = locked; });
+  document.querySelectorAll('[data-action], #locale, #response-mode, #mode, #text, #microphone, #refresh-mics').forEach(el => { el.disabled = locked; });
   $('send').disabled = locked || $('mode').value === 'transcribe';
   $('record').disabled = busy || (!!recorder && !recording);
   $('cancel').hidden = !recorder;
   badge('activity', busy ? 'busy' : recorder ? 'recording' : 'Ready');
 }
 function showState(value) {
+  if (value.busy) replies.stop();
   state = value;
   $('device').textContent = state.device?.key || '—';
   $('endpoint').textContent = state.device ? `${state.device.host} · TCP ${state.device.tcp_port}` : 'Service unavailable';
@@ -28,6 +34,7 @@ function showState(value) {
     $('locale').replaceChildren(...state.locales.map(locale => new Option(locale.native_name, locale.code)));
   }
   if (state.language) $('locale').value = state.language.locale;
+  if (state.response_preferences) $('response-mode').value = state.response_preferences.mode;
   const library = state.library;
   $('catalog').textContent = library ? `${library.track_count || 0} tracks · index ${library.index_current ? 'current' : 'needs rebuilding'}` : 'Library status unavailable';
   controls();
@@ -45,11 +52,14 @@ function showResult(envelope) {
 }
 async function send(url, body, type = 'application/json') {
   if (localBusy || state.busy) return;
-  localBusy = true; traces = []; $('trace').textContent = 'Processing…'; notice(''); controls();
+  replies.stop(); localBusy = true; traces = []; $('trace').textContent = 'Processing…'; notice(''); controls();
   try {
     const response = await fetch(url, {method: 'POST', headers: {'Content-Type': type, 'X-Disc-Token': token}, body});
     if (!response.ok) throw new Error(await response.text());
-    showResult(await response.json());
+    const envelope = await response.json();
+    showResult(envelope);
+    // Only the submitting browser speaks. SSE/reload never replays a response.
+    void replies.play(envelope.result);
   } catch (error) {
     notice(`${error.message} Request was not retried. Check the last result and player state before sending again.`);
   } finally { localBusy = false; controls(); }
@@ -101,7 +111,7 @@ async function finishRecording() {
 }
 $('record').onclick = async () => {
   if (recording) { await finishRecording(); return; }
-  notice(''); const current = new Recorder(); recorder = current; controls();
+  replies.stop(); notice(''); const current = new Recorder(); recorder = current; controls();
   $('record-status').textContent = 'Waiting for microphone permission…';
   try {
     await current.start($('microphone').value, state.max_seconds || 30, (level, seconds) => {
@@ -114,7 +124,7 @@ $('record').onclick = async () => {
   } catch (error) { current.cancel(); if (recorder === current) resetRecording(); notice(`Microphone unavailable: ${error.message}`); }
 };
 $('cancel').onclick = () => { recorder?.cancel(); resetRecording(); };
-addEventListener('pagehide', () => { recorder?.cancel(); stream?.close(); });
+addEventListener('pagehide', () => { recorder?.cancel(); replies.close(); stream?.close(); });
 async function initialize() {
   try {
     const response = await fetch('/api/state');

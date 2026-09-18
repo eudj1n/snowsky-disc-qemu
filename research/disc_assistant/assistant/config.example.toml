@@ -51,8 +51,9 @@ warning = "ansiyellow bold"
 debug = "ansibrightblack"
 suggestion = "ansibrightblack italic"
 
+# Speech input. Web always uses Whisper Server; CLI can still use backend="cli".
 # Optional file-based speech. Install engines/models explicitly; no automatic download.
-# See docs/ASSISTANT_VOICE.md. Both adapters are local; TTS currently requires macOS.
+# See docs/ASSISTANT_VOICE.md. Use setup --all for managed Whisper Server and Piper (RU/EN).
 [speech]
 backend = "cli" # opt-in: "server" (model remains loaded in whisper-server)
 catalog_hints = false # bounded names from the active snapshot, never expected transcripts
@@ -66,6 +67,18 @@ rate = 175
 [speech.voices]
 ru = "Milena"
 en = "Samantha"
+
+# setup --all fills these sections and preserves the previous config in a backup.
+[tts]
+backend = "none" # setup --all selects "piper"
+# server_url = "http://127.0.0.1:18121/synthesize"
+timeout = 30
+# [tts.models]
+# ru = "/absolute/path/ru_RU-denis-medium.onnx"
+# en = "/absolute/path/en_GB-alba-medium.onnx"
+
+[services]
+speech = false # true: web --bootstrap starts the installed Compose speech stack
 
 [playback]
 # Opt in to setting repeat-list (3) before music selection. This persists on DISC.

@@ -5,7 +5,7 @@ from research.disc_assistant.assistant.providers import ProviderInfo
 
 
 class SpeechUnavailable(RuntimeError):
-    """Speech backend is unavailable; no device operation was dispatched."""
+    """Speech backend is unavailable; delivery failure does not change a command outcome."""
 
 
 class InvalidSpeech(ValueError):

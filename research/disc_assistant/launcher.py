@@ -113,7 +113,7 @@ def main(argv=None):
     parser.add_argument('--language', help='select and persist one interaction locale')
     parser.add_argument('--debug', action='store_true', help='stream application request traces')
     parser.add_argument('--source', choices=('cli', 'scheduled'))
-    parser.add_argument('command', choices=('setup', 'up', 'down', 'start', 'listen', 'web', 'language', 'response', 'locales', 'explain', 'commands', 'history', 'sync', 'status', 'queue', 'index', 'search', 'rank', 'ask', 'transcribe', 'synthesize', 'speech-samples', 'speech-check', 'shadow-report', 'test', 'check'))
+    parser.add_argument('command', choices=('setup', 'speech-up', 'speech-down', 'up', 'down', 'start', 'listen', 'web', 'language', 'response', 'locales', 'explain', 'commands', 'history', 'sync', 'status', 'queue', 'index', 'search', 'rank', 'ask', 'transcribe', 'synthesize', 'speech-samples', 'speech-check', 'shadow-report', 'test', 'check'))
     parser.add_argument('arguments', nargs=argparse.REMAINDER)
     args = parser.parse_args(argv)
     config_path = Path(args.config).expanduser()
@@ -128,7 +128,7 @@ def main(argv=None):
             validate_locale(args.language)
             if args.command in ('setup', 'up', 'down', 'test', 'check', 'shadow-report'):
                 raise ValueError('--language applies to application commands, such as start/listen/ask')
-        if args.command not in ('web', 'search', 'rank', 'ask', 'explain', 'commands', 'language', 'response', 'history',
+        if args.command not in ('setup', 'web', 'search', 'rank', 'ask', 'explain', 'commands', 'language', 'response', 'history',
                                 'transcribe', 'synthesize', 'speech-samples', 'speech-check', 'shadow-report') and args.arguments:
             raise ValueError('unexpected arguments; see run.sh help')
         if args.command == 'shadow-report':
@@ -146,9 +146,20 @@ def main(argv=None):
                     arguments[index] = flag + '=' + str(caller / Path(path).expanduser())
             return report_main(arguments)
         if args.command == 'setup':
+            setup_parser = argparse.ArgumentParser(prog='run.sh setup')
+            setup_parser.add_argument('--all', action='store_true')
+            setup_parser.add_argument('--whisper-model', choices=('base', 'small'), default='base')
+            setup_args = setup_parser.parse_args(args.arguments)
+            if not setup_args.all and '--whisper-model' in args.arguments:
+                raise ValueError('--whisper-model requires setup --all')
             subprocess.run([sys.executable, '-m', 'pip', 'install', '-r',
                             str(PACKAGE / 'assistant/requirements.txt')], check=True, cwd=ROOT)
             initialize(config_path)
+            if setup_args.all:
+                subprocess.run([sys.executable, '-m', 'pip', 'install', '-r',
+                                str(PACKAGE / 'assistant/requirements-speech.txt')], check=True, cwd=ROOT)
+                from research.disc_assistant.speech_setup import install
+                install(config_path, model=setup_args.whisper_model)
             return 0
         if args.command in ('test', 'check'):
             module = (['unittest', 'discover', '-s', 'research/disc_assistant', '-t', '.', '-v']
@@ -162,6 +173,15 @@ def main(argv=None):
         if not config_path.is_file():
             raise ValueError(f'config missing: {config_path}; run setup or pass --config PATH')
         config = load(config_path)
+        if args.command in ('speech-up', 'speech-down'):
+            from research.disc_assistant.speech_setup import manage
+            return manage(config, 'up' if args.command == 'speech-up' else 'down')
+        if args.command == 'web' and '--bootstrap' in args.arguments and config.services.get('speech'):
+            from research.disc_assistant.speech_setup import manage
+            try:
+                manage(config, 'up')
+            except (OSError, ValueError, subprocess.SubprocessError) as exc:
+                print(f'Speech startup unavailable ({type(exc).__name__}); text input remains available.', file=sys.stderr)
         needs_search = args.command in ('up', 'index', 'search', 'rank', 'ask') or (
             args.command == 'speech-check' and '--catalog' in args.arguments)
         env = dict(os.environ)
@@ -201,6 +221,9 @@ def main(argv=None):
         return 130
     except (OSError, ValueError, RuntimeError) as exc:
         print(f'Assistant launcher: {exc}', file=sys.stderr)
+        return 1
+    except subprocess.TimeoutExpired:
+        print('Assistant launcher: dependency service operation timed out', file=sys.stderr)
         return 1
     except subprocess.CalledProcessError as exc:
         print(f'Assistant launcher: command failed (exit {exc.returncode})', file=sys.stderr)

@@ -8,7 +8,7 @@ It runs independently of the emulator and uses the shared
 Language, catalog/search policy and the request journal remain in this prototype.
 
 - [assistant/](assistant/README.md): configuration, one-shot CLI and a persistent interactive session.
-- [Disc Assistant Web](../../docs/ASSISTANT_WEB.md): separate browser UI, text and microphone input.
+- [Disc Assistant Web](../../docs/ASSISTANT_WEB.md): separate browser UI, text/microphone input and optional Piper replies.
 - [library/](library/README.md): complete catalog reads, snapshot storage and search.
 - [check.py](check.py): disposable acceptance with synthetic TCP/HTTP servers and a
   real Typesense container. No firmware or physical device is needed.
@@ -17,8 +17,9 @@ Language, catalog/search policy and the request journal remain in this prototype
 `Включи …` / `Play …` command without playback; `ask` launches its best matching
 artist or track after fresh device checks. The owner deferred interactive choice:
 there is no confirmation prompt, including for fuzzy matches. [Browser text/microphone input](../../docs/ASSISTANT_WEB.md) is available with
-`./research/disc_assistant/run.sh web --bootstrap`; human microphone acceptance,
-listening history and lyrics remain pending.
+`./research/disc_assistant/run.sh web --bootstrap`. The owner reports successful
+microphone play/stop on a physical player; quantified acceptance, listening history
+and lyrics remain pending.
 See the [command table and ranking policy](../../docs/ASSISTANT_COMMANDS.md).
 Localized [user responses](../../docs/ASSISTANT_RESPONSES.md) include text, speech
 eligibility and reserved dialogue metadata. [New locales](../../docs/ASSISTANT_LOCALES.md)
@@ -32,6 +33,8 @@ activation or exported secret is needed. From the repository root:
 
 ```sh
 ./research/disc_assistant/run.sh setup
+# Or install the full web runtime with Whisper Server and Piper RU/EN:
+./research/disc_assistant/run.sh setup --all
 ```
 
 `setup` creates `assistant/.venv` if missing, installs the pinned requirements,
@@ -52,7 +55,13 @@ physical DISC normally uses HTTP **12103**. Choose a distinct persistent
 `device.key` per device. It is a user-assigned namespace, not a discovered serial
 number. Both HTTP and TCP must point to the same device.
 
-Start the complete interactive flow:
+For microphone input and spoken replies, use `setup --all`, then
+`./research/disc_assistant/run.sh web --bootstrap`. Web always uses Whisper Server.
+Enable sound on the page; choose All available replies to hear successful controls.
+See [speech setup and lifecycle](../../docs/ASSISTANT_TTS.md) for models, services,
+config backup and external engine options.
+
+Start the complete text-console flow:
 
 ```sh
 ./research/disc_assistant/run.sh start

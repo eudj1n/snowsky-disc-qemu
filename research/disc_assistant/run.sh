@@ -9,7 +9,9 @@ if [[ ${1:-help} == help || ${1:-} == --help || ${1:-} == -h ]]; then
     cat <<'HELP'
 Usage: research/disc_assistant/run.sh [--config PATH] [--source cli|scheduled] [--language CODE] [--debug] COMMAND [ARGS]
 
-  setup          Install dependencies; create missing config and private search key
+  setup [--all] [--whisper-model base|small]  Install Python; --all also installs speech services/models
+  speech-up      Start installed Whisper Server and Piper; no device connection
+  speech-down    Stop speech services, preserving installed models
   up             Start local Typesense and wait for readiness
   down           Stop local Typesense, preserving its volume
   start          Start Typesense, connect, sync/index, then keep an interactive console
