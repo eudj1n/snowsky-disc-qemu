@@ -77,6 +77,20 @@ class VoiceFileTests(unittest.TestCase):
         self.provider.transcribe.assert_awaited_once()
         self.assertEqual(result['response']['code'], 'playback.paused')
 
+    def test_observed_russian_next_variant_dispatches_once_and_preserves_transcript(self):
+        self.provider.transcribe.return_value = Transcription('Следующий трак.', 'ru')
+        with patch.object(cli, 'control', return_value={'status': 'confirmed', 'action': 'next'}) as control:
+            code, result = self.invoke('--language', 'ru', 'ask', '--audio', self.audio)
+        self.assertEqual(code, 0)
+        control.assert_called_once()
+        self.assertEqual(control.call_args.args[1].action, 'next')
+        self.assertEqual(result['action'], 'next')
+        self.assertEqual(result['transcription']['text'], 'Следующий трак.')
+        self.assertEqual(result['transcription']['command_text'], 'Следующий трак')
+        record = history_command(self.config, ['show', result['request_id']])
+        transcript = next(e['payload']['text'] for e in record['events'] if e['phase'] == 'transcription')
+        self.assertEqual(transcript, 'Следующий трак.')
+
     def test_audio_music_passes_through_catalog_ranking_before_single_dispatch(self):
         with Store(self.config.data_dir) as store:
             head = store.publish('test', TRACKS, {}, expected_generation=None)

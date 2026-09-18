@@ -4,6 +4,18 @@ This is the short continuation index. [The roadmap](ASSISTANT.md) preserves
 historical decisions; [MVP acceptance](ASSISTANT_MVP.md) defines completion.
 Conversation and local experiments do not replace device evidence.
 
+## Observed Russian STT spelling, 2026-09-19
+
+The owner reports the microphone flow generally works, with better perceived
+English recognition; several Russian next commands were transcribed as
+`следующий трак` and rejected. This is qualitative feedback, not a measured RU/EN
+accuracy comparison. The complete phrase is now a Russian `next` dictionary alias.
+No global spelling correction, STT tuning or fuzzy control matching was added.
+Raw transcript/command text remain in history; quoted music titles, negation,
+compound requests and the selected-locale boundary keep their existing behavior.
+**335 prototype tests pass**, including single dispatch and transcript retention.
+This is an examined regression case, not new independent acceptance evidence.
+
 ## Resident speech and Piper delivery, 2026-09-18
 
 [Common setup and Piper replies](ASSISTANT_TTS.md) are implemented: `setup --all`
