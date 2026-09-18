@@ -20,6 +20,14 @@ are now implemented; independent human review and learned execution remain pendi
 The MVP accepts one action per request; compound planning and dialogues are deferred.
 The current device contract is [DISC capabilities](DISC_CAPABILITIES.md).
 
+The current [MVP boundary and acceptance gate](ASSISTANT_MVP.md) is tracked in
+[issue #21](https://github.com/eudj1n/snowsky-disc-qemu/issues/21): command input
+through execution on the device. The owner chose to measure the baseline first,
+then agree error limits; later component improvements are separate tasks.
+[Offline shadow reports and review queues](ASSISTANT_SHADOW_REPORTS.md) are now
+implemented. They support interpretation analysis, not physical-device acceptance.
+
+
 ## Goal and first deliverable
 
 Build **Disc Assistant**, a text and voice interface that runs on a computer and
@@ -871,3 +879,20 @@ Next: human review and new speech data, contextual rejection and slot extraction
 then explicit shadow comparison. Encoder fine-tuning, live learned execution and
 Pi resource measurements remain pending. See the workflow document for collection,
 annotation, reproduction and per-variant evidence.
+
+
+### Shadow reporting and MVP scope checkpoint — 2026-09-18
+
+Added offline `run.sh shadow-report`, consuming an explicit history export without
+loading runtime config or invoking a provider/device. Reports separate locale,
+input modality, STT fingerprint and source revision; retain availability and
+coverage exclusions; export prediction-free pending annotations; and compute
+quality only against explicit reviewed labels. Request repetitions and unique
+inputs are both visible. The [workflow](ASSISTANT_SHADOW_REPORTS.md) explains
+sampling bias and why interpretation metrics are not device-outcome metrics.
+The firmware-free prototype suite passes 278 tests.
+
+Added the research-local `AGENTS.md` handoff and [MVP tracker #21](https://github.com/eudj1n/snowsky-disc-qemu/issues/21).
+Next: freeze a representative, reviewed end-to-end baseline, measure current
+execution on DISC, then agree numerical thresholds and run acceptance. Complex
+commands and later component replacement/improvement are outside this MVP.

@@ -456,3 +456,25 @@ execution and independent human/Pi acceptance remain separate steps.
 are now implemented: `/shadow on` records comparisons, `/debug on` displays them,
 and `/explain TEXT` previews each source without execution. The primary still
 executes commands. MVP scope is one action per request; complex commands are deferred.
+
+
+## Offline shadow reports and current MVP gate
+
+After collecting with `/shadow on`, export `/history export /tmp/disc-history.jsonl`.
+Then run the following from a shell; no runtime config/device is needed:
+
+```sh
+./research/disc_assistant/run.sh shadow-report \
+  --history /tmp/disc-history.jsonl --output /tmp/disc-shadow-report
+```
+
+The new private directory contains readable/JSON reports, source evidence and a
+pending annotation queue. `--review-scope all` includes agreeing inputs;
+`--reviewed PATH` computes quality from explicit reviewed annotations.
+See [workflow and denominators](../../docs/ASSISTANT_SHADOW_REPORTS.md).
+
+[The MVP](../../docs/ASSISTANT_MVP.md) is input through execution on DISC with
+agreed error limits. First measure the baseline, then agree thresholds. The
+[MVP checklist](https://github.com/eudj1n/snowsky-disc-qemu/issues/21) distinguishes
+implemented work from acceptance; [AGENTS.md](AGENTS.md) supports session handoff.
+Further component improvements are separate tasks.

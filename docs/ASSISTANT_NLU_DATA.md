@@ -210,3 +210,15 @@ remains a later measured comparison after data review, not an implemented backen
 Live learned execution, microphone capture, automatic feedback training and Pi
 resource acceptance are still pending. No runtime model was automatically installed
 into the user's Assistant by this study.
+
+
+## Shadow observations and explicit scoring
+
+The [shadow-report workflow](ASSISTANT_SHADOW_REPORTS.md) now selects observed
+source disagreements into the same pending/review schema, with predictions in
+a separate evidence file. `--review-scope all` also includes agreements.
+`dataset review` supplies explicit annotations; a subsequent report joins those
+labels by exact ID/text/locale and shows complete-intent, argument and false-activation
+counts. It never trains on outcomes, reruns models or calls a device.
+A reviewed disagreement queue remains a biased observational sample. Fresh
+end-to-end acceptance is tracked separately in [the MVP plan](ASSISTANT_MVP.md).

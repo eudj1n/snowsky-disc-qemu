@@ -263,3 +263,20 @@ No human/Pi acceptance or encoder fine-tuning is claimed. After inspection, use
 this test as regression when redesigning against its failures; preserve a fresh
 holdout for the next comparison. The first `train_commands` experiment remains
 unchanged for reproducibility.
+
+
+## Offline shadow report
+
+`shadow_report.py` reads an explicit journal export and never reruns sources or
+loads ML dependencies. Use the normal launcher:
+
+```sh
+./research/disc_assistant/run.sh shadow-report \
+  --history /tmp/disc-history.jsonl --output /tmp/disc-shadow-report
+```
+
+It separates observations by language, input type and model/rule revision, writes
+a pending queue compatible with `dataset review`, and optionally scores saved
+predictions against `--reviewed PATH`. No automatic labels, training or model
+selection. See [reporting and review](../../../../docs/ASSISTANT_SHADOW_REPORTS.md)
+and [the current MVP gate](../../../../docs/ASSISTANT_MVP.md).

@@ -30,6 +30,7 @@ activation is unnecessary. `ask` starts the best match without a choice dialogue
 | `./research/disc_assistant/run.sh --language en rank 'Play Linkin Park — Numb'` | Explain ranking or a control intent | None |
 | `./research/disc_assistant/run.sh --language en ask 'Play Linkin Park — Numb'` | Select the best candidate, check fresh rows, dispatch once and verify playback | Starts playback |
 | `./research/disc_assistant/run.sh --language en ask 'Pause'` | Execute a state-aware control | See the control table below |
+| `./research/disc_assistant/run.sh shadow-report --history PATH --output DIR` | Offline source report and pending annotation queue; optional `--reviewed PATH` / `--review-scope all`; see [workflow](ASSISTANT_SHADOW_REPORTS.md) | None; no config or device |
 | `./research/disc_assistant/run.sh explain TEXT` | Preview rules, candidate intention, arguments and rejection reasons | None; offline |
 | `./research/disc_assistant/run.sh commands [rebuild\|import FILE]` | Inspect/publish the active locale command snapshot; rebuild clears its model | None; local database only |
 | `./research/disc_assistant/run.sh test` | Run prototype unit tests | None |

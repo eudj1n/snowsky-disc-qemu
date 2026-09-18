@@ -156,6 +156,10 @@ compound rejection and session-only configuration. No physical player was used.
 
 ## Next decision gate
 
+[Offline shadow reports and review-queue exports](ASSISTANT_SHADOW_REPORTS.md) are
+now implemented. They read recorded evidence without rerunning sources, and
+quality requires explicitly reviewed labels.
+
 Collect shadow disagreements and independently annotate complete intentions,
 arguments and rejection reasons. Freeze fresh evaluation data before adjusting
 providers or a selector. Keep source predictions and model versions as features,

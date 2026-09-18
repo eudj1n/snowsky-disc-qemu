@@ -17,6 +17,8 @@ Usage: research/disc_assistant/run.sh [--config PATH] [--source cli|scheduled] [
   language [CODE|reset]   Show/set one saved interaction locale
   response [ARGS] Show/set speech mode none|errors|all, or reset
   locales        Validate installed command and response locales
+  shadow-report --history PATH --output DIR [--reviewed PATH] [--review-scope all]
+                 Offline comparison and pending review queue; no config/device needed
   history [ARGS] View recent requests; show ID, export PATH, prune, clear --yes
   sync           Read the selected DISC catalog into SQLite
   status         Show local catalog/index status

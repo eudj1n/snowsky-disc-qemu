@@ -113,7 +113,7 @@ def main(argv=None):
     parser.add_argument('--language', help='select and persist one interaction locale')
     parser.add_argument('--debug', action='store_true', help='stream application request traces')
     parser.add_argument('--source', choices=('cli', 'scheduled'))
-    parser.add_argument('command', choices=('setup', 'up', 'down', 'start', 'listen', 'language', 'response', 'locales', 'explain', 'commands', 'history', 'sync', 'status', 'queue', 'index', 'search', 'rank', 'ask', 'transcribe', 'synthesize', 'speech-samples', 'speech-check', 'test', 'check'))
+    parser.add_argument('command', choices=('setup', 'up', 'down', 'start', 'listen', 'language', 'response', 'locales', 'explain', 'commands', 'history', 'sync', 'status', 'queue', 'index', 'search', 'rank', 'ask', 'transcribe', 'synthesize', 'speech-samples', 'speech-check', 'shadow-report', 'test', 'check'))
     parser.add_argument('arguments', nargs=argparse.REMAINDER)
     args = parser.parse_args(argv)
     config_path = Path(args.config).expanduser()
@@ -121,16 +121,30 @@ def main(argv=None):
         config_path = Path(os.environ.get('DISC_ASSISTANT_CALLER_DIR', os.getcwd())) / config_path
     config_path = config_path.resolve()
     try:
-        if args.debug and args.command in ('setup', 'up', 'down', 'test', 'check'):
+        if args.debug and args.command in ('setup', 'up', 'down', 'test', 'check', 'shadow-report'):
             raise ValueError('--debug applies to application commands, such as start/listen/ask')
         if args.language:
             from research.disc_assistant.assistant.responses import validate_locale
             validate_locale(args.language)
-            if args.command in ('setup', 'up', 'down', 'test', 'check'):
+            if args.command in ('setup', 'up', 'down', 'test', 'check', 'shadow-report'):
                 raise ValueError('--language applies to application commands, such as start/listen/ask')
         if args.command not in ('search', 'rank', 'ask', 'explain', 'commands', 'language', 'response', 'history',
-                                'transcribe', 'synthesize', 'speech-samples', 'speech-check') and args.arguments:
+                                'transcribe', 'synthesize', 'speech-samples', 'speech-check', 'shadow-report') and args.arguments:
             raise ValueError('unexpected arguments; see run.sh help')
+        if args.command == 'shadow-report':
+            if args.source:
+                raise ValueError('--source does not apply to offline shadow reports')
+            from research.disc_assistant.experiments.nlu.shadow_report import main as report_main
+            # run.sh changes cwd; resolve all file arguments against its caller.
+            caller = Path(os.environ.get('DISC_ASSISTANT_CALLER_DIR', os.getcwd()))
+            arguments = list(args.arguments)
+            for index, value in enumerate(arguments):
+                if index and arguments[index - 1] in ('--history', '--output', '--reviewed'):
+                    arguments[index] = str(caller / Path(value).expanduser())
+                elif any(value.startswith(flag + '=') for flag in ('--history', '--output', '--reviewed')):
+                    flag, path = value.split('=', 1)
+                    arguments[index] = flag + '=' + str(caller / Path(path).expanduser())
+            return report_main(arguments)
         if args.command == 'setup':
             subprocess.run([sys.executable, '-m', 'pip', 'install', '-r',
                             str(PACKAGE / 'assistant/requirements.txt')], check=True, cwd=ROOT)

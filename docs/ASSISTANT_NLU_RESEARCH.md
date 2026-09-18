@@ -299,3 +299,14 @@ learned arbitration and complex command planning are not part of this increment.
 The documented comparison uses implementation acceptance and examined regression,
 with no retraining or independent quality claim. Next collect reviewed shadow
 disagreements and fresh human/STT evaluation data before selecting a live provider.
+
+
+## Observation/reporting checkpoint, 2026-09-18
+
+[Offline reporting and review export](ASSISTANT_SHADOW_REPORTS.md) close the loop
+between saved independent-source evidence and explicit annotations. Reported
+disagreement is not error; quality requires gold, and physical execution remains
+a different measure. No provider was retrained or promoted by this stage.
+The owner defined [MVP acceptance](ASSISTANT_MVP.md) around the current complete
+input-to-device pipeline: measure first, agree error limits next. Future model
+selection/weighting and component improvements belong to separate follow-up tasks.

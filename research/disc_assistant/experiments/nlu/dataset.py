@@ -169,47 +169,54 @@ def private_output(path, text):
         stream.write(text)
 
 
+def history_example(record):
+    """Canonical pending row shared by generic collection and shadow review."""
+    if record.get('command') not in ('ask', 'rank', 'explain') or record.get('input_truncated'):
+        return None
+    locale = record.get('context', {}).get('locale')
+    try:
+        locale_code(locale)
+    except ValueError:
+        return None
+    text = record.get('input')
+    speech = [e['payload'].get('text') for e in record.get('events', [])
+              if e.get('phase') == 'speech_command_text' and isinstance(e.get('payload'), dict)]
+    if speech:
+        text = speech[-1]
+    elif isinstance(text, str) and text.startswith(('/explain ', '/rank ')):
+        text = text.partition(' ')[2]
+    if not valid_text(text) or text == '[audio]' or text.startswith('/'):
+        return None
+    identity = digest([record.get('id'), locale, text])[:24]
+    origin = {'kind': 'history_stt' if speech else 'history_text', 'reference': identity}
+    group = 'history-' + identity
+    if speech:
+        for event in record.get('events', []):
+            phase, payload = event.get('phase'), event.get('payload', {})
+            if not isinstance(payload, dict):
+                continue
+            field = 'sha256' if phase == 'audio_validated' else 'model_sha256' if phase == 'speech_model' else None
+            value = payload.get(field) if field else None
+            if isinstance(value, str) and re.fullmatch('[0-9a-f]{64}', value):
+                origin['audio_sha256' if phase == 'audio_validated' else 'stt_model_sha256'] = value
+                if phase == 'audio_validated':
+                    group = 'audio-' + value
+    return {'id': 'history-' + identity, 'locale': locale, 'text': text,
+            'group': group, 'split': None, 'origin': origin,
+            'review': {'status': 'pending'}, 'label': None, 'intent': None, 'slots': []}
+
+
 def collect(history, output):
     """Copy only input text/locale and a hashed provenance ID; never predicted labels."""
     rows, seen = [], set()
     for record in read_jsonl(history):
-        if record.get('command') not in ('ask', 'rank', 'explain') or record.get('input_truncated'):
+        row = history_example(record)
+        if row is None:
             continue
-        locale = record.get('context', {}).get('locale')
-        try:
-            locale_code(locale)
-        except ValueError:
-            continue
-        text = record.get('input')
-        speech = [e['payload'].get('text') for e in record.get('events', [])
-                  if e.get('phase') == 'speech_command_text' and isinstance(e.get('payload'), dict)]
-        if speech:
-            text = speech[-1]
-        elif isinstance(text, str) and text.startswith(('/explain ', '/rank ')):
-            text = text.partition(' ')[2]
-        if not valid_text(text) or text == '[audio]' or text.startswith('/'):
-            continue
-        key = (locale, normalized(text))
-        if key in seen:
-            continue
-        seen.add(key)
-        identity = digest([record.get('id'), locale, text])[:24]
-        origin = {'kind': 'history_stt' if speech else 'history_text', 'reference': identity}
-        group = 'history-' + identity
-        if speech:
-            for event in record.get('events', []):
-                phase, payload = event.get('phase'), event.get('payload', {})
-                if not isinstance(payload, dict):
-                    continue
-                field = 'sha256' if phase == 'audio_validated' else 'model_sha256' if phase == 'speech_model' else None
-                value = payload.get(field) if field else None
-                if isinstance(value, str) and re.fullmatch('[0-9a-f]{64}', value):
-                    origin['audio_sha256' if phase == 'audio_validated' else 'stt_model_sha256'] = value
-                    if phase == 'audio_validated':
-                        group = 'audio-' + value
-        rows.append({'id': 'history-' + identity, 'locale': locale, 'text': text,
-                     'group': group, 'split': None, 'origin': origin,
-                     'review': {'status': 'pending'}, 'label': None, 'intent': None, 'slots': []})
+        key = (row['locale'], normalized(row['text']))
+        if key not in seen:
+            rows.append(row)
+            seen.add(key)
     private_output(output, ''.join(json.dumps(r, ensure_ascii=False) + '\n' for r in rows))
     return {'pending': len(rows), 'output': str(output), 'labels_inferred': False}
 
