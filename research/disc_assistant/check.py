@@ -30,10 +30,12 @@ ROOT = Path(__file__).resolve().parents[2]
 
 class LinkHandler(socketserver.BaseRequestHandler):
     def handle(self):
+        self.server.accepts += 1
         frames = Frames()
         while data := self.request.recv(4096):
             for tag, payload in frames.feed(data):
                 if tag == '0599':
+                    self.server.handshakes += 1
                     self.request.sendall(frame('a599', '0306'))
                 elif tag == '0501':
                     self.request.sendall(frame('a501', '{"soc_version":257}'))
@@ -128,6 +130,7 @@ async def main():
                 socketserver.ThreadingTCPServer(('127.0.0.1', 0), LinkHandler) as link, \
                 ThreadingHTTPServer(('127.0.0.1', 0), CatalogHandler) as catalog:
             link.selected, link.mutations = None, 0
+            link.accepts, link.handshakes = 0, 0
             link.queue, link.index, link.state = [], 0, 0
             link.mode = 0
             catalog.link = link
@@ -246,6 +249,31 @@ page_size = 2
                 cli('index')
                 assert cli('search', 'Numb')['found'] == 3
                 print('PASS: rebuild from SQLite, sync invalidation and explicit reindex', flush=True)
+                # The console owns a SINGLE connection across startup and commands.
+                # Remove the projection first: bootstrap must rebuild the missing index.
+                prior = cli('status')
+                await sdk.collections[prior['collection']].delete()
+                accepts, handshakes = link.accepts, link.handshakes
+                console = subprocess.run([sys.executable, '-m', 'research.disc_assistant.assistant',
+                    '--config', str(config), 'start'], cwd=ROOT, env=env, text=True, capture_output=True,
+                    input='/sync\n/rank Play Linkin Park\nPlay Linkin Park\nPause\nResume\n/queue\n/status\n/exit\n', timeout=90)
+                assert console.returncode == 0, console.stderr
+                assert '"status": "error"' not in console.stdout, console.stdout
+                assert '"status": "uncertain"' not in console.stdout, console.stdout
+                assert '"status": "not_sent"' not in console.stdout, console.stdout
+                assert 'Startup search preparation unavailable' not in console.stdout, console.stdout
+                assert '"status": "playing"' in console.stdout, console.stdout
+                assert '"status": "confirmed"' in console.stdout, console.stdout
+                assert link.accepts == accepts + 1 and link.handshakes == handshakes + 1
+                rebuilt = cli('status')
+                assert rebuilt['generation'] == prior['generation']
+                assert rebuilt['collection'] != prior['collection']
+                again = subprocess.run([sys.executable, '-m', 'research.disc_assistant.assistant',
+                    '--config', str(config), 'start'], cwd=ROOT, env=env, text=True, capture_output=True,
+                    input='/exit\n', timeout=60)
+                assert again.returncode == 0 and again.stdout.count('"reused": true') == 2, again.stdout
+                assert cli('status')['collection'] == rebuilt['collection']
+                print('PASS: persistent start -> sync/index -> console uses one handshake/socket; unchanged snapshot/index reused; missing projection rebuilt', flush=True)
             finally:
                 link.shutdown()
                 catalog.shutdown()

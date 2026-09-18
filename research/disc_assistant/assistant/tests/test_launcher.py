@@ -90,6 +90,33 @@ class LauncherTests(unittest.TestCase):
             for command in ('ask', 'rank'):
                 self.assertEqual(launcher.main(['--config', str(self.config), command, 'Пауза']), 0)
 
+    def test_start_runs_up_then_one_console_process_and_listen_skips_docker(self):
+        self.initialize()
+        with patch.object(launcher.subprocess, 'run', return_value=Mock(returncode=0)) as run, \
+                patch.object(launcher, 'wait_ready') as ready:
+            self.assertEqual(launcher.main(['--config', str(self.config), 'start']), 0)
+            self.assertEqual(run.call_count, 2)
+            self.assertEqual(run.call_args_list[0].args[0][-2:], ['up', '-d'])
+            self.assertEqual(run.call_args_list[1].args[0][-1], 'start')
+            ready.assert_called_once()
+            run.reset_mock()
+            ready.reset_mock()
+            self.assertEqual(launcher.main(['--config', str(self.config), 'listen']), 0)
+            self.assertEqual(run.call_count, 1)
+            self.assertEqual(run.call_args.args[0][-1], 'listen')
+            ready.assert_not_called()
+
+    def test_failed_search_startup_still_launches_console(self):
+        self.initialize()
+        with patch.object(launcher.subprocess, 'run', side_effect=[OSError('docker unavailable'), Mock(returncode=0)]) as run:
+            self.assertEqual(launcher.main(['--config', str(self.config), 'start']), 0)
+            self.assertEqual(run.call_args.args[0][-1], 'start')
+
+    def test_console_interrupt_exits_without_launcher_traceback(self):
+        self.initialize()
+        with patch.object(launcher.subprocess, 'run', side_effect=KeyboardInterrupt):
+            self.assertEqual(launcher.main(['--config', str(self.config), 'listen']), 130)
+
     def test_down_needs_no_config_and_keeps_volumes(self):
         with patch.object(launcher.subprocess, 'run', return_value=Mock(returncode=0)) as run:
             self.assertEqual(launcher.main(['--config', str(self.config), 'down']), 0)

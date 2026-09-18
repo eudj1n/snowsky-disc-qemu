@@ -1,6 +1,7 @@
 """One serialized playback operation, with fresh selectors and no mutation retries."""
 from collections import Counter
 import time
+from contextlib import nullcontext
 from uuid import uuid4
 
 from controller.fiio_link import playback_snapshot
@@ -95,7 +96,7 @@ def verify_playing(client, selected, rows, timeout):
             update = client.now_playing()
         except TimeoutError:
             update = {}
-        events, client.observed = client.observed, []
+        events = client.take_events()
         validate_scan_events(events)
         for tag, payload in events:
             if tag == 'a202':
@@ -107,17 +108,18 @@ def verify_playing(client, selected, rows, timeout):
     return None
 
 
-def execute(config, store, ranking):
+def execute(config, store, ranking, *, shared=None):
     selected = ranking['candidates'][0]
     result = {'operation_id': uuid4().hex, 'selected': selected, 'status': 'not_sent'}
     client = None
-    with device_lock(config.data_dir):
+    with (device_lock(config.data_dir) if shared is None else nullcontext()):
         try:
             if store.head(config.device_key)['generation'] != ranking['generation']:
                 raise StaleSnapshot('catalog changed after ranking; repeat the command')
             artist_command(selected['artist'], 0 if selected['kind'] == 'track' else None,
                            selected.get('album'))
-            with PlaybackClient(config.host, config.tcp_port, config.timeout) as client:
+            with (PlaybackClient(config.host, config.tcp_port, config.timeout) if shared is None
+                  else nullcontext(shared)) as client:
                 if client.handshake() != '0306' or client.settings().get('soc_version') != 257:
                     raise ValueError('playback requires reviewed DISC V2.57')
                 if config.continuous_context:

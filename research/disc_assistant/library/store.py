@@ -77,6 +77,16 @@ class Store:
             'SELECT id,generation,title,artist,album FROM tracks WHERE generation=? ORDER BY ordinal',
             (generation,))]
 
+    def matches_tracks(self, generation, tracks):
+        """Exact snapshot content/order, including source rows; not identity reconciliation."""
+        rows = self.db.execute('SELECT title,artist,album,source FROM tracks WHERE generation=? ORDER BY ordinal',
+                               (generation,)).fetchall()
+        return len(rows) == len(tracks) and all(
+            (row['title'], row['artist'], row['album'], json.loads(row['source'])) ==
+            (t.title, t.artist, t.album, {'category': 'album/song', 'album': t.album,
+                                       'position': t.position, 'row': t.raw})
+            for row, t in zip(rows, tracks))
+
     def publish_index(self, device, generation, collection, signature):
         with self.db:
             self.db.execute('BEGIN IMMEDIATE')

@@ -49,6 +49,10 @@ class FakeClient:
     def play_mode(self):
         return 0
 
+    def take_events(self):
+        events, self.observed = self.observed, []
+        return events
+
     def scan_guard(self):
         pass
 

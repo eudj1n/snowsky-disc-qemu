@@ -68,7 +68,72 @@ async def eof():
             print(f'PASS: type-7 native EOF mode={mode}, positions={positions}', flush=True)
 
 
-def exercise():
+def persistent(config, store, ranking, short_ranking):
+    from research.disc_assistant.assistant.live import DeviceSession, LiveSocket
+    from unittest.mock import patch
+    writes = []
+    original = LiveSocket.sendall
+    def record(socket, data):
+        if data[:4] in (b'0100', b'0101', b'0102', b'0201'):
+            writes.append(data[:4])
+        return original(socket, data)
+
+    def wait(predicate, timeout=20):
+        deadline = time.monotonic() + timeout
+        while time.monotonic() < deadline:
+            if predicate():
+                return
+            time.sleep(.1)
+        raise AssertionError('persistent-session observation timed out')
+
+    with patch.object(LiveSocket, 'sendall', record), DeviceSession(config, health_interval=1) as session:
+        session.connect()
+        assert session.wait_ready(40), session.status()
+        initial = session.client
+        with session.operation() as client:
+            refreshed = sync(config, store, shared=client, reuse_unchanged=True)
+            assert refreshed['generation'] == ranking['generation']
+            result = execute(replace(config, continuous_context=True), store, ranking, shared=client)
+            assert result['status'] == 'playing', result
+        for action, expected in [('pause', 'confirmed'), ('pause', 'already_satisfied'), ('resume', 'confirmed')]:
+            with session.operation() as client:
+                result = control(config, ControlIntent(action), shared=client)
+                assert result['status'] == expected, result
+            assert session.client is initial
+        with session.operation() as client:
+            result = execute(replace(config, continuous_context=True), store, short_ranking, shared=client)
+            assert result['status'] == 'playing', result
+        title = result['state']['song']['song_name']
+        wait(lambda: session.status()['observation']['state'].get('song', {}).get('song_name') != title)
+        assert session.client is initial
+        before = len(writes)
+        initial.close()  # Test-only transport loss, without a playback mutation.
+        wait(lambda: session.status()['connection'] == 'ready' and session.client is not initial, 40)
+        assert len(writes) == before, writes
+        with session.operation() as client:
+            assert queue_observe(config, shared=client)['queue']['total'] == 3
+        print('PASS: persistent sync/control/queue share one socket; idle EOF pushes and observation-only reconnect', flush=True)
+        with session.operation() as client:
+            client.begin_phase('mode')
+            client.set_play_mode(4)
+            assert client.play_mode() == 4
+        with session.operation() as client:
+            result = execute(config, store, short_ranking, shared=client)
+            assert result['status'] == 'playing', result
+        wait(lambda: session.status()['observation']['playback'] == 'stopped')
+        final_client = session.client
+        with session.operation() as client:
+            observed = queue_observe(config, shared=client)
+            assert not observed['queue']['playback_known']
+        assert session.client is final_client and session.status()['connection'] == 'ready'
+        session.disconnect()
+        before = len(writes)
+        time.sleep(1.5)
+        assert session.status()['connection'] == 'disconnected' and len(writes) == before
+        print('PASS: final EOF preserves connection despite silent 0202; explicit disconnect stays disconnected', flush=True)
+
+
+def exercise(persistent_only=False):
     assert os.environ.get('CI_DISPOSABLE') == '1'
     assert os.environ.get('FW_VERSION') == '2.57'
     with Client() as client, PlayerMemory(Path('/work/rootfs'), '2.57') as memory:
@@ -86,6 +151,11 @@ def exercise():
         assert len(documents) == 6
         target = next(d for d in documents if d['title'] == NAMES[2])
         ranking = {'generation': head['generation'], 'candidates': [dict(target, track_id=target['id'], kind='track')]}
+        if persistent_only:
+            short = next(d for d in documents if d['artist'] == 'Assistant CI')
+            short_ranking = {'generation': head['generation'], 'candidates': [dict(short, track_id=short['id'], kind='track')]}
+            persistent(config, store, ranking, short_ranking)
+            return
         started = execute(replace(config, continuous_context=True), store, ranking)
         assert started['status'] == 'playing', started
         assert started['queue']['mode'] == 3 and started['queue']['total'] == 2, started
@@ -135,5 +205,6 @@ def exercise():
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--fixtures')
+    parser.add_argument('--persistent-only', action='store_true')
     args = parser.parse_args()
-    fixtures(args.fixtures) if args.fixtures else exercise()
+    fixtures(args.fixtures) if args.fixtures else exercise(args.persistent_only)

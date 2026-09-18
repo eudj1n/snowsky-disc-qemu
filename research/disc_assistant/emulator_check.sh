@@ -3,6 +3,8 @@
 set -euo pipefail
 cd "$(dirname "${BASH_SOURCE[0]}")/../.."
 export OTA_DIR="$(cd "${1:?path to reviewed V2.57 OTA chunks}" && pwd)"
+assistant_scenario="${2:-all}"
+case "$assistant_scenario" in all|persistent) ;; *) echo 'Expected all or persistent scenario' >&2; exit 2;; esac
 export FW_VERSION=2.57
 export EMU_IMAGE="${EMU_IMAGE:-snowsky-disc-qemu-ci}"
 assistant_tmp="$(mktemp -d "${TMPDIR:-/tmp}/disc-assistant-emu.XXXXXXXX")"
@@ -34,4 +36,8 @@ compose exec -T emu bash /repo/emulator/scripts/10_setup_env.sh
 compose exec -T emu python3 -B -m tests.integration.awake_check --configure
 compose exec -T emu bash /repo/emulator/scripts/20_boot.sh
 compose exec -T emu python3 -B -m tests.integration.awake_check
-compose exec -T emu python3 -B -m research.disc_assistant.emulator_check
+if [[ "$assistant_scenario" == persistent ]]; then
+  compose exec -T emu python3 -B -m research.disc_assistant.emulator_check --persistent-only
+else
+  compose exec -T emu python3 -B -m research.disc_assistant.emulator_check
+fi

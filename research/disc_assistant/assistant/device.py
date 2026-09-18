@@ -107,7 +107,10 @@ class PlaybackClient(Client):
             self.retain(event)
         raise TimeoutError(f'no {expected} reply')
 
+    def take_events(self):
+        events, self.observed = self.observed, []
+        return events
+
     def scan_guard(self):
         self.collect()
-        events, self.observed = self.observed, []
-        validate_scan_events(events)
+        validate_scan_events(self.take_events())

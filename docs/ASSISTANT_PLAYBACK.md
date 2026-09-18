@@ -1,13 +1,13 @@
 # Assistant playback controls and queue
 
-Two increments following ranked text playback, **2026-09-18**. Work remains in
+Playback and session increments following ranked text playback, **2026-09-18**. Work remains in
 `research/disc_assistant/`. See [commands](ASSISTANT_COMMANDS.md) for available
 behavior and [the implementation plan](ASSISTANT.md) for the broader roadmap.
 M2a controls and M2b native queue observation/continuation are implemented.
-The next increment is M2c: persistent session ownership. The current one-shot CLI
-is a temporary interface, not a decision to reconnect for every user request.
+M2c adds a persistent foreground text console. Existing one-shot commands remain
+available for scripts and cron alongside the interactive application.
 
-Validation on 2026-09-18: 97 prototype unit tests, 313 shared Python tests and
+Validation on 2026-09-18: 116 prototype unit tests, 313 shared Python tests and
 37 shared JavaScript tests pass. Disposable Typesense acceptance covers control
 dispatch without search credentials/current index, queue pagination and explicit
 repeat-list preparation. A separate generated-media V2.57 guest passed actual
@@ -34,16 +34,17 @@ uses `0201/0000`, `0201/0001` and `0201/0002`. Never emulate stop through power-
 library reset, zero volume or seeking to the end. Evidence:
 [remote control](REMOTE_CONTROL.md#timing-and-state), [capabilities](DISC_CAPABILITIES.md).
 
-This short-lived CLI has no background queue executor. `Stop` reports continuation
+Neither the one-shot CLI nor the persistent console has a managed queue executor. `Stop` reports continuation
 as inactive and pauses the device; it does not claim to cancel nonexistent work.
-When a persistent executor is introduced, stop must durably cancel pending
+When a recommendation executor is introduced, stop must durably cancel pending
 assistant launches even if device connectivity fails. Resume may continue the
 native queue but must not revive a cancelled recommendation plan.
 
 ### Execution and state
 
 1. Parse intent before opening search/storage. Under the shared device lock,
-   connect, check handshake/firmware and retain interleaved events with one reader.
+   connect (or borrow the persistent session), check handshake/firmware and retain
+   interleaved events with one reader.
 2. Respect the stock timing gate (existing tests use 2.1 seconds), then read fresh
    state immediately before acting. Unknown/loading or silent reads do not justify
    a blind toggle. Stopped-state resume remains unverified: require a new selection.
@@ -174,84 +175,99 @@ load a plan for display, but must not automatically start music.
 
 ## M2c: persistent device session
 
-Decision on 2026-09-18: keep the DISC TCP connection open while the Assistant
-service is running and connection is enabled. Text CLI, future UI and voice input
-submit work to that service rather than opening independent device connections.
-This increment precedes microphone work and does not require history collection
-or a recommendation-queue executor to be implemented first.
+Implemented on 2026-09-18: keep DISC TCP open while the foreground Assistant
+application is running and connection is enabled. The interactive console submits
+work to that shared session. One-shot CLI commands retain their existing lifecycle
+for scripts/cron. Future voice input can use the same application interface;
+local IPC and a separate daemon are not required for this first slice.
 
 ### Ownership and lifecycle
 
-- One service process owns one device connection, one reader, the state reducer
-  and the serialized command dispatcher. Hold the device ownership lock for the
-  service lifetime. Catalog synchronization uses the same session and matching
-  HTTP endpoint; it must not open a competing TCP connection.
-- Separate connection state (`disconnected`, `connecting`, `ready`, `reconnecting`)
-  from playback state (`unknown`, `loading`, `playing`, `paused`, observed final
-  stop). Attach observations and pending work to a connection generation.
-- Connect performs handshake, compatibility validation and bounded fresh reads
-  of settings, playback and queue. A silent `0202` after EOF leaves playback
-  unknown unless observed events establish stop; it does not alone mean the link
-  is dead. Initial state acquisition can finish with explicit unknown fields.
-- Unexpected socket EOF/error invalidates connection-scoped observations and
-  pending work. Reconnect uses capped backoff with jitter while enabled; reset
-  backoff only after a stable ready session. Do not busy-loop, assume remote
-  wake, inject fake touches or change device power policy.
-- Explicit disconnect disables reconnect and releases TCP for FiiO Control.
-  Connect enables it again. Service shutdown closes the session cleanly; it does
-  not pause playback, clear the queue or restore modes implicitly. A music `Stop`
-  remains a playback intent, distinct from disconnecting or stopping the service.
-- Changing the configured target closes the previous session and invalidates
-  its work before connecting to the new device. Never carry pending selectors
-  across device changes or silently take over another controller's connection.
+- One application owns one device connection, one reader, the state reducer and
+  serialized operations. The device ownership lock lasts for the process lifetime.
+  Catalog synchronization borrows the session and uses the matching HTTP endpoint.
+- Connection state (`disconnected`, `connecting`, `ready`, `reconnecting`) is
+  separate from playback (`unknown`, `loading`, `playing`, `paused`, observed
+  final stop). Observations and pending work belong to a connection generation.
+- Connect performs handshake, V2.57 validation and bounded fresh reads of settings,
+  play mode and playback. Queue rows are fetched by `/queue` and playback execution,
+  not on every reconnect. A silent `0202` after EOF leaves playback unknown unless
+  observed events establish stop; it does not alone mean the link is dead.
+- Unexpected EOF/error invalidates connection observations and pending work.
+  Reconnect starts with 0.5-second backoff, doubling to 15 seconds with ±20% jitter;
+  a session stable for 30 seconds resets the backoff. No remote wake, fake touches
+  or device power-policy changes are introduced.
+- `/disconnect` disables reconnect and releases TCP for FiiO Control. `/connect`
+  enables it asynchronously. The local ownership lock remains until exit. Shutdown
+  closes the session without pausing playback, clearing queues or restoring modes.
+  Music `Stop` remains a playback intent, distinct from disconnect or exit.
+- The configured target is fixed for this process. Exit and restart to change it;
+  selectors never migrate to a new connection generation.
 
 ### Events and command outcomes
 
-Keep receiving events during silence between user commands, catalog HTTP reads,
-search and speech recognition. Blocking HTTP/synchronous work must not stop the
-reader. Replace the diagnostic client's notification-draining request path with
-central routing; a permanently open socket alone is insufficient.
+A dedicated thread receives events between commands and during blocking HTTP or
+search work. Tagged requests are serialized because the protocol has no request
+IDs. Unsolicited updates use the same reducer: state-only deltas preserve metadata,
+loading/final-stop observations remain distinct, and duplicate events do not
+establish additional listens. Idle observations are bounded current state; active
+operations have a bounded event buffer. This is not a listening-history store.
 
-Serialize protocol reads because responses have tags but no request IDs. Route
-unsolicited updates through the same reducer. Handle late replies, state-only
-deltas, full loading snapshots, position resets and duplicate notifications.
-A response timeout makes that read uncertain; do not reinterpret an old reply
-as a command acknowledgement. Check transport health separately with a reviewed
-read command such as `0105`, which still responds after final stop. Prefer pushes
-for normal updates; health probes need bounded, measured cadence rather than
-continuous now-playing polling. Validate physical idle/sleep effects separately.
+A non-`a202` request timeout retires the connection so a delayed tagged reply cannot
+satisfy a later operation. `a202` is also unsolicited and can be silent after final
+stop, so that timeout does not retire an otherwise healthy link. Health uses the
+reviewed `0105` mode read every 30 seconds when no operation owns the client,
+rather than continuous now-playing polling. Physical idle/sleep effects remain
+unvalidated. New controls still require a fresh usable playback observation.
 
-Cancel unsent device mutations when a connection is lost. A write that may have
-started remains `uncertain`. Automatic reconnect restores observation only:
-never replay toggles, navigation, mode changes or track selections, and never
-resume music automatically. Revalidate fresh source rows for every new selection.
-Enforce stock command pacing centrally across all callers.
+Unsent mutations are cancelled across connection generations. Writes that may
+have started remain `uncertain`; reconnect restores observation only. Toggles,
+navigation, mode changes and selections are never replayed. Each new selection
+revalidates source rows. Central pacing enforces the 2.1-second mutation interval
+across console commands, in addition to existing operation checks.
 
-Give local requests operation IDs and report their lifecycle separately from
-device connection state. If a CLI/UI request times out after dispatch, querying
-that operation's result must not dispatch it again. Persist only the minimal
-operation record needed to retain uncertainty across service restart, with bounded
-retention; do not turn a persisted record into an automatic replay queue.
+Device-operation results include an operation ID, but the current synchronous
+console has no durable operation journal or result lookup API. Interrupted output
+must not be interpreted as proof that a write did not occur. Before adding IPC or
+an asynchronous UI, provide bounded result retention and uncertainty records so
+reconnecting callers can inspect an operation without submitting it again. Such
+records must never become a replay queue.
 
-### Migration and acceptance
+### Startup, one-shot compatibility and acceptance
 
-Start with an explicit foreground `serve` entry point and a private local IPC
-endpoint (Unix socket on the current macOS/Linux targets). CLI `ask`, `sync` and
-`queue` become clients; existing offline `search`, `rank`, `index` and local
-catalog `status` retain their meanings. Add explicit connection/status controls
-without overloading `up`/`down`, which currently manage Typesense. These service
-commands are planned, not available yet. Reuse Python/aiohttp where appropriate;
-no new language or external message broker is needed.
+`run.sh start` starts local Typesense (or checks externally managed remote search),
+then connects, syncs, prepares the index and opens interactive input. All device
+steps use one application session. `listen` opens the same console using existing
+data without Docker startup or automatic sync/index. Search preparation failure
+leaves controls available. See the [console commands](ASSISTANT_COMMANDS.md#interactive-console).
 
-Refactor selection, controls and queue observation to accept the shared session.
-Keep operation-level mutation guards and current synthetic/emulator fixtures.
-Acceptance must show one connection across multiple CLI commands, unsolicited
-EOF/physical-button updates between requests, reader progress during slow HTTP,
-bounded reconnect, no mutation replay, explicit disconnect staying disconnected,
-and clean shutdown releasing the connection. Test delayed replies and disconnect
-before/during/after a write. Observe physical sleep, Wi-Fi recovery and competition
-with FiiO Control separately; emulator success does not establish these behaviors.
+Startup and `/sync` compare complete ordered source rows after two fresh equal
+catalog reads. Identical content reuses the existing snapshot generation; this
+does not skip device observation or claim permanent identity. Startup reuses an
+index only when generation/config match and the collection exists with the expected
+count. A missing projection is rebuilt. Explicit `/index` always rebuilds.
 
-Sequence: **M2a controls → M2b observed native queue and explicit mode policy →
-M2c persistent session → M3 microphone**. Arbitrary recommendation-plan execution is a later increment;
-it does not block controls, native continuation or first voice input.
+One-shot `ask`, `sync`, `queue`, offline `search`, `rank`, `index` and local `status`
+remain available with their JSON/nonzero-exit contract. Device operations reject
+concurrent ownership of the same data directory; they do not forward over IPC.
+`up`/`down` still manage Typesense alone. Native queues continue after either
+interface exits without a background recommendation executor.
+
+Validation on 2026-09-18:
+
+- 114 prototype tests passed with the full firmware-free suite, followed by a
+  focused interrupt/reconnect rejection tests (116 total). Coverage includes idle/slow-work
+  events, late replies, scan retention, commands invalidated across generations,
+  loss during writes without replay, explicit disconnect and thread cleanup.
+- Disposable Typesense acceptance ran `start → sync/index → console` with one
+  handshake/socket across commands, reused unchanged snapshots/indexes and rebuilt
+  a missing collection. Existing one-shot acceptance also passed.
+- Focused generated-media V2.57 acceptance verified shared sync/control/queue,
+  unsolicited track changes between commands, observation-only reconnect, final
+  EOF with silent `0202` on the same healthy socket, and disabled reconnect after
+  explicit disconnect. Run `emulator_check.sh OTA_PATH persistent` to reproduce.
+
+Physical sleep, Wi-Fi recovery, button transitions and competition with FiiO
+Control require separate acceptance; emulator success does not establish them.
+Next: bounded physical playback/session validation, then M3 microphone input.
+Arbitrary recommendation-plan execution remains a later increment.

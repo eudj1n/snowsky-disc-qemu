@@ -5,7 +5,7 @@ The experiment lives entirely here until it is ready for promotion into the main
 project. The [plan](../../docs/ASSISTANT.md) describes the wider assistant/dock work.
 It runs independently of the emulator and only imports its public controller package.
 
-- [assistant/](assistant/README.md): configuration, CLI and a bounded device session.
+- [assistant/](assistant/README.md): configuration, one-shot CLI and a persistent interactive session.
 - [library/](library/README.md): complete catalog reads, snapshot storage and search.
 - [check.py](check.py): disposable acceptance with synthetic TCP/HTTP servers and a
   real Typesense container. No firmware or physical device is needed.
@@ -45,6 +45,54 @@ physical DISC normally uses HTTP **12103**. Choose a distinct persistent
 `device.key` per device. It is a user-assigned namespace, not a discovered serial
 number. Both HTTP and TCP must point to the same device.
 
+Start the complete interactive flow:
+
+```sh
+./research/disc_assistant/run.sh start
+```
+
+The launcher starts local Typesense and waits for readiness, then one foreground
+application connects to DISC, synchronizes the catalog, prepares the index and
+opens a text console. Enter commands directly, without `ask` or shell quotes:
+
+```text
+disc> Включи Linkin Park - Numb
+disc> Пауза
+disc> Resume
+disc> /queue
+disc> /status
+disc> /exit
+```
+
+Use `./research/disc_assistant/run.sh listen` to open the same console with the
+existing snapshot/index, without Docker startup or automatic sync/index. This is
+text input; microphone capture is not implemented yet. `/help` lists console
+commands. `/sync` refreshes the catalog; `/index` rebuilds search after changes.
+
+The application owns one TCP socket and continuously receives events, including
+while waiting for input or doing HTTP/search work. Unexpected disconnects trigger
+bounded reconnect and fresh observations, never command replay. Commands submitted
+while disconnected fail rather than waiting to play later. `/disconnect` disables
+reconnect and releases TCP for FiiO Control; `/connect` enables it again. `/status`
+shows connection state and the latest observations. The local data-directory
+ownership lock stays held until `/exit`, EOF or Ctrl-C. Exiting leaves native
+playback and Typesense running; use `down` separately to stop search.
+
+Search startup/index failures leave the console available for playback controls.
+An unavailable player does not block the console indefinitely: inspect `/status`
+and retry `/sync` then `/index` after connection recovery. Startup and `/sync`
+reuse an identical snapshot only after two complete equal network reads. Startup
+also checks the matching Typesense collection and document count before reusing
+it; a missing collection is rebuilt. Explicit `/index` always rebuilds.
+
+### One-shot commands and scripts
+
+The existing flow remains available for scripts and future cron jobs, with JSON
+results and nonzero failure exit codes. One-shot device commands (`sync`, `queue`,
+`ask`) require the console to exit first when sharing its data directory. Offline
+`status`, `search`, `rank` and `index` can run independently. There is no IPC forwarding
+or automatic replay of a failed cron command.
+
 ```sh
 ./research/disc_assistant/run.sh up
 ./research/disc_assistant/run.sh sync
@@ -60,8 +108,8 @@ number. Both HTTP and TCP must point to the same device.
 45 seconds for HTTP readiness after Compose startup. It uses `[typesense].port`
 from TOML, including for the Docker port publication. The legacy `TYPESENSE_PORT`
 in `.env` is used only by manual Compose invocations. Change the TOML port if 8108
-is occupied. Remote Typesense can be used by index/search, but `up` only manages
-local HTTP Typesense. No CORS or LAN port exposure is enabled.
+is occupied. Remote Typesense can be used by index/search; `start` checks its health without
+starting Docker, while `up` only manages local HTTP Typesense. No CORS or LAN port exposure is enabled.
 
 For a different configuration, place the option **before** the command:
 
@@ -136,8 +184,9 @@ score and snapshot provenance. The score is **not a confidence percentage**.
 Duplicates remain separate candidates, including identical CUE rows. Explicit
 aliases are configured locally; there is no automatic transliteration claim.
 Query token dropping is disabled so a missing title is not silently replaced by
-an artist-only result. Each sync makes the old projection stale until `index`
-finishes successfully. Changed aliases/search server also require reindexing.
+an artist-only result. One-shot `sync` always publishes a new generation and makes the old projection
+stale until `index` finishes successfully. Console `/sync` does so only when the
+snapshot content changes. Changed aliases/search server also require reindexing.
 
 ## Data and limitations
 
@@ -161,8 +210,10 @@ and `a60a/0005` (end) if received during the reads. An end received before the r
 allows a new observation, without claiming that a cancelled scan was complete.
 Other `a60a` statuses such as initialization `0010` are not scan evidence; an already-running scan may be
 missed by the existing diagnostic client. Only sync while the player is idle.
-Playback now retains events across Controller queries for one bounded operation.
-A persistent background reader and cross-application coordination remain deferred.
+One-shot playback retains events across Controller queries for its bounded
+operation. The interactive session also receives events while idle and remembers
+observed scan activity for later operations. Scans that began before connection
+can still be missed; cross-application coordination remains deferred.
 
 Tracks carry a new internal ID **per snapshot** plus the literal `album/song`
 scope/position/raw row. Identity continuity across rescans is deliberately not
@@ -229,7 +280,7 @@ the physical player. The read-only slice is ready for the next implementation
 step. On 2026-09-18, `rank`/`ask` added bilingual commands, deterministic lexical
 ranking and fresh Controller playback checks. Command/target/version phrases now
 live in per-language TOML dictionaries, merged using `[language].enabled`
-(default `["ru", "en"]`); all 97 prototype tests pass, including controls,
+(default `["ru", "en"]`); the 97-test checkpoint covered controls,
 queue observations and partial mode/selection failures. A
 read-only alias query on the existing physical-library snapshot resolved correctly.
 The owner chose automatic best-match
@@ -251,6 +302,23 @@ without search credentials/current index and explicit continuous-context mode.
 The generated-media guest check passed on 2026-09-18: controls, previous before
 and after ten seconds, native continuation after disconnect, and type-7 natural
 EOF in all five modes. Physical-device acceptance remains separate.
+
+The persistent-session increment passed 116 prototype unit tests (114 in the
+full firmware-free run, plus focused interrupt/reconnect rejection tests), together with
+313 shared Python and 37 JavaScript tests. Disposable Typesense acceptance checks
+`start → sync/index → console`, one handshake/socket across commands, unchanged
+snapshot/index reuse and reconstruction of a missing collection. A focused guest
+check is available without repeating the five-mode acceptance:
+
+```sh
+./research/disc_assistant/emulator_check.sh /absolute/path/to/main_os/ota_v257 persistent
+```
+
+It passed on V2.57 with generated media: shared sync/control/queue session,
+unsolicited track changes while idle, observation-only reconnect, final EOF with
+silent `0202` on a healthy connection, and explicit disconnect staying disconnected.
+Physical sleep/Wi-Fi recovery, FiiO Control competition and live audio remain
+separate acceptance work. No physical playback was exercised by this increment.
 
 The prototype suite is intentionally run explicitly; `ci/unit.py` has not been
 changed to discover this experimental directory. Before promotion, register its

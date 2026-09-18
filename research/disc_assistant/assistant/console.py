@@ -1,0 +1,183 @@
+"""Foreground application: persistent DISC session and interactive text input."""
+import asyncio
+import json
+import os
+import sys
+from uuid import uuid4
+
+from research.disc_assistant.assistant.config import Config
+from research.disc_assistant.assistant.controls import execute as control
+from research.disc_assistant.assistant.intents import ControlIntent, parse
+from research.disc_assistant.assistant.languages import load_languages
+from research.disc_assistant.assistant.live import DeviceSession
+from research.disc_assistant.assistant.playback import execute as play
+from research.disc_assistant.assistant.queue import observe as queue
+from research.disc_assistant.assistant.ranking import rank
+from research.disc_assistant.assistant.session import sync
+from research.disc_assistant.library.search.typesense import Search, create_client, signature
+from research.disc_assistant.library.store import Store
+
+HELP = '''Enter Play … / Включи …, Pause / Пауза, Resume / Продолжи, Stop / Стоп,
+Next track / Следующий трек, Previous track / Предыдущий трек.
+/connect  /disconnect  /status  /queue  /sync  /index
+/search TEXT  /rank TEXT  /help  /exit
+Events are read continuously. Disconnect/exit never stop music or Typesense.
+One-shot device commands require /exit to release the local ownership lock.
+Offline run.sh search/index/status remain available while this console is open.'''
+
+
+class Application:
+    def __init__(self, config: Config, *, session_factory=DeviceSession):
+        self.config, self.session_factory = config, session_factory
+        self.rules = load_languages(config.languages)
+
+    def __enter__(self):
+        self.session = self.session_factory(self.config)
+        self.session.__enter__()
+        try:
+            self.store = Store(self.config.data_dir)
+        except BaseException:
+            self.session.__exit__(*sys.exc_info())
+            raise
+        self.session.connect()
+        return self
+
+    def __exit__(self, *args):
+        self.session.__exit__(*args)
+        self.store.close()
+
+    def device_call(self, callback):
+        client = None
+        operation_id = uuid4().hex
+        try:
+            with self.session.operation() as client:
+                result = callback(client)
+                result.setdefault('operation_id', operation_id)
+                if client.closed.is_set() and result.get('mutation_attempted'):
+                    result.update(status='uncertain', reason='connection lost during operation; no replay')
+                return result
+        except (OSError, ValueError, RuntimeError) as exc:
+            attempted = bool(client and client.mutation_attempted)
+            return {'operation_id': operation_id, 'status': 'uncertain' if attempted else 'not_sent',
+                    'mutation_attempted': attempted, 'reason': str(exc)}
+
+    async def search(self, command, text='', *, reuse=False):
+        key = os.environ.get(self.config.api_key_env, '')
+        if not key.strip():
+            raise ValueError(f'search is unavailable: set {self.config.api_key_env}; controls remain available')
+        client = create_client(self.config, key)
+        server = [self.config.search_protocol, self.config.search_host, self.config.search_port]
+        search = Search(client, self.config.aliases, server)
+        try:
+            if command == 'index':
+                head = self.store.head(self.config.device_key)
+                if (reuse and head['collection'] and head['generation'] == head['index_generation']
+                        and head['index_signature'] == search.signature):
+                    from typesense.exceptions import ObjectNotFound
+                    try:
+                        info = await client.collections[head['collection']].retrieve()
+                        if info.get('num_documents') == head['track_count']:
+                            return dict(head, reused=True)
+                    except ObjectNotFound:
+                        pass
+                return await search.build(self.store, self.config.device_key)
+            if command == 'rank':
+                return await rank(self.config, self.store, search, text)
+            return await search.search(self.store, self.config.device_key, text)
+        finally:
+            await client.api_call.aclose()
+
+    def status(self):
+        head = self.store.head(self.config.device_key)
+        server = [self.config.search_protocol, self.config.search_host, self.config.search_port]
+        head['index_current'] = bool(head['generation'] and head['generation'] == head['index_generation']
+                                    and head['index_signature'] == signature(self.config.aliases, server))
+        return {'session': self.session.status(), 'library': head}
+
+    def request(self, line):
+        line = line.strip()
+        if not line:
+            return None
+        if line.startswith('/'):
+            command, _, text = line[1:].partition(' ')
+            text = text.strip()
+            if command in ('search', 'rank'):
+                if not text:
+                    raise ValueError(f'/{command} needs text')
+                if command == 'rank':
+                    intent = parse(text, self.rules)
+                    if isinstance(intent, ControlIntent):
+                        return {'status': 'planned', 'action': intent.action, 'requires_search': False}
+                return asyncio.run(self.search(command, text))
+            if text:
+                raise ValueError(f'/{command} takes no arguments')
+            if command == 'help':
+                return {'help': HELP}
+            if command == 'exit':
+                return {'status': 'exit'}
+            if command == 'status':
+                return self.status()
+            if command == 'disconnect':
+                self.session.disconnect()
+                return self.session.status()
+            if command == 'connect':
+                self.session.connect()
+                return self.session.status()
+            if command == 'queue':
+                return self.device_call(lambda client: queue(self.config, shared=client))
+            if command == 'sync':
+                return self.device_call(lambda client: sync(self.config, self.store, shared=client, reuse_unchanged=True))
+            if command == 'index':
+                return asyncio.run(self.search('index'))
+            raise ValueError('unknown console command; use /help')
+        intent = parse(line, self.rules)
+        if isinstance(intent, ControlIntent):
+            return self.device_call(lambda client: control(self.config, intent, shared=client))
+        # Pin the request to the current connection BEFORE potentially slow search.
+        generation = self.session.status()['generation']
+        ranking = asyncio.run(self.search('rank', line))
+        if not ranking['candidates']:
+            return ranking
+        def execute(client):
+            if generation != self.session.status()['generation']:
+                raise ConnectionError('session changed during search; request a new selection')
+            return play(self.config, self.store, ranking, shared=client)
+        return self.device_call(execute)
+
+
+def run(config, *, bootstrap=False, input_fn=input, output=print):
+    def emit(result):
+        if result is not None:
+            output(json.dumps(result, ensure_ascii=False, indent=2))
+
+    with Application(config) as app:
+        try:
+            app.session.wait_ready(config.timeout * 4 + 1)
+            output('Persistent DISC console. /help lists commands; /exit releases the connection.')
+            emit(app.status())
+            if bootstrap:
+                try:
+                    imported = app.request('/sync')
+                    emit(imported)
+                    if imported.get('status') not in ('not_sent', 'uncertain'):
+                        emit(asyncio.run(app.search('index', reuse=True)))
+                except Exception as exc:
+                    output(f'Startup search preparation unavailable ({type(exc).__name__}); controls remain available.')
+            while True:
+                try:
+                    line = input_fn('disc> ' if sys.stdin.isatty() else '')
+                    result = app.request(line)
+                    if result and result.get('status') == 'exit':
+                        break
+                    emit(result)
+                except (EOFError, KeyboardInterrupt):
+                    raise
+                except (ValueError, OSError, RuntimeError) as exc:
+                    emit({'status': 'error', 'reason': str(exc)})
+                except Exception as exc:
+                    # SDK errors can include server bodies. Never print secrets.
+                    emit({'status': 'error', 'reason': type(exc).__name__,
+                          'hint': 'check search configuration; /status and playback controls remain available'})
+        except (EOFError, KeyboardInterrupt):
+            output('Console closed. In-flight writes are not replayed; inspect player state if interrupted.')
+    return 0

@@ -110,7 +110,7 @@ def wait_ready(config, timeout=45):
 def main(argv=None):
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--config', default=os.environ.get('DISC_ASSISTANT_CONFIG', '~/disc-assistant.toml'))
-    parser.add_argument('command', choices=('setup', 'up', 'down', 'sync', 'status', 'queue', 'index', 'search', 'rank', 'ask', 'test', 'check'))
+    parser.add_argument('command', choices=('setup', 'up', 'down', 'start', 'listen', 'sync', 'status', 'queue', 'index', 'search', 'rank', 'ask', 'test', 'check'))
     parser.add_argument('arguments', nargs=argparse.REMAINDER)
     args = parser.parse_args(argv)
     config_path = Path(args.config).expanduser()
@@ -143,6 +143,16 @@ def main(argv=None):
             from research.disc_assistant.assistant.languages import load_languages
             needs_search = not isinstance(parse(args.arguments[0], load_languages(config.languages)), ControlIntent)
         env = environment(config) if needs_search else dict(os.environ)
+        if args.command in ('start', 'listen'):
+            try:
+                env = environment(config)
+                if args.command == 'start':
+                    if config.search_host in ('localhost', '127.0.0.1') and config.search_protocol == 'http':
+                        subprocess.run(compose_command('up', '-d'), check=True, env=env, cwd=ROOT, timeout=60)
+                    wait_ready(config)
+            except (OSError, ValueError, RuntimeError, subprocess.SubprocessError) as exc:
+                print(f'Search startup unavailable ({type(exc).__name__}); entering console with playback controls.',
+                      file=sys.stderr)
         if args.command == 'up':
             if config.search_host not in ('localhost', '127.0.0.1') or config.search_protocol != 'http':
                 raise ValueError('up/down manage local HTTP Typesense only; remote search is externally managed')
@@ -152,6 +162,8 @@ def main(argv=None):
         return subprocess.run([sys.executable, '-m', 'research.disc_assistant.assistant',
                                '--config', str(config_path), args.command, *args.arguments],
                               cwd=ROOT, env=env).returncode
+    except KeyboardInterrupt:
+        return 130
     except (OSError, ValueError, RuntimeError) as exc:
         print(f'Assistant launcher: {exc}', file=sys.stderr)
         return 1

@@ -76,6 +76,16 @@ class ConfigSessionTests(unittest.TestCase):
                 session.sync(self.config, self.store)
             self.assertEqual(self.store.head('test'), first)
 
+    def test_console_sync_reuses_only_an_exact_unchanged_snapshot(self):
+        with patch.object(session, 'Client', return_value=self.client()), patch.object(session, 'HTTPClient', return_value=Catalog()):
+            first = session.sync(self.config, self.store)
+            again = session.sync(self.config, self.store, reuse_unchanged=True)
+            self.assertEqual(again['generation'], first['generation'])
+            self.assertTrue(again['reused'])
+            # One-shot sync preserves its existing publish-new-generation behavior.
+            third = session.sync(self.config, self.store)
+            self.assertNotEqual(third['generation'], first['generation'])
+
     def test_unknown_firmware_never_reads_catalog(self):
         with patch.object(session, 'Client', return_value=self.client(999)), patch.object(session, 'HTTPClient') as http:
             with self.assertRaisesRegex(ValueError, 'V2.57'):

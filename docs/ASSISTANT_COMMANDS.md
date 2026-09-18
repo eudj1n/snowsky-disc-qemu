@@ -11,6 +11,8 @@ activation is unnecessary. `ask` starts the best match without a choice dialogue
 | Command | Behavior | Device effect |
 | --- | --- | --- |
 | `./research/disc_assistant/run.sh setup` | Prepare the environment, config and private search key; preserve existing settings | None |
+| `./research/disc_assistant/run.sh start` | Start Typesense, connect, sync/index, then open the persistent text console | Read only until a playback command is entered |
+| `./research/disc_assistant/run.sh listen` | Open the persistent console with existing data; no Docker startup or automatic sync/index | Initial handshake and state reads |
 | `./research/disc_assistant/run.sh up` | Start local Typesense and await readiness | None |
 | `./research/disc_assistant/run.sh down` | Stop Typesense, retaining its index volume | None |
 | `./research/disc_assistant/run.sh sync` | Read the catalog twice and publish a consistent SQLite snapshot | Read only; does not start a device scan |
@@ -35,6 +37,36 @@ Default configuration is `~/disc-assistant.toml`; override it with:
 Physical DISC uses its LAN IP, TCP **12100**, HTTP **12103**, and reviewed firmware
 **V2.57**. The example's HTTP **12113** is the direct emulator endpoint.
 Disconnect FiiO Control before connecting: stock TCP accepts one client.
+
+## Interactive console
+
+After `start` or `listen`, enter music/control phrases directly, without `ask` or
+shell quoting. Commands share one device session; events keep updating while
+input is idle. `listen` currently means text input, not microphone capture.
+
+| Console command | Behavior |
+| --- | --- |
+| `/help` | List text and maintenance commands |
+| `/status` | Show connection generation, latest playback observations and local catalog/index state |
+| `/connect` | Enable connection/reconnection asynchronously; inspect `/status` for readiness |
+| `/disconnect` | Close TCP and disable reconnect; retain the process ownership lock |
+| `/sync` | Read the catalog twice; reuse the snapshot if all ordered rows are unchanged |
+| `/index` | Rebuild the search projection from SQLite |
+| `/queue` | Read the native queue and mode using the shared connection |
+| `/search TEXT` | Search metadata without playback |
+| `/rank TEXT` | Explain a music ranking or control intent without playback |
+| `/exit` | Close the session and release the local ownership lock; keep music and Typesense running |
+
+EOF or Ctrl-C also exits. Search errors leave playback controls available.
+`start` reuses a matching index after checking collection existence/count; a
+changed snapshot requires rebuilding it. `/sync` alone does not rebuild search.
+
+All existing one-shot commands remain available for scripts and cron. Device
+commands fail with a busy lock while the console owns the same data directory,
+even after `/disconnect`; use `/exit` first. Offline commands remain available.
+There is no local IPC command forwarding. One-shot failures exit nonzero; console
+command failures are printed and leave the input loop open. Reconnect restores
+observations only and never resubmits a failed command.
 
 ## Music requests
 
@@ -69,10 +101,10 @@ returns the intent offline; `ask 'Pause'` connects to the device.
 | `Next`, `Next track` / `Следующий`, `Следующий трек` | Send stock next once and observe the actual result |
 | `Previous`, `Previous track` / `Предыдущий`, `Предыдущий трек` | Stock previous: after >10 seconds it restarts the current track |
 
-The CLI has no background continuation executor: `Stop` reports assistant
+Neither interface has an Assistant-managed continuation executor: `Stop` reports assistant
 continuation as inactive. It does not clear the native queue, seek to zero or
 power off. A later `Resume` can continue the native queue. Arbitrary queue-plan
-cancellation belongs to the future persistent executor.
+cancellation belongs to the future recommendation executor.
 
 Unknown/loading state or a silent now-playing read blocks blind controls.
 Stopped-state resume is unverified; use an explicit music selection. Toggle is
@@ -118,7 +150,8 @@ This is a bounded phrase grammar, not general sentence parsing or inflection.
 Version phrases apply to both queries and metadata. Keep English enabled for
 English tags such as Live/Remastered alongside Russian commands. Music-name
 aliases remain in `aliases.artists/titles`, separate from command forms.
-Dictionary edits apply on the next CLI invocation without `sync`/`index`.
+Dictionary edits apply on the next CLI invocation or console restart without
+`sync`/`index`.
 
 ## Ranking: lexical-v1
 
@@ -159,11 +192,13 @@ and report `metadata_equivalent_rows`; this does not establish permanent identit
 | `not_sent` | Preflight/connection/state failed before dispatch |
 | `uncertain` | A write may have happened, but its required result was not confirmed; no retry |
 
-`not_sent`/`uncertain` produce a nonzero exit code, as do configuration/parsing and
-stale-index errors. After `sync`, run `index` again. A manual repeat is a new
+`not_sent`/`uncertain` produce a nonzero one-shot exit code, as do
+configuration/parsing and stale-index errors. After a changed snapshot, run
+`index` (or `/index`) again. A manual repeat is a new
 request and may restart a recording. Device operations share a data-directory
 lock, not a lock against external controllers. There is no atomic device revision.
-Events are retained within each operation; no persistent session/history exists.
+One-shot events are retained within each operation. The console continuously
+reduces events throughout its session; listening history is not collected.
 
 ## Queue and remaining work
 

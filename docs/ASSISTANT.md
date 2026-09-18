@@ -297,15 +297,14 @@ but must not restrict accepted command languages.
 
 ### Device session rules
 
-- The production direction is a persistent connection owned by the Assistant
-  application service. Per-command connections are a temporary CLI prototype
-  boundary, not the intended lifecycle. Implement M2c before microphone work;
-  see [persistent session migration](ASSISTANT_PLAYBACK.md#m2c-persistent-device-session).
+- M2c implements a persistent connection owned by the foreground Assistant
+  application through `start`/`listen`. One-shot commands remain available for
+  scripts and cron; see [persistent session ownership](ASSISTANT_PLAYBACK.md#m2c-persistent-device-session).
 - Own one TCP connection and one reader in the application service. Serialize
   requests and route replies/events centrally; do not give each UI, catalog worker
   or voice request its own connection. FiiO Control can compete for the stock
-  single-client connection. Existing diagnostic reply-draining behavior needs
-  review before reuse as a persistent event service.
+  single-client connection. The prototype uses a dedicated receiver and central reply/event routing,
+  preserving the Controller diagnostic client for its existing callers.
 - Pair HTTP and TCP with the same selected device. Use documented physical ports;
   emulator adapter/proxy ports are separate configuration.
 - Preserve partial state updates. Duplicate notifications do not create additional
@@ -326,7 +325,7 @@ Track search candidates are not a continuation playlist. Album/artist context
 comes first; an arbitrary assistant-managed recommendation queue requires a
 separately validated execution strategy and, potentially, a persistent session.
 Both increments now have prototype implementations. Controls and read-only `queue`
-bypass search/index dependencies. A short-lived CLI has no background continuation
+bypass search/index dependencies. Neither interface has an Assistant-managed continuation
 plan to cancel. `playback.continuous_context=true` explicitly permits a separately
 verified persistent repeat-list mode change before selection; default configs
 preserve mode. Arbitrary queue plans and their cancellation remain future work.
@@ -374,7 +373,7 @@ M3; later milestones extend it and do not block the first end-to-end result.
 | M2: text-to-playback | Bilingual intents, explained automatic best-match ranking, fresh selection and outcome verification; dialogue deferred | Artist/recording launch; deterministic ranking; absent explicit versions and stale sources rejected; disconnect never replays commands |
 | M2a: playback controls | State-aware pause/resume, explicit Assistant stop semantics, next/previous; no search dependency | Repeated requests, unknown/loading/EOF states, external transitions and uncertain writes; no toggle replay; previous-to-start behavior |
 | M2b: native queue and continuation | Read actual album/artist queue after selection; preserve mode by default, explicit opt-in continuous mode | Type-7 natural EOF, five modes, middle/last/single entries, external queue changes and per-operation results for mode + selection |
-| M2c: persistent device session | One application service owns TCP and event/state routing; CLI becomes a local client; explicit connect/disconnect and bounded reconnect | Repeated commands use one connection; events arrive without commands; disconnect cancels unsent mutations; reconnect refreshes state without playback replay; explicit disconnect suppresses reconnect |
+| M2c: persistent device session | One foreground application owns TCP and event/state routing; interactive console plus retained one-shot CLI; explicit connect/disconnect and bounded reconnect | Repeated commands use one connection; events arrive without commands; disconnect cancels unsent mutations; reconnect refreshes state without playback replay; explicit disconnect suppresses reconnect |
 | M3: microphone | Button recording, speech boundaries, multilingual transcription into the same pipeline | Recorded evaluation phrases and live microphone trials; silence rejection; recognition, retrieval and total latency reported separately |
 | M4: personal selection | Event reconciliation, favorites mirror, observed-history aggregates | Repeated events, seeks and gaps do not inflate history; favorite/recency requests behave as documented; exact requests remain exact |
 | M5: enrichment and hybrid search | Optional lyrics provider, provenance, phrase search; versioned embedding snapshots with incremental cache reuse and lexical/vector retrieval | Correct recording links; measured quality/latency against lexical baseline; interrupted rebuild/model changes cannot mix generations; usable lexical search during model/provider outages |
@@ -424,8 +423,8 @@ The first **M0/M1 subset** now runs under `research/disc_assistant/`. It exposes
 `sync`, `status`, `index` and `search`; setup and tests are in its
 [guide](../research/disc_assistant/README.md). It preserves literal album-scoped
 rows and duplicate multiplicities, publishes snapshots atomically in SQLite and
-rejects lagging search indexes. It has a short diagnostic device session, not the
-persistent event-routing service in the target architecture. Internal identities
+rejects lagging search indexes. That initial checkpoint used a short diagnostic session; M2c below adds the
+persistent event-routing application. Internal identities
 are snapshot-scoped; cross-snapshot reconciliation remains unimplemented.
 
 Validation covers synthetic paginated TCP/HTTP catalogs with a real Typesense
@@ -442,8 +441,8 @@ prototype development. At that checkpoint, all 39 prototype unit tests passed; t
 firmware-free project checks and disposable Typesense acceptance also passed.
 No media scan or playback was triggered by the prototype.
 
-This does not complete every original M0/M1 goal: persistent event routing,
-cross-snapshot identity reconciliation, a browser UI and measured search/resource
+This does not complete every original M0/M1 goal: cross-snapshot identity
+reconciliation, a browser UI and measured search/resource
 baselines remain open. Functional physical search is owner-confirmed; ranking
 quality has not been measured on a fixed labeled personal-catalog evaluation set.
 
@@ -474,7 +473,7 @@ Unit/transport fixtures cover bilingual commands, aliases, fuzzy matches, versio
 constraints, stale/reordered source rows, interleaved scan events, metadata/state
 deltas and uncertain writes without replay. Disposable Typesense acceptance uses
 real Controller TCP/HTTP clients and a synthetic player for best-match artist,
-recording and requested-live launches. All 97 prototype unit tests pass, including
+recording and requested-live launches. At the text/control checkpoint, 97 prototype tests passed, including
 language selection/merging, multiword forms, dictionary validation, controls without
 search, actual queue observation and partial mode/selection failures. A read-only
 `rank` query against the owner's existing physical-library snapshot returned the
@@ -489,11 +488,37 @@ The shared firmware-free suite passed 313 Python / 37 JavaScript tests alongside
 the 97 prototype tests. Physical controls/continuation acceptance remains pending;
 see [playback validation](ASSISTANT_PLAYBACK.md).
 
-Next: migrate per-command sessions to the persistent application service (M2c),
-evaluate `rank` on representative physical-library queries and validate bounded
-`ask` playback, controls and native continuation on deliberately selected physical
-music, then add button-driven microphone input
-(M3). Continue in `research/disc_assistant/`; promotion, repository splitting,
-arbitrary recommendation-queue execution, a background history session and a
-choice dialogue are separate later work. Native queue selection works through
-existing guarded Controller APIs; no new firmware command was introduced.
+## Persistent-console increment, 2026-09-18
+
+M2c now provides `run.sh start`: start/check Typesense, connect once, synchronize,
+prepare search and keep an interactive text console open. `listen` skips startup
+sync/index and uses existing data. Direct music/control phrases and maintenance
+commands share one session with a continuously running reader. Connection loss
+invalidates pending work and permits observation-only reconnect; explicit
+`/disconnect` disables it. `/exit` leaves native playback and Typesense running.
+
+The previous one-shot flow remains supported for scripts and cron. Device commands
+require exclusive ownership of the same data directory; offline operations remain
+independent. There is no local IPC forwarding, durable operation journal or
+history collector in this increment. See the [session contract](ASSISTANT_PLAYBACK.md#m2c-persistent-device-session)
+and [console command table](ASSISTANT_COMMANDS.md#interactive-console).
+
+Unchanged catalog snapshots are reused only after two full equal network reads.
+Startup checks the matching search collection/count and rebuilds missing indexes;
+explicit `/index` rebuilds on demand. Search outages leave controls available.
+
+Validation: 114 prototype tests passed alongside the full 313 Python / 37
+JavaScript project suite; subsequent focused interrupt/reconnect rejection tests bring the
+prototype total to 116. Disposable Typesense acceptance verifies one handshake and
+socket across startup and console commands, snapshot/index reuse and missing-index
+recovery. Focused disposable V2.57 acceptance verifies idle track-change events,
+shared sync/control/queue, reconnect without mutation replay, silent final-stop
+reads on a healthy connection, and explicit disconnect remaining disconnected.
+No new physical playback/session acceptance is claimed.
+
+Next: evaluate `rank` on representative physical-library queries and validate
+bounded `ask`/console playback, controls, native continuation, idle/sleep and Wi-Fi
+recovery on deliberately selected physical music, then add button-driven microphone
+input (M3). Continue in `research/disc_assistant/`; promotion, repository splitting,
+arbitrary recommendation queues, history and choice dialogue remain later work.
+Native playback still uses guarded Controller APIs; no firmware command was added.

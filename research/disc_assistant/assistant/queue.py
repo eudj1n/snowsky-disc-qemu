@@ -1,6 +1,7 @@
 """Observe native queues; never treat search alternatives as a playlist."""
 from collections import Counter
 from uuid import uuid4
+from contextlib import nullcontext
 
 from controller.fiio_http import HTTPClient
 from research.disc_assistant.assistant.device import PlaybackClient, device_lock
@@ -75,8 +76,9 @@ def snapshot(config, client, http, *, expected=None, selected=None):
     return result
 
 
-def observe(config):
-    with device_lock(config.data_dir), PlaybackClient(config.host, config.tcp_port, config.timeout) as client:
+def observe(config, *, shared=None):
+    with (device_lock(config.data_dir) if shared is None else nullcontext()), \
+            (PlaybackClient(config.host, config.tcp_port, config.timeout) if shared is None else nullcontext(shared)) as client:
         if client.handshake() != '0306' or client.settings().get('soc_version') != 257:
             raise ValueError('queue observation requires reviewed DISC V2.57')
         result = snapshot(config, client, HTTPClient(config.host, config.http_port, config.timeout))

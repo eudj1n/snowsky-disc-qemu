@@ -52,6 +52,8 @@ def main(argv=None):
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--config', required=True, help='path to a TOML configuration')
     sub = parser.add_subparsers(dest='command', required=True)
+    sub.add_parser('listen', help='persistent interactive console; existing catalog/index')
+    sub.add_parser('start', help='connect, sync, index and enter the persistent console')
     sub.add_parser('sync', help='read the device catalog twice and publish a SQLite snapshot')
     sub.add_parser('status', help='show locally recorded snapshot/index status; no network calls')
     sub.add_parser('queue', help='read the actual device queue and play mode; no search/index required')
@@ -66,6 +68,9 @@ def main(argv=None):
     args = parser.parse_args(argv)
     try:
         config = load(args.config)
+        if args.command in ('listen', 'start'):
+            from research.disc_assistant.assistant.console import run
+            return run(config, bootstrap=args.command == 'start')
         intent = parse(args.text, load_languages(config.languages)) if args.command in ('ask', 'rank') else None
         if args.command == 'queue':
             result = observe_queue(config)

@@ -1,19 +1,21 @@
 # Assistant application prototype
 
-Experimental CLI orchestration in `research/disc_assistant/assistant/`.
+Experimental application and CLI orchestration in `research/disc_assistant/assistant/`.
 See the [prototype guide](../README.md) for setup, commands and acceptance, and the
 [implementation plan](../../../docs/ASSISTANT.md) for later voice/playback work.
 
 | File | Responsibility |
 | --- | --- |
-| `__main__.py` | `sync`, `status`, `queue`, `index`, `search`, `rank`, `ask`; JSON output and errors |
+| `__main__.py` | `start`, `listen`, `sync`, `status`, `queue`, `index`, `search`, `rank`, `ask`; JSON output and errors |
 | `config.py`, `config.example.toml` | Explicit device/search/storage configuration and aliases |
 | `intents.py`, `ranking.py` | Bilingual play grammar and explained best-match ranking |
 | `languages.py`, `locales/*.toml` | Validated language dictionaries; merged literal command/target/version phrases |
 | `playback.py` | Serialized, fresh Controller selection and playback-state verification |
 | `device.py`, `controls.py` | Shared sequential connection/lock; state-aware pause/resume/stop/next/previous |
 | `queue.py` | Paginated native queue observation; optional verified repeat-list preparation |
-| `session.py` | One short sequential controller TCP session and matching HTTP endpoint during import |
+| `session.py` | Catalog synchronization using a borrowed persistent session or a one-shot connection |
+| `live.py` | Single TCP receiver, event/state routing, session ownership, pacing and observation-only reconnect |
+| `console.py` | Foreground application, startup sync/index and interactive text/maintenance commands |
 | `requirements.txt` | Python runtime pins: official Typesense async SDK and aiohttp |
 | `compose.yaml`, `.env.example` | Independent local Typesense service |
 | `voice/` | Reserved package; no recording or recognition yet |
@@ -33,26 +35,32 @@ Aiohttp is reserved for the future application's HTTP/WebSocket service and is
 used by disposable acceptance for readiness. This slice has no application server.
 Speech dependencies and a transitive lockfile remain deferred.
 
-The current controller client deliberately discards unrelated events during
-queries. This bounded importer checks queued scan events around HTTP reads, but
-is not a persistent event service or listening-history collector. Playback uses a
-separate sequential reader that retains unrelated events during
-queries, guards scan activity and dispatches at most one selection. It serializes
-local device operations and never replays an uncertain mutation. Long-lived
-background event routing/history remain future work.
+`run.sh start` starts Typesense, then opens one foreground application for
+connection, sync/index and interactive input. `listen` skips search startup and
+automatic synchronization. Both use `DeviceSession`: a background socket reader
+keeps receiving while the main thread waits for input, runs search or reads HTTP.
+A separate session worker establishes the connection and performs bounded health
+reads/reconnect. Device operations borrow the same client under a serialization
+lock; only the receiver reads bytes. SQLite stays on the application thread.
 
-The next increment is a persistent application session, before microphone work.
-The service will own TCP and continuously route events; CLI commands will use
-local IPC. Explicit disconnect will release the player and disable reconnect;
-unexpected connection loss will permit observation-only recovery without mutation
-replay. The existing per-command lifecycle is temporary. See
-[M2c](../../../docs/ASSISTANT_PLAYBACK.md#m2c-persistent-device-session).
+The service holds the local device lock for its lifetime. Explicit disconnect
+releases TCP and disables reconnect; `/exit` releases local ownership. Unexpected
+loss invalidates observations and pending commands. Reconnect performs handshake
+and fresh reads only; no selection, toggle or mode write is replayed. Search
+failures leave controls available. See the implemented
+[M2c contract](../../../docs/ASSISTANT_PLAYBACK.md#m2c-persistent-device-session).
 
-Initial connection refusal is retried within the configured timeout to allow the
-stock listener to reopen after disconnect. This occurs before handshake/mutations;
-established sessions are never automatically reconnected. Explicit continuous
-context has two named mutation phases, mode then selection; each allows at most
-one write and reports partial results. Controls never change mode.
+Existing one-shot commands keep their bounded connection lifecycle and JSON/exit
+status contract for scripts and cron. Their initial connection refusal is retried
+within the timeout before handshake/mutations; established one-shot sessions are
+not reconnected. They require the interactive process to release the shared
+ownership lock before device access. Offline search/index/status remain independent.
+There is no IPC endpoint, durable operation journal or history collector yet.
+
+Explicit continuous context has two named mutation phases, mode then selection;
+each allows at most one write and reports partial results. Controls never change
+mode. The persistent client caches handshake only within its current connection,
+retains interleaved events and applies the same fresh-state/source checks.
 
 Russian and English metadata/aliases are searchable independently of the device's
 UI language. Typed play requests now use lexical ranking and fresh selection verification.

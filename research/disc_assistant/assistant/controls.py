@@ -1,5 +1,6 @@
 """State-aware controls, independent of the library and search services."""
 import time
+from contextlib import nullcontext
 from uuid import uuid4
 
 from controller.fiio_link import playback_snapshot
@@ -22,7 +23,7 @@ def identity(state):
 def observe(client):
     """A fresh snapshot, plus retained progress. Never infer stop from silence."""
     update = client.now_playing()
-    events, client.observed = client.observed, []
+    events = client.take_events()
     validate_scan_events(events)
     state, position = {}, None
     for tag, payload in events:
@@ -68,7 +69,7 @@ def verify(client, before, before_position, action, timeout):
     return None, None
 
 
-def execute(config, intent):
+def execute(config, intent, *, shared=None):
     action = intent.action
     if action not in ('pause', 'resume', 'stop', 'next', 'previous'):
         raise ValueError('unsupported control action')
@@ -79,8 +80,9 @@ def execute(config, intent):
         result.update(assistant_continuation='inactive', device_stop_semantics='pause_preserving_position_and_queue')
     client = None
     try:
-        with device_lock(config.data_dir):
-            with PlaybackClient(config.host, config.tcp_port, config.timeout) as client:
+        with (device_lock(config.data_dir) if shared is None else nullcontext()):
+            with (PlaybackClient(config.host, config.tcp_port, config.timeout) if shared is None
+                  else nullcontext(shared)) as client:
                 if client.handshake() != '0306' or client.settings().get('soc_version') != 257:
                     raise ValueError('controls require reviewed DISC V2.57')
                 time.sleep(2.1)
