@@ -25,7 +25,7 @@ bash ci/assistant.sh /absolute/path/to/main_os/ota_v257 /tmp/assistant-run-02 \
   --case en-pause --case ru-compound --screenshots all
 ```
 
-There are 46 cases (23 per locale). Default screenshots cover unsuccessful cases.
+Manifest v6 has 54 cases (24 EN / 30 RU). Default screenshots cover unsuccessful cases.
 Exit status is zero only when every selected case passes; known failures are not
 silently excluded. The fresh guest, search service, network and volumes are removed
 on exit. No host ports are published, no personal configuration is loaded, and the
@@ -196,3 +196,11 @@ readback, mutation evidence and screenshots for every case. Local report:
 screenshot was manually inspected and showed Signal Alpha playing. Other
 screenshots are not claimed visually accepted. Earlier failed reports remain
 unchanged. This closes the full-rerun gap above, not physical MVP acceptance.
+
+Review stage 2 added eight cases. Initial result: **7/8**. The new `ru-zapusti`
+case incorrectly required the Test Album edition of Signal Alpha despite the
+existing lexical tie policy selecting Other Edition. Manifest v6 corrects that
+new gold to Other Edition; no implementation change or original-report rewrite.
+The corrected isolated case passed **1/1**. Reports: `/tmp/disc-review-stage2`
+and `/tmp/disc-review-stage2-corrected`. All other new synonyms, compound credits
+and sequence rejection passed. Prototype tests: 291. Full 54-case run is pending.

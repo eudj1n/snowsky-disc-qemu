@@ -14,8 +14,11 @@ push after each. External review is input for comparison, not a specification.
    fresh API/queue checks and mutation instrumentation. Local evidence:
    `/tmp/disc-review-stage1-46`. One paused-predecessor screenshot was manually
    inspected; the other screenshots remain unreviewed.
-2. **Pending:** align literal grammar and the single-action gate; preserve compound
-   artist credits and quoted music references; add the requested RU synonyms.
+2. **Complete:** literal-v3/shared guard, compound credits, quoted references
+   and requested RU synonyms. **291 prototype tests passed**. New emulator cases:
+   **7/8 initially**, then **1/1** after correcting the new duplicate-edition gold
+   to the existing alphabetical tie policy. Original report is preserved.
+   Manifest v6 has 54 cases; no full-54 run is claimed.
 3. **Pending:** explicit album intent, ranking, fresh native selection and queue
    verification, including albums containing multiple artists.
 4. **Pending:** compare bounded retrieval changes; add an optional resident STT

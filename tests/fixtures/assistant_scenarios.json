@@ -1,5 +1,5 @@
 {
-  "version": 5,
+  "version": 6,
   "cohort": "emulator-regression",
   "tracks": [
     {
@@ -939,7 +939,7 @@
         "status": [
           "playing"
         ],
-        "target": "alpha"
+        "target": "edition"
       }
     },
     {
