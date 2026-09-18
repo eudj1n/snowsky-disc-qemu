@@ -121,3 +121,15 @@ study for low command coverage, the EN reject-all threshold and Pi validation
 still outstanding. Next collect independent human phrasing and actual STT errors,
 expand balanced per-intent examples and negative contexts, and compare training
 variants against a new frozen holdout before enabling any execution provider.
+
+## Expanded training checkpoint
+
+The later [v2 data workflow](ASSISTANT_NLU_DATA.md) adds 609 annotated rows,
+private history collection/review/freezing, and a generic four-way training runner.
+It exports the same bundle format for `/commands import` and `/explain`. Current
+locale reference files stay authoritative for runtime grammar/reference snapshots;
+a versioned, reviewed training corpus can add examples and pins its own fingerprint
+in classifier provenance. Source references must be represented in its train split.
+The first small runner/results above remain historical, reproducible evidence.
+Expanded models improve control coverage but still make false activations and
+miss new language/music slots. Live execution remains unchanged.

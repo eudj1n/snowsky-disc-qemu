@@ -177,3 +177,13 @@ providers share the validated intention boundary. Language-change events retain 
 new response-template context while the request context retains the input locale.
 Old bilingual/split-response journal records are historical and are not rewritten.
 Startup locale/speech preferences persist even with request journaling disabled.
+
+## Explicit training-data collection
+
+The [annotation tool](ASSISTANT_NLU_DATA.md#collect-a-private-annotation-queue) can
+read an explicit history export and create a separate private review queue. It
+keeps applicable text/locale and hashed provenance, including recording/model
+fingerprints where available. It does not infer gold labels from outcomes or
+silently train a model. Failed requests remain useful annotation candidates;
+unsupported maintenance input, truncated input and audio without a transcript
+are excluded. Reviewed corpus versions and journal retention are independent.

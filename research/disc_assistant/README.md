@@ -447,3 +447,8 @@ They keep locale examples, reference vectors and optional trained text classifie
 in versioned Assistant SQLite snapshots. They require no new runtime dependencies
 and never change the executing interpreter. The supervised study and import
 instructions are linked from that guide.
+
+For reviewed command data and training, see the [v2 workflow](../../docs/ASSISTANT_NLU_DATA.md):
+private history queues, explicit annotation, immutable dataset snapshots and a
+four-way supervised comparison. Current model results remain diagnostic; live
+execution, shadow comparison and independent human/Pi acceptance are separate steps.

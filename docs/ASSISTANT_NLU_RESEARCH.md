@@ -261,3 +261,28 @@ initial supervised comparison and bounded argument extraction. Still open: broad
 independent intent data, balanced training/fine-tuning comparisons, real STT error
 coverage, Pi resource measurements, vector music fallback and typed NL filters.
 Do not promote either classifier to `ask` from these small authored results.
+
+## Expanded supervised data checkpoint, 2026-09-18
+
+[Corpus v2 and annotation tools](ASSISTANT_NLU_DATA.md) are implemented. The corpus now
+has 609 rows. Its train/development/test partitions were frozen in `cad202b` before
+the first evaluation; a later revision restores one omitted legacy regression row
+only. New authored test and
+previously examined regression are separate; references, review identity, exact
+argument spans and related-example groups remain explicit. Private history exports
+can be converted to pending queues, reviewed and frozen without copying model
+predictions into gold labels. No private histories enter the tracked corpus.
+
+Four-way ordinary/balanced text/embedding classification gives a useful stronger
+baseline. The exported text fallback improves complete new-test intentions from
+2/35 per locale to 12/35 RU and 14/35 EN, with 3/20 and 2/20 false activations.
+Class balancing does not consistently improve the coverage/rejection tradeoff.
+Frozen embeddings are not a universal fix; class prediction and argument extraction
+remain distinct, with new language slots 0/5 in both locales. The current guards
+also mishandle multi-action and non-music play-prefix requests. These failures are
+recorded rather than patched against the now-inspected test cases.
+
+Decision: retain diagnostic execution boundaries. Next collect independent human
+examples/STT errors, improve contextual rejection and bounded slot extraction,
+and add an explicit shadow comparison. Encoder fine-tuning and live model
+promotion still require their own experiments and fresh evaluation data.

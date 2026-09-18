@@ -14,7 +14,9 @@ implemented. It supersedes the merged-language/separate-response policy recorded
 in the historical increments below.
 The [command catalog and explanation preview](ASSISTANT_COMMAND_CATALOG.md) are
 also implemented; learned classification remains diagnostic while the live
-interpreter uses rules. The current device contract is [DISC capabilities](DISC_CAPABILITIES.md).
+interpreter uses rules. The [reviewed-data workflow and v2 model comparison](ASSISTANT_NLU_DATA.md) are
+implemented; human review, shadow comparison and learned execution remain pending.
+The current device contract is [DISC capabilities](DISC_CAPABILITIES.md).
 
 ## Goal and first deliverable
 
@@ -840,3 +842,30 @@ No physical player, microphone or Pi acceptance was performed in this increment.
 Next: independent command/STT examples and better supervised coverage, then a new
 holdout comparison before enabling the provider. Vector music fallback, structured
 NL filters, microphone input and spoken replies remain separately pending.
+
+## Reviewed-data workflow and supervised v2 study, 2026-09-18
+
+Implemented the [annotation and training workflow](ASSISTANT_NLU_DATA.md). A
+609-row bilingual corpus has training/development/test frozen before evaluation
+and a recorded correction restoring one omitted legacy regression row. Training,
+development, new authored test and earlier regression remain separate. Rows retain
+review identity/rationale, origin, typed slots and related-example groups. These
+are assistant-authored labels, not independently reviewed human examples.
+
+Private history collection creates unlabeled review queues, retains recording/model
+fingerprints when present, and never treats previous predictions as ground truth.
+Explicit review and freeze commands validate slots and prevent split leakage;
+model selection uses development only. The generic runner compares ordinary and
+balanced text and frozen-embedding classifiers and exports portable preview models.
+
+The full preview reaches 12/35 RU and 14/35 EN correct complete test intentions,
+versus 2/35 per locale for extraction/guards alone, but has 3/20 RU and 2/20 EN false
+activations. New language argument extraction is 0/5 per locale. The report exposes
+these failures separately from class recognition and earlier synthetic-STT results.
+No learned execution promotion follows. Validation: 253 prototype tests, actual
+four-way training, JSON scorer parity, import and ordinary-runtime explanation.
+
+Next: human review and new speech data, contextual rejection and slot extraction,
+then explicit shadow comparison. Encoder fine-tuning, live learned execution and
+Pi resource measurements remain pending. See the workflow document for collection,
+annotation, reproduction and per-variant evidence.

@@ -232,3 +232,34 @@ Decision: keep learned commands **preview-only**. Improve the training set,
 compare class balancing and later encoder fine-tuning with independent evaluation,
 and measure the exported runtime on Pi. Microphone capture, semantic music
 fallback and structured Typesense Natural Language Search remain separate tasks.
+
+## Expanded data and supervised v2
+
+[`datasets/commands-v2`](datasets/commands-v2/README.md) freezes 609 annotated RU/EN
+phrases with explicit splits, origins, reviewer identities, typed intentions and
+argument spans. The new [`dataset`](dataset.py) CLI validates, collects private
+history into pending queues, applies explicit annotations and freezes new versions.
+It has no ML dependencies and never copies model predictions into gold labels.
+
+The separate [`study_commands`](study_commands.py) runner compares ordinary and
+balanced text/embedding heads on identical data and exports the development-selected
+text model for `/explain`. It supports the locales present in a validated dataset;
+ordinary runtime requirements and `ask` are unchanged. Reproduce with the prepared
+local model/environment:
+
+```sh
+"$lab/venv/bin/python" -m research.disc_assistant.experiments.nlu.study_commands \
+  --work "$lab" --output "$lab/commands-v2-run"
+```
+
+Use a new output directory. The [data workflow and results](../../../../docs/ASSISTANT_NLU_DATA.md)
+cover collection, annotation schema, split auditing, reproduction and limitations.
+[Full v2 evidence](evaluations/2026-09-18-commands-v2.json) preserves all development
+trials and evaluation predictions. The selected complete preview recognizes 12/35
+RU and 14/35 EN new authored commands, with 3/20 and 2/20 false activations. New
+language slots are 0/5 each: classification alone does not supply arguments.
+Authored test results and earlier synthetic-STT regression are reported separately.
+No human/Pi acceptance or encoder fine-tuning is claimed. After inspection, use
+this test as regression when redesigning against its failures; preserve a fresh
+holdout for the next comparison. The first `train_commands` experiment remains
+unchanged for reproducibility.

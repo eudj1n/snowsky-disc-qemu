@@ -177,3 +177,10 @@ corpus before extending that experiment to another language.
 
 This file is optional for ordinary rule-based `ask`; without it `/explain` cannot
 load a command catalog. See [catalog schema, boundaries and reproduction](ASSISTANT_COMMAND_CATALOG.md).
+
+The newer [v2 annotation/training workflow](ASSISTANT_NLU_DATA.md) accepts installed
+locales from the dataset itself. To extend its comparison, contribute reviewed
+train/development/test/regression rows with stable semantic labels, original-text
+argument spans and grouped related examples; supply all current locale references
+in training. Run its validator/audit before fitting. This avoids adding a language
+branch to the runner and keeps a new locale's quality evidence separate.

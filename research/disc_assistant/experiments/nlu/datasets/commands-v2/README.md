@@ -41,3 +41,9 @@ Selection uses development false activations first, then macro-F1 and correctnes
 ties prefer smaller C and more conservative thresholds. Freeze these choices
 before evaluation, and report raw predictions as well as abstentions. The normal
 live interpreter and extraction templates are unchanged for this comparison.
+
+Revision `commands-v2.1` restores the omitted legacy `ru-test-language-3`
+regression row with its explicit `по-русски` span. This correction was made after
+the initial run; train/development/test rows remain byte-for-byte those committed
+in `cad202b`. The manifest pins the previous hash and records the correction. No
+model hyperparameters or decision policy changed in response to test results.
