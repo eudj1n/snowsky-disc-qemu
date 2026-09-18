@@ -203,9 +203,9 @@ portable export/import and normal-runtime smoke check. The prototype suite has
 253 tests, including 12 new corpus/annotation checks; no physical-player run was
 needed for this stage.
 
-Next: independently reviewed human phrasing and actual microphone STT data;
-context and argument extraction for language/music commands; an explicit shadow
-provider that records disagreements while rules retain control. Encoder fine-tuning
+Next: independently reviewed human phrasing and actual microphone STT data.
+[Argument/context extraction and independent shadow sources](ASSISTANT_INTERPRETATION_SOURCES.md)
+are now implemented; the former v2 test set is regression for this later work. Encoder fine-tuning
 remains a later measured comparison after data review, not an implemented backend.
 Live learned execution, microphone capture, automatic feedback training and Pi
 resource acceptance are still pending. No runtime model was automatically installed

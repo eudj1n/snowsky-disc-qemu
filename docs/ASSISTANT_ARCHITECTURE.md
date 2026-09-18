@@ -232,3 +232,15 @@ provider, resolve a music catalog, call Controller or change language from the
 text. `/commands` manages that snapshot independently of Library generations.
 See [the command catalog](ASSISTANT_COMMAND_CATALOG.md) for storage, publication,
 training boundaries and the remaining acceptance gates.
+
+
+## Independent evidence and single-action policy
+
+The [source contract and shadow collector](ASSISTANT_INTERPRETATION_SOURCES.md) now
+separate experimental evidence from the executing Interpreter. Sources receive
+text/context and return validated intentions or explicit incomplete/rejected/unavailable
+results, with source-local scores and hashes. Shadow comparison never overrides
+the primary. A future selector is a separate policy/model, not an implicit sum
+of incompatible scores. The shared bounded compound-command guard runs before
+primary interpretation for both typed and transcribed input. The MVP has one
+action per request; no planning, sequencing or dialogue is implemented.

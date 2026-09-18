@@ -34,6 +34,8 @@ class Config:
     response_mode: str = 'errors'
     dialogue_enabled: bool = False
     speech: dict = field(default_factory=dict)
+    shadow: bool = False
+    shadow_timeout_ms: int = 100
 
 
 def default_data_dir():
@@ -59,7 +61,7 @@ def number(value, label, low, high):
 def load(path):
     with Path(path).open('rb') as stream:
         raw = tomllib.load(stream)
-    allowed = {'device': {'key', 'host', 'tcp_port', 'http_port'},
+    allowed = {'interpretation': {'shadow', 'shadow_timeout_ms'}, 'device': {'key', 'host', 'tcp_port', 'http_port'},
                'storage': {'data_dir'},
                'typesense': {'host', 'port', 'protocol', 'api_key_env'},
                'sync': {'page_size', 'timeout', 'max_tracks', 'max_requests'},
@@ -96,6 +98,11 @@ def load(path):
     dialogue = raw.get('dialogue', {}).get('enabled', False)
     if dialogue is not False:
         raise ValueError('dialogue.enabled must be false; dialogue is not implemented')
+    interpretation = raw.get('interpretation', {})
+    shadow = interpretation.get('shadow', False)
+    if type(shadow) is not bool:
+        raise ValueError('interpretation.shadow must be a boolean')
+    shadow_timeout = number(interpretation.get('shadow_timeout_ms', 100), 'interpretation.shadow_timeout_ms', 1, 2000)
     terminal = raw.get('terminal', {})
     speech = raw.get('speech', {})
     for key in ('model', 'whisper_executable'):
@@ -151,4 +158,4 @@ def load(path):
         number(sync.get('max_requests', 10000), 'max_requests', 2, 100000), locale, continuous,
         journal_enabled, number(journal.get('retention_days', 90), 'journal.retention_days', 1, 3650),
         number(journal.get('max_requests', 10000), 'journal.max_requests', 1, 1000000), terminal,
-        response['mode'], dialogue, speech)
+        response['mode'], dialogue, speech, shadow, shadow_timeout)

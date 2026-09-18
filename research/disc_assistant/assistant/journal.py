@@ -173,7 +173,7 @@ class Trace:
             self.journal = Journal(self.config)
             self.journal.prune()
             rules = asdict(load_languages((self.config.locale,)))
-            context = {'locale': self.config.locale, 'command_rules_version': 'literal-v2',
+            context = {'locale': self.config.locale, 'shadow_enabled': self.config.shadow, 'command_rules_version': 'literal-v2',
                        'matching_policy': 'lexical-v3', 'transliteration_sha256': transliteration_fingerprint(),
                        'language_rules_sha256': hashlib.sha256(json.dumps(rules, sort_keys=True).encode()).hexdigest(),
                        'metadata_markers_sha256': hashlib.sha256(json.dumps(metadata_markers().phrases).encode()).hexdigest(),

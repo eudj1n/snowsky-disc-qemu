@@ -80,3 +80,9 @@ max_requests = 10000 # Completed requests; recent in-flight requests are retaine
 "Linkin Park" = ["линкин парк"]
 [aliases.titles]
 "Numb" = ["намб"]
+
+[interpretation]
+# Diagnostic sources only. Live requests still use the primary interpreter.
+shadow = false
+# Cooperative async deadline; local CPU/filesystem work is not preempted.
+shadow_timeout_ms = 100

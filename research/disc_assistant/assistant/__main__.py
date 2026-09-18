@@ -62,6 +62,11 @@ async def search_command(config, store, args, trace, intent=None):
         await client.api_call.aclose()
 
 
+def shadow_sources(config):
+    from research.disc_assistant.assistant.interpretation_sources import default_sources
+    return default_sources(config) if config.shadow else None
+
+
 def main(argv=None, *, interpreter=None, transcriber=None, synthesizer=None):
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--config', required=True, help='path to a TOML configuration')
@@ -143,7 +148,8 @@ def main(argv=None, *, interpreter=None, transcriber=None, synthesizer=None):
                 transcription = asyncio.run(transcribe_file(config, args.audio, trace, provider=transcriber))
                 args.text = transcription['command_text']
             intent = (asyncio.run(interpret_request(args.text, InterpretationContext(config.locale),
-                        interpreter=interpreter, trace=trace)) if args.command in ('ask', 'rank') else None)
+                        interpreter=interpreter, trace=trace, shadow=shadow_sources(config),
+                        shadow_timeout_ms=config.shadow_timeout_ms)) if args.command in ('ask', 'rank') else None)
             if args.command == 'explain':
                 from research.disc_assistant.assistant.explain import preview
                 result = preview(config, args.text, trace)

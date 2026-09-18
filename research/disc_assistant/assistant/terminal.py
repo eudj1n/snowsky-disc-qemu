@@ -18,7 +18,7 @@ from research.disc_assistant.assistant.journal import console_history, recallabl
 from research.disc_assistant.assistant.responses import MODES, available_reply_languages
 
 COMMANDS = ('/connect', '/disconnect', '/device', '/status', '/queue', '/sync', '/index',
-            '/search', '/rank', '/explain', '/commands', '/ask', '/transcribe', '/language', '/response', '/locales', '/help', '/history', '/debug', '/clear', '/exit')
+            '/search', '/rank', '/explain', '/commands', '/ask', '/transcribe', '/language', '/response', '/locales', '/help', '/history', '/shadow', '/debug', '/clear', '/exit')
 
 DEFAULT_STYLES = {
     'prompt': 'ansicyan bold',

@@ -103,9 +103,12 @@ def preview(config, text, trace=None):
     catalog = CommandCatalog(config.data_dir)
     try:
         snapshot = catalog.current(config.locale)
+        import asyncio
+        from research.disc_assistant.assistant.interpretation_sources import explain_sources
+        sources = asyncio.run(explain_sources(config, text))
         result = {'status':'explained','locale':config.locale,'text':text,'snapshot':snapshot['id'],
                   'source_hash':snapshot['source_hash'],'mutation_attempted':False,
-                  **decide(text,snapshot['source'],snapshot['classifier'])}
+                  **decide(text,snapshot['source'],snapshot['classifier']), **sources}
         if trace:
             trace.event('explain',result)
         return result

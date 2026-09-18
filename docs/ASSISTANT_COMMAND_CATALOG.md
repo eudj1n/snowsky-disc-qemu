@@ -38,7 +38,8 @@ The JSON includes:
 | Field | Meaning |
 | --- | --- |
 | `rules` | Result of the existing literal parser for comparison |
-| `candidate` | Diagnostic `recognized`, `rejected` or `incomplete` intention, source, reason and extracted spans |
+| `candidate` | Diagnostic `recognized`, `rejected`, `unsupported` or `incomplete` intention, source, reason and extracted spans |
+| `sources`, `policy`, `context` | Independent evidence, single-action policy and interpretation context; see [source contract](ASSISTANT_INTERPRETATION_SOURCES.md) |
 | `classifier` | Optional model's label, runner-up, score, margin and threshold decision; otherwise unavailable |
 | `snapshot`, `source_hash`, `locale` | Exact local reference generation |
 | `mutation_attempted` | Always false for explanation |
@@ -53,12 +54,13 @@ invented title or language. Rejection is a successful diagnostic result, so the
 CLI exits zero; invalid input, missing locale files and stale snapshots are errors.
 `/debug on` exposes the `explain` event, also retained in ordinary request history.
 
-The diagnostic pipeline recognizes explicit authored control phrases, extracts
-music/language slots, applies conservative negation/reported-speech checks and
-falls back to a trained classifier for controls. A music reference may contain
-words such as `Pause` or `Do Not Disturb`. These bounded templates are not a general
-sentence parser: multi-action text, questions and reported speech inside a captured
-reference remain limitations. Preview recognition is not permission to execute.
+The current diagnostic candidate uses [independent sources](ASSISTANT_INTERPRETATION_SOURCES.md):
+complete slot extraction, then literal rules, then classified controls, subject
+to context and single-action checks. Scores remain separate. Music references
+may contain command or negation words; quote ambiguous titles. This bounded
+grammar does not parse arbitrary sentences. Preview recognition is not permission
+to execute. The original `decide` evaluator remains available for reproducible
+historical model studies; current `/explain` adds the newer source comparison.
 
 ## Storage and publication
 
@@ -132,4 +134,5 @@ a versioned, reviewed training corpus can add examples and pins its own fingerpr
 in classifier provenance. Source references must be represented in its train split.
 The first small runner/results above remain historical, reproducible evidence.
 Expanded models improve control coverage but still make false activations and
-miss new language/music slots. Live execution remains unchanged.
+miss new language/music slots. A subsequent [argument/source increment](ASSISTANT_INTERPRETATION_SOURCES.md)
+addresses these as examined regression; learned live execution remains disabled.

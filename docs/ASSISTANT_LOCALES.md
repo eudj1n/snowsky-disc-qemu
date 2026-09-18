@@ -184,3 +184,24 @@ train/development/test/regression rows with stable semantic labels, original-tex
 argument spans and grouped related examples; supply all current locale references
 in training. Run its validator/audit before fitting. This avoids adding a language
 branch to the runner and keeps a new locale's quality evidence separate.
+
+
+## Optional argument/context source
+
+Add `assistant/locales/understanding/CODE.toml` following the RU/EN files to
+extend the independent slots source and shared single-action guard. It has its
+own schema/version/hash and does not invalidate an existing command classifier.
+Use literal `templates` for play/artist/track with exactly one `{query}`, and
+language templates with exactly one `{language}`. `language_names` maps installed
+locale tags to their natural inflections. `controls` names the five control
+classes. `context` supplies negation, reported speech, question prefixes, non-music
+targets, connectors, actions, action modifiers and empty-reference words.
+All lists must be nonempty strings; regex and locale-specific Python branches
+are unnecessary. Refer to [source contracts and limitations](ASSISTANT_INTERPRETATION_SOURCES.md).
+
+Test exact extracted spans, quoted titles containing command words, missing
+arguments, negation, questions, non-music targets and compound commands. Add
+locale cases to `experiments/nlu/slot_acceptance.json` and compare each source.
+Adding templates here extends diagnostics, not the live rule vocabulary. Missing
+optional files leave ordinary literal commands working, with slots unavailable
+and no locale-specific compound guard. New grammars need review before deployment.

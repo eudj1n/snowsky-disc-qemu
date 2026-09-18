@@ -286,3 +286,16 @@ Decision: retain diagnostic execution boundaries. Next collect independent human
 examples/STT errors, improve contextual rejection and bounded slot extraction,
 and add an explicit shadow comparison. Encoder fine-tuning and live model
 promotion still require their own experiments and fresh evaluation data.
+
+
+## Independent-source checkpoint, 2026-09-18
+
+[Common evidence, locale argument extraction and optional shadow comparison](ASSISTANT_INTERPRETATION_SOURCES.md)
+are implemented. Literal rules, slot/context parsing and the portable classifier
+retain separate results, timings and provenance. The live primary retains control;
+only the shared single-action rejection policy changes live interpretation.
+A future learned selector can consume source evidence, but weights/calibration,
+learned arbitration and complex command planning are not part of this increment.
+The documented comparison uses implementation acceptance and examined regression,
+with no retraining or independent quality claim. Next collect reviewed shadow
+disagreements and fresh human/STT evaluation data before selecting a live provider.

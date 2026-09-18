@@ -187,3 +187,10 @@ fingerprints where available. It does not infer gold labels from outcomes or
 silently train a model. Failed requests remain useful annotation candidates;
 unsupported maintenance input, truncated input and audio without a transcript
 are excluded. Reviewed corpus versions and journal retention are independent.
+
+
+With optional [shadow comparison](ASSISTANT_INTERPRETATION_SOURCES.md),
+`interpretation_shadow` retains the primary result and independent source decisions,
+arguments, scores, versions/hashes, input context, timings and agreement. This
+evidence follows the same retention/disabled-journal policy and is not gold
+training data. Compound-policy evidence is recorded before primary interpretation.

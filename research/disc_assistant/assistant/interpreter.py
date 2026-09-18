@@ -65,7 +65,7 @@ def validate_intent(intent):
     return intent
 
 
-async def interpret_request(text, context, *, interpreter=None, trace=None):
+async def _interpret_request(text, context, *, interpreter=None, trace=None):
     if (not isinstance(text, str) or not 1 <= len(text) <= 1000
             or any(ord(c) < 32 for c in text)):
         raise ValueError('command must contain 1..1000 characters without control characters')
@@ -73,7 +73,13 @@ async def interpret_request(text, context, *, interpreter=None, trace=None):
     if trace:
         trace.event('interpretation_started', {'provider': asdict(provider.info), 'locale': context.locale})
     try:
-        result = await provider.interpret(text, context)
+        from research.disc_assistant.assistant.understanding import single_action
+        policy = single_action(text, context.locale)
+        if trace:
+            trace.event('single_action_policy', policy)
+        if trace:
+            trace.stage = 'interpretation_started'
+        result = await provider.interpret(text, context) if policy['supported'] else Interpretation('unsupported')
     except InvalidProviderResult as exc:
         raise InvalidProviderResult('invalid interpreter result') from exc
     except Exception as exc:
@@ -95,3 +101,45 @@ async def interpret_request(text, context, *, interpreter=None, trace=None):
         trace.event('interpretation', {'status': result.status})
         trace.intent(intent)
     return intent
+
+
+async def interpret_request(text, context, *, interpreter=None, trace=None, shadow=None, shadow_timeout_ms=100):
+    """Primary owns execution; independent shadow evidence is never substituted."""
+    import asyncio
+    if not isinstance(text, str) or not 1 <= len(text) <= 1000 or any(ord(c) < 32 for c in text):
+        raise ValueError('command must contain 1..1000 characters without control characters')
+    from research.disc_assistant.assistant.interpretation_sources import collect, comparison
+    task = asyncio.create_task(collect(text, context, shadow, timeout_ms=shadow_timeout_ms)) if shadow else None
+    primary = {'status': 'unavailable', 'intent': None}
+    cancelled = False
+    try:
+        intent = await _interpret_request(text, context, interpreter=interpreter, trace=trace)
+        primary = {'status': 'recognized', 'intent': asdict(intent)}
+        return intent
+    except asyncio.CancelledError:
+        cancelled = True
+        raise
+    except UnsupportedCommand:
+        primary['status'] = 'unsupported'
+        raise
+    except ValueError as exc:
+        primary['status'] = 'unavailable' if isinstance(exc, InvalidProviderResult) else 'unrecognized'
+        raise
+    finally:
+        if task is not None:
+            if cancelled:
+                task.cancel()
+                await asyncio.gather(task, return_exceptions=True)
+            else:
+                try:
+                    results = await task
+                    record = {'primary': primary, 'context': asdict(context), 'sources': results,
+                              'comparison': comparison(primary, results), 'execution_source': 'primary_only'}
+                except Exception as exc:
+                    record = {'status': 'unavailable', 'error_type': type(exc).__name__}
+                if trace:
+                    previous_stage = trace.stage
+                    try:
+                        trace.event('interpretation_shadow', record)
+                    finally:
+                        trace.stage = previous_stage

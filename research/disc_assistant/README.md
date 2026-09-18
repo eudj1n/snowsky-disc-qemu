@@ -451,4 +451,8 @@ instructions are linked from that guide.
 For reviewed command data and training, see the [v2 workflow](../../docs/ASSISTANT_NLU_DATA.md):
 private history queues, explicit annotation, immutable dataset snapshots and a
 four-way supervised comparison. Current model results remain diagnostic; live
-execution, shadow comparison and independent human/Pi acceptance are separate steps.
+execution and independent human/Pi acceptance remain separate steps.
+[Independent sources and optional shadow comparison](../../docs/ASSISTANT_INTERPRETATION_SOURCES.md)
+are now implemented: `/shadow on` records comparisons, `/debug on` displays them,
+and `/explain TEXT` previews each source without execution. The primary still
+executes commands. MVP scope is one action per request; complex commands are deferred.

@@ -88,6 +88,7 @@ The key is a user-assigned namespace, not a discovered hardware identity.
 | `/queue` | Read the native queue and mode using the shared connection |
 | `/search TEXT` | Search metadata without playback |
 | `/rank TEXT` | Explain a music ranking or control intent without playback |
+| `/shadow [on\|off]` | Report/toggle independent interpretation comparison for this console; primary retains execution; see [source contract](ASSISTANT_INTERPRETATION_SOURCES.md) |
 | `/explain TEXT` | Compare literal and diagnostic intent/argument parsing, without execution or music search |
 | `/commands [rebuild\|import FILE]` | Inspect/publish command references and optional trained classifier for the active locale |
 | `/exit` | Close the session and release the local ownership lock; keep music and Typesense running |

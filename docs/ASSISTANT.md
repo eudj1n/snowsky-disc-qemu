@@ -15,7 +15,9 @@ in the historical increments below.
 The [command catalog and explanation preview](ASSISTANT_COMMAND_CATALOG.md) are
 also implemented; learned classification remains diagnostic while the live
 interpreter uses rules. The [reviewed-data workflow and v2 model comparison](ASSISTANT_NLU_DATA.md) are
-implemented; human review, shadow comparison and learned execution remain pending.
+implemented. [Independent sources, argument extraction and optional shadow comparison](ASSISTANT_INTERPRETATION_SOURCES.md)
+are now implemented; independent human review and learned execution remain pending.
+The MVP accepts one action per request; compound planning and dialogues are deferred.
 The current device contract is [DISC capabilities](DISC_CAPABILITIES.md).
 
 ## Goal and first deliverable

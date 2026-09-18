@@ -31,6 +31,7 @@ Commands use one active locale; /language CODE changes input and replies.
 /search TEXT  /rank TEXT  /explain TEXT  /commands [rebuild|import FILE]
 /language [CODE|reset]  /help  /clear  /exit
 /response [mode none|errors|all|reset]  /locales
+/shadow [on|off]  Compare interpretation sources; never changes execution
 /debug [on|off]  Stream request traces for this console session
 /transcribe FILE  /rank --audio FILE  /ask --audio FILE  (PCM WAV input)
 /history [LIMIT|show ID|export PATH|prune|clear --yes]
@@ -166,6 +167,10 @@ class Application:
         if self.debug:
             self.debug_output(event)
 
+    def shadow_sources(self):
+        from research.disc_assistant.assistant.interpretation_sources import default_sources
+        return default_sources(self.config) if self.config.shadow else None
+
     def interpret(self, text, trace):
         playback = 'unknown'
         if hasattr(self, 'session'):
@@ -173,7 +178,8 @@ class Application:
             if observed in ('playing', 'paused', 'stopped'):
                 playback = observed
         return asyncio.run(interpret_request(text, InterpretationContext(self.config.locale, playback),
-                                            interpreter=self.interpreter, trace=trace))
+                                            interpreter=self.interpreter, trace=trace,
+                                            shadow=self.shadow_sources(), shadow_timeout_ms=self.config.shadow_timeout_ms))
 
     def language(self, arguments, trace):
         trace.event('preference', {'name': 'language.locale'})
@@ -199,6 +205,13 @@ class Application:
                 result = catalog_command(self.config, shlex.split(text))
                 trace.event('command_catalog', result)
                 return result
+            if command == 'shadow':
+                if text not in ('', 'on', 'off'):
+                    raise ValueError('/shadow accepts on or off')
+                if text:
+                    self.config = replace(self.config, shadow=text == 'on')
+                return {'shadow': self.config.shadow, 'timeout_ms': self.config.shadow_timeout_ms,
+                        'scope': 'console session only', 'execution_source': 'primary_only'}
             if command == 'debug':
                 if text not in ('', 'on', 'off'):
                     raise ValueError('/debug accepts on or off')
