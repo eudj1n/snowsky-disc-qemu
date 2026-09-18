@@ -19,7 +19,8 @@ api_key_env = "TYPESENSE_API_KEY"
 
 [language]
 # Merge literal command and version phrases from assistant/locales/<code>.toml.
-# Omit this section to keep both languages enabled.
+# Defaults when no saved /language preference exists; /language reset restores them.
+# Omit this section to default to both languages.
 enabled = ["ru", "en"]
 
 [sync]

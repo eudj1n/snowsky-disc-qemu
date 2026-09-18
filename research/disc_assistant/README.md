@@ -56,6 +56,7 @@ application connects to DISC, synchronizes the catalog, prepares the index and
 opens a text console. Enter commands directly, without `ask` or shell quotes:
 
 ```text
+disc> /language ru en
 disc> Включи Linkin Park - Numb
 disc> Пауза
 disc> Resume
@@ -67,7 +68,9 @@ disc> /exit
 Use `./research/disc_assistant/run.sh listen` to open the same console with the
 existing snapshot/index, without Docker startup or automatic sync/index. This is
 text input; microphone capture is not implemented yet. `/help` lists console
-commands. `/sync` refreshes the catalog; `/index` rebuilds search after changes.
+commands. `/language ru` or `/language en` selects command dictionaries and saves
+the choice for later sessions; `/language ru en` enables both, and `/language reset`
+restores TOML defaults. `/sync` refreshes the catalog; `/index` rebuilds search after changes.
 
 The application owns one TCP socket and continuously receives events, including
 while waiting for input or doing HTTP/search work. Unexpected disconnects trigger
@@ -195,6 +198,18 @@ The SQLite file is `library.sqlite3` under `[storage].data_dir`, defaulting to:
 - macOS: `~/Library/Application Support/disc-hub/prototype/`.
 - Linux: `${XDG_DATA_HOME:-~/.local/share}/disc-hub/prototype/`.
 - Windows: `%LOCALAPPDATA%/disc-hub/prototype/`.
+
+Assistant preferences live alongside the catalog in `assistant.sqlite3`, in a
+versioned `settings(key, value_json, updated_at)` table. Currently the saved key is
+`language.enabled`. It applies to the application data directory, across devices
+and configs using that directory; use different directories for independent
+profiles. Saved values override TOML defaults. Device endpoints, credentials and
+operational limits remain in TOML/environment, not in this preferences table.
+One-shot `run.sh language [CODES|reset]` manages the same setting without search
+or a device connection. An already-open console reloads external changes through
+`/language` or on restart. Catalog sync/index rebuilding does not erase preferences.
+Back up both SQLite databases; language selection does not create a catalog or
+collect request/listening history. That journal remains a separate next increment.
 
 An override must be absolute (or start with `~`) and outside the repository.
 New data directories are private to the user. Back up SQLite with all prototype

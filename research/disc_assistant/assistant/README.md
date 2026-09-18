@@ -6,7 +6,8 @@ See the [prototype guide](../README.md) for setup, commands and acceptance, and 
 
 | File | Responsibility |
 | --- | --- |
-| `__main__.py` | `start`, `listen`, `sync`, `status`, `queue`, `index`, `search`, `rank`, `ask`; JSON output and errors |
+| `__main__.py` | `start`, `listen`, `language`, `sync`, `status`, `queue`, `index`, `search`, `rank`, `ask`; JSON output and errors |
+| `preferences.py` | Versioned Assistant SQLite settings; persistent command languages, override/reset and effective configuration |
 | `config.py`, `config.example.toml` | Explicit device/search/storage configuration and aliases |
 | `intents.py`, `ranking.py` | Bilingual play grammar and explained best-match ranking |
 | `languages.py`, `locales/*.toml` | Validated language dictionaries; merged literal command/target/version phrases |
@@ -69,7 +70,8 @@ shows the same ordering without playback. See the
 [command table](../../../docs/ASSISTANT_COMMANDS.md).
 
 `[language].enabled = ["ru", "en"]` is the default in the user configuration.
-The dictionaries support mixed commands such as `Play песню Numb`. Add a language
+`/language` (or one-shot `language`) saves an override in `assistant.sqlite3`
+for later sessions; `reset` removes it and restores TOML defaults. The dictionaries support mixed commands such as `Play песню Numb`. Add a language
 file and enable its code to extend forms for existing semantics. Unknown keys or
 conflicting meanings fail configuration validation. Music-name aliases remain
 separate. See the [dictionary format](../../../docs/ASSISTANT_COMMANDS.md#language-dictionaries).

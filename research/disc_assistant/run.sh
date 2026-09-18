@@ -14,6 +14,7 @@ Usage: research/disc_assistant/run.sh [--config PATH] COMMAND [ARGS]
   down           Stop local Typesense, preserving its volume
   start          Start Typesense, connect, sync/index, then keep an interactive console
   listen         Persistent console using existing catalog/index; no Docker startup
+  language [CODES|reset]  Show/set saved command languages (ru, en, or ru en)
   sync           Read the selected DISC catalog into SQLite
   status         Show local catalog/index status
   queue          Read actual device queue and play mode; no search/index needed

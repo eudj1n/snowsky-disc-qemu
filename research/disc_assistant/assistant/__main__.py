@@ -11,6 +11,7 @@ from research.disc_assistant.assistant.ranking import rank
 from research.disc_assistant.assistant.playback import execute, device_lock
 from research.disc_assistant.assistant.intents import parse, ControlIntent
 from research.disc_assistant.assistant.languages import load_languages
+from research.disc_assistant.assistant.preferences import effective_config, language_command
 from research.disc_assistant.assistant.controls import execute as control
 from research.disc_assistant.assistant.queue import observe as observe_queue
 from research.disc_assistant.library.store import Store
@@ -54,6 +55,8 @@ def main(argv=None):
     sub = parser.add_subparsers(dest='command', required=True)
     sub.add_parser('listen', help='persistent interactive console; existing catalog/index')
     sub.add_parser('start', help='connect, sync, index and enter the persistent console')
+    language = sub.add_parser('language', help='show/set saved command languages, or reset to TOML defaults')
+    language.add_argument('languages', nargs='*')
     sub.add_parser('sync', help='read the device catalog twice and publish a SQLite snapshot')
     sub.add_parser('status', help='show locally recorded snapshot/index status; no network calls')
     sub.add_parser('queue', help='read the actual device queue and play mode; no search/index required')
@@ -68,9 +71,14 @@ def main(argv=None):
     args = parser.parse_args(argv)
     try:
         config = load(args.config)
+        if args.command == 'language':
+            print(json.dumps(language_command(config, args.languages), ensure_ascii=False, indent=2))
+            return 0
         if args.command in ('listen', 'start'):
             from research.disc_assistant.assistant.console import run
             return run(config, bootstrap=args.command == 'start')
+        if args.command in ('ask', 'rank'):
+            config = effective_config(config)
         intent = parse(args.text, load_languages(config.languages)) if args.command in ('ask', 'rank') else None
         if args.command == 'queue':
             result = observe_queue(config)

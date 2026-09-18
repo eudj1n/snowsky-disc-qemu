@@ -104,6 +104,28 @@ indexes reproducible. Keep personal catalogs, credentials, recordings and logs
 out of Git. Audio recording retention is off by default; diagnostic retention
 must be explicit. Tests use synthetic or sanitized fixtures.
 
+### Assistant preferences
+
+Implemented on 2026-09-18: `assistant.sqlite3` alongside `library.sqlite3` owns a
+versioned `settings(key, value_json, updated_at)` table. Its first setting is
+`language.enabled`. Console `/language` and one-shot `language` show/set it;
+`reset` deletes the override. Precedence is saved value, TOML, built-in default.
+Selection is scoped to the application data directory, not the device UI locale.
+Invalid selections are rejected before persistence and the previous value survives.
+Console parsing/ranking updates immediately; new CLI sessions read the same value.
+An open console reloads external changes when `/language` is invoked or on restart.
+
+Keep infrastructure configuration (device endpoints, storage paths, search secrets)
+in TOML/environment. Add future mutable preferences through validated named keys
+and explicit schema migrations; do not turn settings into arbitrary runtime flags.
+Catalog refresh/reindex cannot erase preferences. Back up both databases. This
+increment does not yet persist commands, search decisions or listening history.
+
+Validation: 125 prototype tests and the firmware-free project suite (313 Python /
+37 JavaScript) pass. Preference tests cover reopen, precedence/reset, immediate
+console parsing, one-shot parity, invalid selections and database-version guards.
+No device command or firmware change is required for language selection.
+
 ### Synchronization and identity
 
 1. Connect to a deliberately selected device and inspect its reported version;
@@ -333,6 +355,32 @@ preserve mode. Arbitrary queue plans and their cancellation remain future work.
 These rules follow [DISC capabilities](DISC_CAPABILITIES.md),
 [remote control](REMOTE_CONTROL.md) and [track completion](TRACK_END.md).
 
+## Shared Controller API follow-up
+
+The synthetic TCP handler in `research/disc_assistant/check.py` deliberately uses
+raw tags to model a device. Keep independent wire fixtures so tests can detect
+encoding/decoding mistakes. Application code should not need those tags.
+
+Controller already exposes operations such as `settings`, `now_playing`,
+`play_artist` and `play_queue_index`. The persistent receiver/state reducer and
+state-aware controls currently prototyped in Assistant are candidates for a shared
+Controller session API, usable by both Assistant and a software remote:
+
+- Controller: framing/transports, capabilities, one connection/reader, serialized
+  requests, typed playback/connection observations, pacing, reconnect without
+  mutation replay, guarded device operations and explicit uncertain outcomes.
+- Assistant: language preferences, intent parsing, search/ranking, automatic match
+  policy, command history and recommendations. Assistant `Stop` is currently a
+  pause-preserving-queue policy, not evidence of a native absolute stop command.
+- A future application backend owns one Controller session and shares it across
+  Assistant/remote adapters. A reusable class alone does not permit two independent
+  processes to compete for the stock single-client TCP endpoint; cross-process
+  sharing requires a separate IPC/backend boundary.
+
+Extract and validate that reusable core without importing research, library or
+Assistant code from Controller. Retain the existing diagnostic API during migration.
+The preference/language increment does not perform this Controller refactor.
+
 ## History, preferences and external enrichment
 
 Design event storage early, then add personalized selection after basic playback
@@ -342,6 +390,21 @@ count repeated state events twice, or fill disconnected time with assumed plays.
 Track skips only when evidence supports that attribution. Seeking is not elapsed
 listening. Completion must follow observed firmware behavior; retain partial or
 unknown sessions when evidence is insufficient.
+
+The next journal increment should assign one request ID before parsing and record
+input source (interactive, one-shot, scheduled, later voice), original/normalized
+text, parsed intent or failure, catalog/index generations and policy versions.
+Retain a bounded candidate set with scores/reasons, the selected match and whether
+selection was automatic or explicit. Link device operation IDs and outcomes;
+distinguish unsupported intent, no match, stale index, search outage, not-sent and
+uncertain execution. Store metadata/provenance with snapshot-scoped IDs so old
+records remain interpretable after catalog retention changes. Do not retain raw
+microphone audio by default. Add export, clearing and bounded retention with the
+journal rather than accumulating an unbounded debug log.
+
+An automatic best match is the algorithm's decision, not an explicit user like.
+Scheduled commands are distinct from manual requests; search or dispatch does not
+prove listening. Keep these signals separate before deriving preference features.
 
 Keep raw events so derived play counts and preference rules can be recalculated.
 Keep device favorites, assistant-only likes and inferred preferences separate.

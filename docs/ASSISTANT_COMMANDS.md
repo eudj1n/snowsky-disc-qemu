@@ -12,6 +12,7 @@ activation is unnecessary. `ask` starts the best match without a choice dialogue
 | --- | --- | --- |
 | `./research/disc_assistant/run.sh setup` | Prepare the environment, config and private search key; preserve existing settings | None |
 | `./research/disc_assistant/run.sh start` | Start Typesense, connect, sync/index, then open the persistent text console | Read only until a playback command is entered |
+| `./research/disc_assistant/run.sh language [CODES\|reset]` | Show/set saved command dictionaries, or reset to TOML defaults | None; offline |
 | `./research/disc_assistant/run.sh listen` | Open the persistent console with existing data; no Docker startup or automatic sync/index | Initial handshake and state reads |
 | `./research/disc_assistant/run.sh up` | Start local Typesense and await readiness | None |
 | `./research/disc_assistant/run.sh down` | Stop Typesense, retaining its index volume | None |
@@ -47,6 +48,7 @@ input is idle. `listen` currently means text input, not microphone capture.
 | Console command | Behavior |
 | --- | --- |
 | `/help` | List text and maintenance commands |
+| `/language [CODES\|reset]` | Show/set saved command dictionaries immediately; `reset` restores TOML defaults |
 | `/status` | Show connection generation, latest playback observations and local catalog/index state |
 | `/connect` | Enable connection/reconnection asynchronously; inspect `/status` for readiness |
 | `/disconnect` | Close TCP and disable reconnect; retain the process ownership lock |
@@ -123,7 +125,39 @@ and [`en.toml`](../research/disc_assistant/assistant/locales/en.toml). User conf
 enabled = ["ru", "en"]
 ```
 
-This is also the default for older configs. Dictionaries merge, allowing mixed
+The TOML value supplies the default. An explicit selection is available without
+restarting the console:
+
+```text
+/language          # Show enabled, configured and available languages and source.
+/language ru       # Accept Russian command forms only.
+/language en       # Accept English command forms only.
+/language ru en    # Merge both dictionaries.
+/language reset    # Remove the saved override and restore the loaded TOML default.
+```
+
+Comments above explain the examples; enter only the command itself. For scripts:
+
+```sh
+./research/disc_assistant/run.sh language ru
+./research/disc_assistant/run.sh language
+./research/disc_assistant/run.sh language reset
+```
+
+The selection applies immediately to console parsing and ranking and persists
+across sessions, including one-shot `ask`/`rank`. Precedence is saved preference,
+then TOML, then the bilingual default. Invalid/missing dictionaries and duplicate
+codes fail without replacing the previous selection. `/language` also reloads a
+preference changed by another process; otherwise an already-open console keeps
+its selection until restart. TOML edits require restart.
+
+This selects command dictionaries (including their version phrases), not the
+player's UI language or a metadata-language filter. Artist/title text may still
+use any language. `/language` and other slash commands stay available in every
+selection. Replies/help remain English; microphone recognition is not implemented.
+No sync or index rebuild is required.
+
+The bilingual setting is also the default for older configs. Dictionaries merge, allowing mixed
 requests such as `Play песню Numb`. `search` continues accepting arbitrary text.
 Add `assistant/locales/<code>.toml`, enable its code, and add tests. Example:
 

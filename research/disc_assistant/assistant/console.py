@@ -1,5 +1,6 @@
 """Foreground application: persistent DISC session and interactive text input."""
 import asyncio
+from dataclasses import replace
 import json
 import os
 import sys
@@ -10,6 +11,7 @@ from research.disc_assistant.assistant.controls import execute as control
 from research.disc_assistant.assistant.intents import ControlIntent, parse
 from research.disc_assistant.assistant.languages import load_languages
 from research.disc_assistant.assistant.live import DeviceSession
+from research.disc_assistant.assistant.preferences import effective_config, language_command
 from research.disc_assistant.assistant.playback import execute as play
 from research.disc_assistant.assistant.queue import observe as queue
 from research.disc_assistant.assistant.ranking import rank
@@ -20,7 +22,7 @@ from research.disc_assistant.library.store import Store
 HELP = '''Enter Play … / Включи …, Pause / Пауза, Resume / Продолжи, Stop / Стоп,
 Next track / Следующий трек, Previous track / Предыдущий трек.
 /connect  /disconnect  /status  /queue  /sync  /index
-/search TEXT  /rank TEXT  /help  /exit
+/search TEXT  /rank TEXT  /language [ru|en|ru en|reset]  /help  /exit
 Events are read continuously. Disconnect/exit never stop music or Typesense.
 One-shot device commands require /exit to release the local ownership lock.
 Offline run.sh search/index/status remain available while this console is open.'''
@@ -28,8 +30,9 @@ Offline run.sh search/index/status remain available while this console is open.'
 
 class Application:
     def __init__(self, config: Config, *, session_factory=DeviceSession):
-        self.config, self.session_factory = config, session_factory
-        self.rules = load_languages(config.languages)
+        self.base_config, self.session_factory = config, session_factory
+        self.config = effective_config(config)
+        self.rules = load_languages(self.config.languages)
 
     def __enter__(self):
         self.session = self.session_factory(self.config)
@@ -92,7 +95,8 @@ class Application:
         server = [self.config.search_protocol, self.config.search_host, self.config.search_port]
         head['index_current'] = bool(head['generation'] and head['generation'] == head['index_generation']
                                     and head['index_signature'] == signature(self.config.aliases, server))
-        return {'session': self.session.status(), 'library': head}
+        return {'session': self.session.status(), 'library': head,
+                'language': {'enabled': list(self.config.languages)}}
 
     def request(self, line):
         line = line.strip()
@@ -101,6 +105,12 @@ class Application:
         if line.startswith('/'):
             command, _, text = line[1:].partition(' ')
             text = text.strip()
+            if command == 'language':
+                result = language_command(self.base_config, text.split())
+                rules = load_languages(result['enabled'])
+                self.config = replace(self.config, languages=rules.enabled)
+                self.rules = rules
+                return result
             if command in ('search', 'rank'):
                 if not text:
                     raise ValueError(f'/{command} needs text')
