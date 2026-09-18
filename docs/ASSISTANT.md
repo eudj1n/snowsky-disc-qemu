@@ -754,3 +754,14 @@ Remaining: representative human/noisy recording evaluation and music-name
 resolution, portable TTS, microphone/VAD, resident inference/latency tuning,
 automatic response synthesis/output and cancellation, then Pi deployment.
 Dialogue, recommendations, listening history and online providers remain deferred.
+
+### Base versus small comparison rerun
+
+At the owner's request, reran both models against the same twelve saved synthetic
+WAVs, with unchanged hashes/expectations and isolated temporary preferences. Base
+again passed 3/6 per locale; small passed 4/6. Median STT durations were 347/302 ms
+for base (RU/EN) versus 960/861 ms for small. Base was faster but lost a control or
+language-switch case in each locale; both retain music-name/reference mismatches.
+This is one sequential pass, not a controlled latency or human-speech benchmark.
+See the [comparison evidence and interpretation limits](ASSISTANT_VOICE.md#recorded-acceptance).
+No runtime code, user configuration or physical-player state changed.

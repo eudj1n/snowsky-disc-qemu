@@ -1,0 +1,548 @@
+{
+  "date": "2026-09-18",
+  "engine": {
+    "name": "whisper.cpp",
+    "version": "1.9.4",
+    "gpu": false,
+    "temperature_fallback": false
+  },
+  "platform": {
+    "system": "Darwin",
+    "release": "26.6",
+    "architecture": "arm64"
+  },
+  "tts": {
+    "name": "macos_say",
+    "rate": 175,
+    "voices": {
+      "ru": "Milena",
+      "en": "Samantha"
+    }
+  },
+  "scope": "Repeated comparison on identical saved WAVs; interpretation only, no device access",
+  "methodology": "One sequential pass per model/locale; includes process/model startup; no controlled cold-cache or warmup benchmark",
+  "runs": [
+    {
+      "model": "base",
+      "model_sha256": "60ed5bc3dd14eea856493d334349b405782ddcaf0028d4b5df4088345fba2efe",
+      "locale": "ru",
+      "passed": 3,
+      "total": 6,
+      "median_transcription_ms": 347.308,
+      "mean_transcription_ms": 352.873,
+      "wall_ms": 2385.63,
+      "cases": [
+        {
+          "id": "pause",
+          "passed": true,
+          "text": "Пауза.",
+          "expected": {
+            "status": "recognized",
+            "intent": {
+              "action": "pause"
+            }
+          },
+          "actual": {
+            "status": "recognized",
+            "intent": {
+              "action": "pause"
+            }
+          },
+          "transcription_ms": 425.069,
+          "audio_sha256": "5ebc7df7c59c76ebe094401c61c634f481b3677b143d5a3d8f5c2e5d34899412"
+        },
+        {
+          "id": "next",
+          "passed": true,
+          "text": "Следующий трек.",
+          "expected": {
+            "status": "recognized",
+            "intent": {
+              "action": "next"
+            }
+          },
+          "actual": {
+            "status": "recognized",
+            "intent": {
+              "action": "next"
+            }
+          },
+          "transcription_ms": 308.361,
+          "audio_sha256": "326f037cae4516b66bcaad4be7efa918afd8616c8c12e53bb475f6594a241e05"
+        },
+        {
+          "id": "artist",
+          "passed": false,
+          "text": "включи лингин парк",
+          "expected": {
+            "status": "recognized",
+            "intent": {
+              "query": "Linkin Park",
+              "kind": "auto",
+              "artist": null,
+              "title": null
+            }
+          },
+          "actual": {
+            "status": "recognized",
+            "intent": {
+              "query": "лингин парк",
+              "kind": "auto",
+              "artist": null,
+              "title": null
+            }
+          },
+          "transcription_ms": 370.428,
+          "audio_sha256": "8b0cd0cc5b92f58637a97f88d5de94e32ee87f7ca8e40575137811651d553ef9"
+        },
+        {
+          "id": "track",
+          "passed": false,
+          "text": "включи лингин парбнамп",
+          "expected": {
+            "status": "recognized",
+            "intent": {
+              "query": "Linkin Park Numb",
+              "kind": "auto",
+              "artist": null,
+              "title": null
+            }
+          },
+          "actual": {
+            "status": "recognized",
+            "intent": {
+              "query": "лингин парбнамп",
+              "kind": "auto",
+              "artist": null,
+              "title": null
+            }
+          },
+          "transcription_ms": 348.061,
+          "audio_sha256": "a7aa7a2e6121ae3ac275ea61dc350cb2c55b6f101f3ac79f381b81aa663894d8"
+        },
+        {
+          "id": "language",
+          "passed": false,
+          "text": "переключи из Зыкна английский.",
+          "expected": {
+            "status": "recognized",
+            "intent": {
+              "locale": "en"
+            }
+          },
+          "actual": {
+            "status": "unrecognized"
+          },
+          "transcription_ms": 346.554,
+          "audio_sha256": "4aa685909e9f215c655bc49f3c4deeee47dc87f3b91c8c7671250d068b3b48cf"
+        },
+        {
+          "id": "other",
+          "passed": true,
+          "text": "Сегодня хорошая погода.",
+          "expected": {
+            "status": "unrecognized"
+          },
+          "actual": {
+            "status": "unrecognized"
+          },
+          "transcription_ms": 318.767,
+          "audio_sha256": "29596a04789b7be2c3641aa09959664830b645f9f9525b475bf844a42d2614a3"
+        }
+      ]
+    },
+    {
+      "model": "small",
+      "model_sha256": "1be3a9b2063867b937e64e2ec7483364a79917e157fa98c5d94b5c1fffea987b",
+      "locale": "ru",
+      "passed": 4,
+      "total": 6,
+      "median_transcription_ms": 959.673,
+      "mean_transcription_ms": 985.796,
+      "wall_ms": 6139.123,
+      "cases": [
+        {
+          "id": "pause",
+          "passed": true,
+          "text": "Пауза!",
+          "expected": {
+            "status": "recognized",
+            "intent": {
+              "action": "pause"
+            }
+          },
+          "actual": {
+            "status": "recognized",
+            "intent": {
+              "action": "pause"
+            }
+          },
+          "transcription_ms": 1207.241,
+          "audio_sha256": "5ebc7df7c59c76ebe094401c61c634f481b3677b143d5a3d8f5c2e5d34899412"
+        },
+        {
+          "id": "next",
+          "passed": true,
+          "text": "Следующий трек.",
+          "expected": {
+            "status": "recognized",
+            "intent": {
+              "action": "next"
+            }
+          },
+          "actual": {
+            "status": "recognized",
+            "intent": {
+              "action": "next"
+            }
+          },
+          "transcription_ms": 863.59,
+          "audio_sha256": "326f037cae4516b66bcaad4be7efa918afd8616c8c12e53bb475f6594a241e05"
+        },
+        {
+          "id": "artist",
+          "passed": false,
+          "text": "Включи Линкин Парк.",
+          "expected": {
+            "status": "recognized",
+            "intent": {
+              "query": "Linkin Park",
+              "kind": "auto",
+              "artist": null,
+              "title": null
+            }
+          },
+          "actual": {
+            "status": "recognized",
+            "intent": {
+              "query": "Линкин Парк",
+              "kind": "auto",
+              "artist": null,
+              "title": null
+            }
+          },
+          "transcription_ms": 970.676,
+          "audio_sha256": "8b0cd0cc5b92f58637a97f88d5de94e32ee87f7ca8e40575137811651d553ef9"
+        },
+        {
+          "id": "track",
+          "passed": false,
+          "text": "Включи Линкин Паркнамп.",
+          "expected": {
+            "status": "recognized",
+            "intent": {
+              "query": "Linkin Park Numb",
+              "kind": "auto",
+              "artist": null,
+              "title": null
+            }
+          },
+          "actual": {
+            "status": "recognized",
+            "intent": {
+              "query": "Линкин Паркнамп",
+              "kind": "auto",
+              "artist": null,
+              "title": null
+            }
+          },
+          "transcription_ms": 1030.627,
+          "audio_sha256": "a7aa7a2e6121ae3ac275ea61dc350cb2c55b6f101f3ac79f381b81aa663894d8"
+        },
+        {
+          "id": "language",
+          "passed": true,
+          "text": "Переключи язык на английский.",
+          "expected": {
+            "status": "recognized",
+            "intent": {
+              "locale": "en"
+            }
+          },
+          "actual": {
+            "status": "recognized",
+            "intent": {
+              "locale": "en"
+            }
+          },
+          "transcription_ms": 948.669,
+          "audio_sha256": "4aa685909e9f215c655bc49f3c4deeee47dc87f3b91c8c7671250d068b3b48cf"
+        },
+        {
+          "id": "other",
+          "passed": true,
+          "text": "Сегодня хорошая погода.",
+          "expected": {
+            "status": "unrecognized"
+          },
+          "actual": {
+            "status": "unrecognized"
+          },
+          "transcription_ms": 893.973,
+          "audio_sha256": "29596a04789b7be2c3641aa09959664830b645f9f9525b475bf844a42d2614a3"
+        }
+      ]
+    },
+    {
+      "model": "base",
+      "model_sha256": "60ed5bc3dd14eea856493d334349b405782ddcaf0028d4b5df4088345fba2efe",
+      "locale": "en",
+      "passed": 3,
+      "total": 6,
+      "median_transcription_ms": 302.3,
+      "mean_transcription_ms": 308.169,
+      "wall_ms": 2069.875,
+      "cases": [
+        {
+          "id": "pause",
+          "passed": false,
+          "text": "cause.",
+          "expected": {
+            "status": "recognized",
+            "intent": {
+              "action": "pause"
+            }
+          },
+          "actual": {
+            "status": "unrecognized"
+          },
+          "transcription_ms": 354.441,
+          "audio_sha256": "7e4866fcb8aa99c9db38193c9d9a27dd27d081ec78d7a3d13af55d8171f890dc"
+        },
+        {
+          "id": "next",
+          "passed": true,
+          "text": "Next track.",
+          "expected": {
+            "status": "recognized",
+            "intent": {
+              "action": "next"
+            }
+          },
+          "actual": {
+            "status": "recognized",
+            "intent": {
+              "action": "next"
+            }
+          },
+          "transcription_ms": 289.568,
+          "audio_sha256": "ac5e5f44260c911e9ac7aafb2a1ae3c9444765ef2b247b92dea138c72378c315"
+        },
+        {
+          "id": "artist",
+          "passed": false,
+          "text": "Play Lincoln Park.",
+          "expected": {
+            "status": "recognized",
+            "intent": {
+              "query": "Linkin Park",
+              "kind": "auto",
+              "artist": null,
+              "title": null
+            }
+          },
+          "actual": {
+            "status": "recognized",
+            "intent": {
+              "query": "Lincoln Park",
+              "kind": "auto",
+              "artist": null,
+              "title": null
+            }
+          },
+          "transcription_ms": 295.078,
+          "audio_sha256": "6a34de297c24ca94ce712439cb51f70220abf4c98641a3b65f0a20441051abc2"
+        },
+        {
+          "id": "track",
+          "passed": false,
+          "text": "Play Lincoln Park NOM.",
+          "expected": {
+            "status": "recognized",
+            "intent": {
+              "query": "Linkin Park Numb",
+              "kind": "auto",
+              "artist": null,
+              "title": null
+            }
+          },
+          "actual": {
+            "status": "recognized",
+            "intent": {
+              "query": "Lincoln Park NOM",
+              "kind": "auto",
+              "artist": null,
+              "title": null
+            }
+          },
+          "transcription_ms": 305.326,
+          "audio_sha256": "a3d521e8376cb3c544c67d3842bf3f9884eb506551f2dfe7d8e81fa56d0b7364"
+        },
+        {
+          "id": "language",
+          "passed": true,
+          "text": "Switch Language to Russian.",
+          "expected": {
+            "status": "recognized",
+            "intent": {
+              "locale": "ru"
+            }
+          },
+          "actual": {
+            "status": "recognized",
+            "intent": {
+              "locale": "ru"
+            }
+          },
+          "transcription_ms": 301.32,
+          "audio_sha256": "264c85bdf5143d5e3136d4d3dce04a4ee0402575bfed86dc77267e041e22808d"
+        },
+        {
+          "id": "other",
+          "passed": true,
+          "text": "The weather is nice today.",
+          "expected": {
+            "status": "unrecognized"
+          },
+          "actual": {
+            "status": "unrecognized"
+          },
+          "transcription_ms": 303.28,
+          "audio_sha256": "311b24e19ea9c820b909c8cd7f791e52c88f2ba7d735d3767490e39e7bb65566"
+        }
+      ]
+    },
+    {
+      "model": "small",
+      "model_sha256": "1be3a9b2063867b937e64e2ec7483364a79917e157fa98c5d94b5c1fffea987b",
+      "locale": "en",
+      "passed": 4,
+      "total": 6,
+      "median_transcription_ms": 861.102,
+      "mean_transcription_ms": 888.162,
+      "wall_ms": 5574.917,
+      "cases": [
+        {
+          "id": "pause",
+          "passed": true,
+          "text": "Pause",
+          "expected": {
+            "status": "recognized",
+            "intent": {
+              "action": "pause"
+            }
+          },
+          "actual": {
+            "status": "recognized",
+            "intent": {
+              "action": "pause"
+            }
+          },
+          "transcription_ms": 1061.379,
+          "audio_sha256": "7e4866fcb8aa99c9db38193c9d9a27dd27d081ec78d7a3d13af55d8171f890dc"
+        },
+        {
+          "id": "next",
+          "passed": true,
+          "text": "Next track.",
+          "expected": {
+            "status": "recognized",
+            "intent": {
+              "action": "next"
+            }
+          },
+          "actual": {
+            "status": "recognized",
+            "intent": {
+              "action": "next"
+            }
+          },
+          "transcription_ms": 815.463,
+          "audio_sha256": "ac5e5f44260c911e9ac7aafb2a1ae3c9444765ef2b247b92dea138c72378c315"
+        },
+        {
+          "id": "artist",
+          "passed": false,
+          "text": "Play Lincoln Park.",
+          "expected": {
+            "status": "recognized",
+            "intent": {
+              "query": "Linkin Park",
+              "kind": "auto",
+              "artist": null,
+              "title": null
+            }
+          },
+          "actual": {
+            "status": "recognized",
+            "intent": {
+              "query": "Lincoln Park",
+              "kind": "auto",
+              "artist": null,
+              "title": null
+            }
+          },
+          "transcription_ms": 851.976,
+          "audio_sha256": "6a34de297c24ca94ce712439cb51f70220abf4c98641a3b65f0a20441051abc2"
+        },
+        {
+          "id": "track",
+          "passed": false,
+          "text": "Play Linkin Park Nom",
+          "expected": {
+            "status": "recognized",
+            "intent": {
+              "query": "Linkin Park Numb",
+              "kind": "auto",
+              "artist": null,
+              "title": null
+            }
+          },
+          "actual": {
+            "status": "recognized",
+            "intent": {
+              "query": "Linkin Park Nom",
+              "kind": "auto",
+              "artist": null,
+              "title": null
+            }
+          },
+          "transcription_ms": 877.948,
+          "audio_sha256": "a3d521e8376cb3c544c67d3842bf3f9884eb506551f2dfe7d8e81fa56d0b7364"
+        },
+        {
+          "id": "language",
+          "passed": true,
+          "text": "Switch language to Russian.",
+          "expected": {
+            "status": "recognized",
+            "intent": {
+              "locale": "ru"
+            }
+          },
+          "actual": {
+            "status": "recognized",
+            "intent": {
+              "locale": "ru"
+            }
+          },
+          "transcription_ms": 852.052,
+          "audio_sha256": "264c85bdf5143d5e3136d4d3dce04a4ee0402575bfed86dc77267e041e22808d"
+        },
+        {
+          "id": "other",
+          "passed": true,
+          "text": "The weather is nice today.",
+          "expected": {
+            "status": "unrecognized"
+          },
+          "actual": {
+            "status": "unrecognized"
+          },
+          "transcription_ms": 870.152,
+          "audio_sha256": "311b24e19ea9c820b909c8cd7f791e52c88f2ba7d735d3767490e39e7bb65566"
+        }
+      ]
+    }
+  ]
+}

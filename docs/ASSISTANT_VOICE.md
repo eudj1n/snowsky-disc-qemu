@@ -41,6 +41,25 @@ The small-model pass measured roughly 0.84–1.28 seconds per transcription on t
 host, including subprocess/model startup. These are a few sequential samples,
 not a latency benchmark or Pi estimate.
 
+The owner-requested [base/small comparison rerun](../research/disc_assistant/assistant/voice/evaluations/2026-09-18-base-small-comparison.json)
+used those exact saved WAVs and model hashes, without resynthesis or changes to
+the corpus, interpreter or device configuration. It confirmed the same outcomes:
+
+| Model | RU cases passed | EN cases passed | Median RU STT | Median EN STT |
+| --- | --- | --- | --- | --- |
+| `base` | 3/6 | 3/6 | 347 ms | 302 ms |
+| `small` | 4/6 | 4/6 | 960 ms | 861 ms |
+
+This is one sequential pass per model/locale, with subprocess/model startup
+included and no controlled cache state. Base was about 2.8 times faster in this
+pass but additionally failed Russian language switching and English pause.
+Both models still failed the authored artist/track reference expectations.
+The metric is expected-intention/reference agreement, not word error rate or
+measured catalog selection: Cyrillic transliteration versus a Latin canonical name
+counts as a mismatch even when an alias could resolve it later. This tiny synthetic
+set does not justify replacing small on quality grounds. Base remains an explicit
+lower-latency option; test representative human speech and catalog aliases next.
+
 An additional native STT → interpreter → Controller test sent exactly one pause
 to the synthetic TCP DISC peer and received a confirmed paused outcome, using
 one handshake. No physical player or real microphone was used. **216 prototype
