@@ -1,0 +1,8 @@
+{
+  "version": 1,
+  "name": "commands-v2",
+  "sha256": "654d85b2ac9a37242e0acb7c1a3a7a914d423d8e292aa23f90ab507070bd4310",
+  "description": "Assistant-authored text, not independent human annotations. Train/development/test frozen before supervised v2 evaluation; prior examined material and native STT of synthetic audio are regression only. Multiaction/unsupported/capability questions reject. No execution promotion.",
+  "authored_by": "assistant",
+  "selection": "development only; never tune on test/regression"
+}
