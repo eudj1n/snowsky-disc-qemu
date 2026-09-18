@@ -619,3 +619,8 @@ and the 330 Python / 37 JavaScript firmware-free project suite pass. A real PTY
 with a synthetic TCP peer verifies completion, history suggestions, multiline help,
 screen clearing and input cancellation without reconnecting. No firmware/runtime
 behavior changed; no new physical playback acceptance is claimed.
+
+The terminal also supports configurable prompt/input/result/error/warning and
+suggestion colors via `[terminal]`, with a `NO_COLOR` override. Terminal formatting
+does not alter command parsing, journal evidence or redirected JSON. Font family
+and size remain terminal-application settings.

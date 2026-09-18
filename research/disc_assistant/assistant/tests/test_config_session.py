@@ -27,10 +27,14 @@ class ConfigSessionTests(unittest.TestCase):
         self.assertEqual((self.config.tcp_port, self.config.http_port), (12100, 12103))
         for extra in ('[sync]\npage_size=201', '[sync]\npage_size=true',
                       '[aliases.artists]\nx="bad"', '[typesense]\nprotocol="ftp"',
-                      '[typesense]\nprot="http"', '[unknown]\nx=1'):
+                      '[typesense]\nprot="http"', '[unknown]\nx=1',
+                      '[terminal]\ncolor="yes"', '[terminal]\ninput=12', '[terminal]\nfont="Mono"'):
             self.path.write_text(self.base + extra)
             with self.subTest(extra=extra), self.assertRaises(ValueError):
                 load(self.path)
+
+        self.path.write_text(self.base + '[terminal]\ncolor=false\nprompt="#44aaff bold"')
+        self.assertEqual(load(self.path).terminal, {'color': False, 'prompt': '#44aaff bold'})
 
     def test_data_cannot_live_in_checkout(self):
         self.path.write_text(self.base.split('[storage]')[0] + f'[storage]\ndata_dir="{Path.cwd()}"\n')

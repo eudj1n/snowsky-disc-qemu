@@ -1,5 +1,5 @@
 """Explicit prototype configuration; no environment or filesystem work at import."""
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 import os
 from pathlib import Path
 import sys
@@ -29,6 +29,7 @@ class Config:
     journal_enabled: bool = True
     journal_retention_days: int = 90
     journal_max_requests: int = 10000
+    terminal: dict = field(default_factory=dict)
 
 
 def default_data_dir():
@@ -61,7 +62,8 @@ def load(path):
                'aliases': {'artists', 'titles'},
                'language': {'enabled'},
                'playback': {'continuous_context'},
-               'journal': {'enabled', 'retention_days', 'max_requests'}}
+               'journal': {'enabled', 'retention_days', 'max_requests'},
+               'terminal': {'color', 'prompt', 'input', 'result', 'error', 'warning', 'suggestion'}}
     if set(raw) - set(allowed):
         raise ValueError('unknown configuration section')
     for section, keys in allowed.items():
@@ -77,6 +79,12 @@ def load(path):
     journal_enabled = journal.get('enabled', True)
     if type(journal_enabled) is not bool:
         raise ValueError('journal.enabled must be a boolean')
+    terminal = raw.get('terminal', {})
+    if type(terminal.get('color', True)) is not bool:
+        raise ValueError('terminal.color must be a boolean')
+    for key, value in terminal.items():
+        if key != 'color':
+            text(value, f'terminal.{key}')
     for field, mapping in aliases.items():
         if not isinstance(mapping, dict):
             raise ValueError(f'aliases.{field} must be a table')
@@ -108,4 +116,4 @@ def load(path):
         number(sync.get('max_tracks', 100000), 'max_tracks', 1, 1000000),
         number(sync.get('max_requests', 10000), 'max_requests', 2, 100000), languages, continuous,
         journal_enabled, number(journal.get('retention_days', 90), 'journal.retention_days', 1, 3650),
-        number(journal.get('max_requests', 10000), 'journal.max_requests', 1, 1000000))
+        number(journal.get('max_requests', 10000), 'journal.max_requests', 1, 1000000), terminal)

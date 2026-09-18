@@ -30,6 +30,18 @@ max_requests = 10000
 # Per network operation; a complete import can take much longer.
 timeout = 8
 
+[terminal]
+# Font family/size are configured in your terminal application.
+# ANSI colors follow its palette. Hex colors and bold/italic/underline also work.
+# NO_COLOR=1 disables colors; pipes and TERM=dumb always use plain output.
+color = true
+prompt = "ansicyan bold"
+input = "ansiyellow"
+result = "ansigreen"
+error = "ansired bold"
+warning = "ansiyellow bold"
+suggestion = "ansibrightblack italic"
+
 [playback]
 # Opt in to setting repeat-list (3) before music selection. This persists on DISC.
 # False preserves the player's existing mode. Controls never change it.

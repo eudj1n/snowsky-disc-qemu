@@ -94,6 +94,31 @@ There is no local IPC command forwarding. One-shot failures exit nonzero; consol
 command failures are printed and leave the input loop open. Reconnect restores
 observations only and never resubmits a failed command.
 
+### Terminal appearance
+
+By default, the prompt is bold cyan, input yellow, results green, errors red,
+uncertain outcomes yellow and history suggestions muted/italic. Customize these
+roles in your existing TOML configuration, then restart the console:
+
+```toml
+[terminal]
+color = true
+prompt = "ansicyan bold"
+input = "ansiyellow"
+result = "ansigreen"
+error = "ansired bold"
+warning = "ansiyellow bold"
+suggestion = "ansibrightblack italic"
+```
+
+Styles use [prompt_toolkit style syntax](https://python-prompt-toolkit.readthedocs.io/en/stable/pages/advanced_topics/styling.html):
+ANSI palette names or HEX colors such as `#44aaff`, with optional `bold`, `italic`
+or `underline`. ANSI colors follow your terminal's palette; the terminal controls
+font family and font size. `[terminal].color = false` or `NO_COLOR=1` disables
+colors. Formatting affects only terminal presentation; stored journal data and
+JSON returned to scripts stay unchanged. JSON keys/values are not individually
+highlighted in this first theme; each result uses its status color.
+
 ## Music requests
 
 | English / Russian example | Meaning |

@@ -1,19 +1,33 @@
 """Terminal editing only; all commands still pass through Application.request."""
+import os
 import shlex
 import sqlite3
 
-from prompt_toolkit import PromptSession
+from prompt_toolkit import PromptSession, print_formatted_text
 from prompt_toolkit.auto_suggest import AutoSuggestFromHistory
 from prompt_toolkit.completion import Completer, Completion
+from prompt_toolkit.formatted_text import FormattedText
 from prompt_toolkit.history import InMemoryHistory
+from prompt_toolkit.lexers import SimpleLexer
+from prompt_toolkit.output import ColorDepth
 from prompt_toolkit.patch_stdout import patch_stdout
 from prompt_toolkit.shortcuts import clear
+from prompt_toolkit.styles import Style
 
 from research.disc_assistant.assistant.journal import console_history, recallable
 from research.disc_assistant.assistant.languages import LOCALES
 
 COMMANDS = ('/connect', '/disconnect', '/status', '/queue', '/sync', '/index',
             '/search', '/rank', '/language', '/help', '/history', '/clear', '/exit')
+
+DEFAULT_STYLES = {
+    'prompt': 'ansicyan bold',
+    'input': 'ansiyellow',
+    'result': 'ansigreen',
+    'error': 'ansired bold',
+    'warning': 'ansiyellow bold',
+    'suggestion': 'ansibrightblack italic',
+}
 
 
 class CommandCompleter(Completer):
@@ -55,9 +69,20 @@ class Terminal:
         self.config = config
         self.history_error_reported = False
         self.history = RecallHistory()
+        colors = config.terminal.get('color', True) and not os.environ.get('NO_COLOR')
+        styles = {key: config.terminal.get(key, value) for key, value in DEFAULT_STYLES.items()}
+        styles['auto-suggestion'] = styles.pop('suggestion')
+        self.style = Style.from_dict(styles if colors else {})
+        self.color_depth = None if colors else ColorDepth.DEPTH_1_BIT
         self.session = PromptSession(history=self.history, completer=CommandCompleter(rules),
             auto_suggest=AutoSuggestFromHistory(), complete_while_typing=False,
+            style=self.style, color_depth=self.color_depth, lexer=SimpleLexer('class:input'),
             **session_options)
+
+    def write(self, text, role='result'):
+        # Plain text fragments, never HTML/ANSI interpretation of device metadata.
+        print_formatted_text(FormattedText([(f'class:{role}', text)]), style=self.style,
+                             color_depth=self.color_depth, output=self.session.app.output)
 
     def read(self):
         # Refresh after every completed command, including journal clear/prune.
@@ -68,13 +93,13 @@ class Terminal:
                 strings = console_history(self.config)
             except (OSError, ValueError, sqlite3.Error):
                 if not self.history_error_reported:
-                    print('Saved input history unavailable; using session history.')
+                    self.write('Saved input history unavailable; using session history.', 'warning')
                     self.history_error_reported = True
         self.history = RecallHistory(strings)
         self.session.history = self.history
         self.session.default_buffer.history = self.history
         with patch_stdout():
-            return self.session.prompt('disc> ')
+            return self.session.prompt([('class:prompt', 'disc> ')])
 
     def after_command(self, line, result):
         if result and result.get('status') == 'clear_screen':

@@ -84,6 +84,9 @@ history file. Disabling journaling keeps only session history. `/history clear
 Redirected input/output and `TERM=dumb` keep the plain scripting interface.
 After updating an existing checkout, rerun `run.sh setup` to install new pinned
 dependencies, then restart `listen`; existing config and keys are preserved.
+Prompt, input, results and errors use separate colors. The optional `[terminal]`
+section customizes styles; `NO_COLOR=1` disables colors. Font family/size belong
+to your terminal's settings. See [terminal appearance](../../docs/ASSISTANT_COMMANDS.md#terminal-appearance).
 
 The application owns one TCP socket and continuously receives events, including
 while waiting for input or doing HTTP/search work. Unexpected disconnects trigger

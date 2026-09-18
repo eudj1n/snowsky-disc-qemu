@@ -195,22 +195,30 @@ class Application:
 
 def run(config, *, bootstrap=False, input_fn=None, output=print, source='interactive'):
     interactive_output = sys.stdin.isatty() and sys.stdout.isatty()
+    terminal = None
+    def write(text, role='result'):
+        if terminal is not None and output is print:
+            terminal.write(text, role)
+        else:
+            output(text)
+
     def emit(result):
         if result is not None:
+            role = ('error' if result.get('status') in ('error', 'not_sent', 'not_found')
+                    else 'warning' if result.get('status') == 'uncertain' else 'result')
             if interactive_output and isinstance(result.get('help'), str):
-                output(result['help'])
+                write(result['help'], role)
             else:
-                output(json.dumps(result, ensure_ascii=False, indent=2))
+                write(json.dumps(result, ensure_ascii=False, indent=2), role)
 
     with Application(config, source=source) as app:
-        terminal = None
         if input_fn is None and interactive_output and os.environ.get('TERM') != 'dumb':
             from research.disc_assistant.assistant.terminal import Terminal
             terminal = Terminal(app.config, lambda: app.rules)
         read_input = input_fn or input
         try:
             app.session.wait_ready(config.timeout * 4 + 1)
-            output('Persistent DISC console. /help lists commands; /exit releases the connection.')
+            write('Persistent DISC console. /help lists commands; /exit releases the connection.')
             emit(app.status())
             if bootstrap:
                 try:
@@ -219,7 +227,7 @@ def run(config, *, bootstrap=False, input_fn=None, output=print, source='interac
                     if imported.get('status') not in ('not_sent', 'uncertain'):
                         emit(app.request('/index', source='startup', reuse_index=True))
                 except Exception as exc:
-                    output(f'Startup search preparation unavailable ({type(exc).__name__}); controls remain available.')
+                    write(f'Startup search preparation unavailable ({type(exc).__name__}); controls remain available.', 'warning')
             while True:
                 try:
                     try:
@@ -243,5 +251,5 @@ def run(config, *, bootstrap=False, input_fn=None, output=print, source='interac
                           'request_id': getattr(exc, 'request_id', None),
                           'hint': 'check search configuration; /status and playback controls remain available'})
         except (EOFError, KeyboardInterrupt):
-            output('Console closed. In-flight writes are not replayed; inspect player state if interrupted.')
+            write('Console closed. In-flight writes are not replayed; inspect player state if interrupted.')
     return 0
