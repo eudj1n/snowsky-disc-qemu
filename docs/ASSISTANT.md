@@ -698,3 +698,25 @@ provider substitution, invalid output, unavailability/cancellation, single-pass
 interpretation, reconnect rejection, settings migration and independent metadata
 version labels. Controller and firmware code are unchanged; no microphone,
 external-model or physical speech acceptance is claimed.
+
+## Request timing and debug traces, 2026-09-18
+
+Traced application responses now include `timing.total_ms` and `request_id`,
+including failures and requests with journaling disabled. History commands have
+timing without recording themselves. Timing uses a monotonic clock and ends at
+response construction, before final persistence/output; launcher startup and input
+editing are excluded. Saved outcomes retain the timing without a schema change.
+
+`/debug [on|off]` controls live structured traces for the current console session;
+global `--debug` enables them for `start`, `listen` or a one-shot application command.
+CLI/redirected traces use stderr, preserving one-shot JSON stdout. Terminal traces
+have a configurable color. Debug output failures do not interrupt/replay actions.
+Search diagnostics expose snapshot size, resolved intent, local matches, actual
+Typesense queries and retrieval/filtering counts, without collecting raw packets
+or SDK exception bodies. See [commands](ASSISTANT_COMMANDS.md#timing-and-live-debug-traces).
+
+Validation: 202 prototype tests pass, covering monotonic timing, saved outcomes,
+disabled journals, errors, history clearing, session-only toggles, bounded and
+escaped trace output, stdout/stderr separation, output failures and local/search
+matching diagnostics. Controller and firmware are unchanged. Physical diagnosis
+of the reported artist lookup remains to be done against the owner's catalog.

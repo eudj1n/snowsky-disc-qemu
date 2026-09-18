@@ -141,3 +141,9 @@ class LauncherTests(unittest.TestCase):
         self.assertEqual(result.returncode, 0, result.stderr)
         self.assertIn('setup', result.stdout)
         self.assertIn('search QUERY', result.stdout)
+
+    def test_debug_is_forwarded_before_application_command(self):
+        self.initialize()
+        with patch.object(launcher.subprocess, 'run', return_value=Mock(returncode=0)) as run:
+            self.assertEqual(launcher.main(['--config', str(self.config), '--debug', 'rank', 'Pause']), 0)
+        self.assertEqual(run.call_args.args[0][-3:], ['--debug', 'rank', 'Pause'])

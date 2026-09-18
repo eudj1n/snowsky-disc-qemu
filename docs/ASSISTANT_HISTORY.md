@@ -24,7 +24,7 @@ marked `scheduled` requests, and automatic `startup` preparation.
 | Execution | Start of the operation, linked operation ID, reported mutation attempt, observed result/state and separate mode-change outcome when available |
 | Failure | Stage, category and exception class, or `not_sent`/`uncertain` operation outcome; playback confirmation retains a compact last observation; raw exception bodies are excluded |
 | User response | Generated code/text/language, speech eligibility and reserved dialogue flag; request context pins policy, version and template hash |
-| Timing | Per-event UTC timestamp and elapsed milliseconds from request start |
+| Timing | Per-event UTC timestamp and cumulative elapsed milliseconds; final outcome includes `timing.total_ms` |
 
 `rank` and `search` retain candidates without claiming playback selection. A
 zero-result search is identifiable by `found=0`; music ranking returns `not_found`.
@@ -109,6 +109,21 @@ preferences and the catalog. It requires the literal `clear --yes` command.
 Blank console input is ignored. Launcher infrastructure (`setup`, `up`, `down`,
 tests), invalid CLI syntax/configuration before application startup, and raw
 transport pushes are outside this request journal.
+
+All traced results now carry a `request_id` and monotonic `timing.total_ms`,
+including history operations and requests with collection disabled. An ID does
+not guarantee a saved record. Timing ends after response construction, before
+final outcome persistence and output; earlier journal/debug work is included.
+Old records are not backfilled. No schema migration is needed: timing is part of
+the outcome JSON, and event timestamps retain their existing schema.
+
+`/debug on|off` streams the same bounded event evidence for the current console;
+`--debug` enables it at application startup or for a one-shot command. It works
+independently of collection and does not create another log file. One-shot and
+redirected output uses stderr. Search diagnostics also record catalog size, local
+matches, retrieval and filtering counts. Exception bodies, API keys and raw
+packets are excluded; queries and candidate metadata remain personal data.
+See [timing and debug commands](ASSISTANT_COMMANDS.md#timing-and-live-debug-traces).
 
 TOML defaults, also applied to older configurations:
 

@@ -111,6 +111,7 @@ def main(argv=None):
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--config', default=os.environ.get('DISC_ASSISTANT_CONFIG', '~/disc-assistant.toml'))
     parser.add_argument('--language', help='select and persist one interaction locale')
+    parser.add_argument('--debug', action='store_true', help='stream application request traces')
     parser.add_argument('--source', choices=('cli', 'scheduled'))
     parser.add_argument('command', choices=('setup', 'up', 'down', 'start', 'listen', 'language', 'response', 'locales', 'history', 'sync', 'status', 'queue', 'index', 'search', 'rank', 'ask', 'test', 'check'))
     parser.add_argument('arguments', nargs=argparse.REMAINDER)
@@ -120,6 +121,8 @@ def main(argv=None):
         config_path = Path(os.environ.get('DISC_ASSISTANT_CALLER_DIR', os.getcwd())) / config_path
     config_path = config_path.resolve()
     try:
+        if args.debug and args.command in ('setup', 'up', 'down', 'test', 'check'):
+            raise ValueError('--debug applies to application commands, such as start/listen/ask')
         if args.language:
             from research.disc_assistant.assistant.responses import validate_locale
             validate_locale(args.language)
@@ -174,6 +177,7 @@ def main(argv=None):
         return subprocess.run([sys.executable, '-m', 'research.disc_assistant.assistant',
                                '--config', str(config_path),
                                *(['--source', args.source] if args.source else []),
+                               *(['--debug'] if args.debug else []),
                                *(['--language', args.language] if args.language else []), args.command, *args.arguments],
                               cwd=ROOT, env=env).returncode
     except KeyboardInterrupt:

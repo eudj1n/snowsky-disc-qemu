@@ -14,8 +14,8 @@ from research.disc_assistant.assistant.languages import load_languages
 from research.disc_assistant.assistant.interpreter import InterpretationContext, interpret_request
 from research.disc_assistant.assistant.live import DeviceSession
 from research.disc_assistant.assistant.preferences import effective_config, language_command, response_command
-from research.disc_assistant.assistant.journal import Trace, history_command
-from research.disc_assistant.assistant.responses import Responses, attach_response, exception_result, validate_locales
+from research.disc_assistant.assistant.journal import Trace, history_command, debug_line, debug_stderr
+from research.disc_assistant.assistant.responses import Responses, exception_result, validate_locales
 from research.disc_assistant.assistant.playback import execute as play
 from research.disc_assistant.assistant.queue import observe as queue
 from research.disc_assistant.assistant.ranking import rank
@@ -29,6 +29,7 @@ Commands use one active locale; /language CODE changes input and replies.
 /connect  /disconnect  /device  /status  /queue  /sync  /index
 /search TEXT  /rank TEXT  /language [CODE|reset]  /help  /clear  /exit
 /response [mode none|errors|all|reset]  /locales
+/debug [on|off]  Stream request traces for this console session
 /history [LIMIT|show ID|export PATH|prune|clear --yes]
 Terminal: Up/Down history, Ctrl-R search, Tab completion, Right accepts a suggestion,
 Ctrl-L clears the screen, Ctrl-C cancels input, Ctrl-D on empty input exits.
@@ -38,10 +39,12 @@ Offline run.sh search/index/status remain available while this console is open.'
 
 
 class Application:
-    def __init__(self, config: Config, *, session_factory=DeviceSession, source='interactive', interpreter=None, language=None):
+    def __init__(self, config: Config, *, session_factory=DeviceSession, source='interactive', interpreter=None, language=None,
+                 debug=False, debug_output=debug_stderr):
         self.base_config, self.session_factory = config, session_factory
         self.config = effective_config(config, language=language)
         self.interpreter = interpreter
+        self.debug, self.debug_output = debug, debug_output
         self.rules = load_languages((self.config.locale,))
         self.session_id, self.source = uuid4().hex, source
 
@@ -127,17 +130,21 @@ class Application:
     def request(self, line, *, source=None, reuse_index=False):
         if not line.strip():
             return None
-        # Inspection/export/clear must not reinsert data or journal the export path.
-        if line.strip().split(maxsplit=1)[0] == '/history':
-            return attach_response(self.config, history_command(self.config, shlex.split(line.strip())[1:]),
-                                   command='history', source=source or self.source)
         command = line.strip().split(maxsplit=1)[0][1:] if line.strip().startswith('/') else 'ask'
-        with Trace(self.config, command, line, source=source or self.source, session_id=self.session_id) as trace:
+        # History still gets timing, but never persists inspection/export/clear.
+        with Trace(self.config, command, line, source=source or self.source, session_id=self.session_id,
+                   event_sink=self.trace_event, persist=command != 'history') as trace:
+            if command == 'history':
+                return trace.finish(history_command(self.config, shlex.split(line.strip())[1:]))
             if hasattr(self, 'session'):
                 state = self.session.status()
                 trace.event('connection', {k: state[k] for k in ('generation', 'connection')})
             trace.event('parse', {})
             return trace.finish(self._request(line, trace, reuse_index=reuse_index))
+
+    def trace_event(self, event):
+        if self.debug:
+            self.debug_output(event)
 
     def interpret(self, text, trace):
         playback = 'unknown'
@@ -164,6 +171,12 @@ class Application:
         if line.startswith('/'):
             command, _, text = line[1:].partition(' ')
             text = text.strip()
+            if command == 'debug':
+                if text not in ('', 'on', 'off'):
+                    raise ValueError('/debug accepts on or off')
+                if text:
+                    self.debug = text == 'on'
+                return {'debug': {'enabled': self.debug, 'scope': 'session'}}
             if command == 'language':
                 return self.language(text.split(), trace)
             if command == 'response':
@@ -237,7 +250,8 @@ class Application:
         return self.device_call(execute)
 
 
-def run(config, *, bootstrap=False, input_fn=None, output=print, source='interactive', interpreter=None, language=None):
+def run(config, *, bootstrap=False, input_fn=None, output=print, source='interactive', interpreter=None, language=None,
+        debug=False):
     interactive_output = sys.stdin.isatty() and sys.stdout.isatty()
     terminal = None
     def write(text, role='result'):
@@ -255,7 +269,14 @@ def run(config, *, bootstrap=False, input_fn=None, output=print, source='interac
             else:
                 write(json.dumps(result, ensure_ascii=False, indent=2), role)
 
-    with Application(config, source=source, interpreter=interpreter, language=language) as app:
+    def emit_debug(event):
+        if interactive_output:
+            write(debug_line(event), 'debug')
+        else:
+            debug_stderr(event)
+
+    with Application(config, source=source, interpreter=interpreter, language=language,
+                     debug=debug, debug_output=emit_debug) as app:
         if input_fn is None and interactive_output and os.environ.get('TERM') != 'dumb':
             from research.disc_assistant.assistant.terminal import Terminal
             terminal = Terminal(app.config, lambda: app.rules)

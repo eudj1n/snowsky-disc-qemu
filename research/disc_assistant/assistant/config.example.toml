@@ -48,6 +48,7 @@ input = "ansiyellow"
 result = "ansigreen"
 error = "ansired bold"
 warning = "ansiyellow bold"
+debug = "ansibrightblack"
 suggestion = "ansibrightblack italic"
 
 [playback]

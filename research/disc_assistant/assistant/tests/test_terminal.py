@@ -81,6 +81,8 @@ class TerminalTests(unittest.TestCase):
             return [c.text for c in completer.get_completions(Document(text), CompleteEvent())]
         self.assertEqual(options('/sta'), ['/status'])
         self.assertEqual(options('/dev'), ['/device'])
+        self.assertEqual(options('/deb'), ['/debug'])
+        self.assertEqual(options('/debug o'), ['off', 'on'])
         self.assertIn('ru', options('/language '))
         self.assertNotIn('ru', options('/language ru '))
         self.assertEqual(options('/history pr'), ['prune'])

@@ -7,7 +7,7 @@ venv_python="$prototype_dir/assistant/.venv/bin/python"
 
 if [[ ${1:-help} == help || ${1:-} == --help || ${1:-} == -h ]]; then
     cat <<'HELP'
-Usage: research/disc_assistant/run.sh [--config PATH] [--source cli|scheduled] [--language CODE] COMMAND [ARGS]
+Usage: research/disc_assistant/run.sh [--config PATH] [--source cli|scheduled] [--language CODE] [--debug] COMMAND [ARGS]
 
   setup          Install dependencies; create missing config and private search key
   up             Start local Typesense and wait for readiness
@@ -44,6 +44,7 @@ launcher_args=("$@")
 argument_index=0
 while (( argument_index < ${#launcher_args[@]} )); do
     case "${launcher_args[$argument_index]}" in
+        --debug) argument_index=$((argument_index + 1)) ;;
         --config|--source|--language) argument_index=$((argument_index + 2)) ;;
         --config=*|--source=*|--language=*) argument_index=$((argument_index + 1)) ;;
         *) command_name="${launcher_args[$argument_index]}"; break ;;

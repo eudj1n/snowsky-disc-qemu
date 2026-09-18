@@ -68,7 +68,7 @@ def load(path):
                'dialogue': {'enabled'},
                'playback': {'continuous_context'},
                'journal': {'enabled', 'retention_days', 'max_requests'},
-               'terminal': {'color', 'prompt', 'input', 'result', 'error', 'warning', 'suggestion'}}
+               'terminal': {'color', 'prompt', 'input', 'result', 'error', 'warning', 'suggestion', 'debug'}}
     if set(raw) - set(allowed):
         raise ValueError('unknown configuration section')
     for section, keys in allowed.items():

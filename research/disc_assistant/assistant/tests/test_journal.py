@@ -218,7 +218,7 @@ class JournalTests(unittest.TestCase):
         config = replace(self.config, journal_enabled=False)
         with Trace(config, 'ask', 'Pause') as trace:
             result = trace.finish({'status': 'planned'})
-        self.assertNotIn('request_id', result)
+        self.assertEqual(result['request_id'], trace.id)
         self.assertFalse(config.data_dir.exists())
 
     def test_retention_prunes_completed_entries_and_expired_pending_with_cascade(self):

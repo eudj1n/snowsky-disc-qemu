@@ -18,7 +18,7 @@ from research.disc_assistant.assistant.journal import console_history, recallabl
 from research.disc_assistant.assistant.responses import MODES, available_reply_languages
 
 COMMANDS = ('/connect', '/disconnect', '/device', '/status', '/queue', '/sync', '/index',
-            '/search', '/rank', '/language', '/response', '/locales', '/help', '/history', '/clear', '/exit')
+            '/search', '/rank', '/language', '/response', '/locales', '/help', '/history', '/debug', '/clear', '/exit')
 
 DEFAULT_STYLES = {
     'prompt': 'ansicyan bold',
@@ -26,6 +26,7 @@ DEFAULT_STYLES = {
     'result': 'ansigreen',
     'error': 'ansired bold',
     'warning': 'ansiyellow bold',
+    'debug': 'ansibrightblack',
     'suggestion': 'ansibrightblack italic',
 }
 
@@ -39,7 +40,10 @@ class CommandCompleter(Completer):
             return
         text = document.text_before_cursor.lstrip()
         prefix = text
-        if text.startswith('/language '):
+        if text.startswith('/debug '):
+            prefix = text[len('/debug '):]
+            options = ('on', 'off')
+        elif text.startswith('/language '):
             prefix = text[len('/language '):]
             options = available_reply_languages() + ['reset']
         elif text.startswith('/response '):

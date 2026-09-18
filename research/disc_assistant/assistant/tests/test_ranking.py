@@ -102,6 +102,26 @@ class RankingTests(unittest.IsolatedAsyncioTestCase):
         result = await self.ranked('Play Linkin Park TotallyMissing')
         self.assertEqual(result['candidates'], [])
 
+    async def test_trace_distinguishes_missing_artist_from_exact_local_match(self):
+        trace = Mock()
+        result = await rank(self.config, self.store, self.search, Intent('Макс Корж'), trace=trace)
+        self.assertEqual(result['status'], 'not_found')
+        events = {call.args[0]: call.args[1] for call in trace.event.call_args_list}
+        self.assertEqual(events['catalog_loaded']['track_count'], len(TRACKS))
+        self.assertEqual(events['local_matches']['exact_artist_count'], 0)
+        self.assertEqual(events['local_matches']['artist_candidate_count'], 0)
+        self.assertEqual(events['local_track_matches']['exact_track_count'], 0)
+        self.assertEqual(events['search_query']['query'], 'Макс Корж')
+        self.assertEqual(events['retrieval_filtered']['found'], 0)
+        trace.reset_mock()
+        self.search.search.reset_mock()
+        await rank(self.config, self.store, self.search, Intent('Linkin Park'), trace=trace)
+        events = {call.args[0]: call.args[1] for call in trace.event.call_args_list}
+        self.assertEqual(events['local_matches']['exact_artists'], ['Linkin Park'])
+        self.assertFalse(events['local_matches']['track_search_enabled'])
+        self.assertNotIn('search_query', events)
+        self.search.search.assert_not_called()
+
     async def test_fuzzy_artist_rank_and_same_name_explicit_track_override(self):
         result = await self.ranked('Play artist Linkn Park')
         self.assertEqual(result['candidates'][0]['artist'], 'Linkin Park')

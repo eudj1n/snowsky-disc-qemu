@@ -110,6 +110,9 @@ async def rank(config, store, search, intent, *, trace=None):
     rules = load_languages((config.locale,))
     head = store.verify_index(config.device_key, search.signature)
     documents = store.documents(head['generation'])
+    if trace:
+        trace.event('catalog_loaded', {'track_count': len(documents),
+                                      'artist_count': len({d['artist'] for d in documents})})
     intent = infer(intent, documents, config.aliases)
     if trace:
         from dataclasses import asdict
@@ -122,6 +125,15 @@ async def rank(config, store, search, intent, *, trace=None):
     else:
         known = set()
     candidates = score_artists(intent, documents, config.aliases) if intent.kind != 'track' else []
+    if trace:
+        artist_query = normalized(intent.artist if intent.artist is not None else intent.query)
+        exact_artists = sorted({d['artist'] for d in documents if artist_query
+                                in names(d['artist'], config.aliases.get('artists', {}))})
+        trace.event('local_matches', {'scoped_track_count': len(documents),
+                    'exact_artist_count': len(exact_artists), 'exact_artists': exact_artists[:10],
+                    'exact_artists_truncated': len(exact_artists) > 10,
+                    'artist_candidate_count': len(candidates),
+                    'track_search_enabled': intent.kind != 'artist'})
     retrieval = {'source': 'sqlite', 'truncated': False}
     if intent.kind != 'artist':
         # Exact/base-title/alias matches across the whole SQLite snapshot are not
@@ -129,6 +141,9 @@ async def rank(config, store, search, intent, *, trace=None):
         exact = [r for r in score_tracks(intent, documents, config.aliases, rules)
                  if r['evidence']['title_similarity'] == 1 and
                  (intent.artist is None or r['evidence']['artist_similarity'] == 1)]
+        if trace:
+            trace.event('local_track_matches', {'exact_track_count': len(exact),
+                                               'typesense_needed': not bool(exact)})
         if exact:
             candidates.extend(exact)
         else:
@@ -142,7 +157,12 @@ async def rank(config, store, search, intent, *, trace=None):
             if response['generation'] != head['generation']:
                 raise StaleSnapshot('catalog changed during ranking; repeat the command')
             pool = [dict(r, id=r['id']) for r in response['candidates'] if not known or r['artist'] in known]
-            candidates.extend(score_tracks(intent, pool, config.aliases, rules))
+            scored = score_tracks(intent, pool, config.aliases, rules)
+            if trace:
+                trace.event('retrieval_filtered', {'found': response['found'],
+                            'returned_count': len(response['candidates']), 'scoped_count': len(pool),
+                            'ranked_track_count': len(scored)})
+            candidates.extend(scored)
             retrieval = {'source': 'typesense', 'found': response['found'],
                          'truncated': response['found'] > len(pool)}
     if store.verify_index(config.device_key, search.signature) != head:

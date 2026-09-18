@@ -13,8 +13,8 @@ from research.disc_assistant.assistant.playback import execute, device_lock
 from research.disc_assistant.assistant.intents import ControlIntent, LanguageIntent
 from research.disc_assistant.assistant.interpreter import InterpretationContext, interpret_request
 from research.disc_assistant.assistant.preferences import effective_config, language_command, response_command
-from research.disc_assistant.assistant.journal import Trace, history_command, outcome
-from research.disc_assistant.assistant.responses import Responses, attach_response, exception_result, validate_locales
+from research.disc_assistant.assistant.journal import Trace, history_command, outcome, debug_stderr
+from research.disc_assistant.assistant.responses import Responses, exception_result, validate_locales
 from research.disc_assistant.assistant.controls import execute as control
 from research.disc_assistant.assistant.queue import observe as observe_queue
 from research.disc_assistant.library.store import Store
@@ -65,6 +65,7 @@ def main(argv=None, *, interpreter=None):
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--config', required=True, help='path to a TOML configuration')
     parser.add_argument('--language', help='select and persist one interaction locale at startup')
+    parser.add_argument('--debug', action='store_true', help='stream bounded request traces to stderr')
     parser.add_argument('--source', choices=('cli', 'scheduled'), help='request origin; scheduled is explicit for cron')
     sub = parser.add_subparsers(dest='command', required=True)
     sub.add_parser('listen', help='persistent interactive console; existing catalog/index')
@@ -94,13 +95,15 @@ def main(argv=None, *, interpreter=None):
         base_config = config
         if args.command == 'history':
             config = effective_config(config, language=args.language)
-            print(json.dumps(attach_response(config, history_command(config, args.arguments),
-                command='history', source=args.source or 'cli'), ensure_ascii=False, indent=2))
+            with Trace(config, 'history', 'history', source=args.source or 'cli', persist=False,
+                       event_sink=debug_stderr if args.debug else None) as trace:
+                result = trace.finish(history_command(config, args.arguments))
+            print(json.dumps(result, ensure_ascii=False, indent=2))
             return 0
         if args.command in ('listen', 'start'):
             from research.disc_assistant.assistant.console import run
             return run(config, bootstrap=args.command == 'start', source=args.source or 'interactive',
-                       interpreter=interpreter, language=args.language)
+                       interpreter=interpreter, language=args.language, debug=args.debug)
         try:
             config = effective_config(config, language=args.language)
         except ValueError:
@@ -113,7 +116,8 @@ def main(argv=None, *, interpreter=None):
             text = 'language ' + ' '.join(args.languages)
         if args.command == 'response':
             text = 'response ' + ' '.join(args.arguments)
-        with Trace(config, args.command, text, source=args.source or 'cli') as trace:
+        with Trace(config, args.command, text, source=args.source or 'cli',
+                   event_sink=debug_stderr if args.debug else None) as trace:
             trace.event('parse', {})
             intent = (asyncio.run(interpret_request(args.text, InterpretationContext(config.locale),
                         interpreter=interpreter, trace=trace)) if args.command in ('ask', 'rank') else None)

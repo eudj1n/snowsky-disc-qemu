@@ -56,6 +56,7 @@ The key is a user-assigned namespace, not a discovered hardware identity.
 | --- | --- |
 | `/history [ARGS]` | Inspect recent requests, `show ID`, `export PATH`, `prune`, or `clear --yes`; see [history](ASSISTANT_HISTORY.md) |
 | `/help` | List text and maintenance commands |
+| `/debug [on\|off]` | Show/toggle live request traces for this console session; initially off unless launched with `--debug` |
 | `/clear` | Clear the terminal screen; keep input history, journal and playback |
 | `/response [mode none\|errors\|all\|reset]` | Show/set saved speech policy; see [responses](ASSISTANT_RESPONSES.md) |
 | `/locales` | Validate each installed command/response catalog |
@@ -117,6 +118,7 @@ input = "ansiyellow"
 result = "ansigreen"
 error = "ansired bold"
 warning = "ansiyellow bold"
+debug = "ansibrightblack"
 suggestion = "ansibrightblack italic"
 ```
 
@@ -285,12 +287,51 @@ reduces events throughout its session; listening history is not collected.
 
 Console requests and one-shot application commands are journaled by default in
 `assistant.sqlite3`, including invalid phrases and search/operation failures.
-Results include `request_id` when saved; use `/history show ID` or one-shot
-`history show ID` to inspect stages. The journal retains bounded search candidates,
+Results include `request_id` and `timing.total_ms`, even with journaling disabled.
+Use `/history show ID` or one-shot `history show ID` to inspect saved requests;
+an ID alone does not imply persistence. The journal retains bounded search candidates,
 the automatic selection and operation outcomes without treating them as listens.
 Use `--source scheduled` before the CLI command for cron attribution. History
 inspection/export/clear is not itself journaled. Retention defaults to 90 days and
 10,000 completed requests. See [storage, commands and limits](ASSISTANT_HISTORY.md).
+
+### Timing and live debug traces
+
+```text
+/debug on
+/rank Включи Макс Корж
+/debug off
+```
+
+`/rank` diagnoses interpretation and matching without starting playback. A capable
+terminal displays trace lines in the `debug` color. The switch is session-only;
+it does not change saved preferences, journal collection or speech policy.
+
+Pass the global `--debug` flag before the application command:
+
+```sh
+./research/disc_assistant/run.sh --debug listen
+./research/disc_assistant/run.sh --debug rank 'Включи Макс Корж'
+```
+
+One-shot commands and redirected consoles send traces to **stderr**; one-shot
+stdout remains the JSON result. Each `[trace]` line contains a JSON object with
+`request_id`, `phase`, `observed_at`, `elapsed_ms` and bounded `payload`. These are
+application stages, not raw transport packets or Python stack traces. Debug is
+available without persistent journaling; output errors do not replay operations.
+
+`timing.total_ms` measures a traced application request with a monotonic clock,
+through response construction, including earlier journal/debug overhead. It excludes
+launcher/Python startup, input editing, final result persistence and terminal output.
+It is also returned for failed requests and unjournaled history commands. Blank
+input, startup banners/status and failures before request creation are outside
+this measurement. Per-event `elapsed_ms` is cumulative, not a stage duration.
+
+Search traces include snapshot track/artist counts, resolved intent, local artist
+and exact-track matches, the actual Typesense query when needed, retrieval counts
+and candidates remaining after filtering/scoring. They help distinguish an absent
+exact metadata/alias match, zero retrieval results and rejected retrieved candidates;
+they do not prove that an artist is absent from the device's unsynchronized files.
 
 ## Queue and remaining work
 

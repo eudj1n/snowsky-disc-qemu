@@ -8,6 +8,7 @@ import json
 import os
 from pathlib import Path
 import sqlite3
+import sys
 import time
 from uuid import uuid4
 
@@ -35,6 +36,15 @@ def durable_write(db):
 
 def utcnow():
     return datetime.now(timezone.utc).isoformat(timespec='milliseconds')
+
+
+def debug_line(event):
+    # JSON escapes terminal control characters in user input and metadata.
+    return '[trace] ' + json.dumps(event, ensure_ascii=False)
+
+
+def debug_stderr(event):
+    print(debug_line(event), file=sys.stderr, flush=True)
 
 
 def bounded(value, depth=0):
@@ -75,7 +85,7 @@ def outcome(result):
     safe = {k: result[k] for k in ('status', 'operation_id', 'mutation_attempted', 'action',
             'outcome', 'state', 'fresh_position', 'metadata_equivalent_rows', 'assistant_continuation',
             'device_stop_semantics', 'enabled', 'source', 'reused', 'generation', 'index_generation',
-            'track_count', 'locale', 'mode', 'error_type', 'requested', 'previous', 'confirmation', 'response') if k in result}
+            'track_count', 'locale', 'mode', 'error_type', 'requested', 'previous', 'confirmation', 'response', 'timing') if k in result}
     if result.get('status') in ('not_sent', 'uncertain'):
         safe['failure_category'] = result['status']
     if 'mode_change' in result:
@@ -144,19 +154,20 @@ def console_history(config):
 
 
 class Trace:
-    def __init__(self, config, command, text, *, source='cli', session_id=None):
+    def __init__(self, config, command, text, *, source='cli', session_id=None, event_sink=None, persist=True):
         self.config, self.command, self.text = config, command, text
         self.source, self.session_id = source, session_id or uuid4().hex
         self.id, self.stage = uuid4().hex, 'input'
         self.journal = None
+        self.event_sink, self.persist = event_sink, persist
         self.started = time.monotonic()
         self.responses = Responses(config.locale, config.response_mode)
 
     def __enter__(self):
-        if not self.config.journal_enabled:
+        if not self.config.journal_enabled or not self.persist:
             return self
-        self.journal = Journal(self.config)
         try:
+            self.journal = Journal(self.config)
             self.journal.prune()
             rules = asdict(load_languages((self.config.locale,)))
             context = {'locale': self.config.locale, 'command_rules_version': 'literal-v2',
@@ -170,18 +181,29 @@ class Trace:
                     VALUES(?,?,?,?,?,?,?,?,?,?)''', (self.id, self.session_id, self.source, self.config.device_key,
                     self.command, self.text[:4000], normalized(self.text[:4000]), len(self.text) > 4000,
                     json.dumps(context), utcnow()))
-        except BaseException:
-            self.journal.__exit__()
+        except BaseException as exc:
+            self.unrecorded_failure(exc)
+            if self.journal is not None:
+                self.journal.__exit__()
             raise
         return self
 
     def event(self, phase, payload):
         self.stage = phase
+        event = {'request_id': self.id, 'phase': phase, 'observed_at': utcnow(),
+                 'elapsed_ms': round((time.monotonic() - self.started) * 1000),
+                 'payload': bounded(payload)}
         if self.journal is not None:
             with durable_write(self.journal.db):
                 self.journal.db.execute('''INSERT INTO request_events(request_id,phase,observed_at,elapsed_ms,payload_json)
-                    VALUES(?,?,?,?,?)''', (self.id, phase, utcnow(), round((time.monotonic() - self.started) * 1000),
-                    json.dumps(bounded(payload), ensure_ascii=False)))
+                    VALUES(?,?,?,?,?)''', (self.id, phase, event['observed_at'], event['elapsed_ms'],
+                    json.dumps(event['payload'], ensure_ascii=False)))
+        if self.event_sink is not None:
+            try:
+                self.event_sink(event)
+            except Exception:
+                # Debug output is optional; a broken stream must not change/replay an action.
+                self.event_sink = None
 
     def intent(self, intent):
         self.event('parsed', asdict(intent))
@@ -197,8 +219,23 @@ class Trace:
         self.event('selection', {'method': 'automatic_best_match', 'rank': 1,
                                  'generation': result['generation'], 'candidate': candidate(result['candidates'][0])})
 
+    def stamp(self, result):
+        result['timing'] = {'total_ms': round((time.monotonic() - self.started) * 1000, 3)}
+        result['request_id'] = self.id
+        return result
+
+    def unrecorded_failure(self, exc):
+        # A failed journal write can follow a successful device mutation.
+        result = {'status': 'uncertain', 'error_type': type(exc).__name__}
+        self.responses.attach(result, command=self.command, source=self.source)
+        exc.assistant_result = self.stamp(result)
+        exc.request_id = self.id
+
     def finish(self, result, *, failure=None):
+        if result is None:
+            return None
         self.responses.attach(result, command=self.command, source=self.source, failure=failure)
+        self.stamp(result)
         safe = outcome(result)
         status = result.get('status', 'completed') if result else 'completed'
         self.event('result', safe)
@@ -207,14 +244,14 @@ class Trace:
                 self.journal.db.execute('UPDATE requests SET completed_at=?,status=?,outcome_json=? WHERE id=?',
                                        (utcnow(), status, json.dumps(safe, ensure_ascii=False), self.id))
             self.journal.prune()
-            if result is not None:
-                result['request_id'] = self.id
         return result
 
     def __exit__(self, kind=None, exc=None, tb=None):
         try:
-            if exc is not None and self.journal is not None:
+            if exc is not None:
                 exc.request_id = self.id
+            if isinstance(exc, JournalWriteError):
+                self.unrecorded_failure(exc)
             if exc is not None and not isinstance(exc, JournalWriteError):
                 if isinstance(exc, ProviderUnavailable):
                     category = 'interpreter_unavailable'
@@ -230,7 +267,8 @@ class Trace:
                     category = 'unrecognized_or_invalid_command'
                 elif self.stage == 'preference':
                     category = 'invalid_preference'
-                elif self.stage in ('search', 'retrieval', 'catalog', 'ranking', 'search_query', 'intent_resolved'):
+                elif self.stage in ('search', 'retrieval', 'catalog', 'ranking', 'search_query', 'intent_resolved',
+                                    'catalog_loaded', 'local_matches', 'local_track_matches', 'retrieval_filtered'):
                     category = 'search_unavailable_or_invalid'
                 else:
                     category = 'execution_error'
@@ -238,6 +276,9 @@ class Trace:
                 self.event('error', {'stage': self.stage, 'category': category, 'type': type(exc).__name__})
                 exc.assistant_result = self.finish(
                     {'status': 'interrupted' if category == 'interrupted' else 'error'}, failure=category)
+        except JournalWriteError as write_error:
+            self.unrecorded_failure(write_error)
+            raise
         finally:
             if self.journal is not None:
                 self.journal.__exit__()

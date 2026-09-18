@@ -111,6 +111,14 @@ Prompt, input, results and errors use separate colors. The optional `[terminal]`
 section customizes styles; `NO_COLOR=1` disables colors. Font family/size belong
 to your terminal's settings. See [terminal appearance](../../docs/ASSISTANT_COMMANDS.md#terminal-appearance).
 
+Use `/debug on` to stream request stages and search diagnostics, `/debug off` to
+stop, or launch with `run.sh --debug listen`. For a playback-free diagnosis, use
+`/rank Включи Макс Корж`. One-shot `run.sh --debug rank 'Включи Макс Корж'` keeps
+the JSON result on stdout and traces on stderr. Traced results include
+`timing.total_ms` and `request_id` even with journal collection disabled; IDs alone
+do not guarantee saved history. Debug is session-only and follows the `debug`
+terminal color. See [timing boundaries and trace fields](../../docs/ASSISTANT_COMMANDS.md#timing-and-live-debug-traces).
+
 The application owns one TCP socket and continuously receives events, including
 while waiting for input or doing HTTP/search work. Unexpected disconnects trigger
 bounded reconnect and fresh observations, never command replay. Commands submitted

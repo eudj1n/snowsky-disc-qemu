@@ -194,7 +194,7 @@ class ResponseTests(unittest.TestCase):
         with Trace(config, 'ask', 'Pause') as trace:
             result = trace.finish({'status': 'confirmed', 'action': 'pause'})
         self.assertEqual(result['response']['code'], 'playback.paused')
-        self.assertNotIn('request_id', result)
+        self.assertEqual(result['request_id'], trace.id)
         with self.assertRaises(KeyboardInterrupt) as caught:
             with Trace(config, 'ask', 'Pause') as trace:
                 trace.event('execution_started', {})
