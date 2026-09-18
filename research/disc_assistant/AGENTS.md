@@ -26,6 +26,9 @@ Keep this prototype under research until a separate promotion/split decision.
 
 ## Where to resume
 
+Start with `../../docs/ASSISTANT_STATUS.md`: current review follow-up and evidence.
+The owner authorized five sequential increments, each committed and pushed.
+
 - `../../docs/ASSISTANT_BASELINE.md`: private bound case set (30 RU / 21 EN),
   `baselines/my-player-text-v2/` beneath configured data_dir. Media/gold are frozen;
   physical RU-01–19 are recorded; continue at RU-21 (RU-20 locale switch is last).
@@ -42,8 +45,8 @@ Keep this prototype under research until a separate promotion/split decision.
   First row is a no-op in every mode; random mode means displayed queue order.
   Native Controller previous retains its firmware restart semantics.
   Final focused run: 10/10 (early/late, paused, first row, fuzzy member; RU/EN).
-  Shared checks 349 Python / 37 JS; prototype 287. Full 46-case rerun has not been
-  claimed: keep the earlier 40/42 and final 10/10 reports separate. Keep this cohort separate from physical
+  Shared checks 349 Python / 37 JS; prototype 287. Candidate 6798da0 now passed the full 46/46 manifest-v4 rerun;
+  keep the earlier 40/42 and final 10/10 reports separate. Keep this cohort separate from physical
   results; failures must remain visible.
 - `library/README.md`: semicolon-separated artist members are a derived projection;
   source artist tags remain exact device selectors. Schema 3 requires `/index`,
@@ -126,5 +129,5 @@ reporting or grammar work. Never replay uncertain mutations to improve a metric.
 
 For each completed increment update the relevant English docs, current roadmap
 status and MVP issue checklist. Distinguish implemented, tested with fixtures,
-observed on device and accepted against thresholds. The owner allows intermediate
-commits; do not include unrelated work or assume a new push/release is requested.
+observed on device and accepted against thresholds. The owner explicitly requests a commit and push after each of the five review
+increments. Do not include unrelated work or infer permission to release.

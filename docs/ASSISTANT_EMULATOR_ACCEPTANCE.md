@@ -186,3 +186,13 @@ Final firmware-free checks: **349 shared Python tests, 37 JavaScript tests and
 after the navigation change; the earlier complete 42-case run and final targeted
 10-case run are distinct reports, not a fabricated 46/46 result. Physical
 acceptance and numerical MVP thresholds remain pending.
+
+## Full manifest-v4 checkpoint
+
+Candidate `6798da09b692f047449fcc068a4c79db3e73f432` completed **46/46**
+(23 RU / 23 EN) on 2026-09-18. The isolated run preserved fresh API/queue
+readback, mutation evidence and screenshots for every case. Local report:
+`/tmp/disc-review-stage1-46/results/report.json`. The paused-predecessor
+screenshot was manually inspected and showed Signal Alpha playing. Other
+screenshots are not claimed visually accepted. Earlier failed reports remain
+unchanged. This closes the full-rerun gap above, not physical MVP acceptance.

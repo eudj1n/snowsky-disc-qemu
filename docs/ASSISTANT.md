@@ -1,5 +1,7 @@
 # Disc Assistant: implementation plan
 
+Start with the [current checkpoint](ASSISTANT_STATUS.md) for active work and evidence.
+
 Checkpoint: **2026-09-18**. The desktop prototype in
 [research/disc_assistant](../research/disc_assistant/README.md) now includes catalog
 import, SQLite snapshots, Typesense search, single-locale text commands (Russian or English), explained
