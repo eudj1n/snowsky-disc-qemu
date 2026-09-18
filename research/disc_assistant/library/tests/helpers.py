@@ -28,6 +28,10 @@ class Catalog:
         elif category == 'album':
             counts = Counter(t.album for t in self.tracks)
             rows = [dict(pos=i, name=name, count=count) for i, (name, count) in enumerate(counts.items())]
+        elif category in ('artist/song', 'artist/album/song'):
+            selected = [t for t in self.tracks if t.artist == filters['artist'] and
+                        ('album' not in filters or t.album == filters['album'])]
+            rows = [dict(t.raw, pos=i) for i, t in enumerate(selected)]
         elif category == 'album/song':
             rows = [dict(t.raw) for t in self.tracks if t.album == filters['album']]
         else:

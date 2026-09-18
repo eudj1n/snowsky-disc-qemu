@@ -17,6 +17,11 @@ port = 8108
 protocol = "http"
 api_key_env = "TYPESENSE_API_KEY"
 
+[language]
+# Merge literal command and version phrases from assistant/locales/<code>.toml.
+# Omit this section to keep both languages enabled.
+enabled = ["ru", "en"]
+
 [sync]
 page_size = 200
 max_tracks = 100000

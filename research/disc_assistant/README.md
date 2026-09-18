@@ -1,6 +1,6 @@
 # Disc Assistant research prototype
 
-Working desktop slice: **device catalog → SQLite → Typesense → text candidates**.
+Desktop prototype: **device catalog → SQLite → Typesense → ranked text commands → playback**.
 The experiment lives entirely here until it is ready for promotion into the main
 project. The [plan](../../docs/ASSISTANT.md) describes the wider assistant/dock work.
 It runs independently of the emulator and only imports its public controller package.
@@ -10,9 +10,12 @@ It runs independently of the emulator and only imports its public controller pac
 - [check.py](check.py): disposable acceptance with synthetic TCP/HTTP servers and a
   real Typesense container. No firmware or physical device is needed.
 
-This slice returns candidates; intent parsing, playback, browser UI, microphone,
-listening history and external lyrics follow later. `search "линкин парк намб"`
-is a metadata search, not yet a `Включи …` / `Play …` command parser.
+`search` returns metadata candidates. `rank` explains the ordering for a typed
+`Включи …` / `Play …` command without playback; `ask` launches its best matching
+artist or track after fresh device checks. The owner deferred interactive choice:
+there is no confirmation prompt, including for fuzzy matches. Browser UI,
+microphone, listening history and lyrics follow later.
+See the [command table and ranking policy](../../docs/ASSISTANT_COMMANDS.md).
 
 ## Run on a computer
 
@@ -49,6 +52,8 @@ number. Both HTTP and TCP must point to the same device.
 ./research/disc_assistant/run.sh index
 ./research/disc_assistant/run.sh search 'Linkin Park Numb'
 ./research/disc_assistant/run.sh search 'линкин парк намб' --limit 5
+./research/disc_assistant/run.sh rank 'Включи линкин парк намб'
+./research/disc_assistant/run.sh ask 'Включи линкин парк намб'
 ```
 
 `up` starts the separate local `disc-assistant` Typesense stack and waits up to
@@ -85,7 +90,10 @@ through the explicit venv interpreter and does not itself load `.env`.
 Disconnect FiiO Control/other TCP inspectors first; stock control is single-client.
 It reads metadata only, without scanning, reset, file edits or playback. It publishes
 SQLite only after two equal full reads. `index` and `search` need Typesense but no
-connection to the player. `status` reads local state without contacting either
+connection to the player. `rank` resolves exact metadata locally and uses Typesense
+for fuzzy track retrieval. `ask` also requires the awake player, sends at most one
+selection and verifies the resulting metadata/state; it never changes volume or
+play mode, nor automatically retries a selection. `status` reads local state without contacting either
 service; `index_current` means matching locally recorded generations/config,
 not a live Typesense health check. Commands return JSON; failures exit nonzero.
 
@@ -119,12 +127,15 @@ and `a60a/0005` (end) if received during the reads. An end received before the r
 allows a new observation, without claiming that a cancelled scan was complete.
 Other `a60a` statuses such as initialization `0010` are not scan evidence; an already-running scan may be
 missed by the existing diagnostic client. Only sync while the player is idle.
-Persistent event routing and a stronger session contract remain work for M2.
+Playback now retains events across Controller queries for one bounded operation.
+A persistent background reader and cross-application coordination remain deferred.
 
 Tracks carry a new internal ID **per snapshot** plus the literal `album/song`
 scope/position/raw row. Identity continuity across rescans is deliberately not
 claimed: the API does not expose enough information to distinguish every CUE or
-duplicate recording. These IDs/positions cannot be used as cached playback commands.
+duplicate recording. These IDs/positions cannot be used as cached playback commands. `ask` recomputes
+the current artist-scoped position; metadata-identical copies use the first current
+row and are reported as such, rather than claiming permanent recording identity.
 No history reconciliation is implemented yet.
 
 If any page fails, counts/positions change, album/root membership differs, the
@@ -181,9 +192,14 @@ removed it. This also reproduced `a60a/0010` after connection and verified the
 fix that classifies scan events by payload rather than treating all `a60a` as scans.
 The owner subsequently confirmed successful `sync → index → search` against
 the physical player. The read-only slice is ready for the next implementation
-step: typed Russian/English commands, explicit disambiguation and freshly checked
-Controller playback. Measured ranking quality and physical playback remain
-unvalidated; microphone input follows the text-to-playback path.
+step. On 2026-09-18, `rank`/`ask` added bilingual commands, deterministic lexical
+ranking and fresh Controller playback checks. Command/target/version phrases now
+live in per-language TOML dictionaries, merged using `[language].enabled`
+(default `["ru", "en"]`); all 71 prototype tests pass. A
+read-only alias query on the existing physical-library snapshot resolved correctly.
+The owner chose automatic best-match
+playback and deferred clarification. Measured ranking quality and physical `ask`
+playback remain unvalidated; microphone input follows the text-to-playback path.
 
 The prototype suite is intentionally run explicitly; `ci/unit.py` has not been
 changed to discover this experimental directory. Before promotion, register its

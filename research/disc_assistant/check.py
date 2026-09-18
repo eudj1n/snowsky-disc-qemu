@@ -23,7 +23,7 @@ import aiohttp
 import typesense
 
 from controller.fiio_link import Frames, frame
-from research.disc_assistant.library.tests.helpers import Catalog
+from research.disc_assistant.library.tests.helpers import Catalog, TRACKS
 
 ROOT = Path(__file__).resolve().parents[2]
 
@@ -32,11 +32,26 @@ class LinkHandler(socketserver.BaseRequestHandler):
     def handle(self):
         frames = Frames()
         while data := self.request.recv(4096):
-            for tag, _ in frames.feed(data):
+            for tag, payload in frames.feed(data):
                 if tag == '0599':
                     self.request.sendall(frame('a599', '0306'))
                 elif tag == '0501':
                     self.request.sendall(frame('a501', '{"soc_version":257}'))
+                elif tag in ('0100', '0101'):
+                    prefix = 8 if tag == '0100' else 4
+                    assert payload[prefix-4:prefix] == b'0007'
+                    selector = json.loads(payload[prefix:])
+                    scope = [t for t in TRACKS if t.artist == selector['artist'] and
+                             (not selector['album'] or t.album == selector['album'])]
+                    index = int(payload[:4], 16) if tag == '0100' else 0
+                    self.server.selected = scope[index]
+                    self.server.mutations += 1
+                elif tag == '0202':
+                    selected = self.server.selected
+                    snapshot = {} if selected is None else {'state': 0, 'playerflag': 7,
+                        'song': {'song_name': selected.title, 'song_artist_name': selected.artist,
+                                 'song_album_name': selected.album}}
+                    self.request.sendall(frame('a202', json.dumps(snapshot, ensure_ascii=False)))
                 else:
                     raise AssertionError(f'Unexpected device command: {tag}')
 
@@ -49,7 +64,7 @@ class CatalogHandler(BaseHTTPRequestHandler):
         if self.path != '/song_category_tree/':
             self.send_error(404)
             return
-        filters = {'album': unquote(self.headers['album'])} if 'album' in self.headers else {}
+        filters = {key: unquote(self.headers[key]) for key in ('album', 'artist') if key in self.headers}
         page = Catalog().catalog(self.headers['type'], int(self.headers['start-pos']),
                                  int(self.headers['num-max']), **filters)
         body = json.dumps(page['items'], ensure_ascii=False).encode()
@@ -92,6 +107,7 @@ async def main():
         with tempfile.TemporaryDirectory(prefix='disc-prototype-') as tmp, \
                 socketserver.ThreadingTCPServer(('127.0.0.1', 0), LinkHandler) as link, \
                 ThreadingHTTPServer(('127.0.0.1', 0), CatalogHandler) as catalog:
+            link.selected, link.mutations = None, 0
             threads = [threading.Thread(target=s.serve_forever, daemon=True) for s in (link, catalog)]
             for thread in threads:
                 thread.start()
@@ -138,6 +154,31 @@ page_size = 2
                     assert found['found'] == expected, (query, found)
                     assert all(candidate['match'] for candidate in found['candidates']), found
                     print(f'PASS: {query!r}: {expected} candidates', flush=True)
+                ranked = cli('rank', 'Включи линкин парк намб')
+                assert ranked['candidates'][0]['album'] == 'Meteora', ranked
+                assert link.mutations == 0
+                fuzzy = cli('rank', 'Play Linkin Park - Numbb')
+                assert fuzzy['retrieval']['source'] == 'typesense', fuzzy
+                assert fuzzy['candidates'][0]['album'] == 'Meteora', fuzzy
+                for phrase, kind, album in [
+                        ('Включи линкин парк намб', 'track', 'Meteora'),
+                        ('Play Linkin Park - Numb live', 'track', 'Live'),
+                        ('Включи Linkin Park', 'artist', None),
+                        ('Play Cue entry', 'track', 'Cue Album')]:
+                    previous = link.mutations
+                    playing = cli('ask', phrase)
+                    assert playing['status'] == 'playing', playing
+                    assert playing['selected']['kind'] == kind
+                    if album:
+                        assert playing['state']['song']['song_album_name'] == album
+                    if album == 'Cue Album':
+                        assert playing['metadata_equivalent_rows'] == 2
+                        assert playing['fresh_position'] == 0
+                    assert link.mutations == previous + 1
+                previous = link.mutations
+                assert cli('ask', 'Play Linkin Park - DefinitelyMissing')['status'] == 'not_found'
+                assert link.mutations == previous
+                print('PASS: exact/fuzzy ranking, best-match track/live/artist/CUE playback, missing request sends nothing', flush=True)
                 old = cli('status')
                 await sdk.collections[old['collection']].delete()
                 cli('search', 'Numb', success=False)

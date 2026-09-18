@@ -1,10 +1,12 @@
 # Disc Assistant: implementation plan
 
-Checkpoint: **2026-09-17**. A read-only desktop slice is implemented in
-[research/disc_assistant](../research/disc_assistant/README.md): paginated catalog
-import, SQLite snapshots, Typesense indexing and CLI text candidates. The rest
-of this document describes the target architecture and later milestones. Voice,
-command parsing, playback and listening history are not implemented.
+Checkpoint: **2026-09-18**. The desktop prototype in
+[research/disc_assistant](../research/disc_assistant/README.md) now includes catalog
+import, SQLite snapshots, Typesense search, bilingual text commands, explained
+ranking and bounded Controller playback. `rank` previews the ordering; `ask`
+automatically launches the best candidate. The owner explicitly deferred a
+choice/confirmation dialogue. Voice, listening history and a browser UI remain
+unimplemented. See the [command table](ASSISTANT_COMMANDS.md).
 The current device contract is [DISC capabilities](DISC_CAPABILITIES.md).
 
 ## Goal and first deliverable
@@ -22,7 +24,8 @@ pipeline. Initial examples:
 - `Включи Linkin Park` — play the named artist.
 - `Включи Linkin Park — Numb` — play a particular recording.
 - `Включи линкин парк намб` — resolve spoken aliases and imperfect transcription.
-- Multiple plausible recordings — offer a choice before playback.
+- Multiple plausible recordings — rank deterministically and launch the best match;
+  expose the reasons through `rank`. A choice dialogue is deferred by owner decision.
 - Missing music or an unavailable player — explain the result without guessing.
 
 The computer sends control messages; DISC plays its own media. Audio can leave
@@ -58,8 +61,8 @@ Text input -----------------------+
 Microphone -> speech-to-text -> Assistant -> structured intent
                                   |                |
                                   v                v
-                            Library/search -> candidates -> clarification
-                                  |                         or selection
+                            Library/search -> candidates -> ranking
+                                  |                         best match
                             SQLite + Typesense                  |
                                                                v
 DISC catalog/events -> application session -> fresh selection -> Controller
@@ -150,15 +153,52 @@ as though those recordings were available on the device.
 
 `линкин парк` and `Linkin Park` need deliberate alias/transliteration handling;
 ordinary edit-distance tolerance does not establish their equivalence. A match
-score is not a calibrated confidence probability. Tune selection thresholds and
-ambiguity rules against labeled examples. Search engines may relax queries by
+score is not a calibrated confidence probability. Tune retrieval/ranking against
+labeled examples. Current policy automatically selects the best candidate;
+interactive ambiguity resolution is deferred. Search engines may relax queries by
 dropping tokens: for automatic playback, do not let that silently discard a
 requested artist, title or version. Inspect/configure this behavior explicitly.
 
 Search intent determines field priority. Exact-title selection should favor title
 and artist; a quoted lyric search should use lyrics. Personal preference must not
 override an explicit recording request. Start with lexical retrieval; evaluate
-semantic or hybrid search only for meaning-based requests that justify it.
+semantic or hybrid search against the same labeled baseline before enabling it.
+
+### Planned embedding snapshots
+
+Precompute embeddings for library search documents, including names, aliases and
+later verified lyrics/enrichment. Keep these derived artifacts in `library`,
+outside the checkout alongside application data; the assistant consumes the
+search interface. Phrase-level documents preserve more context than a collection
+of isolated word vectors. Command dictionaries remain responsible for supported
+actions and explicit constraints.
+
+An embedding snapshot should record its source catalog generation, input-content
+hashes, normalization/chunking version, model identifier and immutable revision,
+vector dimension and distance metric. Reuse cached vectors only when both content
+and the full embedding pipeline signature match. Reuse of identical text vectors
+must not merge distinct recordings/CUE rows or establish identity across rescans.
+Maintain a separate mapping from vectors/chunks to each current snapshot entry.
+
+Build changed documents in staging and publish a complete search generation only
+after validating its mapping and model signature. A model change rebuilds vectors;
+a failed build leaves the previous complete projection available subject to the
+existing freshness checks. History/likes remain separate ranking features rather
+than forcing every play event to rebuild semantic vectors.
+
+For voice input, transcribe once, parse the command, embed its search portion with
+the matching model, and combine lexical and vector candidates. Preserve exact
+artist/title/version constraints and fresh Controller selection after retrieval.
+An optional bounded query-vector cache may use normalized text plus the pipeline
+signature; it must never cache a playback position or skip execution checks.
+Lexical search stays available when the embedding model/index is unavailable.
+
+Precomputation avoids embedding the entire catalog per query; it does not remove
+speech recognition or query-embedding latency. Compare lexical and hybrid top-1
+quality, incorrect launches, cold/warm median/p95 latency, build/update time and
+RAM on the desktop before choosing a model or moving to Pi. Snapshot persistence
+and cache reuse are planned; no embeddings, model downloads or vector schema are
+implemented in the current slice.
 
 Typesense keeps its index in memory. Measure index size, build time, query latency
 and RAM on the actual catalog, separately from speech/embedding model resources.
@@ -173,17 +213,25 @@ ranking preferences and optional dialogue context. The first action allowlist is
 play artist or play recording. An LLM is optional; neither a parser nor a model
 should generate unchecked protocol frames or arbitrary executable operations.
 
+Implemented language forms live in separate `assistant/locales/ru.toml` and
+`en.toml` files. `[language].enabled` merges literal command, target and version
+phrases; the default enables both, including mixed-language requests. Conflicting
+meanings fail validation. Adding forms for existing semantics requires no parser
+change; new actions still require implementation. See the
+[language configuration](ASSISTANT_COMMANDS.md#языковые-словари).
+
 For artist playback, use guarded `play_artist(artist, http=http)`. For a recording
 in a named artist album, resolve fresh rows and use
 `play_artist(artist, index, album=album, http=http)`. Unknown/reserved labels and
 unsupported names require an explicit supported path or a clear refusal, not an
 invented selector. Preserve the limitations in [library browsing](LIBRARY_BROWSING.md).
 
-The initial UI shows connection/catalog freshness, typed or recognized text,
-candidate artist/album/version, clarification choices and command outcome. Keep
-states such as searching, awaiting choice, sent, verified, failed and uncertain
-distinct. A clarification response belongs to a specific pending request; expire
-it on cancellation or replacement, and revalidate its choice before execution.
+The current CLI exposes connection/catalog freshness, the requested text, ranked
+artist/album/title candidates, score components and the selected playback outcome.
+There is no pending-choice state or reusable confirmation token. `ask` executes
+one best-match request; `rank` only explains. If dialogue is added later, its
+responses must belong to a particular request, expire on cancellation/replacement
+and be revalidated before execution.
 
 Add microphone recording by button before continuous listening. Select the input,
 bound recording duration, detect end of speech and reject silence. Evaluate a
@@ -266,6 +314,15 @@ but must not restrict accepted command languages.
 - Future pause/resume uses observed state and the documented toggle semantics;
   no unverified absolute play/pause command is introduced.
 
+The next two increments are specified in the
+[playback and queue plan](ASSISTANT_PLAYBACK.md): M2a adds index-independent
+pause/resume, stop-as-session-cancellation-and-pause, and stock navigation;
+M2b reads the actual native queue and makes continuation/mode policy explicit.
+Track search candidates are not a continuation playlist. Album/artist context
+comes first; an arbitrary assistant-managed recommendation queue requires a
+separately validated execution strategy and, potentially, a persistent session.
+These are prepared contracts, not implemented commands.
+
 These rules follow [DISC capabilities](DISC_CAPABILITIES.md),
 [remote control](REMOTE_CONTROL.md) and [track completion](TRACK_END.md).
 
@@ -294,7 +351,8 @@ and matching confidence. Respect the chosen source's storage/use terms. Lyrics
 stay separate from firmware metadata and audio files. Match a composition to its
 recordings carefully; unresolved external matches must not overwrite local tags
 or merge studio/live/CUE entries. External outages must leave local search usable.
-Defer provider selection and embeddings until tested examples justify them.
+Provider/model selection remains deferred; use the planned embedding snapshots
+above for the hybrid-search experiment.
 
 ## Implementation milestones and acceptance
 
@@ -305,10 +363,12 @@ M3; later milestones extend it and do not block the first end-to-end result.
 | --- | --- | --- |
 | M0: session and catalog | Shared device session; SQLite migrations; complete paginated snapshots; internal identities | Synthetic fixtures and a read-only physical catalog import; interrupted sync preserves the last complete snapshot; no personal data committed |
 | M1: text search | Local Typesense index; field weights, aliases, filters; minimal text UI | Labeled exact/typo/Cyrillic/duplicate/missing queries; measured ranking and resources; index rebuild from SQLite works |
-| M2: text-to-playback | Two intents, clarification, fresh selection and outcome verification | Artist and recording launch; stale/ambiguous/missing cases never silently choose another track; disconnect never replays commands |
+| M2: text-to-playback | Bilingual intents, explained automatic best-match ranking, fresh selection and outcome verification; dialogue deferred | Artist/recording launch; deterministic ranking; absent explicit versions and stale sources rejected; disconnect never replays commands |
+| M2a: playback controls | State-aware pause/resume, explicit Assistant stop semantics, next/previous; no search dependency | Repeated requests, unknown/loading/EOF states, external transitions and uncertain writes; no toggle replay; previous-to-start behavior |
+| M2b: native queue and continuation | Read actual album/artist queue after selection; preserve mode by default, explicit opt-in continuous mode | Type-7 natural EOF, five modes, middle/last/single entries, external queue changes and per-operation results for mode + selection |
 | M3: microphone | Button recording, speech boundaries, multilingual transcription into the same pipeline | Recorded evaluation phrases and live microphone trials; silence rejection; recognition, retrieval and total latency reported separately |
 | M4: personal selection | Event reconciliation, favorites mirror, observed-history aggregates | Repeated events, seeks and gaps do not inflate history; favorite/recency requests behave as documented; exact requests remain exact |
-| M5: enrichment | Optional lyrics provider, provenance, phrase search; semantic-search experiment if needed | Correct recording links, explicit ambiguity and usable local search during external outages |
+| M5: enrichment and hybrid search | Optional lyrics provider, provenance, phrase search; versioned embedding snapshots with incremental cache reuse and lexical/vector retrieval | Correct recording links; measured quality/latency against lexical baseline; interrupted rebuild/model changes cannot mix generations; usable lexical search during model/provider outages |
 | M6: hands-free input | Wake word, cancellation and optional spoken clarification | False activations and misses measured in quiet and with music; button input remains available |
 | M7: Pi deployment | Run the same service on Raspberry Pi 5; microphone setup, startup and data persistence | Repeat desktop cases; measure latency, memory, temperature and noise; test Wi-Fi commands during LDAC playback and charging |
 
@@ -369,7 +429,7 @@ The initial `a60a/0010` notification had exposed an overly broad scan guard;
 classification now uses the verified scan payloads instead of the whole status tag.
 The owner then confirmed the desktop flow works against the physical player:
 `sync → index → search`. The first read-only slice is accepted for further
-prototype development. All 39 prototype unit tests pass; the existing
+prototype development. At that checkpoint, all 39 prototype unit tests passed; the existing
 firmware-free project checks and disposable Typesense acceptance also passed.
 No media scan or playback was triggered by the prototype.
 
@@ -378,20 +438,45 @@ cross-snapshot identity reconciliation, a browser UI and measured search/resourc
 baselines remain open. Functional physical search is owner-confirmed; ranking
 quality has not been measured on a fixed labeled personal-catalog evaluation set.
 
-Next implementation slice: **M2, typed commands through verified playback**.
+## Text-command increment, 2026-09-18
 
-1. Parse Russian/English artist and recording requests into structured intents;
-   accept `Включи …` and `Play …` independently of device UI language.
-2. Return explicit choices for ambiguous editions/recordings and a clear missing
-   result. Tune retrieval against representative queries; a score is not permission
-   to launch an uncertain match.
-3. Resolve the chosen candidate against fresh device rows, serialize the operation
-   through the existing guarded Controller helpers and verify playback state.
-   Reject stale selections and never replay a mutation after reconnect/timeout.
-4. Validate artist/track launch, ambiguity, missing/stale results and connection
-   failures with synthetic fixtures and bounded physical-device trials.
+The owner changed the immediate interaction policy: **launch the best available
+match automatically; add selection dialogue later**. The implemented increment adds:
 
-Add button-driven microphone input after this text path works (M3). Continue in
-`research/disc_assistant/`; production promotion and a repository split are not
-part of this checkpoint. Promotion will move reviewed modules, imports, tests
-and CI registration together, with retention and storage/API contracts reviewed.
+- `rank 'Включи …'` / `rank 'Play …'`: complete-snapshot exact/alias matching and
+  bounded fuzzy retrieval, with deterministic scores, version rules and tie breaks.
+- `ask '…'`: the same ranking followed by one guarded Controller artist/track launch.
+  The local snapshot is checked against two fresh artist-scoped reads; the final
+  Controller HTTP preflight checks identity as well as bounds. Reordering computes
+  a fresh position. Indistinguishable copies use the first current matching row
+  and report their multiplicity, not a permanent identity claim.
+- A per-data-directory device-operation lock, one sequential playback event reader
+  retaining unrelated notifications across queries, and no automatic mutation
+  retry/reconnect. Result states distinguish not-sent, playing and uncertain.
+- A [command table](ASSISTANT_COMMANDS.md) describing actual CLI/text commands,
+  ranking factors, result semantics and deferred operations.
+
+History, favorites and popularity are not included in ranking without observations.
+Version penalties are metadata-label heuristics, not an audio-quality or release
+identity claim. Lexical scores are not probabilities. See the command document for
+weights, thresholds, retrieval limits and deterministic tie rules.
+
+Unit/transport fixtures cover bilingual commands, aliases, fuzzy matches, version
+constraints, stale/reordered source rows, interleaved scan events, metadata/state
+deltas and uncertain writes without replay. Disposable Typesense acceptance uses
+real Controller TCP/HTTP clients and a synthetic player for best-match artist,
+recording and requested-live launches. All 71 prototype unit tests pass, including
+language selection/merging, multiword forms, dictionary validation and extension
+without parser changes. A read-only
+`rank` query against the owner's existing physical-library snapshot returned the
+requested recording via its explicit Cyrillic aliases. This validates the software
+path and one live-data ranking case; physical `ask` playback and a labeled
+personal-library ranking benchmark remain pending.
+
+Next: implement the prepared [M2a/M2b contracts](ASSISTANT_PLAYBACK.md), evaluate
+`rank` on representative physical-library queries and validate bounded `ask`
+playback on deliberately selected music, then add button-driven microphone input
+(M3). Continue in `research/disc_assistant/`; promotion, repository splitting,
+arbitrary recommendation-queue execution, a background history session and a
+choice dialogue are separate later work. No new controls or queue mutations were
+enabled while preparing these two directions.

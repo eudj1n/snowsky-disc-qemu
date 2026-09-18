@@ -66,14 +66,18 @@ class Search:
             raise
         return store.head(device)
 
-    async def search(self, store, device, query, *, limit=10):
+    async def search(self, store, device, query, *, limit=10, fields=None):
         if not isinstance(query, str) or not query.strip() or len(query) > 1000:
             raise ValueError('query must contain 1..1000 characters')
         if type(limit) is not int or not 1 <= limit <= 50:
             raise ValueError('limit must be in 1..50')
+        fields = list(fields) if fields is not None else FIELDS
+        if not fields or any(field not in FIELDS for field in fields):
+            raise ValueError('unsupported search fields')
+        weights = dict(zip(FIELDS, (6, 5, 2, 4, 3)))
         head = store.verify_index(device, self.signature)
         reply = await self.client.collections[head['collection']].documents.search({
-            'q': query.strip(), 'query_by': ','.join(FIELDS), 'query_by_weights': '6,5,2,4,3',
+            'q': query.strip(), 'query_by': ','.join(fields), 'query_by_weights': ','.join(str(weights[f]) for f in fields),
             'per_page': limit, 'num_typos': 2, 'prefix': True,
             'drop_tokens_threshold': 0, 'split_join_tokens': 'off',
             'highlight_fields': ','.join(FIELDS), 'enable_highlight_v1': True,

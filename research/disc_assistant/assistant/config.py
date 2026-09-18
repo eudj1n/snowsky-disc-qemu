@@ -5,6 +5,8 @@ from pathlib import Path
 import sys
 import tomllib
 
+from research.disc_assistant.assistant.languages import DEFAULT_LANGUAGES, load_languages
+
 
 @dataclass(frozen=True)
 class Config:
@@ -22,6 +24,7 @@ class Config:
     timeout: int = 8
     max_tracks: int = 100000
     max_requests: int = 10000
+    languages: tuple[str, ...] = DEFAULT_LANGUAGES
 
 
 def default_data_dir():
@@ -51,7 +54,8 @@ def load(path):
                'storage': {'data_dir'},
                'typesense': {'host', 'port', 'protocol', 'api_key_env'},
                'sync': {'page_size', 'timeout', 'max_tracks', 'max_requests'},
-               'aliases': {'artists', 'titles'}}
+               'aliases': {'artists', 'titles'},
+               'language': {'enabled'}}
     if set(raw) - set(allowed):
         raise ValueError('unknown configuration section')
     for section, keys in allowed.items():
@@ -59,6 +63,7 @@ def load(path):
             raise ValueError(f'invalid or unknown options in [{section}]')
     device, storage, search, sync = (raw.get(k, {}) for k in ('device', 'storage', 'typesense', 'sync'))
     aliases = raw.get('aliases', {})
+    languages = load_languages(raw.get('language', {}).get('enabled', DEFAULT_LANGUAGES)).enabled
     for field, mapping in aliases.items():
         if not isinstance(mapping, dict):
             raise ValueError(f'aliases.{field} must be a table')
@@ -88,4 +93,4 @@ def load(path):
         number(sync.get('page_size', 200), 'page_size', 1, 200),
         number(sync.get('timeout', 8), 'timeout', 1, 120),
         number(sync.get('max_tracks', 100000), 'max_tracks', 1, 1000000),
-        number(sync.get('max_requests', 10000), 'max_requests', 2, 100000))
+        number(sync.get('max_requests', 10000), 'max_requests', 2, 100000), languages)

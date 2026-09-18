@@ -110,7 +110,7 @@ def wait_ready(config, timeout=45):
 def main(argv=None):
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--config', default=os.environ.get('DISC_ASSISTANT_CONFIG', '~/disc-assistant.toml'))
-    parser.add_argument('command', choices=('setup', 'up', 'down', 'sync', 'status', 'index', 'search', 'test', 'check'))
+    parser.add_argument('command', choices=('setup', 'up', 'down', 'sync', 'status', 'index', 'search', 'rank', 'ask', 'test', 'check'))
     parser.add_argument('arguments', nargs=argparse.REMAINDER)
     args = parser.parse_args(argv)
     config_path = Path(args.config).expanduser()
@@ -118,7 +118,7 @@ def main(argv=None):
         config_path = Path(os.environ.get('DISC_ASSISTANT_CALLER_DIR', os.getcwd())) / config_path
     config_path = config_path.resolve()
     try:
-        if args.command not in ('search',) and args.arguments:
+        if args.command not in ('search', 'rank', 'ask') and args.arguments:
             raise ValueError('unexpected arguments; see run.sh help')
         if args.command == 'setup':
             subprocess.run([sys.executable, '-m', 'pip', 'install', '-r',
@@ -137,7 +137,7 @@ def main(argv=None):
         if not config_path.is_file():
             raise ValueError(f'config missing: {config_path}; run setup or pass --config PATH')
         config = load(config_path)
-        env = environment(config) if args.command in ('up', 'index', 'search') else dict(os.environ)
+        env = environment(config) if args.command in ('up', 'index', 'search', 'rank', 'ask') else dict(os.environ)
         if args.command == 'up':
             if config.search_host not in ('localhost', '127.0.0.1') or config.search_protocol != 'http':
                 raise ValueError('up/down manage local HTTP Typesense only; remote search is externally managed')

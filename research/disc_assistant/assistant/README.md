@@ -6,8 +6,11 @@ See the [prototype guide](../README.md) for setup, commands and acceptance, and 
 
 | File | Responsibility |
 | --- | --- |
-| `__main__.py` | `sync`, `status`, `index`, `search`; JSON output and errors |
+| `__main__.py` | `sync`, `status`, `index`, `search`, `rank`, `ask`; JSON output and errors |
 | `config.py`, `config.example.toml` | Explicit device/search/storage configuration and aliases |
+| `intents.py`, `ranking.py` | Bilingual play grammar and explained best-match ranking |
+| `languages.py`, `locales/*.toml` | Validated language dictionaries; merged literal command/target/version phrases |
+| `playback.py` | Serialized, fresh Controller selection and playback-state verification |
 | `session.py` | One short sequential controller TCP session and matching HTTP endpoint during import |
 | `requirements.txt` | Python runtime pins: official Typesense async SDK and aiohttp |
 | `compose.yaml`, `.env.example` | Independent local Typesense service |
@@ -30,10 +33,20 @@ Speech dependencies and a transitive lockfile remain deferred.
 
 The current controller client deliberately discards unrelated events during
 queries. This bounded importer checks queued scan events around HTTP reads, but
-is not a persistent event service or listening-history collector. Before adding
-playback/history, implement one reader that routes replies and events centrally,
-serializes commands and never replays an uncertain mutation.
+is not a persistent event service or listening-history collector. Playback uses a
+separate sequential reader that retains unrelated events during
+queries, guards scan activity and dispatches at most one selection. It serializes
+local device operations and never replays an uncertain mutation. Long-lived
+background event routing/history remain future work.
 
 Russian and English metadata/aliases are searchable independently of the device's
-UI language. Natural-language commands, dialogue, ranking policy, fresh selection
-and execution verification will be implemented in subsequent slices.
+UI language. Typed play requests now use lexical ranking and fresh selection verification.
+The owner deferred dialogue/confirmation: `ask` launches the best result; `rank`
+shows the same ordering without playback. See the
+[command table](../../../docs/ASSISTANT_COMMANDS.md).
+
+`[language].enabled = ["ru", "en"]` is the default in the user configuration.
+The dictionaries support mixed commands such as `Play песню Numb`. Add a language
+file and enable its code to extend forms for existing semantics. Unknown keys or
+conflicting meanings fail configuration validation. Music-name aliases remain
+separate. See the [dictionary format](../../../docs/ASSISTANT_COMMANDS.md#языковые-словари).

@@ -1,0 +1,11 @@
+[commands]
+play = ["включи"]
+
+[targets]
+artist = ["исполнителя"]
+track = ["трек", "песню"]
+
+[versions]
+live = ["концерт", "концертная"]
+remix = ["ремикс"]
+acoustic = ["акустика"]

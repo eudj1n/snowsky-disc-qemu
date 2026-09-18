@@ -16,6 +16,8 @@ Usage: research/disc_assistant/run.sh [--config PATH] COMMAND [ARGS]
   status         Show local catalog/index status
   index          Rebuild Typesense from SQLite
   search QUERY   Return candidates (optional --limit N); no playback
+  rank TEXT      Explain the best matches for Включи … / Play …, without playback
+  ask TEXT       Play the best matching artist or track; no choice prompt
   test           Run firmware-free prototype unit tests
   check          Run disposable Typesense acceptance (requires Docker image)
 

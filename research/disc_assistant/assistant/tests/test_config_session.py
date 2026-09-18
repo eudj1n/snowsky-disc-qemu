@@ -37,6 +37,15 @@ class ConfigSessionTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, 'outside'):
             load(self.path)
 
+    def test_language_defaults_selection_and_validation(self):
+        self.assertEqual(self.config.languages, ('ru', 'en'))
+        self.path.write_text(self.base + '[language]\nenabled=["en"]')
+        self.assertEqual(load(self.path).languages, ('en',))
+        for enabled in ('[]', '"ru"', '["ru", "ru"]', '["zz"]'):
+            self.path.write_text(self.base + '[language]\nenabled=' + enabled)
+            with self.subTest(enabled=enabled), self.assertRaises(ValueError):
+                load(self.path)
+
     def client(self, version=257):
         client = Mock()
         client.__enter__ = Mock(return_value=client)
