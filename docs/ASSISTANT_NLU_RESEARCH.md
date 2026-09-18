@@ -1,11 +1,12 @@
 # Language understanding and music reference research
 
-Status: **proposed experiments, 2026-09-18**. The current implementation remains
-rules plus lexical/transliterated catalog matching. No embedding model, learned
-classifier, phonetic engine or automatic training is installed or enabled. The
-owner requested a broader comparison before treating hand-authored aliases as
-the long-term solution. [Catalog evaluation](ASSISTANT_VOICE.md#catalog-selection-evaluation)
-is the implemented measurement foundation.
+Status: **first read-only model comparison completed, 2026-09-18**. The live
+Assistant remains rules plus lexical/transliterated catalog matching. An isolated
+research environment now exercises pinned multilingual MiniLM embeddings,
+character n-grams and real Typesense vector/hybrid retrieval. No learned command
+provider is enabled in the console; SetFit, phonetics and Natural Language Search
+remain pending. [Reproduction and measured results](../research/disc_assistant/experiments/nlu/README.md)
+complement the earlier [catalog speech evaluation](ASSISTANT_VOICE.md#catalog-selection-evaluation).
 
 ## Separate the problems
 
@@ -171,6 +172,69 @@ currently preserves clearer stage visibility and works without an available inde
 
 Priority adjustment: test **hybrid retrieval and structured NL search alongside
 the local intent baseline before choosing to fine-tune**. Compare local versus
-server-managed embeddings without introducing another vector database. Model
-availability, hardware cost and exact adapter support remain unvalidated; the
-review has not enabled providers or transmitted user data to them.
+server-managed embeddings without introducing another vector database. Natural
+Language Search and Voice Query adapter support remain unvalidated. The first
+local embedding/vector experiment below uses only synthetic data and does not
+enable providers in the live Assistant.
+
+
+## First model experiment checkpoint
+
+The opt-in [NLU experiment](../research/disc_assistant/experiments/nlu/README.md)
+has 182 authored bilingual intent phrases and a separate 24-row music catalog
+with development/test queries. It freezes splits, calibrates using development
+only, and records file/model/data signatures. Cached vectors are keyed by pipeline
+and text identity. The tool owns only a disposable Typesense stack and never
+connects to a player or reads the user catalog/configuration.
+
+Measured: vector candidate retrieval plus existing constraints selects 17/20
+expected recordings versus lexical 15/20, with zero false selections on six
+absence cases. Hybrid's selected configuration stays at 15/20; all development
+hybrid settings tied, so a larger discriminating development set is needed.
+Embeddings without thresholds recognize more paraphrases but falsely accept
+12/16 RU and 13/16 EN negatives. Conservative calibration rejects all RU commands.
+The rule-first learned fallback adds only two correctly classified EN commands,
+with unresolved slot extraction and existing rules false activations.
+
+Decision: **no live promotion**. Continue vector fallback in read-only evaluation;
+expand independent name/distractor data. For intentions, compare supervised hard
+negative training plus argument extraction; do not solve the observed issue by
+loosening thresholds on the inspected test set. Structured NL search and its
+missing-field/fallback behavior need a separate typed fixture/provider experiment.
+Representative human speech and Pi resource validation remain open.
+
+Validation: 229 firmware-free prototype tests pass, including five new harness
+tests; the recorded experiment uses the real pinned local embedding model and
+Typesense 30.2. This is not physical-device, microphone or production acceptance.
+
+## Command catalog and embedding snapshots
+
+The owner proposed storing commands with their embeddings. The experiment already
+persists phrase vectors in SQLite by text/pipeline hash and compares a query to
+**training examples only**, including non-command examples. Test vectors may be
+cached for evaluation but are never included in the reference set. This provides
+reuse, not a deployed command registry or better classification by itself.
+
+For a future runtime provider, keep community-editable locale files as the source
+of truth and compile an explicit read-only command index:
+
+- Command definitions: stable semantic action ID and required argument schema.
+- Examples: stable example ID, locale, original phrase and intended action, or
+  explicit non-command label. Store multiple formulations per action.
+- Snapshot: source/rule fingerprint, locale, model revision, embedding pipeline
+  signature/dimensions and publication generation.
+- Vectors: snapshot/example references and normalized values. Rebuild changed
+  inputs, publish a complete snapshot atomically, and never mix model generations.
+
+Load the small active-locale example matrix once and embed only the incoming
+request. A separate Typesense command collection can be tested if the catalog
+becomes large; it is not required merely to compare a few actions/examples.
+Catalog retrieval vectors and command vectors have different semantics and must
+not share an undifferentiated candidate list. Dataset roles must remain explicit
+so stored evaluation examples cannot silently become training references.
+
+A database changes storage and startup work, not the similarity geometry:
+“pause” and “do not pause” can still be neighbors. Activation requires a validated
+intent, correct slots and tested rejection behavior. The current measurements
+therefore still call for negative-aware classification/context handling before
+promoting the cached command vectors into a live interpreter.

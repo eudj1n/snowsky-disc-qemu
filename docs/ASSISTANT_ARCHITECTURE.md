@@ -212,3 +212,11 @@ and slot extraction from catalog name recovery and descriptive search. Candidate
 implementations include a composite Interpreter, Typesense hybrid retrieval and
 a validated Natural Language Search adapter. They share existing typed intent,
 snapshot and guarded execution boundaries; none is currently enabled.
+
+
+Read-only implementations now live in
+[`experiments/nlu`](../research/disc_assistant/experiments/nlu/README.md).
+They evaluate class labels and candidate sources without installing a live
+Interpreter provider. Label similarity cannot fabricate music/language slots;
+prototype vector candidates still pass through the common final ranker. See the
+[measured checkpoint](ASSISTANT_NLU_RESEARCH.md#first-model-experiment-checkpoint).

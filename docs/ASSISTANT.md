@@ -795,3 +795,21 @@ lexical-v2, 2/8 for lexical-v3 without aliases, and 7/8 with aliases tuned to th
 observations. Those eight decisions reuse four WAVs across base/small and a
 seven-row synthetic catalog; they do not establish generalization. See the
 [recorded catalog comparison](ASSISTANT_VOICE.md#recorded-catalog-comparison).
+
+
+## Read-only embedding and hybrid experiment, 2026-09-18
+
+Completed the first comparison from the expanded NLU plan in
+[`experiments/nlu`](../research/disc_assistant/experiments/nlu/README.md): 182
+RU/EN authored phrases, fixed train/development/test partitions, calibrated intent
+exemplar matching, reusable model/text vector cache and disposable real Typesense
+lexical/vector/hybrid track retrieval. Requirements/model download are explicit
+and isolated; Assistant runtime dependencies and defaults are unchanged.
+
+Vector candidates improve guarded selection from 15/20 to 17/20 expected tracks
+on the authored test fixture. Nearest embedding intent labels still confuse
+non-commands and negation; strict RU calibration rejects all commands. There is
+no live semantic command rollout or training claim. Full evidence, resource
+observations and limitations are in the experiment guide. All 229 prototype tests
+pass. Next: broader vector-fallback evaluation, trained negative-aware intent
+classification/slots and typed Natural Language Search; human speech remains open.

@@ -1,0 +1,6 @@
+# Isolated experiment environment, validated with Python 3.12; no live runtime change.
+# Direct pins, not a transitive lockfile. Model revision is pinned separately.
+sentence-transformers==6.0.1
+torch==2.14.0
+scikit-learn==1.9.1
+typesense==2.0.0

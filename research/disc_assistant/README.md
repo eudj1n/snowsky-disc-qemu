@@ -430,3 +430,13 @@ component tests in shared CI, broaden physical-catalog coverage and establish
 resource/ranking baselines and decide the stable storage/API
 contract. Then move the reviewed assistant/library components and update imports,
 entry points, docs and CI together. Promotion does not require splitting repositories.
+
+
+## Optional NLU and vector research
+
+The separate [NLU experiment](experiments/nlu/README.md) compares rules, character
+matching and local multilingual embeddings on frozen authored RU/EN phrases,
+plus real Typesense lexical/vector/hybrid retrieval against synthetic metadata.
+It uses explicit isolated dependencies/model preparation and read-only reports;
+normal `run.sh start`/`ask` behavior and requirements are unchanged. The guide
+contains reproduction commands, measured results and remaining limitations.
