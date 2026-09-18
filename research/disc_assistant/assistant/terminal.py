@@ -17,7 +17,7 @@ from prompt_toolkit.styles import Style
 from research.disc_assistant.assistant.journal import console_history, recallable
 from research.disc_assistant.assistant.languages import LOCALES
 
-COMMANDS = ('/connect', '/disconnect', '/status', '/queue', '/sync', '/index',
+COMMANDS = ('/connect', '/disconnect', '/device', '/status', '/queue', '/sync', '/index',
             '/search', '/rank', '/language', '/help', '/history', '/clear', '/exit')
 
 DEFAULT_STYLES = {
@@ -99,7 +99,7 @@ class Terminal:
         self.session.history = self.history
         self.session.default_buffer.history = self.history
         with patch_stdout():
-            return self.session.prompt([('class:prompt', 'disc> ')])
+            return self.session.prompt([('class:prompt', f'{self.config.device_key}> ')])
 
     def after_command(self, line, result):
         if result and result.get('status') == 'clear_screen':

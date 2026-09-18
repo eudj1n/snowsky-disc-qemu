@@ -624,3 +624,7 @@ The terminal also supports configurable prompt/input/result/error/warning and
 suggestion colors via `[terminal]`, with a `NO_COLOR` override. Terminal formatting
 does not alter command parsing, journal evidence or redirected JSON. Font family
 and size remain terminal-application settings.
+The prompt displays `[device].key`; `/device` reports configured endpoints and
+cached session state, including while disconnected. It performs no network query
+or target switch. Connected/disconnected command coverage and the 154-test
+prototype suite pass.

@@ -183,7 +183,7 @@ class LiveTests(unittest.TestCase):
         with Application(self.config) as app:
             self.assertTrue(app.session.wait_ready(2))
             self.assertIsNone(app.request('   '))
-            for line in ('/unknown', '/disconnect extra', '/search', '/rank'):
+            for line in ('/unknown', '/disconnect extra', '/device other', '/search', '/rank'):
                 with self.assertRaises(ValueError):
                     app.request(line)
             self.assertEqual(self.server.writes, 0)
@@ -200,12 +200,20 @@ class LiveTests(unittest.TestCase):
     def test_console_controls_without_search_and_disconnect_commands(self):
         with Application(self.config) as app:
             self.assertTrue(app.session.wait_ready(2))
+            device = app.request('/device')
+            self.assertEqual(device['device'], {'key': 'synthetic', 'host': '127.0.0.1',
+                'tcp_port': self.config.tcp_port, 'http_port': 1})
+            self.assertEqual(device['session']['connection'], 'ready')
             self.assertEqual(app.request('/rank Pause')['action'], 'pause')
             self.assertEqual(app.request('Pause')['status'], 'confirmed')
             self.assertEqual(app.request('Pause')['status'], 'already_satisfied')
             self.assertEqual(self.server.writes, 1)
             self.assertEqual(self.server.accepts, 1)
             self.assertEqual(app.request('/disconnect')['connection'], 'disconnected')
+            disconnected = app.request('/device')
+            self.assertEqual(disconnected['device'], device['device'])
+            self.assertEqual(disconnected['session']['connection'], 'disconnected')
+            self.assertFalse(disconnected['session']['enabled'])
             self.assertEqual(app.request('Resume')['status'], 'not_sent')
             app.request('/connect')
             self.assertTrue(app.session.wait_ready(2))

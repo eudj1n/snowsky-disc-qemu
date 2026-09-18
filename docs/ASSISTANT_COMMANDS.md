@@ -45,6 +45,10 @@ Disconnect FiiO Control before connecting: stock TCP accepts one client.
 After `start` or `listen`, enter music/control phrases directly, without `ask` or
 shell quoting. Commands share one device session; events keep updating while
 input is idle. `listen` currently means text input, not microphone capture.
+The prompt identifies the configured `[device].key`, for example
+`local-disc-emulator> `. It retains that label while disconnected; `/device`
+shows the configured target and cached connection state without a network query.
+The key is a user-assigned namespace, not a discovered hardware identity.
 
 | Console command | Behavior |
 | --- | --- |
@@ -53,6 +57,7 @@ input is idle. `listen` currently means text input, not microphone capture.
 | `/clear` | Clear the terminal screen; keep input history, journal and playback |
 | `/language [CODES\|reset]` | Show/set saved command dictionaries immediately; `reset` restores TOML defaults |
 | `/status` | Show connection generation, latest playback observations and local catalog/index state |
+| `/device` | Show the current configuration key, host, TCP/HTTP ports and cached session state; also works while disconnected |
 | `/connect` | Enable connection/reconnection asynchronously; inspect `/status` for readiness |
 | `/disconnect` | Close TCP and disable reconnect; retain the process ownership lock |
 | `/sync` | Read the catalog twice; reuse the snapshot if all ordered rows are unchanged |

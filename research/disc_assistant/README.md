@@ -58,14 +58,21 @@ application connects to DISC, synchronizes the catalog, prepares the index and
 opens a text console. Enter commands directly, without `ask` or shell quotes:
 
 ```text
-disc> /language ru en
-disc> Включи Linkin Park - Numb
-disc> Пауза
-disc> Resume
-disc> /queue
-disc> /status
-disc> /exit
+local-disc-emulator> /device
+local-disc-emulator> /language ru en
+local-disc-emulator> Включи Linkin Park - Numb
+local-disc-emulator> Пауза
+local-disc-emulator> Resume
+local-disc-emulator> /queue
+local-disc-emulator> /status
+local-disc-emulator> /exit
 ```
+
+The prompt uses your configured `[device].key`; `/device` shows its key, address,
+ports and current connection state. It remains available while disconnected and
+does not switch targets. For another device, launch with its own `--config` file.
+Simultaneous consoles also need distinct `[storage].data_dir` values because the
+existing process ownership lock is scoped to that directory.
 
 Use `./research/disc_assistant/run.sh listen` to open the same console with the
 existing snapshot/index, without Docker startup or automatic sync/index. This is

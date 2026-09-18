@@ -23,7 +23,7 @@ from research.disc_assistant.library.store import Store
 
 HELP = '''Enter Play … / Включи …, Pause / Пауза, Resume / Продолжи, Stop / Стоп,
 Next track / Следующий трек, Previous track / Предыдущий трек.
-/connect  /disconnect  /status  /queue  /sync  /index
+/connect  /disconnect  /device  /status  /queue  /sync  /index
 /search TEXT  /rank TEXT  /language [ru|en|ru en|reset]  /help  /clear  /exit
 /history [LIMIT|show ID|export PATH|prune|clear --yes]
 Terminal: Up/Down history, Ctrl-R search, Tab completion, Right accepts a suggestion,
@@ -111,6 +111,12 @@ class Application:
         return {'session': self.session.status(), 'library': head,
                 'language': {'enabled': list(self.config.languages)}}
 
+    def device(self):
+        state = self.session.status()
+        return {'device': {'key': self.config.device_key, 'host': self.config.host,
+                           'tcp_port': self.config.tcp_port, 'http_port': self.config.http_port},
+                'session': {key: state[key] for key in ('connection', 'enabled', 'generation', 'last_error')}}
+
     def request(self, line, *, source=None, reuse_index=False):
         if not line.strip():
             return None
@@ -158,6 +164,8 @@ class Application:
                 return {'status': 'clear_screen'}
             if command == 'status':
                 return self.status()
+            if command == 'device':
+                return self.device()
             if command == 'disconnect':
                 self.session.disconnect()
                 return self.session.status()
@@ -231,7 +239,8 @@ def run(config, *, bootstrap=False, input_fn=None, output=print, source='interac
             while True:
                 try:
                     try:
-                        line = terminal.read() if terminal else read_input('disc> ' if sys.stdin.isatty() else '')
+                        line = terminal.read() if terminal else read_input(
+                            f'{app.config.device_key}> ' if interactive_output else '')
                     except KeyboardInterrupt:
                         if terminal:
                             continue  # Cancel input only; no request or mutation has begun.
