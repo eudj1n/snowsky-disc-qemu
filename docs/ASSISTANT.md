@@ -905,3 +905,18 @@ text case specifications per locale, preconditions, current stop semantics and
 separate response/interpretation/device observations. The owner confirmed physical `my-player` and text RU/EN first; exact catalog
 bindings and owner phrasing still require confirmation. The worksheet is a draft,
 not a frozen or executed baseline; thresholds and acceptance remain pending.
+
+
+### Bound baseline checkpoint — 2026-09-18
+
+Owner-confirmed physical `my-player`, text RU/EN first. Six supplied recordings
+were bound through a read-only local snapshot (792 tracks), preserving duplicate
+editions and compound artist metadata. A private 30 RU / 21 EN packet includes
+complete typed gold, expected physical outcomes and blank observations; its case
+set is frozen but live preflight/execution are pending. No personal media list or
+packet was committed. See [baseline status](ASSISTANT_BASELINE.md).
+
+Requested Russian synonyms, default-track behavior and explicit album support
+are recorded separately from existing behavior. Dictionaries were not tuned
+before measurement. Album is a positive desired capability gap, not a rejection
+example; no executing album intent was added.

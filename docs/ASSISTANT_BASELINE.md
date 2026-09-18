@@ -1,22 +1,61 @@
 # Physical-player baseline: preparation and operator worksheet
 
-Prepared **2026-09-18**. **Draft, not frozen or executed.** The owner confirmed a physical `my-player`, text RU/EN first. Exact catalog
-bindings and owner phrasing await confirmation; audio-file evaluation is a separate run.
+Prepared **2026-09-18**. The owner confirmed physical `my-player`, text RU/EN
+first, supplied six artist/title targets and natural Russian command variants,
+and authorized binding from the synchronized library. The concrete private packet
+is now frozen: **30 RU / 21 EN cases**, with complete expected typed intentions
+and device-outcome predicates. **No physical run has started.** The initial generic
+matrix below remains a template; use the bound private packet for this run.
 This supports [MVP issue #21](https://github.com/eudj1n/snowsky-disc-qemu/issues/21)
 and the [baseline-first acceptance policy](ASSISTANT_MVP.md).
 
 ## Owner input needed
 
 - Confirmed: physical `my-player`, text-first RU/EN scope.
-- Supply 2–3 artists and 3–5 recordings definitely present, preferably with album
-  names. Names alone are sufficient to prepare bindings; no entire music upload.
-- Identify acceptable editions if the same title exists more than once. For the
-  first baseline prefer uniquely distinguishable ordinary tracks, not CUE entries.
-- Optionally supply five natural single-action phrases before viewing interpreter
-  output. Keep them verbatim with intended meaning; do not rewrite after failures.
+- Completed: six owner-supplied artist/title pairs were bound from the local
+  read-only SQLite snapshot; all were found. No live connection was opened.
+- Two targets have two catalog editions. Unqualified requests accept either
+  listed edition for this run, without claiming audio/byte equivalence. One target
+  has compound artist metadata; the requested name and actual metadata stay distinct.
+- Completed: owner phrasing is retained in a separate cohort. English variants
+  are authored translations/cases, not independently supplied English utterances.
 - During the live run, observe the player/sound and record the actual outcome.
   API success alone cannot establish the physical result. No firmware flashing,
   microphone purchase or hardware modification is required.
+
+## Bound private packet checkpoint
+
+The active packet is `baselines/my-player-text-v2/` beneath the configured Assistant
+`storage.data_dir`, outside Git. It contains `manifest.json`, `SHA256SUMS`, `RUN.md`,
+`run-context.json` and prefilled `observations.csv`. The 51 case IDs, commands,
+expected current typed contract and recording bindings have been checked without
+calling an interpreter or sending commands. Manifest SHA-256:
+`c42101b5103750ce57a801a5ae024b60d02c361366a3b6d7fafc7210599b03d4`.
+Version 1 was preparation only; use version 2 with complete typed expectations.
+
+The snapshot has 792 tracks and was observed on 2026-09-17. Its head/index generation
+and signature match the current configuration locally; this does not prove the
+physical catalog or firmware is still unchanged. Fill the separate run context
+after live preflight. Run shadow off for this baseline; enabling shadow defines a
+separate latency condition. Locale-switch cases remain last in each locale block.
+Do not modify the frozen manifest when filling observations or run context.
+
+Owner proposals beyond currently implemented behavior are explicit gaps:
+
+- Add play verbs `играй` / `запусти`, stop synonym `хватит`, previous `назад`, next
+  `вперед`. Desired positive results are recorded; no dictionary tuning preceded
+  this baseline. Both existing and unfamiliar formulations remain in the run.
+- Make an omitted music qualifier mean track. The current typed contract uses
+  `auto`; this baseline preserves that representation while recording whether the
+  requested track actually resolves. The policy change is not silently installed.
+- Add `альбом` as an explicit play target. The current Assistant intent contract
+  has no album kind. This is a capability gap, **not a negative gold example** or
+  a silently supported command. It is excluded from this executable cohort and
+  must remain visible in coverage; adding it needs a separate implementation.
+
+Expansion after this baseline must be tested as a new candidate against retained
+regression and fresh acceptance data. Complex/multi-action commands remain outside
+MVP scope; playing an album would still be a single action.
 
 ## Freeze before execution
 

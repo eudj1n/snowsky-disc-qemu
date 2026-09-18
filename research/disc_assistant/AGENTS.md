@@ -26,8 +26,10 @@ Keep this prototype under research until a separate promotion/split decision.
 
 ## Where to resume
 
-- `../../docs/ASSISTANT_BASELINE.md`: draft physical text baseline, pending owner media bindings;
-  do not claim it is frozen or run. CSV observation header is in `experiments/acceptance/`.
+- `../../docs/ASSISTANT_BASELINE.md`: private bound case set (30 RU / 21 EN),
+  `baselines/my-player-text-v2/` beneath configured data_dir. Media/gold are frozen;
+  live preflight and execution remain pending. Do not publish personal packet contents.
+  CSV observation header is in `experiments/acceptance/`.
 - `../../docs/ASSISTANT.md`: implementation roadmap and historical increments.
 - `../../docs/ASSISTANT_ARCHITECTURE.md`: interpreter/STT/TTS contracts, one saved locale.
 - `../../docs/ASSISTANT_INTERPRETATION_SOURCES.md`: independent evidence and shadow boundary.
@@ -56,6 +58,11 @@ runtime storage, reruns providers, connects to a player, trains or selects a mod
 Disagreement is not error. Provider unavailability is not a semantic vote. Reports
 separate locale, text/speech, STT fingerprint and source revision. Gold metrics
 require explicit reviewed labels; never treat command outcomes or predictions as gold.
+
+Owner-supplied synonyms are baseline cases, not yet dictionary changes. The
+requested default-track policy and explicit album target are recorded gaps. Current
+`auto` semantics remain; no album intent or physical album-command acceptance is
+claimed. Measure this candidate before tuning these cases.
 
 ## Ownership and data rules
 

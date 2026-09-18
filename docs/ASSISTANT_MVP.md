@@ -27,9 +27,10 @@ playback/controls. File speech tests and source comparisons also exist. A frozen
 representative physical-device baseline and numerical acceptance have **not** been
 completed. Shadow-report accuracy concerns interpretation, not device success.
 
-The [first physical-player baseline worksheet](ASSISTANT_BASELINE.md) is prepared
-as a draft, awaiting target/media confirmation and concrete expectation review.
-It is not frozen, executed or accepted.
+The [first physical-player baseline](ASSISTANT_BASELINE.md) now has a private
+frozen 51-case text packet bound to the synchronized catalog and owner phrasing.
+Live preflight, execution and acceptance remain pending; audio/failure-scenario
+coverage still needs a later extension.
 
 ## Baseline and acceptance checklist
 
