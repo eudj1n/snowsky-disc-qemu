@@ -45,7 +45,8 @@ Aiohttp serves the web interface and bounded loopback speech adapters. Web alway
 uses Whisper Server. `setup --all` installs the runtime and optional speech bundle;
 see [Piper and managed services](../../../docs/ASSISTANT_TTS.md). CLI/file STT may
 retain its explicit CLI backend. Piper runs in its own Python 3.11 container;
-optional host dependencies are only TOML editing and sample resampling.
+optional host dependencies cover TOML editing, sample resampling and an explicit
+public CA bundle for model downloads.
 A transitive lockfile remains deferred.
 
 `run.sh start` starts Typesense, then opens one foreground application for

@@ -55,6 +55,33 @@ lockfile: OS image tags and package dependency resolution can still change.
 training/embedding experiments are separate optional environments and are not
 installed by this runtime command.
 
+## Download certificates
+
+The installer loads the pinned `certifi` public CA bundle in addition to Python's
+platform/default trust. This avoids relying on an initialized CA store in a
+standalone Python installation. Certificate-chain and hostname verification stay
+enabled; model SHA-256 validation is a separate check. See
+[Python TLS contexts](https://docs.python.org/3/library/ssl.html#ssl.create_default_context)
+and [certifi](https://github.com/certifi/python-certifi).
+
+If an older checkout fails at `Downloading ggml-base.bin` with
+`CERTIFICATE_VERIFY_FAILED`, update the checkout and rerun `setup --all`. It
+installs the explicit CA dependency before downloading; already verified models
+are reused. The pip upgrade notice is unrelated to model download TLS.
+
+For a trusted HTTPS-inspecting proxy whose CA is not in public/default trust,
+obtain its PEM CA bundle from your administrator and pass it explicitly:
+
+```sh
+DISC_ASSISTANT_CA_BUNDLE=/absolute/path/trusted-proxy-ca.pem \
+  ./research/disc_assistant/run.sh setup --all
+```
+
+This adds trust only for the model downloader; it does not change pip or Docker
+trust settings. Invalid bundles fail closed. The installer never retries with
+certificate verification disabled and never installs a certificate from a failed
+connection automatically.
+
 ## Service lifecycle
 
 `web --bootstrap` starts the managed speech stack when `[services] speech=true`,

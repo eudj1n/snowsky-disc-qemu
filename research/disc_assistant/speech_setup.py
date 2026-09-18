@@ -4,13 +4,29 @@ import json
 import os
 from pathlib import Path
 import secrets
+import ssl
 import subprocess
+import urllib.error
 import urllib.request
 
 from research.disc_assistant.assistant.config import load
 
 SERVICES = Path(__file__).parent / 'assistant/voice/services'
 VOICES = {'ru': 'ru_RU-denis-medium', 'en': 'en_GB-alba-medium'}
+
+
+def download_context():
+    """Keep platform trust and add explicit public roots for standalone Python builds."""
+    import certifi
+    context = ssl.create_default_context()
+    context.load_verify_locations(cafile=certifi.where())
+    extra = os.environ.get('DISC_ASSISTANT_CA_BUNDLE')
+    if extra:
+        try:
+            context.load_verify_locations(cafile=str(Path(extra).expanduser()))
+        except (OSError, ssl.SSLError) as exc:
+            raise ValueError('DISC_ASSISTANT_CA_BUNDLE must name a readable, trusted PEM CA bundle') from exc
+    return context
 
 
 def sha256(path):
@@ -29,7 +45,7 @@ def download(entry, root):
     print(f'Downloading {entry["file"]}', flush=True)
     try:
         total = 0
-        with urllib.request.urlopen(entry['url'], timeout=60) as source, temporary.open('xb') as output:
+        with urllib.request.urlopen(entry['url'], timeout=60, context=download_context()) as source, temporary.open('xb') as output:
             while chunk := source.read(1024 * 1024):
                 total += len(chunk)
                 if total > 1024 * 1024 * 1024:
@@ -39,6 +55,14 @@ def download(entry, root):
             raise ValueError('Downloaded model checksum mismatch')
         temporary.chmod(0o644)
         temporary.replace(target)
+    except (urllib.error.URLError, ssl.SSLCertVerificationError) as exc:
+        reason = exc.reason if isinstance(exc, urllib.error.URLError) else exc
+        if isinstance(reason, ssl.SSLCertVerificationError):
+            raise RuntimeError('Model download TLS certificate verification failed. '
+                               'If a trusted proxy inspects HTTPS, set DISC_ASSISTANT_CA_BUNDLE '
+                               'to its administrator-provided PEM CA bundle and rerun setup --all. '
+                               'Certificate verification remains enabled.') from exc
+        raise
     finally:
         temporary.unlink(missing_ok=True)
 

@@ -23,6 +23,17 @@ checks passed. Browser Resume against the synthetic peer reached `Reply played`;
 this is browser completion evidence, not a subjective audio-quality assessment.
 See the speech guide for evidence boundaries and dependency/model notices.
 
+### Installer certificate follow-up
+
+An owner workstation reported `CERTIFICATE_VERIFY_FAILED` downloading Whisper.
+The downloader now explicitly loads pinned certifi roots alongside Python default
+trust, with an optional administrator-provided `DISC_ASSISTANT_CA_BUNDLE`. TLS and
+hostname verification remain required. **22 focused installer/launcher tests** pass,
+including an empty initial trust store, custom/invalid CA bundles and no insecure
+retry. Real pinned model-card download and a ranged Whisper model download also
+passed with an initially empty CA store, including HTTPS redirects. The previous
+330-test full-run checkpoint above remains unchanged.
+
 ## Browser input, 2026-09-18
 
 [Disc Assistant Web](ASSISTANT_WEB.md) now provides a separate loopback interface

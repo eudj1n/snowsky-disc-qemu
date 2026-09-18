@@ -3,8 +3,11 @@ from contextlib import redirect_stdout
 import hashlib
 import io
 import json
+import os
 from pathlib import Path
+import ssl
 import tempfile
+import urllib.error
 import unittest
 from unittest.mock import patch
 
@@ -27,6 +30,9 @@ class SpeechSetupTests(unittest.TestCase):
             speech_setup.download(entry, self.root)
             speech_setup.download(entry, self.root)
             fetch.assert_called_once()
+            context = fetch.call_args.kwargs['context']
+            self.assertEqual(context.verify_mode, ssl.CERT_REQUIRED)
+            self.assertTrue(context.check_hostname)
         (self.root / 'model.bin').write_bytes(b'unknown')
         with self.assertRaises(ValueError):
             speech_setup.download(entry, self.root)
@@ -35,6 +41,38 @@ class SpeechSetupTests(unittest.TestCase):
         with patch.object(speech_setup.urllib.request, 'urlopen', return_value=io.BytesIO(b'corrupt')):
             with self.assertRaises(ValueError):
                 speech_setup.download(entry, self.root)
+        self.assertFalse((self.root / 'model.bin').exists())
+        self.assertFalse(list(self.root.glob('*.part-*')))
+
+    def test_public_roots_work_without_python_default_ca_store(self):
+        empty = ssl.SSLContext(ssl.PROTOCOL_TLS_CLIENT)
+        self.assertEqual(empty.cert_store_stats()['x509_ca'], 0)
+        with patch.object(speech_setup.ssl, 'create_default_context', return_value=empty), \
+                patch.dict(os.environ, {'DISC_ASSISTANT_CA_BUNDLE': ''}):
+            context = speech_setup.download_context()
+        self.assertGreater(context.cert_store_stats()['x509_ca'], 0)
+        self.assertEqual(context.verify_mode, ssl.CERT_REQUIRED)
+        self.assertTrue(context.check_hostname)
+
+    def test_custom_ca_bundle_is_loaded_and_invalid_paths_fail_closed(self):
+        import certifi
+        bundle = self.root / 'trusted-ca.pem'
+        bundle.write_bytes(Path(certifi.where()).read_bytes())
+        with patch.dict(os.environ, {'DISC_ASSISTANT_CA_BUNDLE': str(bundle)}):
+            context = speech_setup.download_context()
+            self.assertTrue(context.check_hostname)
+            self.assertEqual(context.verify_mode, ssl.CERT_REQUIRED)
+            bundle.write_text('invalid certificate')
+            with self.assertRaisesRegex(ValueError, 'trusted PEM CA bundle'):
+                speech_setup.download_context()
+
+    def test_tls_failure_has_actionable_error_without_insecure_retry(self):
+        entry = {'file': 'model.bin', 'url': 'https://fixture.invalid/model', 'sha256': 'unused'}
+        failure = urllib.error.URLError(ssl.SSLCertVerificationError(1, 'untrusted test certificate'))
+        with patch.object(speech_setup.urllib.request, 'urlopen', side_effect=failure) as fetch:
+            with self.assertRaisesRegex(RuntimeError, 'DISC_ASSISTANT_CA_BUNDLE'):
+                speech_setup.download(entry, self.root)
+        fetch.assert_called_once()
         self.assertFalse((self.root / 'model.bin').exists())
         self.assertFalse(list(self.root.glob('*.part-*')))
 
