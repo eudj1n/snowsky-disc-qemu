@@ -1,6 +1,7 @@
 """Native queue observations; independent of search and recommendation policy."""
 from collections import Counter
 from controller.catalog import CatalogReader, CatalogChanged
+from controller.playback import album_matches
 
 MODES = ('list_once', 'random', 'repeat_one', 'repeat_list', 'single_once')
 
@@ -37,7 +38,7 @@ def continuation(mode, total, mark):
     return ('random_within_queue', 'repeat_current', 'wrap_queue', 'stop_after_current')[mode-1]
 
 
-def snapshot(config, client, http, *, expected=None, selected=None):
+def snapshot(config, client, http, *, expected=None, selected=None, selected_position=None):
     mode = client.play_mode()
     result = read_queue(config, http)
     # A fresh state read AFTER HTTP checks catches observed source replacement.
@@ -61,9 +62,19 @@ def snapshot(config, client, http, *, expected=None, selected=None):
                 or song.get('song_artist_name') != result['items'][mark]['author']):
             raise CatalogChanged('queue selection is not confirmed by fresh playback state')
         if selected is not None and (song.get('song_artist_name') != selected['artist'] or
-                (selected.get('album') is not None and song.get('song_album_name') != selected['album']) or
                 (selected['kind'] == 'track' and song.get('song_name') != selected['title'])):
             raise CatalogChanged('playback changed during queue observation')
+        if selected_position is not None and mark != selected_position:
+            raise CatalogChanged('queue position differs from the requested selection')
+        if selected is not None and not album_matches(state, selected, config=config, http=http):
+            raise CatalogChanged('playback album differs from the requested selection')
+        if (selected is not None and selected.get('album') is not None
+                and song.get('song_album_name') != selected['album']):
+            fresh = client.now_playing()
+            if any(fresh.get(key) != state.get(key) for key in ('state', 'playerflag', 'song')):
+                raise CatalogChanged('playback changed while resolving the shortened album')
+        # The extra HTTP reads for a shortened album can receive scan events too.
+        client.scan_guard()
     result.update(mode=mode, mode_name=MODES[mode], state=state,
                   continuation=continuation(mode, result['total'], result['mark']),
                   consistency='two_equal_reads_not_atomic',

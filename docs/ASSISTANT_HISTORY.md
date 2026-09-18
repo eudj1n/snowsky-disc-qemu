@@ -20,7 +20,7 @@ marked `scheduled` requests, and automatic `startup` preparation.
 | Ranking | Up to 10 ranked candidates, scores/reasons, ranking policy and retrieval method; exact SQLite matches do not invent a Typesense query |
 | Selection | Best candidate, rank, snapshot generation and `automatic_best_match` method; recorded only for a requested launch |
 | Execution | Start of the operation, linked operation ID, reported mutation attempt, observed result/state and separate mode-change outcome when available |
-| Failure | Stage, category and exception class, or `not_sent`/`uncertain` operation outcome; raw exception bodies are excluded |
+| Failure | Stage, category and exception class, or `not_sent`/`uncertain` operation outcome; playback confirmation retains a compact last observation; raw exception bodies are excluded |
 | Timing | Per-event UTC timestamp and elapsed milliseconds from request start |
 
 `rank` and `search` retain candidates without claiming playback selection. A

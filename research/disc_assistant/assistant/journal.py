@@ -70,7 +70,7 @@ def outcome(result):
     safe = {k: result[k] for k in ('status', 'operation_id', 'mutation_attempted', 'action',
             'outcome', 'state', 'fresh_position', 'metadata_equivalent_rows', 'assistant_continuation',
             'device_stop_semantics', 'enabled', 'source', 'reused', 'generation', 'index_generation',
-            'track_count', 'error_type', 'requested', 'previous') if k in result}
+            'track_count', 'error_type', 'requested', 'previous', 'confirmation') if k in result}
     if result.get('status') in ('not_sent', 'uncertain'):
         safe['failure_category'] = result['status']
     if 'mode_change' in result:

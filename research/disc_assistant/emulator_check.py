@@ -24,6 +24,8 @@ from tests.integration.track_end_trace import validate
 from tests.integration.remote_control import flush
 from research.diagnostics.player_memory import PlayerMemory
 
+LONG_ALBUM = 'Assistant Confirmation Anniversary Edition'
+
 
 class Client(BaseClient):
     """Test-only initial connection readiness; never retry an established session."""
@@ -45,6 +47,10 @@ def fixtures(directory):
         subprocess.run(['sox', str(wav), '--add-comment', 'ARTIST=Assistant CI',
                         '--add-comment', 'ALBUM=Assistant EOF',
                         str(Path(directory) / (name + '.flac')), 'trim', '0', '6'], check=True)
+    for name in ('Confirmation A', 'Confirmation B'):
+        subprocess.run(['sox', str(wav), '--add-comment', 'ARTIST=Confirmation CI',
+                        '--add-comment', 'ALBUM=' + LONG_ALBUM,
+                        str(Path(directory) / (name + '.flac'))], check=True)
 
 
 async def eof():
@@ -68,7 +74,7 @@ async def eof():
             print(f'PASS: type-7 native EOF mode={mode}, positions={positions}', flush=True)
 
 
-def persistent(config, store, ranking, short_ranking):
+def persistent(config, store, ranking, short_ranking, long_ranking):
     from research.disc_assistant.assistant.live import DeviceSession, LiveSocket
     from unittest.mock import patch
     writes = []
@@ -99,6 +105,17 @@ def persistent(config, store, ranking, short_ranking):
         selected = ranking['candidates'][0]
         check_session(session, artist=selected['artist'], album=selected['album'], index=result['fresh_position'])
         assert session.client is initial
+        with session.operation() as client:
+            result = execute(config, store, long_ranking, shared=client)
+            assert result['status'] == 'playing', result
+            assert result['queue']['mark'] == result['fresh_position'], result
+        reported_album = result['state']['song']['song_album_name']
+        assert reported_album and LONG_ALBUM.startswith(reported_album), result
+        selected = long_ranking['candidates'][0]
+        from controller.models import OperationStatus
+        confirmed = session.play_artist(selected['artist'], album=LONG_ALBUM, index=result['fresh_position'])
+        assert confirmed.status == OperationStatus.PLAYING, confirmed
+        print(f'PASS: long album selection via Assistant and Controller; observed album={reported_album!r}', flush=True)
         with session.operation() as client:
             result = execute(replace(config, continuous_context=True), store, short_ranking, shared=client)
             assert result['status'] == 'playing', result
@@ -147,13 +164,15 @@ def exercise(persistent_only=False):
             head = sync(config, store)
         time.sleep(1)
         documents = store.documents(head['generation'])
-        assert len(documents) == 6
+        assert len(documents) == 8
         target = next(d for d in documents if d['title'] == NAMES[2])
         ranking = {'generation': head['generation'], 'candidates': [dict(target, track_id=target['id'], kind='track')]}
         if persistent_only:
             short = next(d for d in documents if d['artist'] == 'Assistant CI')
             short_ranking = {'generation': head['generation'], 'candidates': [dict(short, track_id=short['id'], kind='track')]}
-            persistent(config, store, ranking, short_ranking)
+            long = next(d for d in documents if d['album'] == LONG_ALBUM)
+            long_ranking = {'generation': head['generation'], 'candidates': [dict(long, track_id=long['id'], kind='track')]}
+            persistent(config, store, ranking, short_ranking, long_ranking)
             return
         started = execute(replace(config, continuous_context=True), store, ranking)
         assert started['status'] == 'playing', started

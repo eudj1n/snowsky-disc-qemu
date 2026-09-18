@@ -78,14 +78,17 @@ def execute(config, store, ranking, *, shared=None):
                 guard = GuardedHTTP(http, category, filters, rows, index, client)
                 client.play_artist(selected['artist'], index if selected['kind'] == 'track' else None,
                                    album=selected.get('album'), http=guard)
-                state = verify_playing(client, selected, rows, config.timeout)
+                result['confirmation'] = {}
+                state = verify_playing(client, selected, rows, config.timeout,
+                                       config=config, http=http, diagnostics=result['confirmation'])
                 result.update(status='playing' if state else 'uncertain', mutation_attempted=True,
                               fresh_position=index if selected['kind'] == 'track' else None,
                               metadata_equivalent_rows=equivalents, state=state)
                 if not state:
                     result['reason'] = 'playback not confirmed before timeout; selection was not retried'
                 else:
-                    result['queue'] = queue_snapshot(config, client, http, expected=rows, selected=selected)
+                    result['queue'] = queue_snapshot(config, client, http, expected=rows, selected=selected,
+                        selected_position=index if selected['kind'] == 'track' else None)
                     result['queue']['source'] = {'category': category, **filters}
                     if config.continuous_context and result['queue']['mode_name'] != 'repeat_list':
                         raise CatalogChanged('continuous mode changed externally; selection was not retried')

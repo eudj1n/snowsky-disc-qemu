@@ -93,6 +93,16 @@ they must not be treated as a continuation playlist.
 
 Current track launch uses `play_artist(artist, index, album=album)`: a position in
 an artist-scoped album, type 7. Artist requests use the whole artist catalog.
+
+Now-playing album text can be shorter than the full HTTP catalog name, as seen
+on the physical player on 2026-09-18. The shared Controller resolves a nonempty
+album prefix only against two equal, fresh artist-album listings with exactly one
+compatible name, then verifies native queue membership and the requested position.
+Ambiguous prefixes remain uncertain. Title/artist equality is not relaxed, and no
+selection is retried. See [the confirmation contract](CONTROLLER_API.md#use).
+Results and the request journal retain `confirmation.last_observed` (state, source
+type, title, artist, album and wire `pos_id`) even when confirmation times out;
+`state: null` still means playback was not confirmed, not that it stopped.
 Controller tests establish these source memberships; the first Assistant slice
 verified the selected track, not audible continuity. See
 [artist-scoped playback](LIBRARY_BROWSING.md#browse-and-play).

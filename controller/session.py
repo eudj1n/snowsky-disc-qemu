@@ -360,10 +360,11 @@ class DiscSession:
             client.scan_guard()
             guard = GuardedHTTP(http, category, filters, rows, position, client)
             client.play_artist(artist, index, album=album, http=guard)
-            state = verify_playing(client, selected, rows, self.config.timeout)
+            state = verify_playing(client, selected, rows, self.config.timeout, config=self.config, http=http)
             result = {'status': 'playing' if state else 'uncertain', 'mutation_attempted': True, 'state': state}
             if state:
-                result['queue'] = snapshot(self.config, client, http, expected=rows, selected=selected)
+                result['queue'] = snapshot(self.config, client, http, expected=rows, selected=selected,
+                                           selected_position=index)
             else:
                 result['reason'] = 'playback not confirmed; selection was not retried'
             return result

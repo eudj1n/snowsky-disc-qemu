@@ -82,6 +82,13 @@ class JournalTests(unittest.TestCase):
         self.assertTrue(row['outcome']['mutation_attempted'])
         self.assertNotIn('private error body', json.dumps(row))
 
+    def test_confirmation_observation_survives_uncertain_result(self):
+        observation = {'last_observed': {'state': 0, 'album': 'Fixture Extended Edit'}}
+        with patch.object(cli, 'control', return_value={'status': 'uncertain',
+                          'mutation_attempted': True, 'confirmation': observation}):
+            self.assertEqual(self.invoke('ask', 'Pause')[0], 1)
+        self.assertEqual(self.latest()['outcome']['confirmation'], observation)
+
     def test_cli_music_records_ranking_selection_and_confirmed_result(self):
         store, client = self.fixture()
         with patch.dict('os.environ', {'TYPESENSE_API_KEY': 'secret-marker'}), \

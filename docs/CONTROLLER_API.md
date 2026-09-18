@@ -76,6 +76,16 @@ not permanent IDs or cached search offsets. Album Play all also verifies the
 reported album. No atomic device revision exists, so external edits can still race
 reads and mutations. Queue observation likewise is not a lease on its positions.
 
+Physical playback reported on 2026-09-18 exposed different album text between
+HTTP catalog and now-playing metadata: the latter can contain only a prefix of
+the full catalog name. Confirmation accepts that difference only when two fresh
+`artist/album` reads agree and the requested full name is the only name compatible
+with the nonempty prefix. Title, artist, playing state and type-7 source remain
+exact; the full native queue is checked and indexed playback must report the
+requested position. A final state read follows the extra album queries. Ambiguous
+prefixes, changed catalogs/queues and other metadata differences remain uncertain,
+with no replay. No fixed truncation length or universal ID mapping is assumed.
+
 ## Normalized data and outcomes
 
 `DeviceSnapshot` contains connection state, enabled flag, connection generation,
@@ -145,6 +155,15 @@ The 2026-09-18 checkpoint passed 322 firmware-free Python tests (including nine
 new session/boundary tests), 37 JavaScript tests and 142 Assistant prototype tests.
 The disposable Typesense end-to-end check and generated-media V2.57 persistent
 acceptance also passed. This checkpoint does not claim new physical-device validation.
+
+The subsequent shortened-album fix passed 330 firmware-free Python tests, 37
+JavaScript tests and 144 Assistant tests. Eight new Controller regression tests
+cover corroborated prefixes, ambiguity, changing catalogs, wrong metadata/positions
+and retained timeout observations. The generated V2.57 fixture independently
+reproduces a shortened album in now-playing metadata; Assistant and the public
+facade both confirm it through fresh catalog/queue evidence. The owner supplied
+the physical failure and matching `/status`; physical revalidation of the fix is
+still pending.
 
 Controller unit tests use an independent synthetic wire peer and enforce the
 production import boundary. They cover immutable state, one connection across

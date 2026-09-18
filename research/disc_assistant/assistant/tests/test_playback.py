@@ -129,6 +129,20 @@ class PlaybackTests(unittest.TestCase):
             self.assertEqual(self.execute()['status'], 'uncertain')
         self.assertEqual(self.client.calls, 1)
 
+    def test_shortened_album_is_confirmed_with_fresh_catalog_and_queue(self):
+        original = self.http.catalog
+        def catalog(category, **kwargs):
+            if category == 'artist/album':
+                return {'total': 1, 'items': [{'pos': 0, 'name': 'Meteora'}]}
+            return original(category, **kwargs)
+        self.http.catalog = catalog
+        self.client.snapshot['song']['song_album_name'] = 'Meteor'
+        result = self.execute()
+        self.assertEqual(result['status'], 'playing')
+        self.assertEqual(result['confirmation']['last_observed']['album'], 'Meteor')
+        self.assertEqual(result['queue']['mark'], 1)
+        self.assertEqual(self.client.calls, 1)
+
     def test_artist_play_all_uses_no_index(self):
         self.ranking['candidates'] = [{'kind': 'artist', 'artist': 'Linkin Park'}]
         self.assertEqual(self.execute()['status'], 'playing')
