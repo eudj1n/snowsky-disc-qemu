@@ -218,7 +218,7 @@ Implemented language forms live in separate `assistant/locales/ru.toml` and
 phrases; the default enables both, including mixed-language requests. Conflicting
 meanings fail validation. Adding forms for existing semantics requires no parser
 change; new actions still require implementation. See the
-[language configuration](ASSISTANT_COMMANDS.md#языковые-словари).
+[language configuration](ASSISTANT_COMMANDS.md#language-dictionaries).
 
 For artist playback, use guarded `play_artist(artist, http=http)`. For a recording
 in a named artist album, resolve fresh rows and use
@@ -288,7 +288,7 @@ claimed; filesystem access inside the emulator is not physical-device API access
 
 Consequently, device locale is **unknown through the supported remote contract**.
 Keep assistant UI/reply language and accepted command languages independent of it.
-The planned command parser will accept both `Включи Linkin Park` and `Play Linkin Park`,
+The command parser accepts both `Включи Linkin Park` and `Play Linkin Park`,
 mapping them to the same intent. Test both text variants and mixed Russian/English
 speech; do not force an English-only model based on a presumed device locale.
 Choose assistant UI language explicitly or from the host/browser preference with
@@ -311,17 +311,21 @@ but must not restrict accepted command languages.
   sending. Report unconfirmed execution as uncertain; do not automatically retry.
 - On reconnect, discard pending mutations, handshake and refresh state. Never
   replay an old selection or toggle. No remote power-on capability is assumed.
-- Future pause/resume uses observed state and the documented toggle semantics;
+- Pause/resume uses observed state and the documented toggle semantics;
   no unverified absolute play/pause command is introduced.
 
-The next two increments are specified in the
+The two playback increments are specified in the
 [playback and queue plan](ASSISTANT_PLAYBACK.md): M2a adds index-independent
-pause/resume, stop-as-session-cancellation-and-pause, and stock navigation;
+pause/resume, explicit pause-preserving-position stop semantics, and stock navigation;
 M2b reads the actual native queue and makes continuation/mode policy explicit.
 Track search candidates are not a continuation playlist. Album/artist context
 comes first; an arbitrary assistant-managed recommendation queue requires a
 separately validated execution strategy and, potentially, a persistent session.
-These are prepared contracts, not implemented commands.
+Both increments now have prototype implementations. Controls and read-only `queue`
+bypass search/index dependencies. A short-lived CLI has no background continuation
+plan to cancel. `playback.continuous_context=true` explicitly permits a separately
+verified persistent repeat-list mode change before selection; default configs
+preserve mode. Arbitrary queue plans and their cancellation remain future work.
 
 These rules follow [DISC capabilities](DISC_CAPABILITIES.md),
 [remote control](REMOTE_CONTROL.md) and [track completion](TRACK_END.md).
@@ -465,18 +469,25 @@ Unit/transport fixtures cover bilingual commands, aliases, fuzzy matches, versio
 constraints, stale/reordered source rows, interleaved scan events, metadata/state
 deltas and uncertain writes without replay. Disposable Typesense acceptance uses
 real Controller TCP/HTTP clients and a synthetic player for best-match artist,
-recording and requested-live launches. All 71 prototype unit tests pass, including
-language selection/merging, multiword forms, dictionary validation and extension
-without parser changes. A read-only
+recording and requested-live launches. All 97 prototype unit tests pass, including
+language selection/merging, multiword forms, dictionary validation, controls without
+search, actual queue observation and partial mode/selection failures. A read-only
 `rank` query against the owner's existing physical-library snapshot returned the
 requested recording via its explicit Cyrillic aliases. This validates the software
 path and one live-data ranking case; physical `ask` playback and a labeled
 personal-library ranking benchmark remain pending.
 
-Next: implement the prepared [M2a/M2b contracts](ASSISTANT_PLAYBACK.md), evaluate
-`rank` on representative physical-library queries and validate bounded `ask`
-playback on deliberately selected music, then add button-driven microphone input
+M2a/M2b validation also passed on a disposable V2.57 guest: actual controls,
+previous-to-start after ten seconds, queue continuation after CLI disconnect,
+and natural type-7 EOF across all five modes with generated six-second tracks.
+The shared firmware-free suite passed 313 Python / 37 JavaScript tests alongside
+the 97 prototype tests. Physical controls/continuation acceptance remains pending;
+see [playback validation](ASSISTANT_PLAYBACK.md).
+
+Next: evaluate `rank` on representative physical-library queries and validate bounded
+`ask` playback, controls and native continuation on deliberately selected physical
+music, then add button-driven microphone input
 (M3). Continue in `research/disc_assistant/`; promotion, repository splitting,
 arbitrary recommendation-queue execution, a background history session and a
-choice dialogue are separate later work. No new controls or queue mutations were
-enabled while preparing these two directions.
+choice dialogue are separate later work. Native queue selection works through
+existing guarded Controller APIs; no new firmware command was introduced.

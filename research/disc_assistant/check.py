@@ -37,6 +37,11 @@ class LinkHandler(socketserver.BaseRequestHandler):
                     self.request.sendall(frame('a599', '0306'))
                 elif tag == '0501':
                     self.request.sendall(frame('a501', '{"soc_version":257}'))
+                elif tag == '0105':
+                    self.request.sendall(frame('a102', f'{self.server.mode:04X}'))
+                elif tag == '0102':
+                    self.server.mode = int(payload, 16)
+                    self.server.mutations += 1
                 elif tag in ('0100', '0101'):
                     prefix = 8 if tag == '0100' else 4
                     assert payload[prefix-4:prefix] == b'0007'
@@ -45,12 +50,21 @@ class LinkHandler(socketserver.BaseRequestHandler):
                              (not selector['album'] or t.album == selector['album'])]
                     index = int(payload[:4], 16) if tag == '0100' else 0
                     self.server.selected = scope[index]
+                    self.server.queue, self.server.index, self.server.state = scope, index, 0
                     self.server.mutations += 1
+                elif tag == '0201':
+                    action = int(payload, 16)
+                    self.server.mutations += 1
+                    if action == 0:
+                        self.server.state = 1 - self.server.state
+                    else:
+                        self.server.index = (self.server.index + (1 if action == 1 else -1)) % len(self.server.queue)
+                        self.server.selected = self.server.queue[self.server.index]
                 elif tag == '0202':
                     selected = self.server.selected
-                    snapshot = {} if selected is None else {'state': 0, 'playerflag': 7,
+                    snapshot = {} if selected is None else {'state': self.server.state, 'playerflag': 7,
                         'song': {'song_name': selected.title, 'song_artist_name': selected.artist,
-                                 'song_album_name': selected.album}}
+                                 'song_album_name': selected.album, 'pos_id': self.server.index + 1}}
                     self.request.sendall(frame('a202', json.dumps(snapshot, ensure_ascii=False)))
                 else:
                     raise AssertionError(f'Unexpected device command: {tag}')
@@ -65,11 +79,17 @@ class CatalogHandler(BaseHTTPRequestHandler):
             self.send_error(404)
             return
         filters = {key: unquote(self.headers[key]) for key in ('album', 'artist') if key in self.headers}
-        page = Catalog().catalog(self.headers['type'], int(self.headers['start-pos']),
-                                 int(self.headers['num-max']), **filters)
+        offset, limit = int(self.headers['start-pos']), int(self.headers['num-max'])
+        if self.headers['type'] == 'curlist/song':
+            rows = [dict(pos=i, name=t.title, author=t.artist) for i, t in enumerate(self.server.link.queue)]
+            page = {'items': rows[offset:offset+limit], 'total': len(rows), 'mark': self.server.link.index}
+        else:
+            page = Catalog().catalog(self.headers['type'], offset, limit, **filters)
         body = json.dumps(page['items'], ensure_ascii=False).encode()
         self.send_response(200)
         self.send_header('total-num', str(page['total']))
+        if 'mark' in page:
+            self.send_header('mark-pos', str(page['mark']))
         self.send_header('Content-Length', str(len(body)))
         self.end_headers()
         self.wfile.write(body)
@@ -108,6 +128,9 @@ async def main():
                 socketserver.ThreadingTCPServer(('127.0.0.1', 0), LinkHandler) as link, \
                 ThreadingHTTPServer(('127.0.0.1', 0), CatalogHandler) as catalog:
             link.selected, link.mutations = None, 0
+            link.queue, link.index, link.state = [], 0, 0
+            link.mode = 0
+            catalog.link = link
             threads = [threading.Thread(target=s.serve_forever, daemon=True) for s in (link, catalog)]
             for thread in threads:
                 thread.start()
@@ -175,10 +198,41 @@ page_size = 2
                         assert playing['metadata_equivalent_rows'] == 2
                         assert playing['fresh_position'] == 0
                     assert link.mutations == previous + 1
+                    assert playing['queue']['total'] >= 1
+                    assert playing['queue']['mode'] == 0
                 previous = link.mutations
                 assert cli('ask', 'Play Linkin Park - DefinitelyMissing')['status'] == 'not_found'
                 assert link.mutations == previous
                 print('PASS: exact/fuzzy ranking, best-match track/live/artist/CUE playback, missing request sends nothing', flush=True)
+                # Controls do not require search credentials or a current index.
+                cli('sync')
+                key = env.pop('TYPESENSE_API_KEY')
+                try:
+                    assert cli('rank', 'Пауза')['status'] == 'planned'
+                    assert cli('queue')['queue']['total'] == 2
+                    for phrase, expected in [('Пауза', 'confirmed'), ('Pause', 'already_satisfied'),
+                                             ('Resume', 'confirmed'), ('Продолжи', 'already_satisfied'),
+                                             ('Next track', 'confirmed'), ('Предыдущий трек', 'confirmed'),
+                                             ('Stop', 'confirmed'), ('Стоп', 'already_satisfied')]:
+                        previous = link.mutations
+                        result = cli('ask', phrase)
+                        assert result['status'] == expected, result
+                        assert link.mutations == previous + (expected == 'confirmed')
+                    print('PASS: state-aware controls without search key/current index; repeated pause/resume/stop send nothing', flush=True)
+                finally:
+                    env['TYPESENSE_API_KEY'] = key
+                cli('index')
+                config.write_text(config.read_text() + '\n[playback]\ncontinuous_context=true\n')
+                previous = link.mutations
+                continuous = cli('ask', 'Play Linkin Park')
+                assert continuous['mode_change']['status'] == 'confirmed', continuous
+                assert continuous['queue']['continuation'] == 'wrap_queue'
+                assert link.mutations == previous + 2
+                again = cli('ask', 'Play Linkin Park')
+                assert again['mode_change']['status'] == 'already_satisfied', again
+                assert link.mutations == previous + 3
+                print('PASS: paginated native queue, preserved default mode and explicit persistent repeat-list mode', flush=True)
+                snapshot = cli('status')
                 old = cli('status')
                 await sdk.collections[old['collection']].delete()
                 cli('search', 'Numb', success=False)

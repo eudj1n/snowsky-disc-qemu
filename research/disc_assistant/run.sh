@@ -14,10 +14,11 @@ Usage: research/disc_assistant/run.sh [--config PATH] COMMAND [ARGS]
   down           Stop local Typesense, preserving its volume
   sync           Read the selected DISC catalog into SQLite
   status         Show local catalog/index status
+  queue          Read actual device queue and play mode; no search/index needed
   index          Rebuild Typesense from SQLite
   search QUERY   Return candidates (optional --limit N); no playback
   rank TEXT      Explain the best matches for Включи … / Play …, without playback
-  ask TEXT       Play the best matching artist or track; no choice prompt
+  ask TEXT       Play the best match, or Pause / Resume / Stop / Next / Previous
   test           Run firmware-free prototype unit tests
   check          Run disposable Typesense acceptance (requires Docker image)
 

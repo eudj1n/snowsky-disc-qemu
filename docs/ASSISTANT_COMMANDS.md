@@ -1,85 +1,104 @@
-# Disc Assistant: команды прототипа
+# Disc Assistant commands
 
-Состояние реализации: **2026-09-18**. Прототип находится в
+Implementation status: **2026-09-18**. The prototype lives in
 [`research/disc_assistant/`](../research/disc_assistant/README.md).
-Точка входа — [`run.sh`](../research/disc_assistant/run.sh); команды ниже запускаются
-из корня репозитория. Активация `.venv` не требуется.
+Run [`run.sh`](../research/disc_assistant/run.sh) from the repository root; virtualenv
+activation is unnecessary. `ask` starts the best match without a choice dialogue.
+`rank` explains the same decision without connecting to the device.
 
-На этом этапе `ask` **автоматически запускает лучшее совпадение**. Диалога выбора
-нет; его добавление отложено. Для просмотра ранжирования без запуска используйте
-`rank`. Ни одна команда не меняет громкость или режим воспроизведения автоматически.
+## Launcher and maintenance
 
-## Команды запуска и обслуживания
-
-| Команда | Что делает | Влияние на физический плеер |
+| Command | Behavior | Device effect |
 | --- | --- | --- |
-| `./research/disc_assistant/run.sh setup` | Подготавливает `.venv`, зависимости, конфигурацию и ключ Typesense; сохраняет существующие настройки | Нет |
-| `./research/disc_assistant/run.sh up` | Запускает локальный Typesense и проверяет готовность | Нет |
-| `./research/disc_assistant/run.sh down` | Останавливает локальный Typesense, сохраняя индекс | Нет |
-| `./research/disc_assistant/run.sh sync` | Читает медиатеку дважды и сохраняет согласованный локальный слепок в SQLite | Только чтение; сканирование карты не запускается |
-| `./research/disc_assistant/run.sh status` | Показывает локальный слепок и состояние его индекса | Нет; без сетевых обращений |
-| `./research/disc_assistant/run.sh index` | Строит индекс Typesense из SQLite | Нет |
-| `./research/disc_assistant/run.sh search 'Linkin Park Numb'` | Ищет метаданные, возвращает кандидатов и совпавшие поля | Нет |
-| `./research/disc_assistant/run.sh rank 'Включи Linkin Park — Numb'` | Разбирает команду и показывает до 10 кандидатов с оценками и причинами порядка | Нет; к плееру не подключается |
-| `./research/disc_assistant/run.sh ask 'Включи Linkin Park — Numb'` | Выбирает первый результат ранжирования, проверяет свежие строки плеера, отправляет одну команду запуска и читает состояние | Запускает воспроизведение |
-| `./research/disc_assistant/run.sh test` | Запускает локальные тесты прототипа | Нет |
-| `./research/disc_assistant/run.sh check` | Проверяет полный сценарий с временным Typesense и синтетическим TCP/HTTP-плеером; удаляет тестовые данные | Нет; настоящее устройство не используется |
-| `./research/disc_assistant/run.sh help` | Показывает справку | Нет |
+| `./research/disc_assistant/run.sh setup` | Prepare the environment, config and private search key; preserve existing settings | None |
+| `./research/disc_assistant/run.sh up` | Start local Typesense and await readiness | None |
+| `./research/disc_assistant/run.sh down` | Stop Typesense, retaining its index volume | None |
+| `./research/disc_assistant/run.sh sync` | Read the catalog twice and publish a consistent SQLite snapshot | Read only; does not start a device scan |
+| `./research/disc_assistant/run.sh status` | Show local snapshot/index status | None; offline |
+| `./research/disc_assistant/run.sh queue` | Read all native queue pages, selected mark and play mode | Read only; no search/index dependency |
+| `./research/disc_assistant/run.sh index` | Rebuild Typesense from SQLite | None |
+| `./research/disc_assistant/run.sh search 'Linkin Park Numb'` | Search metadata and show candidates | None |
+| `./research/disc_assistant/run.sh rank 'Play Linkin Park — Numb'` | Explain ranking or a control intent | None |
+| `./research/disc_assistant/run.sh ask 'Play Linkin Park — Numb'` | Select the best candidate, check fresh rows, dispatch once and verify playback | Starts playback |
+| `./research/disc_assistant/run.sh ask 'Pause'` | Execute a state-aware control | See the control table below |
+| `./research/disc_assistant/run.sh test` | Run prototype unit tests | None |
+| `./research/disc_assistant/run.sh check` | Exercise real CLI/controller/SDK against disposable Typesense and a synthetic player | No physical device used |
+| `./research/disc_assistant/run.sh help` | Show usage | None |
 
-`search` поддерживает `--limit N` (1–50). `rank` и `ask` принимают одну строку в
-кавычках. Конфигурация по умолчанию — `~/disc-assistant.toml`; другой путь:
+`search` accepts `--limit N` (1–50). `rank` and `ask` accept one quoted string.
+Default configuration is `~/disc-assistant.toml`; override it with:
 
 ```sh
 ./research/disc_assistant/run.sh --config /absolute/path/disc.toml ask 'Play Linkin Park'
 ```
 
-Для живого DISC нужны его IP, TCP **12100**, HTTP **12103**, прошивка **V2.57** и
-готовая медиатека. Порт **12113** в шаблоне предназначен для эмулятора. Перед
-подключением отключите FiiO Control: штатный TCP-сервер принимает одного клиента.
+Physical DISC uses its LAN IP, TCP **12100**, HTTP **12103**, and reviewed firmware
+**V2.57**. The example's HTTP **12113** is the direct emulator endpoint.
+Disconnect FiiO Control before connecting: stock TCP accepts one client.
 
-## Поддерживаемые текстовые команды
+## Music requests
 
-| Запрос для `rank` / `ask` | Интерпретация |
+| English / Russian example | Meaning |
 | --- | --- |
-| `Включи Linkin Park` / `Play Linkin Park` | Весь исполнитель при совпадении его имени или явного алиаса |
-| `Включи исполнителя Linkin Park` / `Play artist Linkin Park` | Явный запрос исполнителя, включая поиск с опечаткой |
-| `Включи Linkin Park — Numb` / `Play Linkin Park - Numb` | Исполнитель и трек заданы раздельно; вокруг дефиса/тире нужны пробелы |
-| `Включи Linkin Park Numb` | Распознаётся префикс известного исполнителя, остаток — название трека |
-| `Включи линкин парк намб` | То же через алиасы из TOML; автоматическая транслитерация не заявляется |
-| `Включи Numb` / `Play Numb` | Лучший трек с этим названием; без указанного исполнителя результаты могут принадлежать разным исполнителям |
-| `Включи трек Numb` / `Включи песню Numb` / `Play track Numb` / `Play song Numb` | Явный запрос трека, даже если существует одноимённый исполнитель |
-| `Play Linkin Park - Numb live` | Требуется вариант с маркером live/концерт в названии трека или альбома |
-| `Play Linkin Park - Numb remix` | Требуется remix; отсутствие такого варианта не заменяется обычной записью |
-| `Play artist AC - DC` | Явный тип исполнителя сохраняет дефис как часть имени |
+| `Play Linkin Park` / `Включи Linkin Park` | Whole artist when its name or alias matches |
+| `Play artist Linkin Park` / `Включи исполнителя Linkin Park` | Explicit artist, including fuzzy matching |
+| `Play Linkin Park - Numb` / `Включи Linkin Park — Numb` | Explicit artist/title pair; spaces around the separator are required |
+| `Play Linkin Park Numb` / `Включи линкин парк намб` | Known artist prefix plus title; Cyrillic examples use configured aliases |
+| `Play Numb` / `Включи Numb` | Best matching recording, potentially across artists |
+| `Play track Numb`, `Play song Numb` / `Включи трек Numb`, `Включи песню Numb` | Explicit track, even when an artist has the same name |
+| `Play Linkin Park - Numb live` | Require a live/concert edition marker in title or album |
+| `Play Linkin Park - Numb remix` | Require a remix; never silently substitute the ordinary recording |
+| `Play artist AC - DC` | Explicit artist preserves the dash as part of its name |
+| `Play Stop` / `Включи трек Пауза` | Music titles, not control commands |
 
-При точном совпадении строки одновременно с именем исполнителя и названием трека
-неуточнённый запрос трактуется как исполнитель. Для трека укажите `трек` / `track`.
-Регистр и повторные пробелы при сопоставлении несущественны. Имена для API остаются
-в исходном виде. Язык команд не зависит от языка интерфейса DISC.
+For an exact artist/title name collision, an unqualified request selects the
+artist; use `track` to override. Matching ignores case and repeated whitespace.
+Protocol calls preserve stock names. Command languages are independent of the
+player's UI language. Automatic transliteration is not implemented.
 
-## Языковые словари
+## Playback controls
 
-Формы команд хранятся отдельно в
-[`ru.toml`](../research/disc_assistant/assistant/locales/ru.toml) и
-[`en.toml`](../research/disc_assistant/assistant/locales/en.toml).
-В пользовательском `~/disc-assistant.toml` можно выбрать языки:
+These work without Typesense, a search key or a catalog/index. `rank 'Pause'`
+returns the intent offline; `ask 'Pause'` connects to the device.
+
+| English / Russian | Behavior |
+| --- | --- |
+| `Pause` / `Пауза`, `Приостанови` | Toggle only from confirmed playing; already paused sends nothing |
+| `Resume` / `Продолжи` | Toggle only from confirmed paused; already playing sends nothing |
+| `Stop`, `Stop music` / `Стоп`, `Останови музыку` | Pause while preserving position and native queue; report this explicitly, not as hardware stop |
+| `Next`, `Next track` / `Следующий`, `Следующий трек` | Send stock next once and observe the actual result |
+| `Previous`, `Previous track` / `Предыдущий`, `Предыдущий трек` | Stock previous: after >10 seconds it restarts the current track |
+
+The CLI has no background continuation executor: `Stop` reports assistant
+continuation as inactive. It does not clear the native queue, seek to zero or
+power off. A later `Resume` can continue the native queue. Arbitrary queue-plan
+cancellation belongs to the future persistent executor.
+
+Unknown/loading state or a silent now-playing read blocks blind controls.
+Stopped-state resume is unverified; use an explicit music selection. Toggle is
+not atomic with its state read: external button presses and EOF can race it.
+Unconfirmed writes are reported as uncertain and never retried. A restart requires
+observed progress rollback; an unchanged title alone cannot confirm navigation.
+See the [playback contract](ASSISTANT_PLAYBACK.md).
+
+## Language dictionaries
+
+Literal forms live in [`ru.toml`](../research/disc_assistant/assistant/locales/ru.toml)
+and [`en.toml`](../research/disc_assistant/assistant/locales/en.toml). User config:
 
 ```toml
 [language]
 enabled = ["ru", "en"]
 ```
 
-Это также значение по умолчанию для старых конфигураций. Словари объединяются;
-допустимы смешанные команды `Play песню Numb` и `Включи song Numb`. Выбор языка
-интерфейса плеера не меняется. `search` продолжает искать произвольный текст без
-командной грамматики.
-
-Чтобы добавить язык, создайте `assistant/locales/<код>.toml`, включите его код
-в `language.enabled` и добавьте примеры в тесты. Например:
+This is also the default for older configs. Dictionaries merge, allowing mixed
+requests such as `Play песню Numb`. `search` continues accepting arbitrary text.
+Add `assistant/locales/<code>.toml`, enable its code, and add tests. Example:
 
 ```toml
 [commands]
 play = ["mets", "mets moi"]
+pause = ["pause"]
 [targets]
 artist = ["artiste"]
 track = ["la chanson"]
@@ -87,94 +106,87 @@ track = ["la chanson"]
 live = ["en concert"]
 ```
 
-Значения — буквальные слова или фразы, не регулярные выражения. Более длинный
-префикс проверяется первым; одинаковые формы одного смысла объединяются.
-Одна форма с разными смыслами внутри одной секции, неизвестные ключи и некорректные
-файлы вызывают ошибку конфигурации. Порядок включённых языков не задаёт приоритет.
-Новые формы существующих смыслов не требуют изменения парсера; новая операция
-требует реализации в Python. Сейчас разрешены `commands.play`,
-`targets.artist/track` и версии `live/remix/acoustic/instrumental/demo/karaoke/cover/remaster`.
-Секции можно опускать, но объединение должно содержать команду `play`.
+Values are literal phrases, not regular expressions. Longest play/target prefixes
+win; controls match the entire phrase. Identical forms with the same meaning
+merge. Conflicting meanings within a section, unknown keys and invalid files fail
+validation. Language order does not establish precedence. Semantic keys are
+`commands.play/pause/resume/stop/next/previous`, `targets.artist/track`, and
+`versions.live/remix/acoustic/instrumental/demo/karaoke/cover/remaster`.
+New forms need no parser changes; new actions require Python implementation.
+This is a bounded phrase grammar, not general sentence parsing or inflection.
 
-Маркеры версий из включённых языков применяются и к запросам, и к метаданным.
-Для русских команд с английскими тегами `Live`/`Remastered` оставьте оба языка.
-Алиасы музыкальных имён (`aliases.artists/titles`) остаются в пользовательской
-конфигурации отдельно от языка команд. Изменения словарей применяются при следующем
-запуске CLI без `sync`/`index`. Это ограниченная грамматика префиксов, а не
-универсальный разбор предложений или автоматическая поддержка склонений.
+Version phrases apply to both queries and metadata. Keep English enabled for
+English tags such as Live/Remastered alongside Russian commands. Music-name
+aliases remain in `aliases.artists/titles`, separate from command forms.
+Dictionary edits apply on the next CLI invocation without `sync`/`index`.
 
-## Ранжирование lexical-v1
+## Ranking: lexical-v1
 
-Оценка — прозрачная эвристика, **не вероятность правильного распознавания**.
-Текущая политика предназначена для первых экспериментов; её качество ещё нужно
-измерить на фиксированном наборе запросов пользователя.
+Scores are explainable heuristics, **not probabilities**. Quality needs evaluation
+on a fixed personal-library query set.
 
-| Фактор | Правило |
+| Factor | Policy |
 | --- | --- |
-| Явный исполнитель | Если он точно известен по имени/алиасу, другие исполнители исключаются |
-| Точное имя / алиас | Проверяются по всему актуальному слепку SQLite, поэтому точные совпадения не теряются из-за лимита выдачи Typesense |
-| Название и исполнитель | Для запроса пары: 75% оценки приходится на название и 25% — на исполнителя |
-| Только трек или исполнитель | Оценка определяется сходством запрошенного имени; используется нормализация слов и `SequenceMatcher` |
-| Опечатки | Для треков используется до 50 результатов Typesense; отключено отбрасывание слов запроса. Сходство названия должно быть ≥0,60; для пары — название ≥0,55 и исполнитель ≥0,72. Для отдельного исполнителя — ≥0,80 |
-| Версия указана | Маркеры версии обязательны. Поддержаны live/concert/концерт, remix/ремикс, acoustic/акустика, instrumental, demo, karaoke, cover, remaster/remastered |
-| Версия не указана | Явные маркеры альтернативного варианта дают штраф 12 баллов; только remaster — 2 балла. Это эвристика по тексту метаданных, а не подтверждение типа релиза |
-| Равенство оценок | Порядок по исполнителю, альбому, названию и порядковому номеру строки слепка; случайный выбор отсутствует |
-| История, лайки, популярность | Пока не участвуют: эти данные ещё не собираются |
+| Explicit known artist | Exclude other artists |
+| Exact names/aliases | Check the complete SQLite snapshot, outside the search top-k limit |
+| Artist/title pair | 75% title similarity, 25% artist similarity |
+| Single track or artist | Normalized word similarity using `SequenceMatcher` |
+| Typos | Retrieve up to 50 Typesense candidates with token dropping disabled; minimum title similarity 0.60, or title 0.55 + artist 0.72 for a pair; artist-only minimum 0.80 |
+| Explicit version | All requested markers are mandatory |
+| Unrequested version | Penalty 12; remaster-only penalty 2. Metadata heuristic, not proven recording provenance |
+| Ties | Artist, album, title, then snapshot ordinal; no random choice |
+| History/likes/popularity | Not collected or used yet |
 
-`rank` показывает `score`, `evidence`, `ranking_policy` и сведения о получении
-кандидатов. Если `retrieval.truncated=true`, нечёткие результаты ограничены первыми
-50 ответами Typesense: лучший выбирается из этого набора. Таблица не обещает
-определение студийной версии, качества записи или издания по отсутствующим тегам.
+`rank` exposes `score`, `evidence`, `ranking_policy` and retrieval information.
+`retrieval.truncated=true` means fuzzy retrieval was limited to the returned pool.
+Absence of version tags does not establish studio origin or audio quality.
 
-## Исполнение и результаты
+## Execution and results
 
-Перед отправкой читается свежий список `artist/song` либо `artist/album/song`.
-Он проверяется дважды, сравнивается с локальным составом, а Controller перед
-запуском ещё раз проверяет нужную строку. Позиция вычисляется заново: сохранённый
-номер из поиска не отправляется напрямую. Если несколько строк неразличимы по
-доступным метаданным, берётся первая текущая строка; число таких строк возвращается
-в `metadata_equivalent_rows`. Постоянная идентичность таких копий не гарантируется.
+Music selection reads fresh `artist/song` or `artist/album/song` twice, compares
+membership, and verifies the final row through Controller. Cached search positions
+are never sent directly. Indistinguishable copies select the first current row
+and report `metadata_equivalent_rows`; this does not establish permanent identity.
 
-| Статус | Значение |
+| Status | Meaning |
 | --- | --- |
-| `ranked` | Команда `rank` вернула упорядоченные результаты; воспроизведение не запускалось |
-| `not_found` | Пригодных совпадений нет; команда на плеер не отправлялась |
-| `playing` | После одной команды запуска прочитано состояние `playing` с нужными метаданными и источником type 7; это не проверка слышимого звука |
-| `not_sent` | Свежие данные/совместимость не прошли проверку либо соединение не установлено; попытки отправить запуск не было |
-| `uncertain` | Отправка могла произойти, но требуемое состояние не подтверждено; автоматического повторения нет |
+| `ranked` / `not_found` | Ordered music candidates / no usable match; no playback dispatch |
+| `planned` | Offline control intent; no device access |
+| `playing` | Music launch verified through matching state, metadata and source type 7; not an audible-output test |
+| `confirmed` | Control outcome observed; see `outcome` and `state` |
+| `already_satisfied` | Fresh state already meets the control request; no mutation |
+| `observed` | Read-only native queue and mode; `playback_known=false` when current state is unavailable |
+| `not_sent` | Preflight/connection/state failed before dispatch |
+| `uncertain` | A write may have happened, but its required result was not confirmed; no retry |
 
-`not_sent` и `uncertain` дают ненулевой код выхода. Ошибка парсинга/конфигурации,
-отсутствующий или устаревший индекс также дают ненулевой код. После `sync` снова
-нужен `index`. При изменении состава источника требуется новый `sync → index`.
-После неопределённого результата сначала проверьте состояние плеера; повторный
-ручной `ask` является новым запросом и может заново запустить запись.
+`not_sent`/`uncertain` produce a nonzero exit code, as do configuration/parsing and
+stale-index errors. After `sync`, run `index` again. A manual repeat is a new
+request and may restart a recording. Device operations share a data-directory
+lock, not a lock against external controllers. There is no atomic device revision.
+Events are retained within each operation; no persistent session/history exists.
 
-Запросы к устройству сериализуются между экземплярами прототипа с одной директорией
-данных. Это не блокировка сторонних приложений. События сохраняются во время
-запросов Controller в рамках операции; постоянной фоновой сессии и истории ещё нет.
-У устройства нет атомарной ревизии каталога: внешние изменения всё ещё могут
-произойти между последней проверкой и отправкой.
+## Queue and remaining work
 
-## Следующие команды: подготовлен контракт, реализации пока нет
+A track request selects a position in its artist-scoped album; an artist request
+selects the artist catalog. `ask` now verifies and returns the native queue;
+`queue` reads it independently. `continuation` describes mode policy, not proof
+that the player is currently playing. Native continuation depends on play mode:
+list once stops at the end, single once stops after this recording, repeat one
+repeats it, random stays within the queue, and repeat list wraps.
 
-| Фраза RU / EN | Запланированное действие |
-| --- | --- |
-| `Пауза` / `Pause` | Поставить на паузу с проверкой состояния; повторная пауза не должна включать музыку |
-| `Продолжи` / `Resume` | Продолжить при подтверждённой паузе, сохранив позицию |
-| `Стоп` / `Stop` | Отменить продолжение Assistant и поставить плеер на паузу; отдельный аппаратный stop не подтверждён |
-| `Следующий трек` / `Next track` | Штатный next с наблюдением фактического результата |
-| `Предыдущий трек` / `Previous track` | Штатный previous; после >10 секунд это возврат к началу текущего трека |
+Default configs preserve device mode. To explicitly enable continuous context:
 
-Эти фразы ещё не добавлены в исполняемые языковые словари. Контракт состояния,
-обработка ошибок, контекст альбома/исполнителя и будущая очередь рекомендаций
-описаны в [плане управления и очереди](ASSISTANT_PLAYBACK.md).
-Сейчас запрос одного трека выбирает позицию в альбоме исполнителя; дальнейшее
-воспроизведение зависит от режима устройства. Assistant ещё не показывает
-получившуюся очередь и не гарантирует продолжение после последней записи.
+```toml
+[playback]
+continuous_context = true
+```
 
-## Остальные отложенные команды
+For music requests this sets persistent repeat-list mode (3) before selection.
+`mode_change` reports its own outcome; a later selection failure does not roll it
+back. Controls never change mode. Empty sources cannot launch; one-track contexts
+repeat. No host process is needed for native continuation after CLI exit.
+See [the queue contract](ASSISTANT_PLAYBACK.md). Search alternatives are not a playlist.
 
-Громкость, отдельный запуск альбома,
-жанра или плейлиста, запросы по истории/лайкам/лирике, голосовой ввод и диалог выбора
-пока не реализованы в Assistant. Наличие соответствующего метода Controller само
-по себе не означает поддержку текстовой команды.
+Volume, standalone album/genre/playlist requests, arbitrary recommendation queues,
+history/likes/lyrics requests, microphone input and choice dialogues remain deferred.
+A Controller method does not by itself establish an Assistant text command.

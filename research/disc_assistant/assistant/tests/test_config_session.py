@@ -46,6 +46,15 @@ class ConfigSessionTests(unittest.TestCase):
             with self.subTest(enabled=enabled), self.assertRaises(ValueError):
                 load(self.path)
 
+    def test_continuous_context_requires_explicit_boolean_opt_in(self):
+        self.assertFalse(self.config.continuous_context)
+        self.path.write_text(self.base + '[playback]\ncontinuous_context=true')
+        self.assertTrue(load(self.path).continuous_context)
+        for value in ('1', '"true"', '[]'):
+            self.path.write_text(self.base + '[playback]\ncontinuous_context=' + value)
+            with self.assertRaises(ValueError):
+                load(self.path)
+
     def client(self, version=257):
         client = Mock()
         client.__enter__ = Mock(return_value=client)

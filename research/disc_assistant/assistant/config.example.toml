@@ -29,6 +29,11 @@ max_requests = 10000
 # Per network operation; a complete import can take much longer.
 timeout = 8
 
+[playback]
+# Opt in to setting repeat-list (3) before music selection. This persists on DISC.
+# False preserves the player's existing mode. Controls never change it.
+continuous_context = false
+
 # Optional explicit search aliases; these do not rewrite device metadata.
 [aliases.artists]
 "Linkin Park" = ["линкин парк"]

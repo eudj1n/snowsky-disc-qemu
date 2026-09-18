@@ -1,97 +1,16 @@
 """One serialized playback operation, with fresh selectors and no mutation retries."""
 from collections import Counter
-from contextlib import contextmanager
-import os
 import time
 from uuid import uuid4
 
-from controller.fiio_link import Client, frame, playback_snapshot
+from controller.fiio_link import playback_snapshot
 from controller.fiio_library import artist_command
 from controller.fiio_http import HTTPClient
-from research.disc_assistant.assistant.session import check_events
+from research.disc_assistant.assistant.device import (
+    PlaybackClient, ObservedSocket, device_lock, validate_scan_events)
 from research.disc_assistant.library.catalog import CatalogReader, CatalogChanged
 from research.disc_assistant.library.store import StaleSnapshot
-
-
-@contextmanager
-def device_lock(directory):
-    # Local CLI invocations in this data directory share one device session.
-    # Other controllers/data directories cannot participate in this local lock.
-    import fcntl
-    descriptor = os.open(directory / 'device.lock', os.O_CREAT | os.O_RDWR, 0o600)
-    try:
-        try:
-            fcntl.flock(descriptor, fcntl.LOCK_EX | fcntl.LOCK_NB)
-        except BlockingIOError as exc:
-            raise ValueError('another assistant device operation is active') from exc
-        yield
-    finally:
-        os.close(descriptor)
-
-
-def validate_scan_events(events):
-    pending = iter(events)
-    class Pending:
-        def event(self, timeout):
-            try:
-                return next(pending)
-            except StopIteration as exc:
-                raise TimeoutError from exc
-    check_events(Pending(), during_read=True)
-
-
-class ObservedSocket:
-    def __init__(self, socket, session):
-        self.socket, self.session = socket, session
-
-    def __getattr__(self, name):
-        return getattr(self.socket, name)
-
-    def sendall(self, data):
-        if data[:4] in (b'0100', b'0101'):
-            if self.session.mutation_attempted:
-                raise RuntimeError('playback mutation replay refused')
-            self.session.mutation_attempted = True
-        return self.socket.sendall(data)
-
-
-class PlaybackClient(Client):
-    """One synchronous reader; retain unrelated events across Controller queries."""
-    def __init__(self, *args):
-        super().__init__(*args)
-        self.observed = []
-        self.mutation_attempted = False
-        self.socket = ObservedSocket(self.socket, self)
-
-    def retain(self, event):
-        if len(self.observed) >= 10000:
-            raise ValueError('device event budget exhausted')
-        self.observed.append(event)
-
-    def collect(self):
-        for _ in range(10000):
-            try:
-                self.retain(super().event(timeout=.01))
-            except TimeoutError:
-                return
-        raise ValueError('device event budget exhausted')
-
-    def request(self, tag, payload=b'', *, expected=None):
-        self.collect()
-        self.socket.sendall(frame(tag, payload))
-        expected = expected or 'a' + tag[1:].lower()
-        deadline = time.monotonic() + self.timeout
-        while time.monotonic() < deadline:
-            event = super().event(timeout=max(.001, deadline - time.monotonic()))
-            if event[0] == expected:
-                return event[1]
-            self.retain(event)
-        raise TimeoutError(f'no {expected} reply')
-
-    def scan_guard(self):
-        self.collect()
-        events, self.observed = self.observed, []
-        validate_scan_events(events)
+from research.disc_assistant.assistant.queue import snapshot as queue_snapshot, ensure_continuous
 
 
 class GuardedHTTP:
@@ -201,8 +120,16 @@ def execute(config, store, ranking):
             with PlaybackClient(config.host, config.tcp_port, config.timeout) as client:
                 if client.handshake() != '0306' or client.settings().get('soc_version') != 257:
                     raise ValueError('playback requires reviewed DISC V2.57')
+                if config.continuous_context:
+                    client.begin_phase('mode')
+                    result['mode_change'] = ensure_continuous(client)
+                    if result['mode_change']['status'] not in ('confirmed', 'already_satisfied'):
+                        return dict(result, status=result['mode_change']['status'],
+                                    reason='mode preparation failed; selection was not sent',
+                                    mutation_attempted=result['mode_change']['mutation_attempted'])
+                    client.begin_phase('selection')
                 # Stock navigation ignores rapid commands. Give previous activity
-                # time to settle before fresh preflight; do not alter mode/volume.
+                # time to settle before fresh source preflight and selection.
                 time.sleep(2.1)
                 http = HTTPClient(config.host, config.http_port, config.timeout)
                 category, filters, rows, index, equivalents = fresh_selection(
@@ -219,8 +146,13 @@ def execute(config, store, ranking):
                               metadata_equivalent_rows=equivalents, state=state)
                 if not state:
                     result['reason'] = 'playback not confirmed before timeout; selection was not retried'
+                else:
+                    result['queue'] = queue_snapshot(config, client, http, expected=rows, selected=selected)
+                    result['queue']['source'] = {'category': category, **filters}
+                    if config.continuous_context and result['queue']['mode'] != 3:
+                        raise CatalogChanged('continuous mode changed externally; selection was not retried')
         except (OSError, ValueError, RuntimeError) as exc:
-            attempted = bool(client and client.mutation_attempted)
+            attempted = bool(client and client.mutation_attempted) or result.get('mode_change', {}).get('mutation_attempted', False)
             result.update(status='uncertain' if attempted else 'not_sent', mutation_attempted=attempted,
                           reason=str(exc), retry='never automatic')
     return result

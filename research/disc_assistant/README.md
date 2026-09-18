@@ -92,10 +92,44 @@ It reads metadata only, without scanning, reset, file edits or playback. It publ
 SQLite only after two equal full reads. `index` and `search` need Typesense but no
 connection to the player. `rank` resolves exact metadata locally and uses Typesense
 for fuzzy track retrieval. `ask` also requires the awake player, sends at most one
-selection and verifies the resulting metadata/state; it never changes volume or
-play mode, nor automatically retries a selection. `status` reads local state without contacting either
+selection and verifies the resulting metadata/state and native queue. Volume is
+unchanged; play mode is preserved unless `playback.continuous_context=true` explicitly
+enables repeat-list mode. Mutations are never automatically retried.
+`status` reads local state without contacting either
 service; `index_current` means matching locally recorded generations/config,
 not a live Typesense health check. Commands return JSON; failures exit nonzero.
+
+Controls and queue observation bypass search and catalog storage:
+
+```sh
+./research/disc_assistant/run.sh rank 'Pause'
+./research/disc_assistant/run.sh ask 'Пауза'
+./research/disc_assistant/run.sh ask 'Resume'
+./research/disc_assistant/run.sh ask 'Next track'
+./research/disc_assistant/run.sh ask 'Previous track'
+./research/disc_assistant/run.sh ask 'Stop'
+./research/disc_assistant/run.sh queue
+```
+
+`Stop` means pause with position/queue retained; no separate hardware stop is
+claimed. Already-satisfied pause/resume/stop sends nothing. Unknown current state
+blocks blind toggles. Previous after >10 seconds restarts the current track.
+See the [command contract](../../docs/ASSISTANT_COMMANDS.md).
+
+To continue through the end of the selected album/artist context, opt in in your
+personal TOML (existing configs preserve the player's mode):
+
+```toml
+[playback]
+continuous_context = true
+```
+
+This sets persistent device mode 3 before a music selection and verifies it.
+`mode_change` reports that separate operation even if selection later fails;
+there is no automatic rollback. `ask` reports the actual native queue and
+continuation policy. A one-track context repeats. Recommendations from other
+albums and arbitrary ordered queue construction remain future work. No host
+process is needed for the native queue to continue after CLI exit.
 
 Search returns the observed title, artist, album, matched fields/tokens, a ranking
 score and snapshot provenance. The score is **not a confidence percentage**.
@@ -195,11 +229,28 @@ the physical player. The read-only slice is ready for the next implementation
 step. On 2026-09-18, `rank`/`ask` added bilingual commands, deterministic lexical
 ranking and fresh Controller playback checks. Command/target/version phrases now
 live in per-language TOML dictionaries, merged using `[language].enabled`
-(default `["ru", "en"]`); all 71 prototype tests pass. A
+(default `["ru", "en"]`); all 97 prototype tests pass, including controls,
+queue observations and partial mode/selection failures. A
 read-only alias query on the existing physical-library snapshot resolved correctly.
 The owner chose automatic best-match
 playback and deferred clarification. Measured ranking quality and physical `ask`
 playback remain unvalidated; microphone input follows the text-to-playback path.
+
+Optional firmware acceptance uses a fresh V2.57 stack and generated audio:
+
+```sh
+./research/disc_assistant/emulator_check.sh /absolute/path/to/main_os/ota_v257
+```
+
+It never uses the interactive work volume or personal SD contents. The check covers
+controls, native artist-album queues and natural EOF across five modes. It requires
+the `snowsky-disc-qemu-ci` image; optional `ASSISTANT_LOGS` retains guest logs outside
+the checkout or under ignored `work/`. Synthetic `run.sh check` also covers controls
+without search credentials/current index and explicit continuous-context mode.
+
+The generated-media guest check passed on 2026-09-18: controls, previous before
+and after ten seconds, native continuation after disconnect, and type-7 natural
+EOF in all five modes. Physical-device acceptance remains separate.
 
 The prototype suite is intentionally run explicitly; `ci/unit.py` has not been
 changed to discover this experimental directory. Before promotion, register its

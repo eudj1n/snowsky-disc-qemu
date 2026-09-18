@@ -1,6 +1,11 @@
 # Literal phrases, not regular expressions. Semantic keys are defined in Python.
 [commands]
 play = ["play"]
+pause = ["pause"]
+resume = ["resume"]
+stop = ["stop", "stop music"]
+next = ["next", "next track"]
+previous = ["previous", "previous track"]
 
 [targets]
 artist = ["artist"]

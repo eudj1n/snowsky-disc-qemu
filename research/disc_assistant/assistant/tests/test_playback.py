@@ -19,7 +19,7 @@ class ScopedHTTP:
 
     def catalog(self, category, offset=0, limit=200, **filters):
         self.calls.append((category, offset, limit, filters))
-        return {'total': len(self.rows), 'items': self.rows[offset:offset+limit]}
+        return {'total': len(self.rows), 'items': self.rows[offset:offset+limit], 'mark': 1}
 
 
 class FakeClient:
@@ -29,7 +29,7 @@ class FakeClient:
         self.calls = 0
         self.error = None
         self.snapshot = {'state': 0, 'playerflag': 7, 'song': {'song_name': 'Numb',
-                         'song_artist_name': 'Linkin Park', 'song_album_name': 'Meteora'}}
+                         'song_artist_name': 'Linkin Park', 'song_album_name': 'Meteora', 'pos_id': 2}}
 
     def __enter__(self):
         return self
@@ -37,11 +37,17 @@ class FakeClient:
     def __exit__(self, *args):
         return False
 
+    def begin_phase(self, name):
+        pass
+
     def handshake(self):
         return '0306'
 
     def settings(self):
         return {'soc_version': 257}
+
+    def play_mode(self):
+        return 0
 
     def scan_guard(self):
         pass
@@ -86,7 +92,7 @@ class PlaybackTests(unittest.TestCase):
         self.assertEqual(result['status'], 'playing')
         self.assertEqual(self.client.selected_index, 1)
         self.assertEqual(self.client.calls, 1)
-        self.assertEqual(self.http.calls[-1][1:3], (1, 1))
+        self.assertIn(('artist/album/song', 1, 1, {'artist': 'Linkin Park', 'album': 'Meteora'}), self.http.calls)
 
     def test_changed_membership_and_generation_do_not_send(self):
         self.http.rows[1] = dict(pos=1, name='Replaced', author='Linkin Park')
@@ -153,7 +159,7 @@ class PlaybackTests(unittest.TestCase):
     def test_socket_marks_uncertain_attempt_before_transport_error(self):
         raw = Mock()
         raw.sendall.side_effect = OSError('broken')
-        session = Mock(mutation_attempted=False)
+        session = Mock(mutation_attempted=False, mutation_phase='selection', attempted_phases=set())
         socket = playback.ObservedSocket(raw, session)
         with self.assertRaises(OSError):
             socket.sendall(frame('0100', '00000007'))

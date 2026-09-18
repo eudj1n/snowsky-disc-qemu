@@ -29,7 +29,7 @@ class RankingTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(parse('Включи Linkin Park — Numb').artist, 'Linkin Park')
         self.assertEqual(parse('Play artist AC - DC'), Intent('AC - DC', 'artist'))
         self.assertEqual(parse('Включи трек Numb').kind, 'track')
-        for phrase in ('pause', 'удали Numb', 'play ', 'Play Numb\nstop', ''):
+        for phrase in ('pause Numb', 'удали Numb', 'play ', 'Play Numb\nstop', ''):
             with self.assertRaises(ValueError):
                 parse(phrase)
 

@@ -14,10 +14,18 @@ class Intent:
     title: str | None = None
 
 
+@dataclass(frozen=True)
+class ControlIntent:
+    action: str
+
+
 def parse(text, rules=None):
     if not isinstance(text, str) or not 1 <= len(text) <= 1000 or any(ord(c) < 32 for c in text):
         raise ValueError('command must contain 1..1000 characters without control characters')
     rules = rules if rules is not None else load_languages()
+    for phrase, action in rules.commands:
+        if action != 'play' and normalized(text) == phrase:
+            return ControlIntent(action)
     match = rules.prefix('commands', unicodedata.normalize('NFC', text).strip())
     if not match:
         raise ValueError('supported play prefixes: ' + ', '.join(phrase for phrase, _ in rules.commands))

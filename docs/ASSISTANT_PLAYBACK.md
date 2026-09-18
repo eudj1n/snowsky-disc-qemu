@@ -1,186 +1,175 @@
-# Assistant: управление воспроизведением и очередь
+# Assistant playback controls and queue
 
-План двух следующих срезов после текстового запуска, **2026-09-18**.
-Описанное ниже ещё не реализовано в Assistant. Текущие команды и статусы —
-в [таблице команд](ASSISTANT_COMMANDS.md), общий план — в [ASSISTANT.md](ASSISTANT.md).
-Работа остаётся в `research/disc_assistant/`.
+Two increments following ranked text playback, **2026-09-18**. Work remains in
+`research/disc_assistant/`. See [commands](ASSISTANT_COMMANDS.md) for available
+behavior and [the implementation plan](ASSISTANT.md) for the broader roadmap.
+M2a controls and M2b native queue observation/continuation are implemented.
 
-## 1. Управление текущим воспроизведением — M2a
+Validation on 2026-09-18: 97 prototype unit tests, 313 shared Python tests and
+37 shared JavaScript tests pass. Disposable Typesense acceptance covers control
+dispatch without search credentials/current index, queue pagination and explicit
+repeat-list preparation. A separate generated-media V2.57 guest passed actual
+pause/resume/stop/next, previous before/after ten seconds, native continuation
+after Assistant disconnect, and type-7 natural EOF in all five modes. This does
+not establish physical-device behavior or audible gapless transitions.
 
-Цель: `Пауза`, `Продолжи`, `Стоп` и переходы между треками работают независимо
-от поискового индекса. Для них не нужны Typesense, актуальный слепок медиатеки
-или повторный поиск названия текущей записи.
+## M2a: current playback controls
 
-### Семантика команд
+Controls bypass Typesense and SQLite. Language dictionaries supply whole-phrase
+pause/resume/stop/next/previous forms, while `Play Stop` remains a music request.
+`rank` explains control intent offline; `ask` executes it.
 
-| Запрос RU / EN | Намерение | Запланированное поведение |
-| --- | --- | --- |
-| `Пауза`, `Приостанови` / `Pause` | `pause` | Если играет — один toggle, затем подтверждение паузы. Если уже на паузе — без записи на устройство. Сохраняет текущую позицию и контекст продолжения |
-| `Продолжи` / `Resume` | `resume` | Если на паузе — один toggle и подтверждение playing. Если уже играет — без записи. Не перезапускает найденный трек с начала |
-| `Стоп`, `Останови музыку` / `Stop` | `stop` | Отменяет дальнейшие запуски Assistant и при необходимости ставит устройство на паузу. Сохраняет штатную очередь и позицию; не означает аппаратный stop, сброс позиции или очистку очереди |
-| `Следующий трек` / `Next track` | `next` | Одна штатная команда next; затем чтение фактического результата. Не вычисляет следующую позицию арифметически |
-| `Предыдущий трек` / `Previous track` | `previous` | Штатная previous: после >10 секунд перезапускает текущий трек. Ответ различает возврат к началу и смену записи, если это подтверждено наблюдениями |
+| Intent | Contract |
+| --- | --- |
+| `pause` | One toggle from confirmed playing; no write if already paused |
+| `resume` | One toggle from confirmed paused; no write if already playing |
+| `stop` | Pause while retaining position and native queue; explicitly report pause semantics |
+| `next` | One stock next command, then observe the actual result |
+| `previous` | Stock previous; after >10 seconds this restarts the current track |
 
-`Stop` здесь — явно обозначенная семантика Assistant. Ответ должен сообщать
-«сессия Assistant остановлена; плеер на паузе», а не подтверждать несуществующий
-аппаратный stop. Если связь потеряна, локальная отмена всё равно сохраняется,
-но состояние устройства остаётся неизвестным. Последующий `Resume` может
-продолжить сохранённую штатную очередь; отменённый план рекомендаций не возрождается.
-Для нового плана нужен новый запрос музыки.
-
-Подтверждённый контракт Controller: `play_pause()` — `0201/0000`,
-`next_track()` — `0201/0001`, `previous_track()` — `0201/0002`.
-Абсолютные play/pause и отдельный сетевой stop не установлены. Подробности:
+There is no confirmed absolute pause/play or separate network stop. Controller
+uses `0201/0000`, `0201/0001` and `0201/0002`. Never emulate stop through power-off,
+library reset, zero volume or seeking to the end. Evidence:
 [remote control](REMOTE_CONTROL.md#timing-and-state), [capabilities](DISC_CAPABILITIES.md).
-Не подменять stop выключением, сбросом библиотеки, громкостью 0 или seek в конец.
 
-### Исполнение и состояние
+This short-lived CLI has no background queue executor. `Stop` reports continuation
+as inactive and pauses the device; it does not claim to cancel nonexistent work.
+When a persistent executor is introduced, stop must durably cancel pending
+assistant launches even if device connectivity fails. Resume may continue the
+native queue but must not revive a cancelled recommendation plan.
 
-1. Разобрать намерение до открытия поискового клиента. Новые формы команд
-   добавить в языковые TOML; управляющие команды сопоставлять с целой фразой.
-   `Play Stop` остаётся поиском записи с названием Stop, `Stop` — управлением.
-2. Под общей блокировкой устройства открыть сессию, проверить handshake/прошивку
-   и прочитать свежее состояние одним обработчиком ответов и событий.
-   Представлять `playing`, `paused`, `loading`, `stopped`, `unknown` отдельно.
-3. Соблюсти временной интервал команд и снова проверить состояние перед toggle.
-   При нужном состоянии вернуть `already_satisfied`. При неизвестном состоянии
-   или незавершённой загрузке не отправлять toggle наугад. Для состояния после
-   конечного EOF контракт resume не подтверждён: нужен новый явный выбор музыки.
-4. Зарегистрировать попытку отправки до записи в сокет, отправить максимум одну
-   управляющую мутацию и наблюдать результат. Не повторять потерянный toggle/next
-   после таймаута или reconnect. Различать `not_sent` и `uncertain`.
-5. Для pause/resume проверять состояние и согласованный контекст записи; для
-   навигации — свежие метаданные, очередь, отметку выбранной строки и доступный
-   прогресс. Изменение названия не обязательно: существуют повторы и копии.
+### Execution and state
 
-Стоковый интервал проверяется по целым секундам; существующие проверки используют
-2,1 с. На границе EOF или при внешнем нажатии кнопки состояние может измениться
-между чтением и записью: абсолютная идемпотентность поверх toggle не гарантируется.
-Если результат не соответствует запросу, сообщить неопределённость без второго toggle.
-Очередь локальных запросов не должна задерживать `stop` за будущими автозапусками:
-он отменяет ещё не отправленные действия, но не может отозвать байты из сокета.
+1. Parse intent before opening search/storage. Under the shared device lock,
+   connect, check handshake/firmware and retain interleaved events with one reader.
+2. Respect the stock timing gate (existing tests use 2.1 seconds), then read fresh
+   state immediately before acting. Unknown/loading or silent reads do not justify
+   a blind toggle. Stopped-state resume remains unverified: require a new selection.
+3. Return `already_satisfied` when appropriate. Otherwise mark the mutation attempt
+   before socket I/O and send once. Observe state/context; never replay after a
+   timeout or reconnect.
+4. Pause/resume confirmation requires the expected state in the same recording
+   context. Navigation requires an observed identity change or progress rollback
+   for a restart. Same-title repeats and copies cannot be resolved from title alone.
 
-Полный `a202 state=2` может означать загрузку. Пустой ответ и таймаут `0202`
-не доказывают остановку. Подтверждённая последовательность конечного EOF —
-сброс `a103` в 0, затем `a202 state=2` без метаданных; после неё `0202` может
-молчать. На reconnect без истории событий сохранять `unknown`.
-Кратковременный state=1 около EOF не считать пользовательской паузой.
-См. [наблюдения EOF](TRACK_END.md).
+Initial connection refusal is retried within the configured timeout, before any
+handshake/mutation. This accommodates the stock listener's delayed reopening;
+it is not reconnection or replay of an established operation.
 
-### Изменения и критерии готовности
+Stock navigation is rate-limited by integer seconds. External controls and EOF
+can race the final read; absolute idempotence cannot be guaranteed over a toggle.
+A mismatched outcome is uncertain, not grounds for a second corrective toggle.
+A future pending-operation queue must prioritize stop over unsent auto-launches;
+it cannot retract bytes already sent.
 
-- Добавить типизированный управляющий intent и маршрутизацию `ask`; `rank`
-  объясняет управляющее намерение без подключения и без списка кандидатов.
-- Вынести общую сессию/наблюдение из `playback.py` в переиспользуемый модуль.
-  Текущий `ObservedSocket` учитывает только `0100/0101`: расширить учёт попыток
-  для управляющих операций, сохранив запрет повторной мутации одной операции.
-- Добавить отдельный исполнитель управления; различать результат на устройстве
-  и локальную отмену плана. Не расширять Controller неподтверждёнными командами.
-- Проверить RU/EN и смешанные словари, коллизии с названиями песен, работу без
-  Typesense/индекса, повторные pause/resume без второй записи, неизвестное состояние,
-  внешнее изменение состояния, EOF, разрыв после отправки и отсутствие повторов.
-- Проверить next в random и previous до/после 10 секунд. На синтетическом сервере
-  проверить контракт запросов; семантику прошивки — на коротких тестовых файлах
-  в изолированном эмуляторе, затем отдельно на физическом устройстве.
+Full `a202 state=2` can mean loading. Empty replies and `0202` timeouts are not
+proof of stop. Observed final EOF resets `a103` to zero then sends metadata-free
+state 2; subsequent `0202` can be silent. A reconnect without event history leaves
+state unknown. Transient state 1 at EOF is not proof of a user pause.
+See [EOF evidence](TRACK_END.md).
 
-## 2. Контекст запуска и продолжение музыки — M2b
+### Implementation and acceptance
 
-Результат поиска отвечает «какую запись начать», очередь — «что будет после неё».
-Список кандидатов одного поиска не является очередью: там могут оказаться копии,
-другие исполнители и конкурирующие версии одной песни.
+- `device.py`: shared lock, event-preserving sequential client, mutation-attempt
+  tracking for selection/mode/control commands.
+- `controls.py`: fresh-state control execution; no search or catalog dependency.
+- Unit tests cover RU/EN phrases, title collisions, no-op pause/resume, missing
+  search credentials, unknown/loading state, external track change, uncertain
+  writes without replay, and progress evidence for previous-to-start.
+- Synthetic transport acceptance checks real CLI and Controller dispatch. Firmware
+  acceptance additionally covers previous before/after 10 seconds, actual state
+  events and native random continuation. Physical audio is a separate observation.
 
-### Сначала штатная очередь
+## M2b: source context and continuation
 
-Сейчас Assistant запускает трек через `play_artist(artist, index, album=album)`.
-Это выбор позиции внутри альбома данного исполнителя (type 7), а запрос
-исполнителя запускает весь его каталог. Проверки Controller подтверждают состав
-очередей этих источников; Assistant пока не читает и не показывает получившуюся
-очередь. Его acceptance подтверждает выбранный трек, не непрерывность звучания.
-См. [artist-scoped playback](LIBRARY_BROWSING.md#browse-and-play).
+Search answers “which recording starts”; a queue answers “what follows”. Ranked
+search alternatives can contain competing versions, copies and other artists;
+they must not be treated as a continuation playlist.
 
-Первый вариант политики: **трек → контекст его альбома; исполнитель → каталог
-исполнителя**. Сохранить порядок, который возвращает устройство, и после запуска
-прочитать все страницы HTTP `curlist/song`. Сверить ожидаемый состав и выбранную
-строку; показать источник, фактическую очередь, режим и ограничения продолжения.
-Если после отправки состав не подтвердился, не исправлять его повторным запуском.
+### Native queue first
 
-| Режим устройства | Что ожидается от очереди |
+Current track launch uses `play_artist(artist, index, album=album)`: a position in
+an artist-scoped album, type 7. Artist requests use the whole artist catalog.
+Controller tests establish these source memberships; the first Assistant slice
+verified the selected track, not audible continuity. See
+[artist-scoped playback](LIBRARY_BROWSING.md#browse-and-play).
+
+The first policy is **track → its artist-scoped album; artist → its catalog**.
+Read all HTTP `curlist/song` pages after selection, compare the expected membership
+and selected row, and report the actual queue/order, source and mode. A failed
+post-dispatch check must not trigger an automatic corrective selection.
+
+| Mode | Expected continuation |
 | --- | --- |
-| 0 — list once | Следующие строки до конца; выбран последний трек — после него остановка |
-| 1 — random | Переходы внутри очереди; отсутствие повторов и точный следующий трек не гарантируются |
-| 2 — repeat one | Повтор текущей записи |
-| 3 — repeat list | Продолжение с переходом от последней строки к первой |
-| 4 — single once | Остановка после выбранного трека, даже если очередь длиннее |
+| 0 — list once | Advance to the end; a selected last track stops afterward |
+| 1 — random | Continue within the queue; no non-repetition or next-position guarantee |
+| 2 — repeat one | Repeat the current recording |
+| 3 — repeat list | Wrap from the final entry to the first |
+| 4 — single once | Stop after the selected recording, regardless of queue length |
 
-Это проверено на короткой пользовательской очереди V2.57 с выключенными gapless
-и folder jump; для Assistant дополнительно проверить EOF именно источника type 7.
-Нельзя обещать одинаковое поведение непроверенных настроек или отсутствие слышимой
-паузы между записями. Источники: [EOF](TRACK_END.md), [режимы](REMOTE_CONTROL.md).
+Natural behavior was originally checked on a short custom queue. The Assistant
+acceptance now also checks type-7 EOF, with gapless/folder jump off, using three
+six-second generated tracks. Do not promise untested preference behavior or
+gapless audible transitions. See [EOF](TRACK_END.md).
 
-В M2b по умолчанию сохраняем текущий режим и явно показываем, если он мешает
-продолжению. Для непрерывного режима предлагаем отдельную явную настройку
-Assistant: контекст альбома/исполнителя + repeat list. Включение этой настройки
-разрешает установку режима 3 с чтением результата, без подтверждения каждого
-запроса. Это постоянная настройка плеера: показать изменение и не восстанавливать
-её скрыто после выхода CLI. Синтаксис конфигурации добавить вместе с реализацией.
+Preserve device mode by default and report restrictions. The explicit
+`[playback].continuous_context = true` setting sets mode 3 with readback verification.
+Opting in authorizes that behavior without a confirmation for each request.
+Mode changes persist on the player; expose them and do not restore settings
+silently when CLI exits. The default is false, including for older configs.
 
-Таким образом, последний трек может продолжиться с начала альбома, но новая музыка
-из другого альбома автоматически пока не подмешивается. В очереди из одной записи
-непрерывный режим означает повтор; пустой источник означает отсутствие запуска.
-Порядок установки режима и выбора записи нужно проверить отдельно: это две
-разные мутации, а не атомарная операция. Фиксировать результат каждой, прекращать
-сценарий при неопределённом исходе и не выполнять автоматический откат/повтор.
+At an album's end, continuous context wraps to its beginning; it does not add
+music from other albums. A one-entry source repeats; an empty source cannot play.
+Mode change and track selection are separate mutations: record each outcome,
+stop on uncertainty, and never retry or automatically roll back a partial result.
+Both phases share one TCP connection; each can dispatch once. Results preserve
+the mode phase even when the subsequent selection or queue verification fails.
 
-### Затем очередь Assistant с рекомендациями
+### Later: Assistant recommendation queues
 
-Следующий этап после проверки штатного контекста — отдельный `QueuePlan`:
-начальная выбранная запись, ограниченный список продолжения, политика отбора,
-поколение каталога, причины включения и статус исполнения. По умолчанию сначала
-тот же исполнитель; дальнейшее расширение по жанру/сходству должно быть явной
-политикой. Лайки, история и эмбеддинги подключаются по мере появления этих данных.
-Не терять CUE-строки и копии из-за совпадающих ID; исключение повторов требует
-подтверждённого соответствия записей, а не совпадения одного названия.
+A separate `QueuePlan` should contain the chosen starting recording, bounded
+continuation candidates, selection policy, catalog generation, inclusion reasons
+and execution status. Start with the same artist; expansion by genre/similarity
+must be an explicit policy. History, likes and embeddings become inputs only
+when available. Identical names or device IDs are insufficient to merge recordings
+or deduplicate CUE entries across snapshots.
 
-Разделить в модели три объекта:
-
-| Объект | Владелец и роль |
+| Object | Owner and role |
 | --- | --- |
-| Каталог и поисковые признаки | `library`: слепки, доступность, данные для ранжирования |
-| План продолжения | `assistant`: запрос пользователя, политика, выбранная последовательность и отмена |
-| Фактическая очередь устройства | Наблюдение текущей сессии: свежие HTTP-строки, источник и отметка выбранного трека |
+| Catalog/search features | `library`: snapshots, availability and ranking inputs |
+| Continuation plan | `assistant`: request, policy, intended sequence and cancellation |
+| Observed device queue | Current session: fresh HTTP rows, source and selected mark |
 
-Точного API для произвольного упорядоченного заполнения активной очереди у нас
-нет. Пользовательский плейлист — возможный вариант, но порядок добавления не
-гарантирует порядок проигрывания, а позиции плейлистов меняются. Отдельно проверить
-состав/порядок и жизненный цикл принадлежащего Assistant плейлиста; не переиспользовать
-пользовательский плейлист только по совпавшему имени. См. [PLAYLISTS.md](PLAYLISTS.md).
+No verified API writes an arbitrary ordered active queue. A custom playlist is
+one candidate backend, but insertion order does not establish playback order and
+playlist positions change. Verify order/membership and ownership/lifecycle before
+using it; a matching name alone does not establish ownership. See [PLAYLISTS.md](PLAYLISTS.md).
 
-Альтернатива — постоянная сессия Assistant, которая наблюдает завершение и выбирает
-следующую запись. Она требует согласования со штатным автопереходом: нельзя
-одновременно разрешить ему выбрать следующий трек и отправить собственный выбор.
-Возможный single-once режим для такого исполнителя должен быть включён явно и
-проверен отдельно. Между записями возможна пауза; отключение компьютера прекращает
-управляемое продолжение. Текущий одноразовый CLI не сможет делать это после выхода.
+Another backend is a persistent Assistant session that observes completion and
+selects the next recording. It must coordinate with native auto-advance: do not
+let both independently launch the next track. A possible single-once execution
+mode requires explicit opt-in and separate validation. Gaps can occur, and losing
+the host ends managed continuation. The current CLI cannot execute after exit.
 
-Для постоянной сессии предусмотреть один TCP reader, отмену по stop/новому запросу,
-приостановку по pause, обнаружение внешней смены источника и потерю владения планом
-при reconnect. Отсоединение не должно порождать догоняющие запуски. Повторный запуск
-процесса загружает план для просмотра, но не начинает музыку автоматически.
+Persistent execution needs one TCP reader, cancellation on stop/new requests,
+suspension on pause, detection of external source changes, and loss of plan
+ownership on reconnect. Never issue catch-up launches. A restarted process may
+load a plan for display, but must not automatically start music.
 
-### Критерии готовности M2b
+### M2b acceptance
 
-- После выбора среднего/последнего трека показаны фактическая очередь и режим;
-  проверены natural EOF и границы очереди для всех пяти режимов, а не только next.
-- Покрыты один трек, пустой источник, одинаковые названия альбомов у разных
-  исполнителей, CUE/копии и внешний выбор другой очереди.
-- Пользовательский режим сохраняется по умолчанию. Явно включённый непрерывный
-  режим проверяет каждую мутацию отдельно; частичная ошибка не маскируется успехом.
-- Stop/pause не запускают продолжение. При выключенном Assistant штатная очередь
-  продолжает работать согласно режиму плеера; это проверить отдельным сценарием.
-- Контекст type 7 и EOF проверены в изолированном эмуляторе; работа на физическом
-  плеере и слышимые переходы отмечены отдельно. Произвольная очередь рекомендаций
-  не считается реализованной по одному успешному запуску альбома.
+- Read actual queue/mode after selecting middle/last entries; verify natural EOF
+  in all five modes, not just explicit next.
+- Cover one entry, empty sources, overlapping artist/album names, CUE/copies and
+  externally replaced queues.
+- Preserve mode by default; verify each step separately for explicit continuous
+  context, including partial failure after a mode write.
+- Stop/pause must not start continuation. Native queues must continue according
+  to device mode after Assistant exits.
+- Verify type-7 context/EOF in an isolated emulator; record physical behavior and
+  audible transitions separately. One successful album launch does not establish
+  arbitrary recommendation-queue execution.
 
-Порядок работ: **M2a управление → M2b наблюдаемая штатная очередь и политика режима
-→ M3 микрофон**. Исполнитель произвольного плана продолжения — отдельный последующий
-срез; он не блокирует управление, штатное продолжение и первый голосовой ввод.
+Sequence: **M2a controls → M2b observed native queue and explicit mode policy →
+M3 microphone**. Arbitrary recommendation-plan execution is a later increment;
+it does not block controls, native continuation or first voice input.

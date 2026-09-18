@@ -9,6 +9,10 @@ from research.disc_assistant.assistant.config import load
 from research.disc_assistant.assistant.session import sync
 from research.disc_assistant.assistant.ranking import rank
 from research.disc_assistant.assistant.playback import execute, device_lock
+from research.disc_assistant.assistant.intents import parse, ControlIntent
+from research.disc_assistant.assistant.languages import load_languages
+from research.disc_assistant.assistant.controls import execute as control
+from research.disc_assistant.assistant.queue import observe as observe_queue
 from research.disc_assistant.library.store import Store
 from research.disc_assistant.library.search.typesense import Search, create_client, signature
 
@@ -50,25 +54,26 @@ def main(argv=None):
     sub = parser.add_subparsers(dest='command', required=True)
     sub.add_parser('sync', help='read the device catalog twice and publish a SQLite snapshot')
     sub.add_parser('status', help='show locally recorded snapshot/index status; no network calls')
+    sub.add_parser('queue', help='read the actual device queue and play mode; no search/index required')
     sub.add_parser('index', help='rebuild Typesense from SQLite; no device connection')
     search = sub.add_parser('search', help='show candidates only; never starts playback')
     search.add_argument('query')
     search.add_argument('--limit', type=int, default=10)
     for name, help_text in [('rank', 'explain ranked candidates without playback'),
-                            ('ask', 'play the best match for Включи … / Play …')]:
+                            ('ask', 'play the best match or control current playback')]:
         command = sub.add_parser(name, help=help_text)
         command.add_argument('text')
     args = parser.parse_args(argv)
     try:
         config = load(args.config)
-        with Store(config.data_dir) as store:
-            if args.command == 'sync':
-                with device_lock(config.data_dir):
-                    result = sync(config, store)
-            elif args.command == 'status':
-                result = status(config, store)
-            else:
-                result = asyncio.run(search_command(config, store, args))
+        intent = parse(args.text, load_languages(config.languages)) if args.command in ('ask', 'rank') else None
+        if args.command == 'queue':
+            result = observe_queue(config)
+        elif isinstance(intent, ControlIntent):
+            result = ({'status': 'planned', 'action': intent.action, 'requires_search': False}
+                      if args.command == 'rank' else control(config, intent))
+        else:
+            result = run_catalog_command(config, args)
         print(json.dumps(result, ensure_ascii=False, indent=2))
         return 1 if result.get('status') in ('not_sent', 'uncertain') else 0
     except (ValueError, OSError, RuntimeError) as exc:
@@ -79,6 +84,18 @@ def main(argv=None):
         # credentials out of accidental terminal logs.
         print(f'Assistant: {type(exc).__name__}; check the configured service and credentials', file=sys.stderr)
         return 1
+
+
+def run_catalog_command(config, args):
+    with Store(config.data_dir) as store:
+        if args.command == 'sync':
+            with device_lock(config.data_dir):
+                result = sync(config, store)
+        elif args.command == 'status':
+            result = status(config, store)
+        else:
+            result = asyncio.run(search_command(config, store, args))
+    return result
 
 
 if __name__ == '__main__':

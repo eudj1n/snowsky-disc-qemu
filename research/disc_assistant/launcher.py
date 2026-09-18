@@ -110,7 +110,7 @@ def wait_ready(config, timeout=45):
 def main(argv=None):
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--config', default=os.environ.get('DISC_ASSISTANT_CONFIG', '~/disc-assistant.toml'))
-    parser.add_argument('command', choices=('setup', 'up', 'down', 'sync', 'status', 'index', 'search', 'rank', 'ask', 'test', 'check'))
+    parser.add_argument('command', choices=('setup', 'up', 'down', 'sync', 'status', 'queue', 'index', 'search', 'rank', 'ask', 'test', 'check'))
     parser.add_argument('arguments', nargs=argparse.REMAINDER)
     args = parser.parse_args(argv)
     config_path = Path(args.config).expanduser()
@@ -137,7 +137,12 @@ def main(argv=None):
         if not config_path.is_file():
             raise ValueError(f'config missing: {config_path}; run setup or pass --config PATH')
         config = load(config_path)
-        env = environment(config) if args.command in ('up', 'index', 'search', 'rank', 'ask') else dict(os.environ)
+        needs_search = args.command in ('up', 'index', 'search', 'rank', 'ask')
+        if args.command in ('rank', 'ask') and len(args.arguments) == 1:
+            from research.disc_assistant.assistant.intents import parse, ControlIntent
+            from research.disc_assistant.assistant.languages import load_languages
+            needs_search = not isinstance(parse(args.arguments[0], load_languages(config.languages)), ControlIntent)
+        env = environment(config) if needs_search else dict(os.environ)
         if args.command == 'up':
             if config.search_host not in ('localhost', '127.0.0.1') or config.search_protocol != 'http':
                 raise ValueError('up/down manage local HTTP Typesense only; remote search is externally managed')
