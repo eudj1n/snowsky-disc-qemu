@@ -5,3 +5,4 @@
 # Speech dependencies come with that stage.
 aiohttp==3.14.3
 typesense==2.0.0
+prompt_toolkit==3.0.53

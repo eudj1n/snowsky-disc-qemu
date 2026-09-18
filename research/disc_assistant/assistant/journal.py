@@ -117,6 +117,27 @@ class Journal:
         return result
 
 
+def recallable(text):
+    """Recall submitted single-line commands, excluding history maintenance/UI."""
+    return (bool(text.strip()) and len(text) <= 4000
+            and not any(ord(c) < 32 or ord(c) == 127 for c in text)
+            and text.strip().split(maxsplit=1)[0] not in ('/history', '/clear', '/exit'))
+
+
+def console_history(config):
+    """Oldest first, device-scoped interactive input; persistence stays in Trace."""
+    if not config.journal_enabled:
+        return []
+    cutoff = (datetime.now(timezone.utc) - timedelta(days=config.journal_retention_days)).isoformat(timespec='milliseconds')
+    with Journal(config) as journal:
+        rows = journal.db.execute('''SELECT input FROM requests
+            WHERE device=? AND source='interactive' AND input_truncated=0 AND started_at>=?
+              AND command NOT IN ('history','clear','exit')
+            ORDER BY started_at DESC,rowid DESC LIMIT ?''',
+            (config.device_key, cutoff, min(1000, config.journal_max_requests))).fetchall()
+    return [row['input'] for row in reversed(rows) if recallable(row['input'])]
+
+
 class Trace:
     def __init__(self, config, command, text, *, source='cli', session_id=None):
         self.config, self.command, self.text = config, command, text

@@ -18,7 +18,8 @@ See the [prototype guide](../README.md) for setup, commands and acceptance, and 
 | `session.py` | Catalog synchronization using a borrowed persistent session or a one-shot connection |
 | `live.py` | Thin config/ownership adapter over `controller.session.DiscSession` |
 | `console.py` | Foreground application, startup sync/index and interactive text/maintenance commands |
-| `requirements.txt` | Python runtime pins: official Typesense async SDK and aiohttp |
+| `terminal.py` | `prompt_toolkit` editing, journal-backed recall, language-aware completion and screen clearing |
+| `requirements.txt` | Python runtime pins: official Typesense async SDK, aiohttp and prompt_toolkit |
 | `compose.yaml`, `.env.example` | Independent local Typesense service |
 | `voice/` | Reserved package; no recording or recognition yet |
 | `tests/` | Configuration, CLI and session tests |

@@ -24,8 +24,10 @@ from research.disc_assistant.library.store import Store
 HELP = '''Enter Play … / Включи …, Pause / Пауза, Resume / Продолжи, Stop / Стоп,
 Next track / Следующий трек, Previous track / Предыдущий трек.
 /connect  /disconnect  /status  /queue  /sync  /index
-/search TEXT  /rank TEXT  /language [ru|en|ru en|reset]  /help  /exit
+/search TEXT  /rank TEXT  /language [ru|en|ru en|reset]  /help  /clear  /exit
 /history [LIMIT|show ID|export PATH|prune|clear --yes]
+Terminal: Up/Down history, Ctrl-R search, Tab completion, Right accepts a suggestion,
+Ctrl-L clears the screen, Ctrl-C cancels input, Ctrl-D on empty input exits.
 Events are read continuously. Disconnect/exit never stop music or Typesense.
 One-shot device commands require /exit to release the local ownership lock.
 Offline run.sh search/index/status remain available while this console is open.'''
@@ -152,6 +154,8 @@ class Application:
                 return {'help': HELP}
             if command == 'exit':
                 return {'status': 'exit'}
+            if command == 'clear':
+                return {'status': 'clear_screen'}
             if command == 'status':
                 return self.status()
             if command == 'disconnect':
@@ -189,12 +193,21 @@ class Application:
         return self.device_call(execute)
 
 
-def run(config, *, bootstrap=False, input_fn=input, output=print, source='interactive'):
+def run(config, *, bootstrap=False, input_fn=None, output=print, source='interactive'):
+    interactive_output = sys.stdin.isatty() and sys.stdout.isatty()
     def emit(result):
         if result is not None:
-            output(json.dumps(result, ensure_ascii=False, indent=2))
+            if interactive_output and isinstance(result.get('help'), str):
+                output(result['help'])
+            else:
+                output(json.dumps(result, ensure_ascii=False, indent=2))
 
     with Application(config, source=source) as app:
+        terminal = None
+        if input_fn is None and interactive_output and os.environ.get('TERM') != 'dumb':
+            from research.disc_assistant.assistant.terminal import Terminal
+            terminal = Terminal(app.config, lambda: app.rules)
+        read_input = input_fn or input
         try:
             app.session.wait_ready(config.timeout * 4 + 1)
             output('Persistent DISC console. /help lists commands; /exit releases the connection.')
@@ -209,11 +222,17 @@ def run(config, *, bootstrap=False, input_fn=input, output=print, source='intera
                     output(f'Startup search preparation unavailable ({type(exc).__name__}); controls remain available.')
             while True:
                 try:
-                    line = input_fn('disc> ' if sys.stdin.isatty() else '')
+                    try:
+                        line = terminal.read() if terminal else read_input('disc> ' if sys.stdin.isatty() else '')
+                    except KeyboardInterrupt:
+                        if terminal:
+                            continue  # Cancel input only; no request or mutation has begun.
+                        raise
                     result = app.request(line)
                     if result and result.get('status') == 'exit':
                         break
-                    emit(result)
+                    if not terminal or not terminal.after_command(line, result):
+                        emit(result)
                 except (EOFError, KeyboardInterrupt):
                     raise
                 except (ValueError, OSError, RuntimeError) as exc:

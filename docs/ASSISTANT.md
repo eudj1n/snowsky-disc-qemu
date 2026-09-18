@@ -602,3 +602,20 @@ The subsequent shared Controller extraction is now implemented; see
 and representative ranking evaluation, followed by microphone input or a remote
 adapter over this shared session. Recommendations and repository promotion remain
 separate subsequent work.
+
+## Interactive terminal increment, 2026-09-18
+
+`start`/`listen` now use `prompt_toolkit` in capable terminals: history recall and
+search, suggestions, slash-command/language-dictionary completion, screen clearing
+and readable multiline help. Recall reuses the existing request journal with its
+retention and device namespace; disabled journaling uses session-only history.
+Ctrl-C cancels editing; an interrupted operation still exits without replay.
+One-shot commands and redirected input/output retain JSON output; dumb terminals
+use plain input. Controller and playback behavior are unchanged. See the
+[interactive command reference](ASSISTANT_COMMANDS.md#interactive-console).
+
+Validation: 154 prototype tests (including ten terminal/history regression tests)
+and the 330 Python / 37 JavaScript firmware-free project suite pass. A real PTY
+with a synthetic TCP peer verifies completion, history suggestions, multiline help,
+screen clearing and input cancellation without reconnecting. No firmware/runtime
+behavior changed; no new physical playback acceptance is claimed.

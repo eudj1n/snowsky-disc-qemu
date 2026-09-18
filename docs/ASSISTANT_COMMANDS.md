@@ -50,6 +50,7 @@ input is idle. `listen` currently means text input, not microphone capture.
 | --- | --- |
 | `/history [ARGS]` | Inspect recent requests, `show ID`, `export PATH`, `prune`, or `clear --yes`; see [history](ASSISTANT_HISTORY.md) |
 | `/help` | List text and maintenance commands |
+| `/clear` | Clear the terminal screen; keep input history, journal and playback |
 | `/language [CODES\|reset]` | Show/set saved command dictionaries immediately; `reset` restores TOML defaults |
 | `/status` | Show connection generation, latest playback observations and local catalog/index state |
 | `/connect` | Enable connection/reconnection asynchronously; inspect `/status` for readiness |
@@ -61,7 +62,28 @@ input is idle. `listen` currently means text input, not microphone capture.
 | `/rank TEXT` | Explain a music ranking or control intent without playback |
 | `/exit` | Close the session and release the local ownership lock; keep music and Typesense running |
 
-EOF or Ctrl-C also exits. Search errors leave playback controls available.
+In a capable terminal, `prompt_toolkit` provides Up/Down recall, Ctrl-R history
+search, Tab completion and history-based suggestions (Right accepts a suggestion).
+Ctrl-L clears the screen. Ctrl-C while editing cancels only the current input;
+Ctrl-D on an empty input or `/exit` closes the session. Ctrl-C during an operation
+still exits without replaying any possible device write. `/help` renders readable
+multiline text. Other operation results retain their JSON format.
+
+Completion covers slash commands, `/language` codes, `/history` subcommands and
+command phrases from the enabled TOML dictionaries. It follows `/language` changes
+immediately. Music-library completion is deferred; completion does not query or
+control the player. Suggestions never execute without Enter.
+
+Recall uses up to 1,000 recent interactive journal entries for this device,
+respecting journal age/count limits. Truncated/multiline input and history/UI
+maintenance commands are excluded. There is no separate history file. With
+journaling disabled, recall is session-only; `/history clear --yes` also clears
+the editor's history. `/clear` and Ctrl-L never delete journal entries.
+
+Redirected input/output retain plain input and JSON output. `TERM=dumb` uses plain
+input too, with readable help when both streams are terminals. In plain mode,
+`/clear` returns a `clear_screen` status without terminal escape sequences. EOF
+or Ctrl-C exits. Search errors leave playback controls available.
 `start` reuses a matching index after checking collection existence/count; a
 changed snapshot requires rebuilding it. `/sync` alone does not rebuild search.
 

@@ -47,6 +47,13 @@ The journal uses `assistant.sqlite3` in `[storage].data_dir`, alongside the sepa
 unknown schema versions are rejected. Event foreign keys cascade when a request
 is removed. New database/export files are private to the user.
 
+The interactive terminal also uses this journal for input recall and suggestions:
+up to 1,000 recent single-line, untruncated `interactive` requests for the current
+device, within configured age/count limits. History inspection, `/clear` and
+`/exit` are excluded from recall. Input recall is refreshed before each prompt,
+so clearing/pruning the journal is reflected immediately. Disabling collection
+uses session-only editor history; no second persistent history store is created.
+
 Each stage commits independently, before progressing to the next stage. A process
 crash can leave `pending` evidence; interrupted commands are marked `interrupted`
 when the handler can save their outcome. Neither means that no device write

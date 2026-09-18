@@ -1,0 +1,85 @@
+"""Terminal editing only; all commands still pass through Application.request."""
+import shlex
+import sqlite3
+
+from prompt_toolkit import PromptSession
+from prompt_toolkit.auto_suggest import AutoSuggestFromHistory
+from prompt_toolkit.completion import Completer, Completion
+from prompt_toolkit.history import InMemoryHistory
+from prompt_toolkit.patch_stdout import patch_stdout
+from prompt_toolkit.shortcuts import clear
+
+from research.disc_assistant.assistant.journal import console_history, recallable
+from research.disc_assistant.assistant.languages import LOCALES
+
+COMMANDS = ('/connect', '/disconnect', '/status', '/queue', '/sync', '/index',
+            '/search', '/rank', '/language', '/help', '/history', '/clear', '/exit')
+
+
+class CommandCompleter(Completer):
+    def __init__(self, rules):
+        self.rules = rules
+
+    def get_completions(self, document, complete_event):
+        if document.text_after_cursor:
+            return
+        text = document.text_before_cursor.lstrip()
+        prefix = text
+        if text.startswith('/language '):
+            parts = text.split(' ')
+            prefix = parts[-1]
+            chosen = parts[1:-1]
+            options = [p.stem for p in sorted(LOCALES.glob('*.toml')) if p.stem not in chosen]
+            if not any(chosen):
+                options.append('reset')
+        elif text.startswith('/history '):
+            prefix = text[len('/history '):]
+            options = ('show', 'export', 'prune', 'clear')
+        elif text.startswith('/'):
+            options = COMMANDS
+        else:
+            options = [phrase for phrase, _ in self.rules().commands]
+        for option in sorted(set(options)):
+            if option.casefold().startswith(prefix.casefold()):
+                yield Completion(option, start_position=-len(prefix))
+
+
+class RecallHistory(InMemoryHistory):
+    def append_string(self, string):
+        if recallable(string):
+            super().append_string(string)
+
+
+class Terminal:
+    def __init__(self, config, rules, **session_options):
+        self.config = config
+        self.history_error_reported = False
+        self.history = RecallHistory()
+        self.session = PromptSession(history=self.history, completer=CommandCompleter(rules),
+            auto_suggest=AutoSuggestFromHistory(), complete_while_typing=False,
+            **session_options)
+
+    def read(self):
+        # Refresh after every completed command, including journal clear/prune.
+        # The journal already stores submitted input and applies its retention.
+        strings = self.history.get_strings()[-1000:]
+        if self.config.journal_enabled:
+            try:
+                strings = console_history(self.config)
+            except (OSError, ValueError, sqlite3.Error):
+                if not self.history_error_reported:
+                    print('Saved input history unavailable; using session history.')
+                    self.history_error_reported = True
+        self.history = RecallHistory(strings)
+        self.session.history = self.history
+        self.session.default_buffer.history = self.history
+        with patch_stdout():
+            return self.session.prompt('disc> ')
+
+    def after_command(self, line, result):
+        if result and result.get('status') == 'clear_screen':
+            clear()
+            return True
+        if result and 'removed' in result and shlex.split(line.strip()) == ['/history', 'clear', '--yes']:
+            self.history = RecallHistory()
+        return False

@@ -74,13 +74,25 @@ commands. `/language ru` or `/language en` selects command dictionaries and save
 the choice for later sessions; `/language ru en` enables both, and `/language reset`
 restores TOML defaults. `/sync` refreshes the catalog; `/index` rebuilds search after changes.
 
+The terminal uses `prompt_toolkit`: Up/Down recall, Ctrl-R history search, Tab
+completion, history suggestions accepted with Right, and Ctrl-L or `/clear` to
+clear the screen. `/help` is readable multiline text. Ctrl-C while editing cancels
+the input; Ctrl-D on an empty line exits. Recall reuses this device's interactive
+request journal, subject to retention, with up to 1,000 entries and no separate
+history file. Disabling journaling keeps only session history. `/history clear
+--yes` clears saved and editor history; clearing the screen preserves it.
+Redirected input/output and `TERM=dumb` keep the plain scripting interface.
+After updating an existing checkout, rerun `run.sh setup` to install new pinned
+dependencies, then restart `listen`; existing config and keys are preserved.
+
 The application owns one TCP socket and continuously receives events, including
 while waiting for input or doing HTTP/search work. Unexpected disconnects trigger
 bounded reconnect and fresh observations, never command replay. Commands submitted
 while disconnected fail rather than waiting to play later. `/disconnect` disables
 reconnect and releases TCP for FiiO Control; `/connect` enables it again. `/status`
 shows connection state and the latest observations. The local data-directory
-ownership lock stays held until `/exit`, EOF or Ctrl-C. Exiting leaves native
+ownership lock stays held until `/exit`, EOF or interruption during an operation.
+In plain input mode, Ctrl-C also exits immediately. Exiting leaves native
 playback and Typesense running; use `down` separately to stop search.
 
 Search startup/index failures leave the console available for playback controls.
