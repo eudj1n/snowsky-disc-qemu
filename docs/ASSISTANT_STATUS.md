@@ -24,8 +24,12 @@ push after each. External review is input for comparison, not a specification.
    **350 shared Python / 37 JS tests** passed; 12 focused tests additionally cover
    the new session helper and oracle (including two new session tests and one new
    oracle test). Manifest v7 has 64 cases; no full-64 result is claimed.
-4. **Pending:** compare bounded retrieval changes; add an optional resident STT
-   adapter and bounded catalog vocabulary hints, with measured comparisons.
+4. **Complete:** known-artist prefilter promoted after synthetic comparison
+   (3/5 to 4/5). Schema 4 requires `/index`; split/join remains off. Optional
+   resident STT and catalog hints implemented. Matched base decoder comparison:
+   CLI 318 ms / resident 226 ms median; hints improve exact intentions 12/24 to
+   18/24 on 12 repeated synthetic samples. **301 tests and 6/6 emulator cases**
+   passed. See [comparison details](ASSISTANT_REVIEW_EVALUATION.md).
 5. **Pending:** structured local-model evidence as an optional shadow source,
    validated typed arguments and comparative reports; primary rules retain execution.
 

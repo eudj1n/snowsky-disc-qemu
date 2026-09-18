@@ -214,3 +214,8 @@ plus 37 JS checks passed. An additional focused 12-test run covers the new sessi
 helper and oracle, including two newly added session tests and one new oracle test.
 The public helper works over TCP and WS in unit fixtures; this Assistant album
 cohort uses TCP. Physical album acceptance is still pending.
+
+Review stage 4: **6/6 focused cases passed** after schema 4 rebuild and
+known-artist prefiltering (RU/EN track, fuzzy collaboration member and compilation
+album). Report: `/tmp/disc-review-stage4`. Prototype checks: 301. See
+[isolated search and speech comparisons](ASSISTANT_REVIEW_EVALUATION.md).

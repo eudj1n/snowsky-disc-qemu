@@ -54,6 +54,9 @@ suggestion = "ansibrightblack italic"
 # Optional file-based speech. Install engines/models explicitly; no automatic download.
 # See docs/ASSISTANT_VOICE.md. Both adapters are local; TTS currently requires macOS.
 [speech]
+backend = "cli" # opt-in: "server" (model remains loaded in whisper-server)
+catalog_hints = false # bounded names from the active snapshot, never expected transcripts
+# server_url = "http://127.0.0.1:18119/inference"
 # model = "~/disc-speech/ggml-small.bin"
 whisper_executable = "whisper-cli"
 timeout = 120

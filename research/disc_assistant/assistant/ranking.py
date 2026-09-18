@@ -149,7 +149,8 @@ async def rank(config, store, search, intent, *, trace=None):
             if trace:
                 trace.event('search_query', {'query': query, 'limit': 50})
             response = await search.search(store, config.device_key, query, limit=50,
-                                           fields=('title', 'artist', 'title_aliases', 'artist_aliases', 'album', 'album_aliases', 'artists'))
+                                           fields=('title', 'artist', 'title_aliases', 'artist_aliases', 'album', 'album_aliases', 'artists'),
+                                           artist_scope=known or None)
             if trace:
                 trace.search(response, phase='retrieval')
             if response['generation'] != head['generation']:
@@ -170,7 +171,7 @@ async def rank(config, store, search, intent, *, trace=None):
             'intent': intent.kind, 'resolved_intent': asdict(intent), 'generation': head['generation'], 'device': config.device_key,
             'retrieval': retrieval, 'candidates': candidates[:10],
             'candidate_count': len(candidates), 'candidates_truncated': len(candidates) > 10,
-            'ranking_policy': 'lexical-v4; scores are not probabilities; no history/likes'}
+            'ranking_policy': 'lexical-v5; scores are not probabilities; no history/likes'}
 
 
 def score_albums(intent, documents, aliases):

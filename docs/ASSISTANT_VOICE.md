@@ -10,7 +10,7 @@ samples through the same `SpeechSynthesizer` interface reserved for future repli
 | Area | Implemented | Still pending |
 | --- | --- | --- |
 | Input | Bounded PCM WAV files, explicit active locale, raw transcript and normalized command text | Microphone, resampling/compressed formats, streaming, wake word, voice activity detection |
-| STT | Local `whisper.cpp` CLI adapter, explicit model, timeout/cancellation, model fingerprint | Resident model/server, GPU tuning, remote provider, music vocabulary hints |
+| STT | Local `whisper.cpp` CLI adapter, explicit model, timeout/cancellation, model fingerprint | GPU tuning, remote provider, microphone input |
 | TTS | Local macOS `say` adapter, configured voices, WAV and provenance sidecar | Portable Pi/Linux engine, automatic response synthesis and speaker delivery |
 | Integration | `transcribe`, `rank --audio`, `ask --audio`, equivalent console commands | Questions, confirmations and dialogue |
 | Evaluation | RU/EN synthetic corpora, separate interpretation and catalog-selection checks | Human/noisy recordings, physical-player speech acceptance |
@@ -316,3 +316,40 @@ is in-sample tuning, not general voice accuracy. It motivates the broader model
 comparison instead of indefinitely adding transcript-specific aliases.
 Validation: **224 prototype tests** and disposable real Typesense/SDK plus
 synthetic-device acceptance pass. No physical player was used.
+
+## Optional resident STT and catalog vocabulary
+
+The CLI backend remains the default. To retain a model between requests, build the
+`whisper-server` target from the same reviewed whisper.cpp version and start it
+explicitly with the same installed multilingual model:
+
+```sh
+whisper-server -m /absolute/path/ggml-base.bin --host 127.0.0.1 --port 18119 -ng -nf -nlp
+```
+
+```toml
+[speech]
+backend = "server"
+server_url = "http://127.0.0.1:18119/inference"
+model = "/absolute/path/ggml-base.bin"
+catalog_hints = false
+```
+
+Assistant never starts, reloads or downloads a server/model. The endpoint must be
+an explicit loopback IP; redirects and environment proxies are disabled. Responses
+are bounded, locale/task checked, and timeout/unavailability never falls back to
+another backend. Use a dedicated service whose loaded model matches `speech.model`: the
+recorded file digest is operator configuration, not remote attestation.
+
+`catalog_hints = true` supplies at most 64 names / 800 characters from up to 512
+rows of the current device snapshot, including semicolon artist members. The
+projection is deterministic, opt-in and shared by CLI/server adapters. Logs record
+snapshot, digest, count and truncation. This is vocabulary bias, not a transcript
+replacement or an expected answer. It can help names and also bias recognition.
+Empty hints are sent explicitly on every server request to avoid prompt carryover.
+New locales use their reply metadata's English language name to validate server
+`verbose_json` language; ensure it matches the installed Whisper language.
+
+See [measured review comparisons](ASSISTANT_REVIEW_EVALUATION.md) and the two
+reproducible experiment modules. These measurements do not change the default
+base/small choice, microphone status, or physical acceptance.

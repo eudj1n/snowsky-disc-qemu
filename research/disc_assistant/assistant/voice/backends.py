@@ -11,6 +11,7 @@ import tempfile
 import time
 
 from research.disc_assistant.assistant.providers import ProviderInfo
+from research.disc_assistant.assistant.voice.vocabulary import catalog_vocabulary, prompt
 from research.disc_assistant.assistant.speech import (
     Audio, SpeechContext, SynthesisRequest, Transcription, InvalidSpeech, NoSpeech, SpeechUnavailable,
 )
@@ -74,7 +75,8 @@ class WhisperCpp:
             await run_process([self.settings.get('whisper_executable', 'whisper-cli'),
                 '-m', str(Path(self.settings['model']).expanduser().resolve()),
                 '-f', str(source), '-l', self.settings.get('stt_languages', {}).get(context.locale, context.locale),
-                '-oj', '-of', str(output), '-np', '-ng', '-nf'],
+                '-oj', '-of', str(output), '-np', '-ng', '-nf',
+                *(['--prompt', prompt(context.vocabulary)] if context.vocabulary else [])],
                 timeout=self.settings.get('timeout', 120))
             try:
                 with output.with_suffix('.json').open('rb') as stream:
@@ -128,8 +130,12 @@ async def transcribe_file(config, path, trace, *, provider=None):
     trace.event('audio_validated', details)
     if details['digital_silence']:
         raise NoSpeech('no speech: digital silence')
-    provider = provider if provider is not None else WhisperCpp(config.speech)
-    context = SpeechContext(config.locale, trace.id)
+    if provider is None:
+        from research.disc_assistant.assistant.voice.resident import WhisperServer
+        provider = WhisperServer(config.speech) if config.speech.get('backend', 'cli') == 'server' else WhisperCpp(config.speech)
+    vocabulary, evidence = catalog_vocabulary(config)
+    trace.event('speech_vocabulary', evidence)
+    context = SpeechContext(config.locale, trace.id, vocabulary)
     trace.event('transcription_started', {'provider': asdict(provider.info), 'locale': context.locale})
     started = time.monotonic()
     try:

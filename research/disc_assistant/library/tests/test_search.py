@@ -35,6 +35,19 @@ class SearchTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(head['generation'], head['index_generation'])
         self.collection.delete.assert_not_called()
 
+    async def test_artist_filter_is_applied_before_top_k_without_raw_query_syntax(self):
+        from research.disc_assistant.library.artists import artist_key
+        await self.search.build(self.store, 'test')
+        self.collection.documents.search = AsyncMock(return_value={'found': 0, 'hits': []})
+        credit = 'Name`],other:=true || artist:[anything'
+        await self.search.search(self.store, 'test', 'Song', artist_scope=[credit], split_join='fallback')
+        params = self.collection.documents.search.call_args.args[0]
+        self.assertEqual(params['filter_by'], 'artist_key:=[' + artist_key(credit) + ']')
+        self.assertEqual(params['split_join_tokens'], 'fallback')
+        self.assertNotIn(credit, params['filter_by'])
+        with self.assertRaises(ValueError):
+            await self.search.search(self.store, 'test', 'Song', artist_scope=[])
+
     async def test_empty_snapshot_is_indexed_without_document_import(self):
         self.store.publish('test', [], {}, expected_generation=self.head['generation'])
         self.collection.retrieve.return_value = {'num_documents': 0}

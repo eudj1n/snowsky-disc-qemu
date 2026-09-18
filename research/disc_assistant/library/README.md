@@ -73,3 +73,11 @@ catalog checks and playback use the stock artist selector, never a fabricated
 member-only selector. This does not create an aggregate queue of every solo and
 collaborative recording by a person. Artist-only commands select one matching
 native artist group under the existing deterministic ranking policy.
+
+### Schema 4: prefilter known raw credits
+
+Schema 4 / lexical-v5 add a derived SHA-256 `artist_key` for exact raw-credit
+filtering before Typesense top-50 retrieval. This prevents unrelated artist names
+inside titles from crowding out a requested artist. The full original credit and
+semicolon member projection remain unchanged. Run `/index`, not `/sync`. The
+SQLite schema remains version 1. Compare the [measured variants](../../../docs/ASSISTANT_REVIEW_EVALUATION.md).

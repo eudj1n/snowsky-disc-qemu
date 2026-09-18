@@ -71,7 +71,7 @@ def load(path):
                'dialogue': {'enabled'},
                'playback': {'continuous_context'},
                'journal': {'enabled', 'retention_days', 'max_requests'},
-               'speech': {'model', 'whisper_executable', 'timeout', 'max_seconds', 'voices', 'stt_languages', 'rate'},
+               'speech': {'backend', 'server_url', 'catalog_hints', 'model', 'whisper_executable', 'timeout', 'max_seconds', 'voices', 'stt_languages', 'rate'},
                'terminal': {'color', 'prompt', 'input', 'result', 'error', 'warning', 'suggestion', 'debug'}}
     if set(raw) - set(allowed):
         raise ValueError('unknown configuration section')
@@ -105,6 +105,11 @@ def load(path):
     shadow_timeout = number(interpretation.get('shadow_timeout_ms', 100), 'interpretation.shadow_timeout_ms', 1, 2000)
     terminal = raw.get('terminal', {})
     speech = raw.get('speech', {})
+    if speech.get('backend', 'cli') not in ('cli', 'server') or type(speech.get('catalog_hints', False)) is not bool:
+        raise ValueError('invalid speech backend or catalog_hints')
+    if speech.get('backend') == 'server' or 'server_url' in speech:
+        from research.disc_assistant.assistant.local_service import endpoint
+        endpoint(speech.get('server_url'), '/inference')
     for key in ('model', 'whisper_executable'):
         if key in speech:
             text(speech[key], f'speech.{key}')

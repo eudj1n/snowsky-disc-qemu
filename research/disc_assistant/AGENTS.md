@@ -49,8 +49,8 @@ The owner authorized five sequential increments, each committed and pushed.
   keep the earlier 40/42 and final 10/10 reports separate. Keep this cohort separate from physical
   results; failures must remain visible.
 - `library/README.md`: semicolon-separated artist members are a derived projection;
-  source artist tags remain exact device selectors. Schema 3 requires `/index`,
-  not `/sync`; ranking is lexical-v4. No aggregate person-level queue is implemented.
+  source artist tags remain exact device selectors. Schema 4 requires `/index`,
+  not `/sync`; ranking is lexical-v5 (known artist filtered before top-50). No aggregate person-level queue is implemented.
 - `../../docs/ASSISTANT.md`: implementation roadmap and historical increments.
 - `../../docs/ASSISTANT_ARCHITECTURE.md`: interpreter/STT/TTS contracts, one saved locale.
 - `../../docs/ASSISTANT_INTERPRETATION_SOURCES.md`: independent evidence and shadow boundary.

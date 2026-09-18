@@ -5,9 +5,9 @@ from uuid import uuid4
 
 from research.disc_assistant.library.store import StaleSnapshot
 from research.disc_assistant.library.transliteration import projected_aliases, fingerprint
-from research.disc_assistant.library.artists import artist_names, split_artists
+from research.disc_assistant.library.artists import artist_names, split_artists, artist_key
 
-SCHEMA_VERSION = 3
+SCHEMA_VERSION = 4
 FIELDS = ['title', 'artist', 'album', 'title_aliases', 'artist_aliases', 'album_aliases', 'artists']
 
 
@@ -50,7 +50,7 @@ class Search:
         try:
             await self.client.collections.create({'name': name, 'fields': [
                 {'name': field, 'type': 'string[]' if field.endswith('_aliases') or field == 'artists' else 'string'}
-                for field in FIELDS] + [{'name': 'generation', 'type': 'string', 'index': False}]})
+                for field in FIELDS] + [{'name': 'artist_key', 'type': 'string', 'facet': True}, {'name': 'generation', 'type': 'string', 'index': False}]})
             for start in range(0, len(documents), 200):
                 batch = documents[start:start + 200]
                 result = await collection.documents.import_(batch, {'action': 'create'})
@@ -71,7 +71,7 @@ class Search:
             raise
         return store.head(device)
 
-    async def search(self, store, device, query, *, limit=10, fields=None):
+    async def search(self, store, device, query, *, limit=10, fields=None, artist_scope=None, split_join="off"):
         if not isinstance(query, str) or not query.strip() or len(query) > 1000:
             raise ValueError('query must contain 1..1000 characters')
         if type(limit) is not int or not 1 <= limit <= 50:
@@ -80,11 +80,20 @@ class Search:
         if not fields or any(field not in FIELDS for field in fields):
             raise ValueError('unsupported search fields')
         weights = dict(zip(FIELDS, (6, 5, 2, 4, 3, 1, 5)))
+        if split_join not in ('off', 'fallback', 'always'):
+            raise ValueError('unsupported split/join policy')
+        extra = {}
+        if artist_scope is not None:
+            if not isinstance(artist_scope, (list, tuple, set)) or not artist_scope or any(not isinstance(a, str) or not a for a in artist_scope):
+                raise ValueError('artist scope must contain nonempty raw credits')
+            if len(artist_scope) > 1000:
+                raise ValueError('artist scope exceeds the bounded filter size')
+            extra['filter_by'] = 'artist_key:=[' + ','.join(sorted({artist_key(a) for a in artist_scope})) + ']'
         head = store.verify_index(device, self.signature)
         reply = await self.client.collections[head['collection']].documents.search({
             'q': query.strip(), 'query_by': ','.join(fields), 'query_by_weights': ','.join(str(weights[f]) for f in fields),
             'per_page': limit, 'num_typos': 2, 'prefix': True,
-            'drop_tokens_threshold': 0, 'split_join_tokens': 'off',
+            'drop_tokens_threshold': 0, 'split_join_tokens': split_join, **extra,
             'highlight_fields': ','.join(FIELDS), 'enable_highlight_v1': True,
         })
         if store.verify_index(device, self.signature) != head:
@@ -98,7 +107,8 @@ class Search:
             row = store.db.execute('SELECT * FROM tracks WHERE id=? AND generation=?',
                                    (document.get('id'), head['generation'])).fetchone()
             if (row is None or any(document.get(k) != row[k] for k in ('generation', 'title', 'artist', 'album'))
-                    or document.get('artists') != split_artists(row['artist'])):
+                    or document.get('artists') != split_artists(row['artist'])
+                    or document.get('artist_key') != artist_key(row['artist'])):
                 raise StaleSnapshot('search result disagrees with SQLite; rebuild the index')
             evidence = [{'field': h['field'], 'matched_tokens': h.get('matched_tokens', [])}
                         for h in hit.get('highlights', []) if h.get('field') in FIELDS]
