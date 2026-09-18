@@ -41,6 +41,13 @@ queries, guards scan activity and dispatches at most one selection. It serialize
 local device operations and never replays an uncertain mutation. Long-lived
 background event routing/history remain future work.
 
+The next increment is a persistent application session, before microphone work.
+The service will own TCP and continuously route events; CLI commands will use
+local IPC. Explicit disconnect will release the player and disable reconnect;
+unexpected connection loss will permit observation-only recovery without mutation
+replay. The existing per-command lifecycle is temporary. See
+[M2c](../../../docs/ASSISTANT_PLAYBACK.md#m2c-persistent-device-session).
+
 Initial connection refusal is retried within the configured timeout to allow the
 stock listener to reopen after disconnect. This occurs before handshake/mutations;
 established sessions are never automatically reconnected. Explicit continuous

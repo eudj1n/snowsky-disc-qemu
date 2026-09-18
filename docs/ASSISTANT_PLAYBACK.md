@@ -4,6 +4,8 @@ Two increments following ranked text playback, **2026-09-18**. Work remains in
 `research/disc_assistant/`. See [commands](ASSISTANT_COMMANDS.md) for available
 behavior and [the implementation plan](ASSISTANT.md) for the broader roadmap.
 M2a controls and M2b native queue observation/continuation are implemented.
+The next increment is M2c: persistent session ownership. The current one-shot CLI
+is a temporary interface, not a decision to reconnect for every user request.
 
 Validation on 2026-09-18: 97 prototype unit tests, 313 shared Python tests and
 37 shared JavaScript tests pass. Disposable Typesense acceptance covers control
@@ -170,6 +172,86 @@ load a plan for display, but must not automatically start music.
   audible transitions separately. One successful album launch does not establish
   arbitrary recommendation-queue execution.
 
+## M2c: persistent device session
+
+Decision on 2026-09-18: keep the DISC TCP connection open while the Assistant
+service is running and connection is enabled. Text CLI, future UI and voice input
+submit work to that service rather than opening independent device connections.
+This increment precedes microphone work and does not require history collection
+or a recommendation-queue executor to be implemented first.
+
+### Ownership and lifecycle
+
+- One service process owns one device connection, one reader, the state reducer
+  and the serialized command dispatcher. Hold the device ownership lock for the
+  service lifetime. Catalog synchronization uses the same session and matching
+  HTTP endpoint; it must not open a competing TCP connection.
+- Separate connection state (`disconnected`, `connecting`, `ready`, `reconnecting`)
+  from playback state (`unknown`, `loading`, `playing`, `paused`, observed final
+  stop). Attach observations and pending work to a connection generation.
+- Connect performs handshake, compatibility validation and bounded fresh reads
+  of settings, playback and queue. A silent `0202` after EOF leaves playback
+  unknown unless observed events establish stop; it does not alone mean the link
+  is dead. Initial state acquisition can finish with explicit unknown fields.
+- Unexpected socket EOF/error invalidates connection-scoped observations and
+  pending work. Reconnect uses capped backoff with jitter while enabled; reset
+  backoff only after a stable ready session. Do not busy-loop, assume remote
+  wake, inject fake touches or change device power policy.
+- Explicit disconnect disables reconnect and releases TCP for FiiO Control.
+  Connect enables it again. Service shutdown closes the session cleanly; it does
+  not pause playback, clear the queue or restore modes implicitly. A music `Stop`
+  remains a playback intent, distinct from disconnecting or stopping the service.
+- Changing the configured target closes the previous session and invalidates
+  its work before connecting to the new device. Never carry pending selectors
+  across device changes or silently take over another controller's connection.
+
+### Events and command outcomes
+
+Keep receiving events during silence between user commands, catalog HTTP reads,
+search and speech recognition. Blocking HTTP/synchronous work must not stop the
+reader. Replace the diagnostic client's notification-draining request path with
+central routing; a permanently open socket alone is insufficient.
+
+Serialize protocol reads because responses have tags but no request IDs. Route
+unsolicited updates through the same reducer. Handle late replies, state-only
+deltas, full loading snapshots, position resets and duplicate notifications.
+A response timeout makes that read uncertain; do not reinterpret an old reply
+as a command acknowledgement. Check transport health separately with a reviewed
+read command such as `0105`, which still responds after final stop. Prefer pushes
+for normal updates; health probes need bounded, measured cadence rather than
+continuous now-playing polling. Validate physical idle/sleep effects separately.
+
+Cancel unsent device mutations when a connection is lost. A write that may have
+started remains `uncertain`. Automatic reconnect restores observation only:
+never replay toggles, navigation, mode changes or track selections, and never
+resume music automatically. Revalidate fresh source rows for every new selection.
+Enforce stock command pacing centrally across all callers.
+
+Give local requests operation IDs and report their lifecycle separately from
+device connection state. If a CLI/UI request times out after dispatch, querying
+that operation's result must not dispatch it again. Persist only the minimal
+operation record needed to retain uncertainty across service restart, with bounded
+retention; do not turn a persisted record into an automatic replay queue.
+
+### Migration and acceptance
+
+Start with an explicit foreground `serve` entry point and a private local IPC
+endpoint (Unix socket on the current macOS/Linux targets). CLI `ask`, `sync` and
+`queue` become clients; existing offline `search`, `rank`, `index` and local
+catalog `status` retain their meanings. Add explicit connection/status controls
+without overloading `up`/`down`, which currently manage Typesense. These service
+commands are planned, not available yet. Reuse Python/aiohttp where appropriate;
+no new language or external message broker is needed.
+
+Refactor selection, controls and queue observation to accept the shared session.
+Keep operation-level mutation guards and current synthetic/emulator fixtures.
+Acceptance must show one connection across multiple CLI commands, unsolicited
+EOF/physical-button updates between requests, reader progress during slow HTTP,
+bounded reconnect, no mutation replay, explicit disconnect staying disconnected,
+and clean shutdown releasing the connection. Test delayed replies and disconnect
+before/during/after a write. Observe physical sleep, Wi-Fi recovery and competition
+with FiiO Control separately; emulator success does not establish these behaviors.
+
 Sequence: **M2a controls → M2b observed native queue and explicit mode policy →
-M3 microphone**. Arbitrary recommendation-plan execution is a later increment;
+M2c persistent session → M3 microphone**. Arbitrary recommendation-plan execution is a later increment;
 it does not block controls, native continuation or first voice input.

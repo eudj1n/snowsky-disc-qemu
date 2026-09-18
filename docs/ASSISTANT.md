@@ -297,6 +297,10 @@ but must not restrict accepted command languages.
 
 ### Device session rules
 
+- The production direction is a persistent connection owned by the Assistant
+  application service. Per-command connections are a temporary CLI prototype
+  boundary, not the intended lifecycle. Implement M2c before microphone work;
+  see [persistent session migration](ASSISTANT_PLAYBACK.md#m2c-persistent-device-session).
 - Own one TCP connection and one reader in the application service. Serialize
   requests and route replies/events centrally; do not give each UI, catalog worker
   or voice request its own connection. FiiO Control can compete for the stock
@@ -370,6 +374,7 @@ M3; later milestones extend it and do not block the first end-to-end result.
 | M2: text-to-playback | Bilingual intents, explained automatic best-match ranking, fresh selection and outcome verification; dialogue deferred | Artist/recording launch; deterministic ranking; absent explicit versions and stale sources rejected; disconnect never replays commands |
 | M2a: playback controls | State-aware pause/resume, explicit Assistant stop semantics, next/previous; no search dependency | Repeated requests, unknown/loading/EOF states, external transitions and uncertain writes; no toggle replay; previous-to-start behavior |
 | M2b: native queue and continuation | Read actual album/artist queue after selection; preserve mode by default, explicit opt-in continuous mode | Type-7 natural EOF, five modes, middle/last/single entries, external queue changes and per-operation results for mode + selection |
+| M2c: persistent device session | One application service owns TCP and event/state routing; CLI becomes a local client; explicit connect/disconnect and bounded reconnect | Repeated commands use one connection; events arrive without commands; disconnect cancels unsent mutations; reconnect refreshes state without playback replay; explicit disconnect suppresses reconnect |
 | M3: microphone | Button recording, speech boundaries, multilingual transcription into the same pipeline | Recorded evaluation phrases and live microphone trials; silence rejection; recognition, retrieval and total latency reported separately |
 | M4: personal selection | Event reconciliation, favorites mirror, observed-history aggregates | Repeated events, seeks and gaps do not inflate history; favorite/recency requests behave as documented; exact requests remain exact |
 | M5: enrichment and hybrid search | Optional lyrics provider, provenance, phrase search; versioned embedding snapshots with incremental cache reuse and lexical/vector retrieval | Correct recording links; measured quality/latency against lexical baseline; interrupted rebuild/model changes cannot mix generations; usable lexical search during model/provider outages |
@@ -484,7 +489,8 @@ The shared firmware-free suite passed 313 Python / 37 JavaScript tests alongside
 the 97 prototype tests. Physical controls/continuation acceptance remains pending;
 see [playback validation](ASSISTANT_PLAYBACK.md).
 
-Next: evaluate `rank` on representative physical-library queries and validate bounded
+Next: migrate per-command sessions to the persistent application service (M2c),
+evaluate `rank` on representative physical-library queries and validate bounded
 `ask` playback, controls and native continuation on deliberately selected physical
 music, then add button-driven microphone input
 (M3). Continue in `research/disc_assistant/`; promotion, repository splitting,
