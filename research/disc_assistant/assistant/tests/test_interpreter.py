@@ -130,7 +130,7 @@ class InterpretationFlowTests(unittest.TestCase):
                                            'observation': {'playback': 'playing'}}
         app.device_call = Mock(return_value={'status': 'playing'})
         with patch.dict('os.environ', {'TYPESENSE_API_KEY': 'fixture'}), \
-                patch('research.disc_assistant.assistant.console.create_client', return_value=sdk):
+                patch('research.disc_assistant.assistant.application.create_client', return_value=sdk):
             app.request('some external phrasing')
         provider.interpret.assert_awaited_once()
         app.device_call.assert_called_once()

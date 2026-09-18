@@ -126,6 +126,11 @@ class MacOSSay:
 async def transcribe_file(config, path, trace, *, provider=None):
     trace.event('audio_input', {'format': 'pcm_wav'})
     audio = load_audio(path, max_seconds=config.speech.get('max_seconds', 30))
+    return await transcribe_audio(config, audio, trace, provider=provider)
+
+
+async def transcribe_audio(config, audio, trace, *, provider=None):
+    """Common validated-audio pipeline for files and browser capture."""
     details = audio_details(audio)
     trace.event('audio_validated', details)
     if details['digital_silence']:

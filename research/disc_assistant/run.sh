@@ -13,6 +13,7 @@ Usage: research/disc_assistant/run.sh [--config PATH] [--source cli|scheduled] [
   up             Start local Typesense and wait for readiness
   down           Stop local Typesense, preserving its volume
   start          Start Typesense, connect, sync/index, then keep an interactive console
+  web [--bootstrap] [--port 8090]  Local browser UI with text and microphone input
   listen         Persistent console using existing catalog/index; no Docker startup
   language [CODE|reset]   Show/set one saved interaction locale
   response [ARGS] Show/set speech mode none|errors|all, or reset

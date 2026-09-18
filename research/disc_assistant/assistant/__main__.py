@@ -74,6 +74,9 @@ def main(argv=None, *, interpreter=None, transcriber=None, synthesizer=None):
     parser.add_argument('--debug', action='store_true', help='stream bounded request traces to stderr')
     parser.add_argument('--source', choices=('cli', 'scheduled'), help='request origin; scheduled is explicit for cron')
     sub = parser.add_subparsers(dest='command', required=True)
+    browser = sub.add_parser('web', help='local Disc Assistant Web interface')
+    browser.add_argument('--port', type=int, default=8090)
+    browser.add_argument('--bootstrap', action='store_true', help='sync/index before serving')
     sub.add_parser('listen', help='persistent interactive console; existing catalog/index')
     sub.add_parser('start', help='connect, sync, index and enter the persistent console')
     language = sub.add_parser('language', help='show/set the saved interaction locale, or reset to TOML defaults')
@@ -122,6 +125,9 @@ def main(argv=None, *, interpreter=None, transcriber=None, synthesizer=None):
                 result = trace.finish(history_command(config, args.arguments))
             print(json.dumps(result, ensure_ascii=False, indent=2))
             return 0
+        if args.command == 'web':
+            from research.disc_assistant.assistant.web.server import run
+            return run(config, port=args.port, language=args.language, bootstrap=args.bootstrap)
         if args.command in ('listen', 'start'):
             from research.disc_assistant.assistant.console import run
             return run(config, bootstrap=args.command == 'start', source=args.source or 'interactive',

@@ -157,7 +157,7 @@ class SourceFlowTests(unittest.TestCase):
         self.assertEqual(row['events'][-2]['payload']['category'],'unrecognized_or_invalid_command')
         self.assertIn('interpretation_shadow',[e['phase'] for e in row['events']])
         transcript={'text':'Play Blur and stop','command_text':'Play Blur and stop','locale':'en'}
-        with patch('research.disc_assistant.assistant.console.transcribe_file',AsyncMock(return_value=transcript)):
+        with patch('research.disc_assistant.assistant.application.transcribe_file',AsyncMock(return_value=transcript)):
             with self.assertRaises(UnsupportedCommand):app.request('/ask --audio fixture.wav')
         app.device_call.assert_not_called()
 

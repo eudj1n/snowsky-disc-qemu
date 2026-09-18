@@ -24,6 +24,17 @@ expansion of this MVP: microphone/wake word, live TTS, learned selection, semant
 retrieval, fine-tuning, recommendations, dialogues and Raspberry Pi/hardware acceptance.
 Keep this prototype under research until a separate promotion/split decision.
 
+## Browser adapter checkpoint
+
+`assistant/application.py` is the common synchronous service. CLI lives in
+`assistant/console.py`; Disc Assistant Web lives in `assistant/web/` and follows
+viewer styling without runtime imports. `run.sh web --bootstrap` prepares search
+and serves loopback port 8090. One worker owns application/SQLite; the existing
+Controller session receives events continuously. No queued/retried mutations,
+public/LAN serving, arbitrary slash commands or filesystem upload paths. Browser
+recording is bounded PCM capture, explicit stop/submit/cancel; no VAD/wake word.
+See `../../docs/ASSISTANT_WEB.md` for contracts and pending human acceptance.
+
 ## Where to resume
 
 Start with `../../docs/ASSISTANT_STATUS.md`: current review follow-up and evidence.
@@ -61,7 +72,7 @@ The owner authorized five sequential increments, each committed and pushed.
 - `../../docs/DISC_CAPABILITIES.md`: Controller contract; protocol details stay there.
 
 Current implementation includes persistent sessions/reconnect without mutation replay,
-CLI/console, library snapshots/Typesense, ranking, continuation through native queues,
+CLI/console and separate web text/microphone input, library snapshots/Typesense, ranking, continuation through native queues,
 play/pause/resume/stop/next/previous, localized responses, journal/timing/debug,
 file STT (CLI or opt-in resident server with bounded catalog hints) and synthetic speech checks, offline command snapshots and diagnostic models.
 The owner has reported live-player playback/controls working. This is not yet a

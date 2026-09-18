@@ -172,14 +172,14 @@ class JournalTests(unittest.TestCase):
         app.session.status.return_value = {'generation': 7, 'connection': 'ready'}
         app.device_call = Mock(return_value={'status': 'not_sent', 'operation_id': 'op-no'})
         with patch.dict('os.environ', {'TYPESENSE_API_KEY': 'synthetic'}), \
-                patch('research.disc_assistant.assistant.console.create_client', return_value=client):
+                patch('research.disc_assistant.assistant.application.create_client', return_value=client):
             app.request('Play Linkin Park - Numb')
         row = self.latest()
         self.assertEqual(row['status'], 'not_sent')
         self.assertIn('selection', [e['phase'] for e in row['events']])
         self.assertEqual(row['events'][0]['payload']['generation'], 7)
         with patch.dict('os.environ', {'TYPESENSE_API_KEY': 'synthetic'}), \
-                patch('research.disc_assistant.assistant.console.create_client', side_effect=RuntimeError('secret-body')):
+                patch('research.disc_assistant.assistant.application.create_client', side_effect=RuntimeError('secret-body')):
             with self.assertRaises(RuntimeError):
                 app.request('Play Numb')
         self.assertNotIn('secret-body', json.dumps(self.latest()))

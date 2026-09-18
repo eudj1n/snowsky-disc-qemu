@@ -6,7 +6,7 @@ See the [prototype guide](../README.md) for setup, commands and acceptance, and 
 
 | File | Responsibility |
 | --- | --- |
-| `__main__.py` | `start`, `listen`, `language`, `response`, `locales`, `history`, `sync`, `status`, `queue`, `index`, `search`, `rank`, `ask`; JSON output and errors |
+| `__main__.py` | `start`, `listen`, `web`, `language`, `response`, `locales`, `history`, `sync`, `status`, `queue`, `index`, `search`, `rank`, `ask`; JSON output and errors |
 | `database.py`, `journal.py` | Schema migrations, bounded request/decision events, retention, inspection/export/clear |
 | `preferences.py` | Versioned Assistant SQLite settings; one persistent locale and speech policy with atomic legacy migration, override/reset and effective configuration |
 | `config.py`, `config.example.toml` | Explicit device/search/storage configuration and aliases |
@@ -21,7 +21,9 @@ See the [prototype guide](../README.md) for setup, commands and acceptance, and 
 | `queue.py` | Controller queue adapter; Assistant continuous-context opt-in |
 | `session.py` | Catalog synchronization using a borrowed persistent session or a one-shot connection |
 | `live.py` | Thin config/ownership adapter over `controller.session.DiscSession` |
-| `console.py` | Foreground application, startup sync/index and interactive text/maintenance commands |
+| `application.py` | Shared command orchestration, search, speech, preferences and guarded execution |
+| `console.py` | Terminal adapter, startup sync/index and interactive text/maintenance commands |
+| `web/` | Separate loopback browser adapter, microphone capture, live observations and diagnostics |
 | `terminal.py` | `prompt_toolkit` editing, journal-backed recall, language-aware completion, configurable colors and screen clearing |
 | `requirements.txt` | Python runtime pins: official Typesense async SDK, aiohttp and prompt_toolkit |
 | `compose.yaml`, `.env.example` | Independent local Typesense service |
@@ -104,3 +106,5 @@ No audio or dialogue is implemented. See the [response contract](../../../docs/A
 Community locales consist of command and response TOML catalogs. Follow the
 [contribution guide](../../../docs/ASSISTANT_LOCALES.md), then run `/locales` or the
 standalone validator. No runtime Python registry edits are required.
+
+The browser entry point is `run.sh web --bootstrap`; see [Disc Assistant Web](../../../docs/ASSISTANT_WEB.md). It owns the same device lock as the console.

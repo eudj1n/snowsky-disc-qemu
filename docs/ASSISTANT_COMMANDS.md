@@ -19,6 +19,7 @@ activation is unnecessary. `ask` starts the best match without a choice dialogue
 | `./research/disc_assistant/run.sh response [ARGS]` | Show/set speech policy, or reset its default | None; offline |
 | `./research/disc_assistant/run.sh locales` | Validate each installed locale pair | None; offline |
 | `./research/disc_assistant/run.sh language [CODE\|reset]` | Show/set one interaction locale, or reset to the TOML default | None; offline |
+| `./research/disc_assistant/run.sh web [--bootstrap] [--port 8090]` | Separate [browser interface](ASSISTANT_WEB.md), text and microphone; optional search startup/sync/index | Read only until an Execute request is submitted |
 | `./research/disc_assistant/run.sh listen` | Open the persistent console with existing data; no Docker startup or automatic sync/index | Initial handshake and state reads |
 | `./research/disc_assistant/run.sh up` | Start local Typesense and await readiness | None |
 | `./research/disc_assistant/run.sh down` | Stop Typesense, retaining its index volume | None |

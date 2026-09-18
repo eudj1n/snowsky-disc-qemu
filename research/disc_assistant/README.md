@@ -8,6 +8,7 @@ It runs independently of the emulator and uses the shared
 Language, catalog/search policy and the request journal remain in this prototype.
 
 - [assistant/](assistant/README.md): configuration, one-shot CLI and a persistent interactive session.
+- [Disc Assistant Web](../../docs/ASSISTANT_WEB.md): separate browser UI, text and microphone input.
 - [library/](library/README.md): complete catalog reads, snapshot storage and search.
 - [check.py](check.py): disposable acceptance with synthetic TCP/HTTP servers and a
   real Typesense container. No firmware or physical device is needed.
@@ -15,8 +16,9 @@ Language, catalog/search policy and the request journal remain in this prototype
 `search` returns metadata candidates. `rank` explains the ordering for a typed
 `Включи …` / `Play …` command without playback; `ask` launches its best matching
 artist or track after fresh device checks. The owner deferred interactive choice:
-there is no confirmation prompt, including for fuzzy matches. Browser UI,
-microphone, listening history and lyrics follow later.
+there is no confirmation prompt, including for fuzzy matches. [Browser text/microphone input](../../docs/ASSISTANT_WEB.md) is available with
+`./research/disc_assistant/run.sh web --bootstrap`; human microphone acceptance,
+listening history and lyrics remain pending.
 See the [command table and ranking policy](../../docs/ASSISTANT_COMMANDS.md).
 Localized [user responses](../../docs/ASSISTANT_RESPONSES.md) include text, speech
 eligibility and reserved dialogue metadata. [New locales](../../docs/ASSISTANT_LOCALES.md)

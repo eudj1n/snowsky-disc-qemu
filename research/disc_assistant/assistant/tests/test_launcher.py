@@ -106,6 +106,19 @@ class LauncherTests(unittest.TestCase):
             self.assertEqual(run.call_args.args[0][-1], 'listen')
             ready.assert_not_called()
 
+    def test_web_defaults_to_existing_services_and_bootstrap_prepares_search(self):
+        self.initialize()
+        with patch.object(launcher.subprocess, 'run', return_value=Mock(returncode=0)) as run, \
+                patch.object(launcher, 'wait_ready') as ready:
+            self.assertEqual(launcher.main(['--config', str(self.config), 'web', '--port', '8092']), 0)
+            self.assertEqual(run.call_count, 1)
+            self.assertEqual(run.call_args.args[0][-3:], ['web', '--port', '8092'])
+            ready.assert_not_called()
+            run.reset_mock()
+            self.assertEqual(launcher.main(['--config', str(self.config), 'web', '--bootstrap']), 0)
+            self.assertEqual(run.call_count, 2)
+            ready.assert_called_once()
+
     def test_failed_search_startup_still_launches_console(self):
         self.initialize()
         with patch.object(launcher.subprocess, 'run', side_effect=[OSError('docker unavailable'), Mock(returncode=0)]) as run:

@@ -113,7 +113,7 @@ def main(argv=None):
     parser.add_argument('--language', help='select and persist one interaction locale')
     parser.add_argument('--debug', action='store_true', help='stream application request traces')
     parser.add_argument('--source', choices=('cli', 'scheduled'))
-    parser.add_argument('command', choices=('setup', 'up', 'down', 'start', 'listen', 'language', 'response', 'locales', 'explain', 'commands', 'history', 'sync', 'status', 'queue', 'index', 'search', 'rank', 'ask', 'transcribe', 'synthesize', 'speech-samples', 'speech-check', 'shadow-report', 'test', 'check'))
+    parser.add_argument('command', choices=('setup', 'up', 'down', 'start', 'listen', 'web', 'language', 'response', 'locales', 'explain', 'commands', 'history', 'sync', 'status', 'queue', 'index', 'search', 'rank', 'ask', 'transcribe', 'synthesize', 'speech-samples', 'speech-check', 'shadow-report', 'test', 'check'))
     parser.add_argument('arguments', nargs=argparse.REMAINDER)
     args = parser.parse_args(argv)
     config_path = Path(args.config).expanduser()
@@ -128,7 +128,7 @@ def main(argv=None):
             validate_locale(args.language)
             if args.command in ('setup', 'up', 'down', 'test', 'check', 'shadow-report'):
                 raise ValueError('--language applies to application commands, such as start/listen/ask')
-        if args.command not in ('search', 'rank', 'ask', 'explain', 'commands', 'language', 'response', 'history',
+        if args.command not in ('web', 'search', 'rank', 'ask', 'explain', 'commands', 'language', 'response', 'history',
                                 'transcribe', 'synthesize', 'speech-samples', 'speech-check', 'shadow-report') and args.arguments:
             raise ValueError('unexpected arguments; see run.sh help')
         if args.command == 'shadow-report':
@@ -174,15 +174,16 @@ def main(argv=None):
                 # Forward to the application so search-configuration failures are
                 # journaled too. Never fall back to a possibly stale exported key.
                 env.pop(config.api_key_env, None)
-        if args.command in ('start', 'listen'):
+        if args.command in ('start', 'listen', 'web'):
             try:
                 env = environment(config)
-                if args.command == 'start':
+                if args.command == 'start' or (args.command == 'web' and '--bootstrap' in args.arguments):
                     if config.search_host in ('localhost', '127.0.0.1') and config.search_protocol == 'http':
                         subprocess.run(compose_command('up', '-d'), check=True, env=env, cwd=ROOT, timeout=60)
                     wait_ready(config)
             except (OSError, ValueError, RuntimeError, subprocess.SubprocessError) as exc:
-                print(f'Search startup unavailable ({type(exc).__name__}); entering console with playback controls.',
+                env.pop(config.api_key_env, None)
+                print(f'Search startup unavailable ({type(exc).__name__}); entering the interface with playback controls.',
                       file=sys.stderr)
         if args.command == 'up':
             if config.search_host not in ('localhost', '127.0.0.1') or config.search_protocol != 'http':

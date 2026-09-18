@@ -8,8 +8,9 @@ import, SQLite snapshots, Typesense search, single-locale text commands (Russian
 ranking and bounded Controller playback. `rank` previews the ordering; `ask`
 automatically launches the best candidate. The owner explicitly deferred a
 choice/confirmation dialogue. File-based voice input and synthetic sample generation
-are implemented; microphone capture, spoken reply delivery, listening history and
-a browser UI remain pending. See [voice setup and evaluation](ASSISTANT_VOICE.md)
+are implemented. [Disc Assistant Web](ASSISTANT_WEB.md) now adds browser microphone
+capture and text input through the shared application service; human microphone
+acceptance, spoken reply delivery and listening history remain pending. See [voice setup and evaluation](ASSISTANT_VOICE.md)
 and the [command table](ASSISTANT_COMMANDS.md).
 The [interpreter, speech and locale architecture](ASSISTANT_ARCHITECTURE.md) is now
 implemented. It supersedes the merged-language/separate-response policy recorded

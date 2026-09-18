@@ -1,5 +1,9 @@
 # File-based speech prototype
 
+Current browser entry point: [Disc Assistant Web](ASSISTANT_WEB.md) records a bounded
+microphone utterance and uses this same WAV/STT pipeline. Historical file-only
+measurements below do not establish human microphone accuracy.
+
 Implemented on **2026-09-18** under `research/disc_assistant/`. This first speech
 slice accepts a WAV file, transcribes it locally, then uses the existing interpreter,
 ranking and guarded Controller execution. It also synthesizes reproducible input
@@ -10,7 +14,7 @@ samples through the same `SpeechSynthesizer` interface reserved for future repli
 | Area | Implemented | Still pending |
 | --- | --- | --- |
 | Input | Bounded PCM WAV files, explicit active locale, raw transcript and normalized command text | Microphone, resampling/compressed formats, streaming, wake word, voice activity detection |
-| STT | Local `whisper.cpp` CLI adapter, explicit model, timeout/cancellation, model fingerprint | GPU tuning, remote provider, microphone input |
+| STT | Local `whisper.cpp` CLI adapter, explicit model, timeout/cancellation, model fingerprint | GPU tuning, remote provider, human microphone acceptance |
 | TTS | Local macOS `say` adapter, configured voices, WAV and provenance sidecar | Portable Pi/Linux engine, automatic response synthesis and speaker delivery |
 | Integration | `transcribe`, `rank --audio`, `ask --audio`, equivalent console commands | Questions, confirmations and dialogue |
 | Evaluation | RU/EN synthetic corpora, separate interpretation and catalog-selection checks | Human/noisy recordings, physical-player speech acceptance |
