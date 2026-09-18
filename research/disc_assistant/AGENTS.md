@@ -26,6 +26,8 @@ Keep this prototype under research until a separate promotion/split decision.
 
 ## Where to resume
 
+- `../../docs/ASSISTANT_BASELINE.md`: draft physical text baseline, pending owner media bindings;
+  do not claim it is frozen or run. CSV observation header is in `experiments/acceptance/`.
 - `../../docs/ASSISTANT.md`: implementation roadmap and historical increments.
 - `../../docs/ASSISTANT_ARCHITECTURE.md`: interpreter/STT/TTS contracts, one saved locale.
 - `../../docs/ASSISTANT_INTERPRETATION_SOURCES.md`: independent evidence and shadow boundary.

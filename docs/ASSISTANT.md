@@ -896,3 +896,12 @@ Added the research-local `AGENTS.md` handoff and [MVP tracker #21](https://githu
 Next: freeze a representative, reviewed end-to-end baseline, measure current
 execution on DISC, then agree numerical thresholds and run acceptance. Complex
 commands and later component replacement/improvement are outside this MVP.
+
+
+### Baseline preparation — 2026-09-18
+
+Prepared a [physical-player operator worksheet](ASSISTANT_BASELINE.md) with 20
+text case specifications per locale, preconditions, current stop semantics and
+separate response/interpretation/device observations. The owner confirmed physical `my-player` and text RU/EN first; exact catalog
+bindings and owner phrasing still require confirmation. The worksheet is a draft,
+not a frozen or executed baseline; thresholds and acceptance remain pending.

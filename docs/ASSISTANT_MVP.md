@@ -27,6 +27,10 @@ playback/controls. File speech tests and source comparisons also exist. A frozen
 representative physical-device baseline and numerical acceptance have **not** been
 completed. Shadow-report accuracy concerns interpretation, not device success.
 
+The [first physical-player baseline worksheet](ASSISTANT_BASELINE.md) is prepared
+as a draft, awaiting target/media confirmation and concrete expectation review.
+It is not frozen, executed or accepted.
+
 ## Baseline and acceptance checklist
 
 1. Freeze an explicit single-action command set, expected complete intentions and
