@@ -1,7 +1,19 @@
-"""Replaceable speech contracts. No microphone, model, network or speaker backend."""
+"""Replaceable speech contracts; concrete file adapters live in voice/."""
 from dataclasses import dataclass
 from typing import Protocol
 from research.disc_assistant.assistant.providers import ProviderInfo
+
+
+class SpeechUnavailable(RuntimeError):
+    """Speech backend is unavailable; no device operation was dispatched."""
+
+
+class InvalidSpeech(ValueError):
+    """Invalid audio or provider output; never interpret or execute it."""
+
+
+class NoSpeech(ValueError):
+    """No usable speech was returned; never execute an empty transcription."""
 
 
 @dataclass(frozen=True)

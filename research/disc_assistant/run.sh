@@ -25,6 +25,11 @@ Usage: research/disc_assistant/run.sh [--config PATH] [--source cli|scheduled] [
   search QUERY   Return candidates (optional --limit N); no playback
   rank TEXT      Explain the best matches for Включи … / Play …, without playback
   ask TEXT       Play the best match, or Pause / Resume / Stop / Next / Previous
+  transcribe WAV Recognize a PCM WAV file without interpreting or executing it
+  rank --audio WAV / ask --audio WAV  Use recognized speech instead of typed TEXT
+  synthesize TEXT --output WAV       Save synthetic audio and its metadata; no playback
+  speech-samples DIR [--corpus JSON]  Generate the active locale's test corpus
+  speech-check DIR                   Check sample interpretations; no device access
   test           Run firmware-free prototype unit tests
   check          Run disposable Typesense acceptance (requires Docker image)
 

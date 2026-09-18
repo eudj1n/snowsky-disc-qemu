@@ -85,7 +85,8 @@ commands. `/language ru` or `/language en` selects one language for commands and
 responses and saves it for later sessions. `/language reset` stores the configured
 default. Natural commands such as `Переключи язык на английский` use the same
 handler. `/response mode none|errors|all` controls future speech eligibility only.
-No speech synthesis or dialogue runs yet. `/locales` checks installed catalogs.
+Explicit file synthesis and transcription are available; automatic spoken replies
+and dialogue remain pending. `/locales` checks installed catalogs.
 `/sync` refreshes the catalog; `/index` rebuilds search after changes.
 
 To explicitly select and persist English at startup:
@@ -96,6 +97,22 @@ To explicitly select and persist English at startup:
 
 See [architecture and migration](../../docs/ASSISTANT_ARCHITECTURE.md) for interpreter,
 speech provider and single-locale contracts. Music metadata remains multilingual.
+
+File-based voice input is now available before microphone work:
+
+```sh
+./research/disc_assistant/run.sh --language ru synthesize 'Пауза' --output /tmp/disc-pause.wav
+./research/disc_assistant/run.sh transcribe /tmp/disc-pause.wav
+./research/disc_assistant/run.sh rank --audio /tmp/disc-pause.wav
+./research/disc_assistant/run.sh ask --audio /tmp/disc-pause.wav
+```
+
+Install/configure the external STT model/executable first; TTS currently uses
+macOS `say`. Only `ask` executes the command. In the console use `/transcribe FILE`,
+`/rank --audio FILE` or `/ask --audio FILE`. Corpus generation, evaluation,
+format limits and known recognition errors are documented in
+[ASSISTANT_VOICE.md](../../docs/ASSISTANT_VOICE.md). No microphone or spoken reply
+delivery is implemented yet.
 
 The terminal uses `prompt_toolkit`: Up/Down recall, Ctrl-R history search, Tab
 completion, history suggestions accepted with Right, and Ctrl-L or `/clear` to

@@ -4,6 +4,9 @@ name = "English"
 native_name = "English"
 
 [messages]
+"speech.unavailable" = "Speech processing is currently unavailable."
+"speech.invalid" = "I could not process this audio."
+"speech.no_speech" = "No speech was recognized."
 "command.completed" = "Command completed."
 "command.not_sent" = "The command was not sent to the player."
 "command.uncertain" = "I could not confirm the command result. Check the player."

@@ -1,0 +1,12 @@
+{
+  "version": 1,
+  "locale": "en",
+  "cases": [
+    {"id": "pause", "text": "Pause", "expected": {"status": "recognized", "intent": {"action": "pause"}}},
+    {"id": "next", "text": "Next track", "expected": {"status": "recognized", "intent": {"action": "next"}}},
+    {"id": "artist", "text": "Play Linkin Park", "expected": {"status": "recognized", "intent": {"query": "Linkin Park", "kind": "auto", "artist": null, "title": null}}},
+    {"id": "track", "text": "Play Linkin Park Numb", "expected": {"status": "recognized", "intent": {"query": "Linkin Park Numb", "kind": "auto", "artist": null, "title": null}}},
+    {"id": "language", "text": "Switch language to Russian", "expected": {"status": "recognized", "intent": {"locale": "ru"}}},
+    {"id": "other", "text": "The weather is nice today", "expected": {"status": "unrecognized"}}
+  ]
+}

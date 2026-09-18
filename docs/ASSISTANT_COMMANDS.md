@@ -29,9 +29,18 @@ activation is unnecessary. `ask` starts the best match without a choice dialogue
 | `./research/disc_assistant/run.sh --language en ask 'Pause'` | Execute a state-aware control | See the control table below |
 | `./research/disc_assistant/run.sh test` | Run prototype unit tests | None |
 | `./research/disc_assistant/run.sh check` | Exercise real CLI/controller/SDK against disposable Typesense and a synthetic player | No physical device used |
+| `./research/disc_assistant/run.sh transcribe FILE` | Transcribe PCM WAV with the active locale; return raw and normalized text | None |
+| `./research/disc_assistant/run.sh rank --audio FILE` | Transcribe and preview the normal intent/ranking path | None |
+| `./research/disc_assistant/run.sh ask --audio FILE` | Transcribe then execute the normal guarded command path | Same as typed `ask` |
+| `./research/disc_assistant/run.sh synthesize TEXT --output FILE.wav` | Generate a WAV and provenance sidecar through TTS | None; no speaker output |
+| `./research/disc_assistant/run.sh speech-samples DIR [--corpus JSON]` | Generate synthetic inputs for the active locale in a new directory | None |
+| `./research/disc_assistant/run.sh speech-check DIR` | Check transcripts against expected intentions; nonzero exit on mismatches | None; no settings changes |
 | `./research/disc_assistant/run.sh help` | Show usage | None |
 
 `search` accepts `--limit N` (1–50). `rank` and `ask` accept one quoted string.
+They alternatively accept `--audio FILE`, mutually exclusive with text. Speech
+requires explicitly configured external engines/models; see
+[file input, installation and evaluation](ASSISTANT_VOICE.md).
 Default configuration is `~/disc-assistant.toml`; override it with:
 
 ```sh
@@ -57,6 +66,9 @@ The key is a user-assigned namespace, not a discovered hardware identity.
 | `/history [ARGS]` | Inspect recent requests, `show ID`, `export PATH`, `prune`, or `clear --yes`; see [history](ASSISTANT_HISTORY.md) |
 | `/help` | List text and maintenance commands |
 | `/debug [on\|off]` | Show/toggle live request traces for this console session; initially off unless launched with `--debug` |
+| `/transcribe FILE` | Recognize PCM WAV and return text; no interpretation or playback |
+| `/rank --audio FILE` | Transcribe and preview intention/ranking; no device mutation |
+| `/ask --audio FILE` | Transcribe and execute through the normal interpreter and Controller |
 | `/clear` | Clear the terminal screen; keep input history, journal and playback |
 | `/response [mode none\|errors\|all\|reset]` | Show/set saved speech policy; see [responses](ASSISTANT_RESPONSES.md) |
 | `/locales` | Validate each installed command/response catalog |
@@ -179,7 +191,7 @@ See the [playback contract](ASSISTANT_PLAYBACK.md).
 ## Language dictionaries
 
 The application uses one active locale for command interpretation, user responses
-and future speech provider context. Russian and English are installed; the default
+and speech provider context. Russian and English are installed; the default
 is Russian. Music names and aliases remain unrestricted by locale.
 
 ```toml

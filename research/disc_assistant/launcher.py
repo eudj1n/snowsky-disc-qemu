@@ -113,7 +113,7 @@ def main(argv=None):
     parser.add_argument('--language', help='select and persist one interaction locale')
     parser.add_argument('--debug', action='store_true', help='stream application request traces')
     parser.add_argument('--source', choices=('cli', 'scheduled'))
-    parser.add_argument('command', choices=('setup', 'up', 'down', 'start', 'listen', 'language', 'response', 'locales', 'history', 'sync', 'status', 'queue', 'index', 'search', 'rank', 'ask', 'test', 'check'))
+    parser.add_argument('command', choices=('setup', 'up', 'down', 'start', 'listen', 'language', 'response', 'locales', 'history', 'sync', 'status', 'queue', 'index', 'search', 'rank', 'ask', 'transcribe', 'synthesize', 'speech-samples', 'speech-check', 'test', 'check'))
     parser.add_argument('arguments', nargs=argparse.REMAINDER)
     args = parser.parse_args(argv)
     config_path = Path(args.config).expanduser()
@@ -128,7 +128,8 @@ def main(argv=None):
             validate_locale(args.language)
             if args.command in ('setup', 'up', 'down', 'test', 'check'):
                 raise ValueError('--language applies to application commands, such as start/listen/ask')
-        if args.command not in ('search', 'rank', 'ask', 'language', 'response', 'history') and args.arguments:
+        if args.command not in ('search', 'rank', 'ask', 'language', 'response', 'history',
+                                'transcribe', 'synthesize', 'speech-samples', 'speech-check') and args.arguments:
             raise ValueError('unexpected arguments; see run.sh help')
         if args.command == 'setup':
             subprocess.run([sys.executable, '-m', 'pip', 'install', '-r',

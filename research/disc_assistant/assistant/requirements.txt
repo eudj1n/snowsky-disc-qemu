@@ -2,7 +2,7 @@
 # Direct dependency pins; this is not a transitive dependency lockfile.
 # sqlite3/asyncio/unittest are in the standard library.
 # aiohttp serves the application API; Typesense AsyncClient handles search.
-# Speech dependencies come with that stage.
+# File speech adapters use external whisper-cli and macOS say; no Python model runtime.
 aiohttp==3.14.3
 typesense==2.0.0
 prompt_toolkit==3.0.53

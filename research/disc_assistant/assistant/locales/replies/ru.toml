@@ -4,6 +4,9 @@ name = "Russian"
 native_name = "Русский"
 
 [messages]
+"speech.unavailable" = "Обработка речи сейчас недоступна."
+"speech.invalid" = "Не удалось обработать это аудио."
+"speech.no_speech" = "Не удалось распознать речь."
 "command.completed" = "Команда выполнена."
 "command.not_sent" = "Команда не отправлена плееру."
 "command.uncertain" = "Не удалось подтвердить выполнение команды. Проверь плеер."

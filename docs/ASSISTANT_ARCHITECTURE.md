@@ -9,7 +9,8 @@ interpreters and speech engines have independent provider contracts.
 ```text
 Typed text ------------------------+
                                    v
-Microphone -> Transcriber -> text -> Interpreter(text, context)
+WAV file --> Transcriber -> text -> Interpreter(text, context)
+Microphone (future) ------^
                                    |
                            validated intention
                                    |
@@ -28,9 +29,11 @@ Microphone -> Transcriber -> text -> Interpreter(text, context)
                          speak? -> Synthesizer -> AudioOutput
 ```
 
-Only text input, the rules interpreter and response generation run today. Speech
-interfaces are defined and exercised with fake adapters. There is no microphone,
-model, external service, TTS playback or dialogue loop in this increment.
+Text and WAV-file input, the rules interpreter and response generation run today.
+Local `whisper.cpp` and macOS `say` adapters implement the speech contracts; the
+latter generates explicit sample files. There is no microphone, external service,
+automatic reply playback or dialogue loop. See [file speech](ASSISTANT_VOICE.md)
+for setup, corpus evaluation and the measured recognition limitations.
 
 ## Interpretation
 
@@ -84,7 +87,7 @@ text; search and ranking cannot reinterpret the command. Search result IDs remai
 snapshot-scoped. Controller preflight and observed playback remain the authority
 for execution, regardless of which interpreter supplied the intention.
 
-The console pins connection generation before a potentially slow interpreter and
+The console pins connection generation before transcription and a potentially slow interpreter and
 checks it before dispatch, then retains the existing check after search. A request
 spanning a reconnect is not sent on the new connection. Fresh playback/control
 checks still handle changes within the same connection.
@@ -100,7 +103,7 @@ mode = "errors"
 ```
 
 `locale` selects command syntax, user response templates and the context supplied
-to future speech providers. Device UI language remains independent and unknown
+to speech providers. Device UI language remains independent and unknown
 through the supported remote contract. Music titles, artist names and aliases may
 use any language. A Russian command can contain `Linkin Park — Numb`.
 
@@ -123,7 +126,7 @@ Switch language to Russian
 Natural language changes use the current language's command syntax and the same
 settings handler as `/language`. A successful change is acknowledged in the new
 language. `/rank`/one-shot `rank` can preview a language intent without applying it.
-A future transcription passes through this same handler. `/language` with no
+An executed audio transcription passes through this same handler. `/language` with no
 arguments reloads the saved value; reset stores the current TOML default.
 
 Open consoles keep their locale until a settings command reloads preferences or
@@ -187,12 +190,16 @@ implicitly switch the application locale. Providers report `no_speech` separatel
 from failures and preserve cancellation. They share `ProviderInfo` and
 `ProviderUnavailable`; capture/output implementations remain independent of engines.
 
-The future application must check `response.speak` before synthesis, record
+The future response-delivery layer must check `response.speak` before synthesis, record
 synthesis and playback delivery separately, and cancel obsolete audio as needed.
 An audio failure cannot turn a confirmed device command into a playback failure or
 trigger a replay. Current code records generated text/eligibility only; it does
-not claim any audio was delivered. Concrete backends, format conversion, streaming,
-voice selection/capability discovery and latency evaluation remain future work.
+not claim any audio was delivered. Concrete file adapters now run through
+`voice/backends.py`: local CLI STT and macOS file TTS, with validated WAV input,
+bounded subprocess execution and cancellation. `voice/samples.py` generates and
+evaluates explicit per-locale corpora without device commands. Portable TTS,
+format conversion, streaming, voice capability discovery and representative
+human-speech latency/quality evaluation remain future work.
 
 Dialogue stays disabled: `interactive` is false and `dialogue.enabled=true` is
 rejected. These interfaces do not add questions, pending confirmations or choices.

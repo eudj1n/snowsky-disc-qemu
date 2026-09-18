@@ -25,6 +25,7 @@ marked `scheduled` requests, and automatic `startup` preparation.
 | Failure | Stage, category and exception class, or `not_sent`/`uncertain` operation outcome; playback confirmation retains a compact last observation; raw exception bodies are excluded |
 | User response | Generated code/text/language, speech eligibility and reserved dialogue flag; request context pins policy, version and template hash |
 | Timing | Per-event UTC timestamp and cumulative elapsed milliseconds; final outcome includes `timing.total_ms` |
+| File speech | Audio hash/format/duration, local provider/model identity, raw transcript, normalized command text and STT duration; no audio bytes or input path |
 
 `rank` and `search` retain candidates without claiming playback selection. A
 zero-result search is identifiable by `found=0`; music ranking returns `not_found`.

@@ -22,6 +22,7 @@ from research.disc_assistant.assistant.ranking import rank
 from research.disc_assistant.assistant.session import sync
 from research.disc_assistant.library.search.typesense import Search, create_client, signature
 from research.disc_assistant.library.store import Store
+from research.disc_assistant.assistant.voice.backends import transcribe_file
 
 HELP = '''Enter Play … / Включи …, Pause / Пауза, Resume / Продолжи, Stop / Стоп,
 Next track / Следующий трек, Previous track / Предыдущий трек.
@@ -30,6 +31,7 @@ Commands use one active locale; /language CODE changes input and replies.
 /search TEXT  /rank TEXT  /language [CODE|reset]  /help  /clear  /exit
 /response [mode none|errors|all|reset]  /locales
 /debug [on|off]  Stream request traces for this console session
+/transcribe FILE  /rank --audio FILE  /ask --audio FILE  (PCM WAV input)
 /history [LIMIT|show ID|export PATH|prune|clear --yes]
 Terminal: Up/Down history, Ctrl-R search, Tab completion, Right accepts a suggestion,
 Ctrl-L clears the screen, Ctrl-C cancels input, Ctrl-D on empty input exits.
@@ -40,10 +42,11 @@ Offline run.sh search/index/status remain available while this console is open.'
 
 class Application:
     def __init__(self, config: Config, *, session_factory=DeviceSession, source='interactive', interpreter=None, language=None,
-                 debug=False, debug_output=debug_stderr):
+                 debug=False, debug_output=debug_stderr, transcriber=None):
         self.base_config, self.session_factory = config, session_factory
         self.config = effective_config(config, language=language)
         self.interpreter = interpreter
+        self.transcriber = transcriber
         self.debug, self.debug_output = debug, debug_output
         self.rules = load_languages((self.config.locale,))
         self.session_id, self.source = uuid4().hex, source
@@ -131,8 +134,12 @@ class Application:
         if not line.strip():
             return None
         command = line.strip().split(maxsplit=1)[0][1:] if line.strip().startswith('/') else 'ask'
+        audio_command = (line.strip().startswith('/') and
+                         (command == 'transcribe' or
+                          (command in ('ask', 'rank') and line.strip().split()[1:2] == ['--audio'])))
         # History still gets timing, but never persists inspection/export/clear.
-        with Trace(self.config, command, line, source=source or self.source, session_id=self.session_id,
+        with Trace(self.config, command, '[audio]' if audio_command else line,
+                   source=source or self.source, session_id=self.session_id,
                    event_sink=self.trace_event, persist=command != 'history') as trace:
             if command == 'history':
                 return trace.finish(history_command(self.config, shlex.split(line.strip())[1:]))
@@ -140,6 +147,18 @@ class Application:
                 state = self.session.status()
                 trace.event('connection', {k: state[k] for k in ('generation', 'connection')})
             trace.event('parse', {})
+            if audio_command:
+                args = shlex.split(line.strip())
+                expected_count = 2 if command == 'transcribe' else 3
+                if command not in ('transcribe', 'ask', 'rank') or len(args) != expected_count:
+                    raise ValueError('use /transcribe FILE, /rank --audio FILE or /ask --audio FILE')
+                generation = self.session.status()['generation'] if hasattr(self, 'session') else None
+                transcription = asyncio.run(transcribe_file(self.config, args[-1], trace, provider=self.transcriber))
+                result = ({'status': 'transcribed'} if command == 'transcribe' else
+                          self.natural_request(transcription['command_text'], trace,
+                                               generation=generation, preview=command == 'rank'))
+                result['transcription'] = transcription
+                return trace.finish(result)
             return trace.finish(self._request(line, trace, reuse_index=reuse_index))
 
     def trace_event(self, event):
@@ -229,11 +248,20 @@ class Application:
             raise ValueError('unknown console command; use /help')
         # An online interpreter may take time: pin before interpretation, not after it.
         generation = self.session.status()['generation'] if hasattr(self, 'session') else None
+        return self.natural_request(line, trace, generation=generation)
+
+    def natural_request(self, line, trace, *, generation=None, preview=False):
+        # This is natural input only: recognized speech can never enter slash commands.
         intent = self.interpret(line, trace)
+        if preview:
+            if isinstance(intent, (ControlIntent, LanguageIntent)):
+                return {'status': 'planned', 'action': intent.action if isinstance(intent, ControlIntent) else 'set_language',
+                        'requires_search': False}
+            return asyncio.run(self.search('rank', line, intent=intent, trace=trace))
+        if generation is not None and generation != self.session.status()['generation']:
+            return {'status': 'not_sent', 'mutation_attempted': False, 'reason': 'session changed during speech/interpretation'}
         if isinstance(intent, LanguageIntent):
             return self.language([intent.locale], trace)
-        if generation is not None and generation != self.session.status()['generation']:
-            return {'status': 'not_sent', 'mutation_attempted': False, 'reason': 'session changed during interpretation'}
         if isinstance(intent, ControlIntent):
             trace.event('execution_started', {'action': intent.action})
             return self.device_call(lambda client: control(self.config, intent, shared=client))
@@ -251,7 +279,7 @@ class Application:
 
 
 def run(config, *, bootstrap=False, input_fn=None, output=print, source='interactive', interpreter=None, language=None,
-        debug=False):
+        debug=False, transcriber=None):
     interactive_output = sys.stdin.isatty() and sys.stdout.isatty()
     terminal = None
     def write(text, role='result'):
@@ -276,7 +304,7 @@ def run(config, *, bootstrap=False, input_fn=None, output=print, source='interac
             debug_stderr(event)
 
     with Application(config, source=source, interpreter=interpreter, language=language,
-                     debug=debug, debug_output=emit_debug) as app:
+                     debug=debug, debug_output=emit_debug, transcriber=transcriber) as app:
         if input_fn is None and interactive_output and os.environ.get('TERM') != 'dumb':
             from research.disc_assistant.assistant.terminal import Terminal
             terminal = Terminal(app.config, lambda: app.rules)

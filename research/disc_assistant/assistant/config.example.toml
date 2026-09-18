@@ -51,6 +51,19 @@ warning = "ansiyellow bold"
 debug = "ansibrightblack"
 suggestion = "ansibrightblack italic"
 
+# Optional file-based speech. Install engines/models explicitly; no automatic download.
+# See docs/ASSISTANT_VOICE.md. Both adapters are local; TTS currently requires macOS.
+[speech]
+# model = "~/disc-speech/ggml-small.bin"
+whisper_executable = "whisper-cli"
+timeout = 120
+max_seconds = 30
+rate = 175
+
+[speech.voices]
+ru = "Milena"
+en = "Samantha"
+
 [playback]
 # Opt in to setting repeat-list (3) before music selection. This persists on DISC.
 # False preserves the player's existing mode. Controls never change it.

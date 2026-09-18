@@ -6,7 +6,7 @@ import sys
 import tomllib
 
 from research.disc_assistant.assistant.languages import load_languages
-from research.disc_assistant.assistant.responses import DEFAULT_LANGUAGE, validate_response_preferences
+from research.disc_assistant.assistant.responses import DEFAULT_LANGUAGE, validate_response_preferences, locale_code
 
 
 @dataclass(frozen=True)
@@ -33,6 +33,7 @@ class Config:
     terminal: dict = field(default_factory=dict)
     response_mode: str = 'errors'
     dialogue_enabled: bool = False
+    speech: dict = field(default_factory=dict)
 
 
 def default_data_dir():
@@ -68,6 +69,7 @@ def load(path):
                'dialogue': {'enabled'},
                'playback': {'continuous_context'},
                'journal': {'enabled', 'retention_days', 'max_requests'},
+               'speech': {'model', 'whisper_executable', 'timeout', 'max_seconds', 'voices', 'stt_languages', 'rate'},
                'terminal': {'color', 'prompt', 'input', 'result', 'error', 'warning', 'suggestion', 'debug'}}
     if set(raw) - set(allowed):
         raise ValueError('unknown configuration section')
@@ -95,6 +97,23 @@ def load(path):
     if dialogue is not False:
         raise ValueError('dialogue.enabled must be false; dialogue is not implemented')
     terminal = raw.get('terminal', {})
+    speech = raw.get('speech', {})
+    for key in ('model', 'whisper_executable'):
+        if key in speech:
+            text(speech[key], f'speech.{key}')
+    if 'model' in speech and not Path(speech['model']).expanduser().is_absolute():
+        raise ValueError('speech.model must be an absolute path (or start with ~)')
+    for key, default, low, high in (('timeout', 120, 1, 600), ('max_seconds', 30, 1, 120), ('rate', 175, 80, 350)):
+        number(speech.get(key, default), f'speech.{key}', low, high)
+    for key in ('voices', 'stt_languages'):
+        mapping = speech.get(key, {})
+        if not isinstance(mapping, dict):
+            raise ValueError(f'speech.{key} must be a locale-to-name table')
+        for speech_locale, value in mapping.items():
+            locale_code(speech_locale)
+            text(value, f'speech.{key}.{speech_locale}')
+            if key == 'stt_languages' and value == 'auto':
+                raise ValueError('speech.stt_languages must select an explicit language')
     if type(terminal.get('color', True)) is not bool:
         raise ValueError('terminal.color must be a boolean')
     for key, value in terminal.items():
@@ -132,4 +151,4 @@ def load(path):
         number(sync.get('max_requests', 10000), 'max_requests', 2, 100000), locale, continuous,
         journal_enabled, number(journal.get('retention_days', 90), 'journal.retention_days', 1, 3650),
         number(journal.get('max_requests', 10000), 'journal.max_requests', 1, 1000000), terminal,
-        response['mode'], dialogue)
+        response['mode'], dialogue, speech)

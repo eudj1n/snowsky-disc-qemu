@@ -24,7 +24,7 @@ See the [prototype guide](../README.md) for setup, commands and acceptance, and 
 | `terminal.py` | `prompt_toolkit` editing, journal-backed recall, language-aware completion, configurable colors and screen clearing |
 | `requirements.txt` | Python runtime pins: official Typesense async SDK, aiohttp and prompt_toolkit |
 | `compose.yaml`, `.env.example` | Independent local Typesense service |
-| `voice/` | Reserved package; no recording or recognition yet |
+| `voice/` | Bounded WAV input, local whisper.cpp STT and macOS say TTS, synthetic corpora and interpretation evaluation |
 | `tests/` | Configuration, CLI and session tests |
 
 The application asks [library](../library/README.md) for persistence/search and
@@ -39,7 +39,9 @@ The official [typesense-python](https://github.com/typesense/typesense-python)
 2.0.0 AsyncClient is used only by library search; its transport closes on CLI exit.
 Aiohttp is reserved for the future application's HTTP/WebSocket service and is
 used by disposable acceptance for readiness. This slice has no application server.
-Speech dependencies and a transitive lockfile remain deferred.
+Speech uses explicitly installed external executables/models; the Python dependency
+set is unchanged. See [file speech setup and limitations](../../../docs/ASSISTANT_VOICE.md).
+A transitive lockfile remains deferred.
 
 `run.sh start` starts Typesense, then opens one foreground application for
 connection, sync/index and interactive input. `listen` skips search startup and

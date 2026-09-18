@@ -5,8 +5,10 @@ Checkpoint: **2026-09-18**. The desktop prototype in
 import, SQLite snapshots, Typesense search, single-locale text commands (Russian or English), explained
 ranking and bounded Controller playback. `rank` previews the ordering; `ask`
 automatically launches the best candidate. The owner explicitly deferred a
-choice/confirmation dialogue. Voice, listening history and a browser UI remain
-unimplemented. See the [command table](ASSISTANT_COMMANDS.md).
+choice/confirmation dialogue. File-based voice input and synthetic sample generation
+are implemented; microphone capture, spoken reply delivery, listening history and
+a browser UI remain pending. See [voice setup and evaluation](ASSISTANT_VOICE.md)
+and the [command table](ASSISTANT_COMMANDS.md).
 The [interpreter, speech and locale architecture](ASSISTANT_ARCHITECTURE.md) is now
 implemented. It supersedes the merged-language/separate-response policy recorded
 in the historical increments below.
@@ -260,7 +262,10 @@ one best-match request; `rank` only explains. If dialogue is added later, its
 responses must belong to a particular request, expire on cancellation/replacement
 and be revalidated before execution.
 
-Add microphone recording by button before continuous listening. Select the input,
+The file-based STT/TTS slice now precedes microphone work; it provides synthetic
+corpora and explicit `transcribe`, `rank --audio` and `ask --audio` commands.
+Recorded quality gaps and setup are in [ASSISTANT_VOICE.md](ASSISTANT_VOICE.md).
+Next add microphone recording by button before continuous listening. Select the input,
 bound recording duration, detect end of speech and reject silence. Evaluate a
 multilingual speech model on Russian commands containing English music names.
 Show the transcript so recognition errors can be separated from search errors.
@@ -437,7 +442,8 @@ M3; later milestones extend it and do not block the first end-to-end result.
 | M2a: playback controls | State-aware pause/resume, explicit Assistant stop semantics, next/previous; no search dependency | Repeated requests, unknown/loading/EOF states, external transitions and uncertain writes; no toggle replay; previous-to-start behavior |
 | M2b: native queue and continuation | Read actual album/artist queue after selection; preserve mode by default, explicit opt-in continuous mode | Type-7 natural EOF, five modes, middle/last/single entries, external queue changes and per-operation results for mode + selection |
 | M2c: persistent device session | One foreground application owns TCP and event/state routing; interactive console plus retained one-shot CLI; explicit connect/disconnect and bounded reconnect | Repeated commands use one connection; events arrive without commands; disconnect cancels unsent mutations; reconnect refreshes state without playback replay; explicit disconnect suppresses reconnect |
-| M3: microphone | Button recording, speech boundaries, multilingual transcription into the same pipeline | Recorded evaluation phrases and live microphone trials; silence rejection; recognition, retrieval and total latency reported separately |
+| M3a: file speech — implemented | PCM WAV input, local whisper.cpp STT, macOS sample TTS, per-locale corpora and debug/journal integration | 216 prototype tests; real synthetic RU/EN evaluation exposes music-name failures; STT through Controller verified with a synthetic TCP peer |
+| M3b: microphone — pending | Button recording, speech boundaries, transcription into the same pipeline | Human/noisy recordings, live microphone trials, silence rejection and latency/resource evaluation |
 | M4: personal selection | Event reconciliation, favorites mirror, observed-history aggregates | Repeated events, seeks and gaps do not inflate history; favorite/recency requests behave as documented; exact requests remain exact |
 | M5: enrichment and hybrid search | Optional lyrics provider, provenance, phrase search; versioned embedding snapshots with incremental cache reuse and lexical/vector retrieval | Correct recording links; measured quality/latency against lexical baseline; interrupted rebuild/model changes cannot mix generations; usable lexical search during model/provider outages |
 | M6: hands-free input | Wake word, cancellation and optional spoken clarification | False activations and misses measured in quiet and with music; button input remains available |
@@ -720,3 +726,31 @@ disabled journals, errors, history clearing, session-only toggles, bounded and
 escaped trace output, stdout/stderr separation, output failures and local/search
 matching diagnostics. Controller and firmware are unchanged. Physical diagnosis
 of the reported artist lookup remains to be done against the owner's catalog.
+
+## File speech increment, 2026-09-18
+
+Implemented M3a before microphone capture: `transcribe FILE`, `rank --audio FILE`
+and `ask --audio FILE`, plus console equivalents. A local whisper.cpp adapter
+transcribes validated PCM WAV into the existing single-locale interpreter path.
+The console pins connection generation before STT; no replay or administrative
+slash-command dispatch follows recognition. Traces/journals now record provider,
+model/audio hashes, transcript and timing, without copying source audio.
+
+The local macOS `say` TTS adapter generates explicit WAV/metadata artifacts.
+`speech-samples` creates per-locale corpora, and `speech-check` compares intentions
+without catalog/device access or settings changes. Community additions use data
+files and deployment voice/language mappings. Automatic response TTS delivery is
+still pending even though the reusable synthesis backend now exists.
+
+Validation: 216 prototype tests pass. Real whisper.cpp v1.9.4 CPU inference on
+synthetic RU/EN corpora gives 3/6 per locale with base and 4/6 with small; music
+name accuracy remains unresolved. A real synthesized Russian pause went through
+STT and Controller to a synthetic TCP peer with exactly one mutation and a
+confirmed result. See [setup, evidence and limitations](ASSISTANT_VOICE.md).
+The report is tracked; generated WAVs, downloaded models and external engine
+builds are outside the repository. No physical-player speech acceptance is claimed.
+
+Remaining: representative human/noisy recording evaluation and music-name
+resolution, portable TTS, microphone/VAD, resident inference/latency tuning,
+automatic response synthesis/output and cancellation, then Pi deployment.
+Dialogue, recommendations, listening history and online providers remain deferred.

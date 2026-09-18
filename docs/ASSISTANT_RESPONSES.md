@@ -2,7 +2,9 @@
 
 Implemented in the research prototype. The Assistant adds localized user feedback
 to existing operation results; Controller remains responsible for device state and
-verified operations. No speech engine or dialogue loop runs in this increment.
+verified operations. File STT and explicit sample TTS now run through
+[speech adapters](ASSISTANT_VOICE.md); automatic response delivery and dialogue
+remain unimplemented.
 
 ## Response contract
 
@@ -129,10 +131,18 @@ This records generation/eligibility only, not display or playback delivery.
 History made before this increment remains readable without response fields.
 
 The [speech provider contracts](ASSISTANT_ARCHITECTURE.md#speech-provider-contracts)
-are now defined. A future voice adapter can consume `text`, `language` and `speak`; it will need its
+now have local file adapters. Explicit sample synthesis bypasses response policy;
+it does not claim that a response was spoken. A future delivery layer can consume
+`text`, `language` and `speak`; it will need its
 own delivery/cancellation events. Future dialogue support must add a request-bound
 pending state, expiry and explicit transitions before any response can set
 `interactive: true`. A boolean alone is not a dialogue state machine.
 
 See [adding locales](ASSISTANT_LOCALES.md), the
 [command reference](ASSISTANT_COMMANDS.md) and [journal](ASSISTANT_HISTORY.md).
+
+Audio failures use `speech.no_speech`, `speech.invalid` and `speech.unavailable`
+before interpretation/execution. These distinguish an empty/digital-silence result,
+invalid audio/provider output, and unavailable processing. Raw provider diagnostics
+are not inserted into localized templates. The existing command response is used
+after successful transcription; no second execution policy is introduced.

@@ -19,6 +19,7 @@ from research.disc_assistant.assistant.controls import execute as control
 from research.disc_assistant.assistant.queue import observe as observe_queue
 from research.disc_assistant.library.store import Store
 from research.disc_assistant.library.search.typesense import Search, create_client, signature
+from research.disc_assistant.assistant.voice.backends import transcribe_file
 
 
 def server_identity(config):
@@ -61,7 +62,7 @@ async def search_command(config, store, args, trace, intent=None):
         await client.api_call.aclose()
 
 
-def main(argv=None, *, interpreter=None):
+def main(argv=None, *, interpreter=None, transcriber=None, synthesizer=None):
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--config', required=True, help='path to a TOML configuration')
     parser.add_argument('--language', help='select and persist one interaction locale at startup')
@@ -84,10 +85,22 @@ def main(argv=None, *, interpreter=None):
     search = sub.add_parser('search', help='show candidates only; never starts playback')
     search.add_argument('query')
     search.add_argument('--limit', type=int, default=10)
+    audio = sub.add_parser('transcribe', help='transcribe PCM WAV without interpretation or device access')
+    audio.add_argument('audio')
+    synth = sub.add_parser('synthesize', help='synthesize text into a new WAV and metadata sidecar; no playback')
+    synth.add_argument('text')
+    synth.add_argument('--output', required=True)
+    samples = sub.add_parser('speech-samples', help='generate the active locale corpus into a new directory')
+    samples.add_argument('directory')
+    samples.add_argument('--corpus')
+    check = sub.add_parser('speech-check', help='evaluate generated samples without device access or preference changes')
+    check.add_argument('directory')
     for name, help_text in [('rank', 'explain ranked candidates without playback'),
                             ('ask', 'play the best match or control current playback')]:
         command = sub.add_parser(name, help=help_text)
-        command.add_argument('text')
+        input_group = command.add_mutually_exclusive_group(required=True)
+        input_group.add_argument('text', nargs='?')
+        input_group.add_argument('--audio', help='PCM WAV input instead of typed text')
     args = parser.parse_args(argv)
     config = None
     try:
@@ -103,7 +116,7 @@ def main(argv=None, *, interpreter=None):
         if args.command in ('listen', 'start'):
             from research.disc_assistant.assistant.console import run
             return run(config, bootstrap=args.command == 'start', source=args.source or 'interactive',
-                       interpreter=interpreter, language=args.language, debug=args.debug)
+                       interpreter=interpreter, language=args.language, debug=args.debug, transcriber=transcriber)
         try:
             config = effective_config(config, language=args.language)
         except ValueError:
@@ -112,6 +125,8 @@ def main(argv=None, *, interpreter=None):
             if not recovery:
                 raise
         text = getattr(args, 'text', getattr(args, 'query', args.command))
+        if getattr(args, 'audio', None) is not None:
+            text = '[audio]'
         if args.command == 'language':
             text = 'language ' + ' '.join(args.languages)
         if args.command == 'response':
@@ -119,9 +134,19 @@ def main(argv=None, *, interpreter=None):
         with Trace(config, args.command, text, source=args.source or 'cli',
                    event_sink=debug_stderr if args.debug else None) as trace:
             trace.event('parse', {})
+            transcription = None
+            if getattr(args, 'audio', None) is not None:
+                transcription = asyncio.run(transcribe_file(config, args.audio, trace, provider=transcriber))
+                args.text = transcription['command_text']
             intent = (asyncio.run(interpret_request(args.text, InterpretationContext(config.locale),
                         interpreter=interpreter, trace=trace)) if args.command in ('ask', 'rank') else None)
-            if args.command == 'language' or (isinstance(intent, LanguageIntent) and args.command == 'ask'):
+            if args.command == 'transcribe':
+                result = {'status': 'transcribed'}
+            elif args.command in ('synthesize', 'speech-samples', 'speech-check'):
+                from research.disc_assistant.assistant.voice.samples import speech_command
+                result = asyncio.run(speech_command(config, args, trace, transcriber=transcriber,
+                                                   synthesizer=synthesizer, interpreter=interpreter))
+            elif args.command == 'language' or (isinstance(intent, LanguageIntent) and args.command == 'ask'):
                 trace.event('preference', {'name': 'language.locale'})
                 result = language_command(base_config, [intent.locale] if isinstance(intent, LanguageIntent) else args.languages)
                 config = replace(config, locale=result['locale'])
@@ -146,9 +171,11 @@ def main(argv=None, *, interpreter=None):
                     result = control(config, intent)
             else:
                 result = run_catalog_command(config, args, trace, intent)
+            if transcription is not None:
+                result['transcription'] = transcription
             trace.finish(result)
         print(json.dumps(result, ensure_ascii=False, indent=2))
-        return 1 if result.get('status') in ('not_sent', 'uncertain') else 0
+        return 1 if result.get('status') in ('not_sent', 'uncertain', 'evaluation_failed') else 0
     except (ValueError, OSError, RuntimeError) as exc:
         if config is not None:
             print(json.dumps(exception_result(config, exc, source=args.source or 'cli'), ensure_ascii=False, indent=2))

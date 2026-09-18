@@ -19,6 +19,7 @@ MESSAGE_FIELDS = {
     **{key: frozenset() for key in (
         'command.completed', 'command.not_sent', 'command.uncertain', 'command.interrupted',
         'command.unrecognized', 'command.unsupported', 'command.error', 'search.unavailable', 'search.no_match',
+        'speech.unavailable', 'speech.invalid', 'speech.no_speech',
         'catalog.stale', 'preferences.invalid', 'playback.paused', 'playback.already_paused',
         'language.changed', 'interpreter.unavailable', 'interpreter.invalid', 'playback.resumed', 'playback.already_playing', 'playback.stopped', 'playback.restarted')},
     'playback.started': frozenset(('title', 'artist')),
@@ -120,6 +121,9 @@ def message_for(result, command, failure=None):
         return 'command.interrupted', {}, True
     if status == 'error':
         code = {'unrecognized_or_invalid_command': 'command.unrecognized',
+                'speech_no_speech': 'speech.no_speech',
+                'speech_invalid': 'speech.invalid',
+                'speech_unavailable': 'speech.unavailable',
                 'invalid_preference': 'preferences.invalid',
                 'unsupported_command': 'command.unsupported',
                 'interpreter_unavailable': 'interpreter.unavailable',

@@ -19,6 +19,7 @@ from research.disc_assistant.library.versions import metadata_markers
 from research.disc_assistant.assistant.responses import Responses
 from research.disc_assistant.assistant.providers import ProviderUnavailable, InvalidProviderResult
 from research.disc_assistant.assistant.interpreter import UnsupportedCommand
+from research.disc_assistant.assistant.speech import SpeechUnavailable, InvalidSpeech, NoSpeech
 
 
 class JournalWriteError(RuntimeError):
@@ -85,7 +86,8 @@ def outcome(result):
     safe = {k: result[k] for k in ('status', 'operation_id', 'mutation_attempted', 'action',
             'outcome', 'state', 'fresh_position', 'metadata_equivalent_rows', 'assistant_continuation',
             'device_stop_semantics', 'enabled', 'source', 'reused', 'generation', 'index_generation',
-            'track_count', 'locale', 'mode', 'error_type', 'requested', 'previous', 'confirmation', 'response', 'timing') if k in result}
+            'track_count', 'locale', 'mode', 'error_type', 'requested', 'previous', 'confirmation', 'response', 'timing',
+            'passed', 'total', 'sample_count') if k in result}
     if result.get('status') in ('not_sent', 'uncertain'):
         safe['failure_category'] = result['status']
     if 'mode_change' in result:
@@ -134,7 +136,7 @@ class Journal:
 
 def recallable(text):
     """Recall submitted single-line commands, excluding history maintenance/UI."""
-    return (bool(text.strip()) and len(text) <= 4000
+    return (bool(text.strip()) and text.strip() != '[audio]' and len(text) <= 4000
             and not any(ord(c) < 32 or ord(c) == 127 for c in text)
             and text.strip().split(maxsplit=1)[0] not in ('/history', '/clear', '/exit'))
 
@@ -253,7 +255,13 @@ class Trace:
             if isinstance(exc, JournalWriteError):
                 self.unrecorded_failure(exc)
             if exc is not None and not isinstance(exc, JournalWriteError):
-                if isinstance(exc, ProviderUnavailable):
+                if isinstance(exc, NoSpeech):
+                    category = 'speech_no_speech'
+                elif isinstance(exc, InvalidSpeech):
+                    category = 'speech_invalid'
+                elif isinstance(exc, SpeechUnavailable):
+                    category = 'speech_unavailable'
+                elif isinstance(exc, ProviderUnavailable):
                     category = 'interpreter_unavailable'
                 elif isinstance(exc, InvalidProviderResult):
                     category = 'invalid_interpretation'
