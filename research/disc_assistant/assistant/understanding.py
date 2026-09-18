@@ -158,7 +158,7 @@ def extract(text, locale):
             return {**base, 'status': 'incomplete', 'label': 'play', 'reason': 'missing_music_reference'}
         start = text.find(value, span['start'])
         span = {'name': 'query', 'start': start, 'end': start+len(value), 'text': value}
-        intent = Intent(value, kind) if quoted else music_intent(value, kind)
+        intent = music_intent('"' + value + '"', kind) if quoted else music_intent(value, kind)
         return {**base, 'status': 'recognized', 'label': 'play', 'intent': asdict(intent), 'spans': [span], 'reason': 'music_slot'}
     if phrase_matches(text, context['negation']):
         return {**base, 'reason': 'negated_command'}

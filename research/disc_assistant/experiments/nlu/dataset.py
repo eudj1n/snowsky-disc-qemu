@@ -1,4 +1,6 @@
 """Auditable command annotations and explicit private history collection. No ML imports."""
+from research.disc_assistant.assistant.intents import AlbumIntent, music_from_dict
+
 import argparse
 from collections import Counter
 from dataclasses import asdict
@@ -57,7 +59,7 @@ def validate_row(row, *, pending=False):
     if value is None and label in ('play', 'language') and row['slots'] == []:
         return row  # Known action without the required argument; never executable.
     try:
-        intent = (Intent(**value) if label == 'play' else LanguageIntent(**value) if label == 'language'
+        intent = (music_from_dict(value) if label == 'play' else LanguageIntent(**value) if label == 'language'
                   else ControlIntent(**value))
         validate_intent(intent)
     except (TypeError, ValueError, RuntimeError) as exc:

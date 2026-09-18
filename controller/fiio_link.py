@@ -9,7 +9,7 @@ import time
 from controller.fiio_settings import setting_query, setting_command, setting_value, peq_payload, peq_value
 from controller.fiio_playlist import playlist_command, verify_playlist
 from controller.fiio_library import (genre_command, verify_genre, folder_command, verify_folder,
-                          artist_command, verify_artist)
+                          artist_command, verify_artist, album_command, verify_album)
 
 
 def frame(tag, payload=b''):
@@ -307,6 +307,14 @@ class Client:
         version = self.settings().get('soc_version')
         require(version, 'artist_playback')
         verify_artist(http, artist, index, album)
+        self.socket.sendall(frame(*command))
+
+    def play_album(self, album, index=None, *, http):
+        """Play a complete named album after fresh source bounds verification."""
+        command = album_command(album, index)
+        version = self.settings().get('soc_version')
+        require(version, 'album_playback')
+        verify_album(http, album, index)
         self.socket.sendall(frame(*command))
 
     def play_folder(self, path, index=None, *, http, expected_name=None):

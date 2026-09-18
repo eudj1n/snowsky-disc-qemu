@@ -10,7 +10,7 @@ DEFAULT_LANGUAGES = (DEFAULT_LOCALE,)
 LOCALES = Path(__file__).with_name('locales')
 SECTIONS = {
     'commands': {'play', 'pause', 'resume', 'stop', 'next', 'previous', 'set_language'},
-    'targets': {'artist', 'track'},
+    'targets': {'artist', 'track', 'album'},
     'versions': {'live', 'remix', 'acoustic', 'instrumental', 'demo', 'karaoke', 'cover', 'remaster'},
 }
 

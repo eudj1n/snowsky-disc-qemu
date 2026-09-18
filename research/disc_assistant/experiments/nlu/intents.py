@@ -1,4 +1,6 @@
 """Train-only nearest exemplars, development-only thresholds, untouched test scoring."""
+from research.disc_assistant.assistant.intents import AlbumIntent, music_from_dict
+
 from dataclasses import asdict
 import json
 from pathlib import Path
@@ -91,7 +93,7 @@ def calibrate(rows, evidence, rules=None):
 def label_of(intent):
     if type(intent) is ControlIntent:
         return intent.action
-    if type(intent) is Intent:
+    if type(intent) in (Intent, AlbumIntent):
         return 'play'
     if type(intent) is LanguageIntent:
         return 'language'

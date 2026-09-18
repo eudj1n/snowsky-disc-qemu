@@ -44,6 +44,9 @@ position. First row is a no-op; native Controller previous semantics are unchang
 This supersedes the restart behavior described in historical increments below.
 
 
+Explicit album requests now have a separate typed intent, snapshot ranking and
+verified whole/scoped native playback. See the [command contract](ASSISTANT_COMMANDS.md#album-selection).
+
 ## Goal and first deliverable
 
 Build **Disc Assistant**, a text and voice interface that runs on a computer and

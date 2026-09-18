@@ -57,6 +57,7 @@ validated intention only when recognized:
 | Intention | Meaning |
 | --- | --- |
 | `Intent(query, kind, artist, title)` | Music request; unresolved names remain text, not guessed track IDs |
+| `AlbumIntent(query, album, artist, kind="album")` | Explicit whole or artist-scoped album; no catalog IDs from the interpreter |
 | `ControlIntent(action)` | Allowlisted pause/resume/stop/next/previous |
 | `LanguageIntent(locale)` | Set one installed, valid interaction locale |
 

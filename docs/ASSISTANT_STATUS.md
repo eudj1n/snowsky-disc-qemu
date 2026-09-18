@@ -19,8 +19,11 @@ push after each. External review is input for comparison, not a specification.
    **7/8 initially**, then **1/1** after correcting the new duplicate-edition gold
    to the existing alphabetical tie policy. Original report is preserved.
    Manifest v6 has 54 cases; no full-54 run is claimed.
-3. **Pending:** explicit album intent, ranking, fresh native selection and queue
-   verification, including albums containing multiple artists.
+3. **Complete:** typed album intent, snapshot ranking and guarded complete/scoped
+   native album playback. **10/10 focused emulator cases**, **296 prototype tests**,
+   **350 shared Python / 37 JS tests** passed; 12 focused tests additionally cover
+   the new session helper and oracle (including two new session tests and one new
+   oracle test). Manifest v7 has 64 cases; no full-64 result is claimed.
 4. **Pending:** compare bounded retrieval changes; add an optional resident STT
    adapter and bounded catalog vocabulary hints, with measured comparisons.
 5. **Pending:** structured local-model evidence as an optional shadow source,

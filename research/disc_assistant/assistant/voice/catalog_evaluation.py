@@ -1,4 +1,6 @@
 """Read-only selection evaluation over one pinned catalog/index generation."""
+from research.disc_assistant.assistant.intents import AlbumIntent, music_from_dict
+
 import os
 import time
 
@@ -82,7 +84,7 @@ class CatalogEvaluation:
                     'expected_selection': self.targets[case['id']]}
         start = time.monotonic()
         try:
-            result = await rank(self.config, self.store, self.search, Intent(**intent), trace=self.trace)
+            result = await rank(self.config, self.store, self.search, music_from_dict(intent), trace=self.trace)
         except StaleSnapshot:
             raise
         except Exception as exc:

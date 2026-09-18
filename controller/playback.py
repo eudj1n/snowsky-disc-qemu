@@ -39,8 +39,10 @@ def album_matches(state, selected, *, config=None, http=None):
         return False
     reader = CatalogReader(http, page_size=config.page_size, max_tracks=config.max_tracks,
                            max_requests=config.max_requests)
-    albums = reader.rows('artist/album', artist=selected['artist'])
-    if albums != reader.rows('artist/album', artist=selected['artist']):
+    category = 'artist/album' if selected.get('artist') is not None else 'album'
+    filters = {'artist': selected['artist']} if selected.get('artist') is not None else {}
+    albums = reader.rows(category, **filters)
+    if albums != reader.rows(category, **filters):
         raise CatalogChanged('artist albums changed during playback confirmation')
     compatible = [row['name'] for row in albums if row['name'].startswith(observed)]
     if compatible != [wanted]:
@@ -50,10 +52,11 @@ def album_matches(state, selected, *, config=None, http=None):
 
 def matches(state, selected, rows, *, album_verified=False):
     song = state.get('song')
-    if state.get('state') != 0 or state.get('playerflag') != 7 or not isinstance(song, dict):
+    source = 3 if selected['kind'] == 'album' and selected.get('artist') is None else 7
+    if state.get('state') != 0 or state.get('playerflag') != source or not isinstance(song, dict):
         return False
     artist, title = song.get('song_artist_name'), song.get('song_name')
-    if artist != selected['artist']:
+    if selected.get('artist') is not None and artist != selected['artist']:
         return False
     if not album_verified and not album_matches(state, selected):
         return False

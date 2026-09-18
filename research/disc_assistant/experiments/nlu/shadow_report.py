@@ -1,4 +1,6 @@
 """Offline shadow observations and explicit review; never reruns or trains providers."""
+from research.disc_assistant.assistant.intents import AlbumIntent, music_from_dict
+
 import argparse
 from collections import Counter, defaultdict
 from dataclasses import asdict
@@ -51,7 +53,7 @@ def source_result(raw, text, *, primary=False):
         raise ValueError('invalid source identity')
     value, chosen = raw.get('intent'), raw.get('label', 'reject')
     if value is not None:
-        value = (Intent(**value) if chosen == 'play' else LanguageIntent(**value) if chosen == 'language'
+        value = (music_from_dict(value) if chosen == 'play' else LanguageIntent(**value) if chosen == 'language'
                  else ControlIntent(**value))
     evidence = Evidence(name, version, raw.get('status'), chosen, value, raw.get('reason', ''),
                         raw.get('spans', []), raw.get('scores', {}), raw.get('provenance', {}))

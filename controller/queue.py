@@ -56,12 +56,13 @@ def snapshot(config, client, http, *, expected=None, selected=None, selected_pos
             raise CatalogChanged('actual queue differs from the requested source')
         song = state.get('song', {})
         mark = result['mark']
-        if (state.get('state') != 0 or state.get('playerflag') != 7 or not 0 <= mark < result['total']
+        source = 3 if selected and selected['kind'] == 'album' and selected.get('artist') is None else 7
+        if (state.get('state') != 0 or state.get('playerflag') != source or not 0 <= mark < result['total']
                 or song.get('pos_id') != mark + 1
                 or song.get('song_name') != result['items'][mark]['name']
                 or song.get('song_artist_name') != result['items'][mark]['author']):
             raise CatalogChanged('queue selection is not confirmed by fresh playback state')
-        if selected is not None and (song.get('song_artist_name') != selected['artist'] or
+        if selected is not None and ((selected.get('artist') is not None and song.get('song_artist_name') != selected['artist']) or
                 (selected['kind'] == 'track' and song.get('song_name') != selected['title'])):
             raise CatalogChanged('playback changed during queue observation')
         if selected_position is not None and mark != selected_position:

@@ -32,10 +32,10 @@ def load_suite():
         if (case['locale'] not in ('ru', 'en') or not case['command'].strip()
                 or setup['track'] not in tracks or setup['state'] not in ('playing', 'paused')
                 or type(setup['progress_seconds']) is not int or not 1 <= setup['progress_seconds'] <= 15
-                or expected['effect'] not in ('track', 'artist', 'paused', 'playing', 'next', 'previous', 'unchanged')
+                or expected['effect'] not in ('track', 'artist', 'album', 'paused', 'playing', 'next', 'previous', 'unchanged')
                 or expected['mutation'] not in ('required', 'none') or not expected['status']):
             raise ValueError('Invalid scenario: ' + case['id'])
-        if expected['effect'] in ('track', 'artist'):
+        if expected['effect'] in ('track', 'artist', 'album'):
             if any(k not in tracks for k in expected.get('accepted_targets', [expected.get('target')])):
                 raise ValueError('Unknown expected recording')
     return suite
@@ -66,7 +66,7 @@ def judge(case, tracks, before, result, after, writes):
     checks['mutation_contract'] = bool(writes) if expected['mutation'] == 'required' else not writes
     if expected['mutation'] == 'none' and result.get('mutation_attempted') is True:
         checks['mutation_contract'] = False
-    if effect in ('track', 'artist'):
+    if effect in ('track', 'artist', 'album'):
         accepted = [tracks[k] for k in expected.get('accepted_targets', [expected['target']])]
         checks['target'] = any(recording(a, t) for t in accepted)
         checks['playing'] = a.get('state') == 0
@@ -74,7 +74,7 @@ def judge(case, tracks, before, result, after, writes):
         valid = []
         for target in accepted:
             valid.append(Counter((t['title'], t['artist']) for t in tracks.values()
-                                 if t['artist'] == target['artist'] and
+                                 if (effect == 'album' or t['artist'] == target['artist']) and
                                  (effect == 'artist' or t['album'] == target['album'])))
         checks['queue_membership'] = Counter((r['name'], r['author']) for r in after['queue']['items']) in valid
     elif effect in ('next', 'previous'):
@@ -93,7 +93,7 @@ def judge(case, tracks, before, result, after, writes):
                                       0 <= ap - bp <= elapsed + 2000)
         if b.get('state') == a.get('state') == 0:
             checks['playback_progress'] = bp is not None and ap is not None and ap > bp
-    if effect not in ('track', 'artist'):
+    if effect not in ('track', 'artist', 'album'):
         checks['queue_preserved'] = before['queue']['items'] == after['queue']['items']
     checks['queue_state_agrees'] = after['queue']['mark'] + 1 == a.get('song', {}).get('pos_id')
     return checks

@@ -2,7 +2,7 @@
 from dataclasses import asdict, dataclass
 from typing import Literal, Protocol
 
-from research.disc_assistant.assistant.intents import Intent, ControlIntent, LanguageIntent, parse
+from research.disc_assistant.assistant.intents import Intent, AlbumIntent, ControlIntent, LanguageIntent, parse
 from research.disc_assistant.assistant.languages import load_languages
 from research.disc_assistant.assistant.providers import ProviderInfo, ProviderUnavailable, InvalidProviderResult
 
@@ -17,7 +17,7 @@ class InterpretationContext:
 @dataclass(frozen=True)
 class Interpretation:
     status: Literal['recognized', 'unrecognized', 'unsupported']
-    intent: Intent | ControlIntent | LanguageIntent | None = None
+    intent: Intent | AlbumIntent | ControlIntent | LanguageIntent | None = None
 
 
 class Interpreter(Protocol):
@@ -53,6 +53,8 @@ def validate_intent(intent):
             valid = True
         except ValueError:
             valid = False
+    elif type(intent) is AlbumIntent:
+        valid = intent.kind == 'album' and text(intent.query) and text(intent.album) and (intent.artist is None or text(intent.artist))
     elif type(intent) is Intent:
         valid = (text(intent.query) and intent.kind in ('auto', 'artist', 'track')
                  and all(value is None or text(value) for value in (intent.artist, intent.title))

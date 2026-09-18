@@ -15,6 +15,18 @@ class Intent:
 
 
 @dataclass(frozen=True)
+class AlbumIntent:
+    query: str
+    album: str
+    artist: str | None = None
+    kind: str = 'album'
+
+
+def music_from_dict(value):
+    return AlbumIntent(**value) if value.get('kind') == 'album' else Intent(**value)
+
+
+@dataclass(frozen=True)
 class ControlIntent:
     action: str
 
@@ -68,8 +80,10 @@ def music_intent(query, kind='auto'):
         value = query[1:-1].strip()
         if not value:
             raise ValueError('empty music reference')
-        return Intent(value, kind)
+        return AlbumIntent(value, value) if kind == 'album' else Intent(value, kind)
     parts = re.split(r'\s+[—–-]\s+', query, maxsplit=1) if kind != 'artist' else [query]
+    if kind == 'album':
+        return AlbumIntent(query, parts[-1].strip(), parts[0].strip() if len(parts) == 2 else None)
     if len(parts) == 2:
         return Intent(query, 'track', parts[0].strip(), parts[1].strip())
     return Intent(query, kind)

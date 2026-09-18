@@ -6,7 +6,7 @@ from uuid import uuid4
 
 from controller.events import merge_snapshot
 from controller.playback import GuardedHTTP, matches, verify_playing
-from controller.fiio_library import artist_command
+from controller.fiio_library import artist_command, album_command
 from controller.fiio_http import HTTPClient
 from research.disc_assistant.assistant.device import (
     PlaybackClient, ObservedSocket, device_lock, validate_scan_events)
@@ -20,13 +20,16 @@ def fresh_selection(config, store, generation, selected, http):
     artist = selected['artist']
     filters = {'artist': artist}
     category = 'artist/song'
+    if selected['kind'] == 'album':
+        filters = {'album': selected['album'], **({'artist': artist} if artist is not None else {})}
+        category = 'artist/album/song' if artist is not None else 'album/song'
     if selected['kind'] == 'track':
         found = [d for d in local if d['id'] == selected['track_id']]
         if len(found) != 1 or any(found[0][k] != selected[k] for k in ('artist', 'album', 'title')):
             raise StaleSnapshot('candidate no longer matches the local snapshot')
         filters['album'] = selected['album']
         category = 'artist/album/song'
-    scope = [d for d in local if d['artist'] == artist and
+    scope = [d for d in local if (artist is None or d['artist'] == artist) and
              ('album' not in filters or d['album'] == filters['album'])]
     reader = CatalogReader(http, page_size=config.page_size, max_tracks=config.max_tracks,
                            max_requests=config.max_requests)
@@ -52,8 +55,11 @@ def execute(config, store, ranking, *, shared=None):
         try:
             if store.head(config.device_key)['generation'] != ranking['generation']:
                 raise StaleSnapshot('catalog changed after ranking; repeat the command')
-            artist_command(selected['artist'], 0 if selected['kind'] == 'track' else None,
-                           selected.get('album'))
+            generic_album = selected['kind'] == 'album' and selected.get('artist') is None
+            if generic_album:
+                album_command(selected['album'])
+            else:
+                artist_command(selected['artist'], 0 if selected['kind'] == 'track' else None, selected.get('album'))
             with (PlaybackClient(config.host, config.tcp_port, config.timeout) if shared is None
                   else nullcontext(shared)) as client:
                 if client.handshake() != '0306' or client.settings().get('soc_version') != 257:
@@ -76,8 +82,11 @@ def execute(config, store, ranking, *, shared=None):
                 if store.head(config.device_key)['generation'] != ranking['generation']:
                     raise StaleSnapshot('catalog changed before playback')
                 guard = GuardedHTTP(http, category, filters, rows, index, client)
-                client.play_artist(selected['artist'], index if selected['kind'] == 'track' else None,
-                                   album=selected.get('album'), http=guard)
+                if generic_album:
+                    client.play_album(selected['album'], http=guard)
+                else:
+                    client.play_artist(selected['artist'], index if selected['kind'] == 'track' else None,
+                                       album=selected.get('album'), http=guard)
                 result['confirmation'] = {}
                 state = verify_playing(client, selected, rows, config.timeout,
                                        config=config, http=http, diagnostics=result['confirmation'])

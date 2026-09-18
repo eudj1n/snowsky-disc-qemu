@@ -123,3 +123,17 @@ def verify_folder(http, path, index=None, expected_name=None):
             playable(row)
             return
         offset += len(rows)
+
+
+def album_command(album, index=None):
+    """Ordinary named album (type 3), distinct from an artist-scoped album."""
+    prefix = position(index)
+    name_header(album)
+    if album == 'unknown_album':
+        raise ValueError('reserved unknown album is not supported')
+    return ('0101' if index is None else '0100', prefix + '0003' + album)
+
+
+def verify_album(http, album, index=None):
+    wanted = 0 if index is None else index
+    checked_row(http.catalog('album/song', offset=wanted, limit=1, album=album), wanted)

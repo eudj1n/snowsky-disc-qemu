@@ -168,6 +168,8 @@ single-action gate. Ambiguous words are not globally removed from song names.
 | English / Russian example | Meaning |
 | --- | --- |
 | `Play Linkin Park` / `Включи Linkin Park` | Whole artist when its name or alias matches |
+| `Play album Meteora` / `Включи альбом Meteora` | Complete native album, across all artists |
+| `Play album Linkin Park — Meteora` / `Включи альбом Linkin Park — Meteora` | Artist-scoped album |
 | `Play artist Linkin Park` / `Включи исполнителя Linkin Park` | Explicit artist, including fuzzy matching |
 | `Play Linkin Park - Numb` / `Включи Linkin Park — Numb` | Explicit artist/title pair; spaces around the separator are required |
 | `Play Linkin Park Numb` / `Включи линкин парк намб` | Known artist prefix plus title; Cyrillic examples use configured aliases |
@@ -401,6 +403,23 @@ back. Controls never change mode. Empty sources cannot launch; one-track context
 repeat. No host process is needed for native continuation after CLI exit.
 See [the queue contract](ASSISTANT_PLAYBACK.md). Search alternatives are not a playlist.
 
-Volume, standalone album/genre/playlist requests, arbitrary recommendation queues,
+Volume, standalone genre/playlist requests, arbitrary recommendation queues,
 history/likes/lyrics requests, microphone input and choice dialogues remain deferred.
 A Controller method does not by itself establish an Assistant text command.
+
+## Album selection
+
+`AlbumIntent(query, album, artist, kind="album")` keeps album names separate from
+track titles. Album requests are explicit; ordinary `auto` artist/track policy
+remains unchanged. Rank complete names from the SQLite snapshot (minimum lexical
+similarity 0.80); an explicit artist is a separate constraint. Equal scores use
+album/artist lexical ordering. Scores are not confidence probabilities.
+
+A generic album groups all raw artist credits under that exact stock album name.
+It uses Controller type 3 and `album/song`; a scoped album uses type 7 and
+`artist/album/song`. Identically named physical editions merged by the stock
+category are also one native scope: the Assistant does not invent a release ID.
+The fresh source is read twice and compared with the snapshot, then checked again
+immediately before one selection. Confirmation checks album, source, observed
+track membership and the complete queue. Shortened album metadata requires a
+unique fresh compatible name. No uncertain selection is retried.

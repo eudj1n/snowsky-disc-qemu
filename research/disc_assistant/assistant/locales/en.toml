@@ -9,6 +9,7 @@ next = ["next", "next track"]
 previous = ["previous", "previous track"]
 
 [targets]
+album = ["album"]
 artist = ["artist"]
 track = ["track", "song"]
 

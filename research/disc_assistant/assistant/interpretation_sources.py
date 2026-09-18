@@ -3,6 +3,8 @@
 A source never receives application state, Controller or a search client. Scores
 remain source-local; no learned arbitration or action dispatch lives here.
 """
+from research.disc_assistant.assistant.intents import AlbumIntent, music_from_dict
+
 import asyncio
 from dataclasses import asdict, dataclass, field
 import json
@@ -40,7 +42,7 @@ class Source(Protocol):
 
 
 def label(intent):
-    return ('play' if type(intent) is Intent else 'language' if type(intent) is LanguageIntent
+    return ('play' if type(intent) in (Intent, AlbumIntent) else 'language' if type(intent) is LanguageIntent
             else intent.action if type(intent) is ControlIntent else 'reject')
 
 
@@ -92,7 +94,7 @@ class SlotSource:
     async def evaluate(self, text, context):
         result = extract(text, context.locale)
         raw = result['intent']
-        intent = (Intent(**raw) if result['label'] == 'play' else LanguageIntent(**raw) if result['label'] == 'language'
+        intent = (music_from_dict(raw) if result['label'] == 'play' else LanguageIntent(**raw) if result['label'] == 'language'
                   else ControlIntent(**raw)) if raw is not None else None
         return Evidence(self.name, self.version, result['status'], result['label'], intent, result['reason'],
                         tuple(result['spans']), provenance=result['evidence'])

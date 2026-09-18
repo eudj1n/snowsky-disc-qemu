@@ -1,5 +1,5 @@
 {
-  "version": 6,
+  "version": 7,
   "cohort": "emulator-regression",
   "tracks": [
     {
@@ -43,6 +43,20 @@
       "artist": "Test Atlas",
       "album": "Other Edition",
       "number": 1
+    },
+    {
+      "key": "comp-a",
+      "title": "Compilation North",
+      "artist": "Collection North",
+      "album": "Shared Collection",
+      "number": 1
+    },
+    {
+      "key": "comp-b",
+      "title": "Compilation South",
+      "artist": "Collection South",
+      "album": "Shared Collection",
+      "number": 2
     }
   ],
   "cases": [
@@ -1007,6 +1021,202 @@
         "mutation": "none",
         "status": [
           "error"
+        ]
+      }
+    },
+    {
+      "id": "en-album",
+      "locale": "en",
+      "command": "Play album Test Album",
+      "setup": {
+        "track": "beta",
+        "state": "playing",
+        "progress_seconds": 3
+      },
+      "expected": {
+        "effect": "album",
+        "mutation": "required",
+        "status": [
+          "playing"
+        ],
+        "target": "alpha",
+        "accepted_targets": [
+          "alpha",
+          "beta",
+          "gamma"
+        ]
+      }
+    },
+    {
+      "id": "en-album-compilation",
+      "locale": "en",
+      "command": "Play album Shared Collection",
+      "setup": {
+        "track": "beta",
+        "state": "playing",
+        "progress_seconds": 3
+      },
+      "expected": {
+        "effect": "album",
+        "mutation": "required",
+        "status": [
+          "playing"
+        ],
+        "target": "comp-a",
+        "accepted_targets": [
+          "comp-a",
+          "comp-b"
+        ]
+      }
+    },
+    {
+      "id": "en-album-scoped",
+      "locale": "en",
+      "command": "Play album Collection South — Shared Collection",
+      "setup": {
+        "track": "beta",
+        "state": "playing",
+        "progress_seconds": 3
+      },
+      "expected": {
+        "effect": "track",
+        "mutation": "required",
+        "status": [
+          "playing"
+        ],
+        "target": "comp-b"
+      }
+    },
+    {
+      "id": "en-album-cyrillic",
+      "locale": "en",
+      "command": "Play album Русский альбом",
+      "setup": {
+        "track": "beta",
+        "state": "playing",
+        "progress_seconds": 3
+      },
+      "expected": {
+        "effect": "album",
+        "mutation": "required",
+        "status": [
+          "playing"
+        ],
+        "target": "ru"
+      }
+    },
+    {
+      "id": "en-album-missing",
+      "locale": "en",
+      "command": "Play album Nonexistent Unrecorded XYZ",
+      "setup": {
+        "track": "beta",
+        "state": "playing",
+        "progress_seconds": 3
+      },
+      "expected": {
+        "effect": "unchanged",
+        "mutation": "none",
+        "status": [
+          "not_found"
+        ]
+      }
+    },
+    {
+      "id": "ru-album",
+      "locale": "ru",
+      "command": "Включи альбом Test Album",
+      "setup": {
+        "track": "beta",
+        "state": "playing",
+        "progress_seconds": 3
+      },
+      "expected": {
+        "effect": "album",
+        "mutation": "required",
+        "status": [
+          "playing"
+        ],
+        "target": "alpha",
+        "accepted_targets": [
+          "alpha",
+          "beta",
+          "gamma"
+        ]
+      }
+    },
+    {
+      "id": "ru-album-compilation",
+      "locale": "ru",
+      "command": "Включи альбом Shared Collection",
+      "setup": {
+        "track": "beta",
+        "state": "playing",
+        "progress_seconds": 3
+      },
+      "expected": {
+        "effect": "album",
+        "mutation": "required",
+        "status": [
+          "playing"
+        ],
+        "target": "comp-a",
+        "accepted_targets": [
+          "comp-a",
+          "comp-b"
+        ]
+      }
+    },
+    {
+      "id": "ru-album-scoped",
+      "locale": "ru",
+      "command": "Включи альбом Collection South — Shared Collection",
+      "setup": {
+        "track": "beta",
+        "state": "playing",
+        "progress_seconds": 3
+      },
+      "expected": {
+        "effect": "track",
+        "mutation": "required",
+        "status": [
+          "playing"
+        ],
+        "target": "comp-b"
+      }
+    },
+    {
+      "id": "ru-album-cyrillic",
+      "locale": "ru",
+      "command": "Включи альбом Русский альбом",
+      "setup": {
+        "track": "beta",
+        "state": "playing",
+        "progress_seconds": 3
+      },
+      "expected": {
+        "effect": "album",
+        "mutation": "required",
+        "status": [
+          "playing"
+        ],
+        "target": "ru"
+      }
+    },
+    {
+      "id": "ru-album-missing",
+      "locale": "ru",
+      "command": "Включи альбом Nonexistent Unrecorded XYZ",
+      "setup": {
+        "track": "beta",
+        "state": "playing",
+        "progress_seconds": 3
+      },
+      "expected": {
+        "effect": "unchanged",
+        "mutation": "none",
+        "status": [
+          "not_found"
         ]
       }
     }

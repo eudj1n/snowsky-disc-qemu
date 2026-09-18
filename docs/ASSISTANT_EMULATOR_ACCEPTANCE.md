@@ -25,7 +25,7 @@ bash ci/assistant.sh /absolute/path/to/main_os/ota_v257 /tmp/assistant-run-02 \
   --case en-pause --case ru-compound --screenshots all
 ```
 
-Manifest v6 has 54 cases (24 EN / 30 RU). Default screenshots cover unsuccessful cases.
+Manifest v7 has 64 cases (29 EN / 35 RU). Default screenshots cover unsuccessful cases.
 Exit status is zero only when every selected case passes; known failures are not
 silently excluded. The fresh guest, search service, network and volumes are removed
 on exit. No host ports are published, no personal configuration is loaded, and the
@@ -204,3 +204,13 @@ new gold to Other Edition; no implementation change or original-report rewrite.
 The corrected isolated case passed **1/1**. Reports: `/tmp/disc-review-stage2`
 and `/tmp/disc-review-stage2-corrected`. All other new synonyms, compound credits
 and sequence rejection passed. Prototype tests: 291. Full 54-case run is pending.
+
+Review stage 3: **10/10 album cases passed** (`/tmp/disc-review-stage3`),
+including complete multi-artist compilations, artist-scoped albums, Cyrillic and
+absent names. The oracle derives complete membership from fixture metadata, not
+the chosen Assistant candidate. Manifest v7 adds two synthetic compilation tracks
+and ten cases; original fixtures are retained. 296 prototype and 350 shared Python
+plus 37 JS checks passed. An additional focused 12-test run covers the new session
+helper and oracle, including two newly added session tests and one new oracle test.
+The public helper works over TCP and WS in unit fixtures; this Assistant album
+cohort uses TCP. Physical album acceptance is still pending.

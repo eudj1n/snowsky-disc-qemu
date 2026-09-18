@@ -2,7 +2,7 @@
 import re
 from dataclasses import asdict
 
-from research.disc_assistant.assistant.intents import Intent, normalized, names
+from research.disc_assistant.assistant.intents import Intent, AlbumIntent, normalized, names
 from research.disc_assistant.assistant.languages import load_languages
 from research.disc_assistant.library.store import StaleSnapshot
 from research.disc_assistant.library.versions import with_query_markers
@@ -91,7 +91,7 @@ def ordered(candidates):
 
 
 async def rank(config, store, search, intent, *, trace=None):
-    if type(intent) is not Intent:
+    if type(intent) not in (Intent, AlbumIntent):
         raise TypeError('rank requires an interpreted music Intent')
     rules = load_languages((config.locale,))
     head = store.verify_index(config.device_key, search.signature)
@@ -99,6 +99,15 @@ async def rank(config, store, search, intent, *, trace=None):
     if trace:
         trace.event('catalog_loaded', {'track_count': len(documents),
                                       'artist_count': len({d['artist'] for d in documents})})
+    if type(intent) is AlbumIntent:
+        candidates = score_albums(intent, documents, config.aliases)
+        if store.verify_index(config.device_key, search.signature) != head:
+            raise StaleSnapshot('catalog changed during album ranking')
+        return {'status': 'ranked' if candidates else 'not_found', 'query': intent.query,
+                'intent': 'album', 'resolved_intent': asdict(intent), 'generation': head['generation'],
+                'device': config.device_key, 'retrieval': {'source': 'sqlite', 'truncated': False},
+                'candidates': candidates[:10], 'candidate_count': len(candidates),
+                'candidates_truncated': len(candidates) > 10, 'ranking_policy': 'album-lexical-v1; scores are not probabilities'}
     intent = infer(intent, documents, config.aliases)
     if trace:
         trace.event('intent_resolved', asdict(intent))
@@ -162,3 +171,20 @@ async def rank(config, store, search, intent, *, trace=None):
             'retrieval': retrieval, 'candidates': candidates[:10],
             'candidate_count': len(candidates), 'candidates_truncated': len(candidates) > 10,
             'ranking_policy': 'lexical-v4; scores are not probabilities; no history/likes'}
+
+
+def score_albums(intent, documents, aliases):
+    """Album names are native scopes; generic albums retain every credited artist."""
+    scopes = {(d['album'], d['artist'] if intent.artist is not None else None) for d in documents}
+    result = []
+    for album, artist in scopes:
+        album_score, album_match = similarity(intent.album, album)
+        artist_score, artist_match = artist_similarity(intent.artist, artist, aliases) if artist is not None else (1.0, 'not_requested')
+        # Version words remain part of the complete album name; no title cleanup.
+        if album_score < .80 or artist_score < .80:
+            continue
+        score = album_score * 100 if artist is None else album_score * 75 + artist_score * 25
+        result.append({'kind': 'album', 'album': album, 'artist': artist, 'score': round(score, 4),
+                       'evidence': {'album_similarity': round(album_score, 4), 'album_match': album_match,
+                                    'artist_similarity': round(artist_score, 4), 'artist_match': artist_match}})
+    return sorted(result, key=lambda c: (-c['score'], normalized(c['album']), normalized(c['artist'] or '')))

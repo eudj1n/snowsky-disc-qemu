@@ -36,6 +36,15 @@ class AssistantAcceptanceTests(unittest.TestCase):
         self.assertTrue(checks['response_status'])
         self.assertFalse(checks['expected_neighbor'])
 
+    def test_album_requires_all_artists_in_fixture_queue(self):
+        target = self.tracks['comp-a']
+        self.after['state']['song'].update(song_name=target['title'], song_artist_name=target['artist'],
+                                          song_file_path='/tmp/sdcard/comp-a.flac', pos_id=1)
+        self.after['queue'].update(mark=0, items=[dict(pos=0, name=target['title'], author=target['artist'])])
+        checks = judge(self.case('album-compilation'), self.tracks, self.before, self.reply('playing'), self.after, [{}])
+        self.assertTrue(checks['target'])
+        self.assertFalse(checks['queue_membership'])
+
     def test_wrong_track_cannot_become_gold_from_selected(self):
         result = dict(self.reply('playing'), selected={'title': 'Signal Beta', 'artist': 'Test Atlas'})
         checks = judge(self.case('track'), self.tracks, self.before, result, self.after, [{}])

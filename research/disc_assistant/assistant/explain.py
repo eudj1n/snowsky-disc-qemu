@@ -1,4 +1,6 @@
 """Diagnostic interpretation only. Never registered as an executing provider."""
+from research.disc_assistant.assistant.intents import AlbumIntent, music_from_dict
+
 from dataclasses import asdict
 import re
 
@@ -10,7 +12,7 @@ from research.disc_assistant.assistant.languages import load_languages, normaliz
 
 
 def label_of(intent):
-    return (intent.action if type(intent) is ControlIntent else 'play' if type(intent) is Intent
+    return (intent.action if type(intent) is ControlIntent else 'play' if type(intent) in (Intent, AlbumIntent)
             else 'language' if type(intent) is LanguageIntent else 'reject')
 
 

@@ -179,3 +179,13 @@ Generated-media V2.57 acceptance uses
 pause/resume, mode changes/readback, queue and normalized state on the same socket
 as Assistant operations, then checks idle pushes, reconnect without replay and
 healthy final-stop silence. It never uses personal media or the interactive volume.
+
+## Complete named albums
+
+`DiscSession.play_album(album)` selects the complete native album across raw
+artist credits and verifies fresh source membership and playback queue. Existing
+`play_artist(artist, album=...)` selects only that artist's album scope. Shared
+TCP/WS `play_album(album, index=None, http=...)` helpers use reviewed V2.57 type 3
+with fresh source bounds, reject empty/reserved names and never retry mutations.
+The session helper adds two equal source reads and final row identity protection.
+The stock catalog has no release identifier or atomic revision token.

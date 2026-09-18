@@ -377,6 +377,34 @@ class DiscSession:
             return result
         return self._perform('play_artist', select)
 
+    def play_album(self, album):
+        """Play all artists in a named native album; verify its complete queue."""
+        from controller.fiio_http import HTTPClient
+        from controller.fiio_library import album_command
+        from controller.catalog import CatalogReader, CatalogChanged
+        from controller.playback import GuardedHTTP, verify_playing
+        from controller.queue import snapshot
+        def select(client):
+            album_command(album)
+            time.sleep(2.1)
+            http = HTTPClient(self.config.host, self.config.http_port, self.config.timeout)
+            reader = CatalogReader(http, page_size=self.config.page_size, max_tracks=self.config.max_tracks,
+                                   max_requests=self.config.max_requests)
+            rows = reader.rows('album/song', album=album)
+            if not rows or rows != reader.rows('album/song', album=album):
+                raise CatalogChanged('album source is empty or changing')
+            selected = {'kind': 'album', 'artist': None, 'album': album}
+            client.scan_guard()
+            client.play_album(album, http=GuardedHTTP(http, 'album/song', {'album': album}, rows, 0, client))
+            state = verify_playing(client, selected, rows, self.config.timeout, config=self.config, http=http)
+            result = {'status': 'playing' if state else 'uncertain', 'mutation_attempted': True, 'state': state}
+            if state:
+                result['queue'] = snapshot(self.config, client, http, expected=rows, selected=selected)
+            else:
+                result['reason'] = 'album playback not confirmed; selection was not retried'
+            return result
+        return self._perform('play_album', select)
+
     @contextmanager
     def operation(self):
         with self.guard:
