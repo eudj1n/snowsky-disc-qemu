@@ -7,7 +7,7 @@ M2a controls and M2b native queue observation/continuation are implemented.
 M2c adds a persistent foreground text console. Existing one-shot commands remain
 available for scripts and cron alongside the interactive application.
 
-Validation on 2026-09-18: 116 prototype unit tests, 313 shared Python tests and
+Earlier checkpoint on 2026-09-18: 116 prototype unit tests, 313 shared Python tests and
 37 shared JavaScript tests pass. Disposable Typesense acceptance covers control
 dispatch without search credentials/current index, queue pagination and explicit
 repeat-list preparation. A separate generated-media V2.57 guest passed actual
@@ -27,10 +27,11 @@ pause/resume/stop/next/previous forms, while `Play Stop` remains a music request
 | `resume` | One toggle from confirmed paused; no write if already playing |
 | `stop` | Pause while retaining position and native queue; explicitly report pause semantics |
 | `next` | One stock next command, then observe the actual result |
-| `previous` | Stock previous; after >10 seconds this restarts the current track |
+| `previous` | One explicit predecessor selection from the fresh queue, at every elapsed position; first row is a no-op |
 
-There is no confirmed absolute pause/play or separate network stop. Controller
-uses `0201/0000`, `0201/0001` and `0201/0002`. Never emulate stop through power-off,
+There is no confirmed absolute pause/play or separate network stop. Native Controller controls
+use `0201/0000`, `0201/0001` and `0201/0002`; Assistant previous instead uses guarded
+queue-index selection (`0100`, type 0). Never emulate stop through power-off,
 library reset, zero volume or seeking to the end. Evidence:
 [remote control](REMOTE_CONTROL.md#timing-and-state), [capabilities](DISC_CAPABILITIES.md).
 
@@ -52,8 +53,11 @@ native queue but must not revive a cancelled recommendation plan.
    before socket I/O and send once. Observe state/context; never replay after a
    timeout or reconnect.
 4. Pause/resume confirmation requires the expected state in the same recording
-   context. Navigation requires an observed identity change or progress rollback
-   for a restart. Same-title repeats and copies cannot be resolved from title alone.
+   context. Assistant previous requires the expected queue position, matching row
+   and unchanged membership/mode after a single selection; a restart cannot pass.
+   Native next still observes identity change/progress. Same-title copies cannot
+   be resolved from title alone. Queue selection legitimately changes the source
+   flag to type 0, so confirmation must not require the original artist type 7.
 
 Initial connection refusal is retried within the configured timeout, before any
 handshake/mutation. This accommodates the stock listener's delayed reopening;
@@ -75,7 +79,8 @@ See [EOF evidence](TRACK_END.md).
 
 - `device.py`: shared lock, event-preserving sequential client, mutation-attempt
   tracking for selection/mode/control commands.
-- `controls.py`: fresh-state control execution; no search or catalog dependency.
+- `controls.py`: fresh-state control execution; previous uses live queue HTTP
+  observations through Controller, without search or a local catalog dependency.
 - Unit tests cover RU/EN phrases, title collisions, no-op pause/resume, missing
   search credentials, unknown/loading state, external track change, uncertain
   writes without replay, and progress evidence for previous-to-start.
@@ -282,3 +287,21 @@ The [shared Controller API](CONTROLLER_API.md) now owns this session/state core
 and verified device operations. Assistant retains its policy and request journal.
 Physical playback/session validation and M3 microphone input follow separately.
 Arbitrary recommendation-plan execution remains a later increment.
+
+
+## Explicit previous-row policy (2026-09-18)
+
+The owner selected deterministic previous-track semantics after the emulator
+regression exposed the stock restart shortcut. `controller.queue.previous_in_queue`
+and `DiscSession.previous_in_queue()` guard a single positional selection with
+fresh queue/current-state reads and post-selection verification. Assistant uses
+this path for all elapsed positions, including the native 10–12 second restart
+interval. It does not send two previous commands or replay an uncertain selection.
+
+First row returns `already_satisfied` with `outcome: queue_start` in every mode.
+Random mode uses displayed queue order, not playback history. A predecessor
+selection starts playback from paused state. `Client.previous_track()` and
+`DiscSession.previous_track()` retain native firmware behavior. The optional
+`http=` preflight on `Client.play_queue_index()` preserves its original TCP-only
+behavior for existing callers. There is still no atomic device queue revision.
+See [emulator regression results](ASSISTANT_EMULATOR_ACCEPTANCE.md).

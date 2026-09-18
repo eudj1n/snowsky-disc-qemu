@@ -98,8 +98,8 @@ class ControlsTests(unittest.TestCase):
         self.assertTrue(result['mutation_attempted'])
         self.assertEqual(self.client.calls, 1)
 
-    def test_navigation_uses_observed_identity_not_position_arithmetic(self):
-        for action in ('next', 'previous'):
+    def test_native_next_uses_observed_identity_not_position_arithmetic(self):
+        for action in ('next',):
             self.client.snapshot['song']['pos_id'] = 8
             self.assertEqual(self.execute(action)['outcome'], 'track_changed')
             self.assertEqual(self.client.snapshot['song']['pos_id'], 2)
@@ -159,3 +159,12 @@ class ControlsTests(unittest.TestCase):
         self.assertFalse((self.config.data_dir / 'library.sqlite3').exists())
         from research.disc_assistant.assistant.journal import history_command
         self.assertEqual([r['status'] for r in history_command(self.config)['requests']], ['confirmed', 'planned'])
+
+
+    def test_previous_uses_guarded_queue_navigation(self):
+        with patch.object(controls, 'previous_in_queue', return_value={
+                'status': 'confirmed', 'mutation_attempted': True}) as navigation:
+            self.assertEqual(self.execute('previous')['status'], 'confirmed')
+            navigation.assert_called_once()
+            self.assertIs(navigation.call_args.args[1], self.client)
+            self.assertEqual(self.client.calls, 0)

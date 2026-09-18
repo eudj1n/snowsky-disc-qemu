@@ -7,8 +7,9 @@ from research.disc_assistant.assistant.languages import load_languages
 from research.disc_assistant.library.store import StaleSnapshot
 from research.disc_assistant.library.versions import with_query_markers
 from research.disc_assistant.assistant.resolver import infer
-from research.disc_assistant.assistant.matching import similarity, words, exact_name, strong_match
+from research.disc_assistant.assistant.matching import similarity, strong_match, artist_similarity
 from research.disc_assistant.library.transliteration import fold
+from research.disc_assistant.library.artists import artist_names
 
 
 def versions(value, rules):
@@ -46,15 +47,15 @@ def score_tracks(intent, documents, aliases, rules=None):
             title_score, title_match = base_score, 'base_' + base_match
         artist_score, artist_match = 0.0, 'not_requested'
         if intent.artist is not None:
-            artist_score, artist_match = similarity(intent.artist, doc['artist'],
-                                                    aliases.get('artists', {}).get(doc['artist'], []))
+            artist_score, artist_match = artist_similarity(intent.artist, doc['artist'], aliases)
             if artist_score < .72 or title_score < .55:
                 continue
             score = 75 * title_score + 25 * artist_score
         else:
             # Mixed requests with a misspelled artist can still be retrieved and
             # ranked as a complete artist/title phrase; never discard its words.
-            combined, combined_match = similarity(intent.query, doc['artist'] + ' ' + doc['title'])
+            combined, combined_match = max((similarity(intent.query, name + ' ' + doc['title'])
+                for name in artist_names(doc['artist'])), key=lambda result: result[0])
             if intent.kind == 'auto' and combined > title_score:
                 title_score, title_match = combined, 'combined_' + combined_match
             if title_score < .60:
@@ -74,7 +75,7 @@ def score_tracks(intent, documents, aliases, rules=None):
 def score_artists(intent, documents, aliases):
     result = []
     for artist in sorted({d['artist'] for d in documents}):
-        score, match = similarity(intent.query, artist, aliases.get('artists', {}).get(artist, []))
+        score, match = artist_similarity(intent.query, artist, aliases)
         if score >= .80:
             result.append({'kind': 'artist', 'artist': artist, 'score': round(score * 100, 4),
                            'evidence': {'artist_similarity': round(score, 4), 'artist_match': match}})
@@ -102,12 +103,10 @@ async def rank(config, store, search, intent, *, trace=None):
     if trace:
         trace.event('intent_resolved', asdict(intent))
     if intent.artist is not None:
-        known = {d['artist'] for d in documents if exact_name(intent.artist, d['artist'],
-                 config.aliases.get('artists', {}).get(d['artist'], []))}
+        known = {d['artist'] for d in documents if strong_match(artist_similarity(intent.artist, d['artist'], config.aliases)[1])}
         if known:
             # A literal canonical name wins over an alias shared with another artist.
-            strengths = {artist: similarity(intent.artist, artist,
-                         config.aliases.get('artists', {}).get(artist, []))[0] for artist in known}
+            strengths = {artist: artist_similarity(intent.artist, artist, config.aliases)[0] for artist in known}
             known = {artist for artist in known if strengths[artist] == max(strengths.values())}
             documents = [d for d in documents if d['artist'] in known]
     else:
@@ -116,7 +115,8 @@ async def rank(config, store, search, intent, *, trace=None):
     if trace:
         artist_query = normalized(intent.artist if intent.artist is not None else intent.query)
         exact_artists = sorted({d['artist'] for d in documents if artist_query
-                                in names(d['artist'], config.aliases.get('artists', {}))})
+                                in {alias for name in artist_names(d['artist'])
+                                    for alias in names(name, config.aliases.get('artists', {}))}})
         trace.event('local_matches', {'scoped_track_count': len(documents),
                     'exact_artist_count': len(exact_artists), 'exact_artists': exact_artists[:10],
                     'exact_artists_truncated': len(exact_artists) > 10,
@@ -140,7 +140,7 @@ async def rank(config, store, search, intent, *, trace=None):
             if trace:
                 trace.event('search_query', {'query': query, 'limit': 50})
             response = await search.search(store, config.device_key, query, limit=50,
-                                           fields=('title', 'artist', 'title_aliases', 'artist_aliases', 'album', 'album_aliases'))
+                                           fields=('title', 'artist', 'title_aliases', 'artist_aliases', 'album', 'album_aliases', 'artists'))
             if trace:
                 trace.search(response, phase='retrieval')
             if response['generation'] != head['generation']:
@@ -161,4 +161,4 @@ async def rank(config, store, search, intent, *, trace=None):
             'intent': intent.kind, 'resolved_intent': asdict(intent), 'generation': head['generation'], 'device': config.device_key,
             'retrieval': retrieval, 'candidates': candidates[:10],
             'candidate_count': len(candidates), 'candidates_truncated': len(candidates) > 10,
-            'ranking_policy': 'lexical-v3; scores are not probabilities; no history/likes'}
+            'ranking_policy': 'lexical-v4; scores are not probabilities; no history/likes'}

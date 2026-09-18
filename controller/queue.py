@@ -80,3 +80,72 @@ def snapshot(config, client, http, *, expected=None, selected=None, selected_pos
                   consistency='two_equal_reads_not_atomic',
                   playback_known=bool(state.get('song')) and state.get('state') in (0, 1))
     return result
+
+
+def _row_matches(state, row, index):
+    from pathlib import PurePosixPath
+    song = state.get('song') or {}
+    names = {song.get('song_name'), PurePosixPath(song.get('song_file_path') or '').name}
+    # Queue selection changes the source flag to type 0 even if the queue was
+    # created from type 7. Position, row identity and stable membership are proof.
+    return (song.get('pos_id') == index + 1
+            and row['name'] in names and (not row['author'] or row['author'] == song.get('song_artist_name')))
+
+
+def previous_in_queue(config, client, http):
+    """One guarded predecessor selection, independent of elapsed time or shuffle history.
+
+    At the start of the displayed queue, leave playback unchanged in every mode.
+    No atomic device revision exists; observed races block or make the result uncertain.
+    """
+    import time
+    from uuid import uuid4
+    from controller.controls import identity
+    result = {'operation_id': uuid4().hex, 'action': 'previous', 'status': 'not_sent',
+              'mutation_attempted': False, 'navigation_policy': 'previous_queue_row'}
+    try:
+        if client.handshake() != '0306' or client.settings().get('soc_version') != 257:
+            raise ValueError('queue navigation requires reviewed DISC V2.57')
+        time.sleep(2.1)
+        before = snapshot(config, client, http)
+        current = before['mark']
+        state = before['state']
+        if (state.get('state') not in (0, 1) or not 0 <= current < before['total']
+                or not _row_matches(state, before['items'][current], current)):
+            raise CatalogChanged('current queue position is not confirmed; no selection sent')
+        if current == 0:
+            return dict(result, status='already_satisfied', outcome='queue_start', state=state, queue=before)
+        index = current - 1
+        target = before['items'][index]
+
+        class Guard:
+            def catalog(self, category, offset=0, limit=200, **filters):
+                if (category, offset, limit, filters) != ('curlist/song', index, 1, {}):
+                    raise ValueError('unexpected queue selection preflight')
+                fresh = snapshot(config, client, http)
+                if (any(fresh[k] != before[k] for k in ('items', 'mark', 'mode'))
+                        or identity(fresh['state']) != identity(state)
+                        or fresh['state'].get('state') != state['state']):
+                    raise CatalogChanged('queue or playback changed before selection')
+                return {'total': fresh['total'], 'items': [fresh['items'][index]]}
+
+        client.play_queue_index(index, http=Guard())
+        result.update(mutation_attempted=True, selected_position=index)
+        deadline = time.monotonic() + config.timeout
+        while time.monotonic() < deadline:
+            try:
+                after = snapshot(config, client, http)
+            except TimeoutError:
+                continue
+            if after['items'] != before['items'] or after['mode'] != before['mode']:
+                raise CatalogChanged('queue changed after selection; selection was not retried')
+            if (after['mark'] == index and after['state'].get('state') == 0
+                    and _row_matches(after['state'], target, index)):
+                return dict(result, status='confirmed', outcome='track_changed', state=after['state'], queue=after)
+            time.sleep(.15)
+        result.update(status='uncertain', reason='previous queue row not confirmed; selection was not retried')
+    except (OSError, ValueError, RuntimeError) as exc:
+        attempted = result['mutation_attempted'] or bool(client.mutation_attempted)
+        result.update(status='uncertain' if attempted else 'not_sent', mutation_attempted=attempted,
+                      reason=str(exc), error_type=type(exc).__name__)
+    return result

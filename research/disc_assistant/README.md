@@ -229,7 +229,8 @@ Controls and queue observation bypass search and catalog storage:
 
 `Stop` means pause with position/queue retained; no separate hardware stop is
 claimed. Already-satisfied pause/resume/stop sends nothing. Unknown current state
-blocks blind toggles. Previous after >10 seconds restarts the current track.
+blocks blind toggles. Previous selects the preceding queue row at any elapsed
+position; first row is a no-op. Native Controller previous retains its restart shortcut.
 See the [command contract](../../docs/ASSISTANT_COMMANDS.md).
 
 To continue through the end of the selected album/artist context, opt in in your
@@ -391,7 +392,19 @@ The owner chose automatic best-match
 playback and deferred clarification. Measured ranking quality and physical `ask`
 playback remain unvalidated; microphone input follows the text-to-playback path.
 
-Optional firmware acceptance uses a fresh V2.57 stack and generated audio:
+Full text-to-device scenario automation with real Typesense is now available:
+
+```sh
+bash ci/assistant.sh /absolute/path/to/main_os/ota_v257 /tmp/assistant-run-01
+```
+
+This opt-in runner creates a disposable guest/search stack, runs 46 RU/EN cases
+with independent state/queue checks, and retains reports/screenshots in the new
+output directory. See [scenario instructions](../../docs/ASSISTANT_EMULATOR_ACCEPTANCE.md)
+for selected cases, known failures and adding fixtures. It does not use personal
+settings, libraries or the physical player.
+
+The older focused firmware acceptance uses a fresh V2.57 stack and generated audio:
 
 ```sh
 ./research/disc_assistant/emulator_check.sh /absolute/path/to/main_os/ota_v257
@@ -403,8 +416,8 @@ the `snowsky-disc-qemu-ci` image; optional `ASSISTANT_LOGS` retains guest logs o
 the checkout or under ignored `work/`. Synthetic `run.sh check` also covers controls
 without search credentials/current index and explicit continuous-context mode.
 
-The generated-media guest check passed on 2026-09-18: controls, previous before
-and after ten seconds, native continuation after disconnect, and type-7 natural
+An earlier generated-media guest check passed on 2026-09-18: controls, native
+previous/restart before and after ten seconds, native continuation after disconnect, and type-7 natural
 EOF in all five modes. Physical-device acceptance remains separate.
 
 The persistent-session increment passed 116 prototype unit tests (114 in the
@@ -478,3 +491,9 @@ agreed error limits. First measure the baseline, then agree thresholds. The
 [MVP checklist](https://github.com/eudj1n/snowsky-disc-qemu/issues/21) distinguishes
 implemented work from acceptance; [AGENTS.md](AGENTS.md) supports session handoff.
 Further component improvements are separate tasks.
+
+
+Semicolon-separated artist credits now expose individual members for search and
+ranking while retaining literal device selectors. After upgrading, restart the
+console and run `/index`; an existing SQLite snapshot needs no `/sync`. See the
+[Library metadata policy](library/README.md#multiple-artist-credits).

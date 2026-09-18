@@ -28,8 +28,26 @@ Keep this prototype under research until a separate promotion/split decision.
 
 - `../../docs/ASSISTANT_BASELINE.md`: private bound case set (30 RU / 21 EN),
   `baselines/my-player-text-v2/` beneath configured data_dir. Media/gold are frozen;
-  live preflight and execution remain pending. Do not publish personal packet contents.
+  physical RU-01–19 are recorded; continue at RU-21 (RU-20 locale switch is last).
+  RU-17 rejection gold is disputed because its text could be a recording title;
+  retain the original attempt and separate review, not a confirmed defect count.
+  Private run context is authoritative. Do not publish personal packet contents.
   CSV observation header is in `experiments/acceptance/`.
+- `../../docs/ASSISTANT_EMULATOR_ACCEPTANCE.md`: owner-proposed next validation
+  direction, a disposable full Assistant/Typesense/stock-firmware scenario runner.
+  Implemented via `bash ci/assistant.sh OTA_DIR NEW_REPORT_DIR [--case ID]`.
+  Manifest v4 has 46 cases. The initial 36-case run exposed shared-artist retrieval
+  and late previous/restart behavior. The 42-case follow-up passed all artist cases;
+  Assistant previous now selects the explicit predecessor through Controller.
+  First row is a no-op in every mode; random mode means displayed queue order.
+  Native Controller previous retains its firmware restart semantics.
+  Final focused run: 10/10 (early/late, paused, first row, fuzzy member; RU/EN).
+  Shared checks 349 Python / 37 JS; prototype 287. Full 46-case rerun has not been
+  claimed: keep the earlier 40/42 and final 10/10 reports separate. Keep this cohort separate from physical
+  results; failures must remain visible.
+- `library/README.md`: semicolon-separated artist members are a derived projection;
+  source artist tags remain exact device selectors. Schema 3 requires `/index`,
+  not `/sync`; ranking is lexical-v4. No aggregate person-level queue is implemented.
 - `../../docs/ASSISTANT.md`: implementation roadmap and historical increments.
 - `../../docs/ASSISTANT_ARCHITECTURE.md`: interpreter/STT/TTS contracts, one saved locale.
 - `../../docs/ASSISTANT_INTERPRETATION_SOURCES.md`: independent evidence and shadow boundary.

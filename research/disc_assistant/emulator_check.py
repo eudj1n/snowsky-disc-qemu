@@ -186,7 +186,7 @@ def exercise(persistent_only=False):
             result = control(config, ControlIntent(action))
             assert result['status'] == status, result
         print('PASS: Assistant selection/queue, pause/resume/stop and next on stock firmware', flush=True)
-        # Exercise previous both below and above the stock ten-second threshold.
+        # Assistant previous selects the preceding row on both sides of the native threshold.
         time.sleep(1)
         started = execute(config, store, ranking)
         assert started['status'] == 'playing', started
@@ -194,14 +194,17 @@ def exercise(persistent_only=False):
         previous = control(config, ControlIntent('previous'))
         assert previous['status'] == 'confirmed' and previous['outcome'] == 'track_changed', previous
         time.sleep(1)
+        started = execute(config, store, ranking)
+        assert started['status'] == 'playing', started
+        time.sleep(1)
         with Client() as client:
             assert client.handshake() == '0306'
             client.seek(12000)
             time.sleep(1.2)
         time.sleep(1)
         previous = control(config, ControlIntent('previous'))
-        assert previous['status'] == 'confirmed' and previous['outcome'] == 'restarted', previous
-        print('PASS: previous changes track before ten seconds and confirms restart from progress afterward', flush=True)
+        assert previous['status'] == 'confirmed' and previous['outcome'] == 'track_changed', previous
+        print('PASS: previous selects the preceding queue row before and after twelve seconds', flush=True)
         time.sleep(1)
         observed = queue_observe(config)
         assert observed['queue']['total'] == 2

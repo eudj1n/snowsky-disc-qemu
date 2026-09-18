@@ -256,14 +256,18 @@ class Client:
             require(version, 'favorite_positions')
         self.socket.sendall(frame('0100', payload))
 
-    def play_queue_index(self, index):
+    def play_queue_index(self, index, *, http=None):
         """Select a zero-based position in the current queue, with a fresh bounds check.
 
         The queue can still change between query and selection; Link has no revision
         token. Never replay this command after reconnecting or reuse a cached count.
         """
         position = hex_value(index)
-        if index >= self.library('queue')['total']:
+        # HTTP permits a caller to guard the exact row immediately before send.
+        # The original TCP-only API retains its fresh queue-count query.
+        page = (http.catalog('curlist/song', offset=index, limit=1) if http is not None
+                else self.library('queue'))
+        if index >= page['total'] or (http is not None and len(page['items']) != 1):
             raise ValueError('position outside the current queue')
         self.socket.sendall(frame('0100', position + '0000'))
 

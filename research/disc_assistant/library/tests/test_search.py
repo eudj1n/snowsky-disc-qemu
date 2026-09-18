@@ -114,3 +114,35 @@ class SearchTests(unittest.IsolatedAsyncioTestCase):
         for query in ('', '   ', 'x' * 1001):
             with self.assertRaises(ValueError):
                 await self.search.search(self.store, 'test', query)
+
+    async def test_member_projection_aliases_and_tamper_rejection(self):
+        from research.disc_assistant.library.catalog import Track
+        tracks = [Track('Stan', 'Eminem;Dido', 'Album', 0, {})]
+        self.head = self.store.publish('test', tracks, {}, expected_generation=self.head['generation'])
+        self.search = Search(self.client, {'artists': {'Dido': ['дайдо']}}, ['http', 'localhost', 8108])
+        self.collection.documents.import_.return_value = [{'success': True}]
+        self.collection.retrieve.return_value = {'num_documents': 1}
+        await self.search.build(self.store, 'test')
+        doc = self.collection.documents.import_.call_args.args[0][0]
+        self.assertEqual(doc['artist'], 'Eminem;Dido')
+        self.assertEqual(doc['artists'], ['Eminem', 'Dido'])
+        self.assertIn('дайдо', doc['artist_aliases'])
+        self.assertIn('daydo', doc['artist_aliases'])
+        schema = self.client.collections.create.call_args.args[0]['fields']
+        self.assertIn({'name': 'artists', 'type': 'string[]'}, schema)
+        self.collection.documents.search = AsyncMock(return_value={'found': 1, 'hits': [{'document': doc}]})
+        self.assertEqual((await self.search.search(self.store, 'test', 'Dido'))['candidates'][0]['artists'],
+                         ['Eminem', 'Dido'])
+        doc['artists'] = ['Wrong']
+        with self.assertRaises(StaleSnapshot):
+            await self.search.search(self.store, 'test', 'Dido')
+
+    async def test_old_projection_signature_requires_reindex(self):
+        from unittest.mock import patch
+        from research.disc_assistant.library.search.typesense import signature
+        with patch('research.disc_assistant.library.search.typesense.SCHEMA_VERSION', 2):
+            old = signature(ALIASES, ['http', 'localhost', 8108])
+        self.store.publish_index('test', self.head['generation'], 'old-index', old)
+        with self.assertRaises(StaleSnapshot):
+            await self.search.search(self.store, 'test', 'Dido')
+        self.collection.documents.search.assert_not_called()

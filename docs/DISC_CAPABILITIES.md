@@ -110,3 +110,15 @@ no unrelated power/release gates are claimed rerun. Raw firmware, captures,
 artwork and experimental logs remain ignored; sanitized fixtures are tracked.
 The [research record](PROTOCOL_RESEARCH.md) preserves chronology and remaining
 follow-up boundaries. This summary is the current entry point for a controller.
+
+
+### Explicit predecessor helper
+
+`DiscSession.previous_in_queue()` provides one guarded selection of the preceding
+row in the current displayed queue, independent of elapsed position. It checks
+fresh membership/current state before sending and the target row afterwards;
+unknown state or an observed race blocks dispatch or returns uncertainty, never
+a replay. First row is a no-op in all modes. Native `previous_track()` remains
+unchanged. `Client.play_queue_index(index, http=...)` optionally uses an HTTP row
+preflight; omitting it retains the existing TCP queue-count check. See the
+[Assistant policy and evidence](ASSISTANT_PLAYBACK.md#explicit-previous-row-policy-2026-09-18).

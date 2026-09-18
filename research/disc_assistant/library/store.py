@@ -3,6 +3,7 @@ import json
 from pathlib import Path
 import sqlite3
 from uuid import uuid4
+from research.disc_assistant.library.artists import split_artists
 
 
 class StaleSnapshot(ValueError):
@@ -73,7 +74,7 @@ class Store:
         return self.head(device)
 
     def documents(self, generation):
-        return [dict(row) for row in self.db.execute(
+        return [dict(row, artists=split_artists(row['artist'])) for row in self.db.execute(
             'SELECT id,generation,title,artist,album FROM tracks WHERE generation=? ORDER BY ordinal',
             (generation,))]
 

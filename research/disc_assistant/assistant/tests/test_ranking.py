@@ -178,3 +178,35 @@ class RankingTests(unittest.IsolatedAsyncioTestCase):
         self.config.aliases = {}
         result = await self.ranked('Включи Линкин Паркнамп')
         self.assertEqual(result['candidates'], [])
+
+    async def test_collaboration_matches_each_member_but_keeps_device_credit(self):
+        from research.disc_assistant.library.catalog import Track
+        tracks = [Track('Stan', 'Eminem;Dido', 'Album', 0, {}),
+                  Track('Other', 'Eminem', 'Solo', 0, {}),
+                  Track('Stan', 'Someone Else', 'Cover', 0, {})]
+        self.head = self.store.publish('test', tracks, {}, expected_generation=self.head['generation'])
+        self.store.publish_index('test', self.head['generation'], 'index', 'sig')
+        self.config.aliases = {'artists': {'Dido': ['дайдо']}}
+        for phrase in ('Play Eminem — Stan', 'Play Dido — Stan', 'Play Dido Stan',
+                       'Включи дайдо Stan', 'Play Eminem;Dido — Stan'):
+            with self.subTest(phrase=phrase):
+                result = await self.ranked(phrase)
+                self.assertEqual([c['artist'] for c in result['candidates']], ['Eminem;Dido'])
+                self.assertEqual(result['candidates'][0]['title'], 'Stan')
+        self.search.search.assert_not_called()
+        artist = await self.ranked('Play artist Dido')
+        self.assertEqual(artist['candidates'][0]['artist'], 'Eminem;Dido')
+
+    async def test_member_alias_cannot_override_literal_member_and_fuzzy_retrieval_is_scoped(self):
+        from research.disc_assistant.library.catalog import Track
+        tracks = [Track('Stan', 'Eminem;Dido', 'Album', 0, {}),
+                  Track('Stan', 'Wrong;Guest', 'Cover', 0, {})]
+        self.head = self.store.publish('test', tracks, {}, expected_generation=self.head['generation'])
+        self.store.publish_index('test', self.head['generation'], 'index', 'sig')
+        self.config.aliases = {'artists': {'Guest': ['Dido']}}
+        docs = self.store.documents(self.head['generation'])
+        self.search.search.return_value = {'generation': self.head['generation'], 'found': 2, 'candidates': docs}
+        result = await self.ranked('Play Dido — Stann')
+        self.assertEqual(result['retrieval']['source'], 'typesense')
+        self.assertEqual([c['artist'] for c in result['candidates']], ['Eminem;Dido'])
+        self.assertIn('artists', self.search.search.call_args.kwargs['fields'])

@@ -196,3 +196,18 @@ class PlaybackTests(unittest.TestCase):
         self.assertEqual(client.observed, [('a60a', b'000F')])
         with patch.object(client, 'collect'), self.assertRaisesRegex(ValueError, 'scan activity'):
             client.scan_guard()
+
+    def test_member_match_preserves_literal_credit_in_fresh_device_scope(self):
+        from research.disc_assistant.library.catalog import Track
+        from research.disc_assistant.library.tests.helpers import Catalog
+        tracks = [Track('Stan', 'Eminem;Dido', 'Album', 0,
+                        {'pos': 0, 'name': 'Stan', 'author': 'Eminem;Dido'})]
+        head = self.store.publish('test', tracks, {}, expected_generation=self.head['generation'])
+        selected = {'kind': 'track', 'track_id': head['generation'] + ':0',
+                    'artist': 'Eminem;Dido', 'title': 'Stan', 'album': 'Album'}
+        http = Catalog(tracks)
+        category, filters, rows, index, count = playback.fresh_selection(
+            self.config, self.store, head['generation'], selected, http)
+        self.assertEqual(filters, {'artist': 'Eminem;Dido', 'album': 'Album'})
+        self.assertEqual((index, count), (0, 1))
+        self.assertEqual(rows[0]['author'], 'Eminem;Dido')

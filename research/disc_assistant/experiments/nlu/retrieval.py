@@ -16,6 +16,7 @@ from research.disc_assistant.assistant.ranking import rank
 from research.disc_assistant.assistant.resolver import infer
 from research.disc_assistant.assistant.voice.catalog_evaluation import selection_matches
 from research.disc_assistant.library.catalog import Track
+from research.disc_assistant.library.artists import artist_names
 from research.disc_assistant.library.store import Store
 from research.disc_assistant.library.search.typesense import Search, create_client, FIELDS
 from research.disc_assistant.library.transliteration import fold, projected_aliases
@@ -40,7 +41,7 @@ class Retrieval:
                   'q': fold(query) if self.mode == 'hybrid' else '*',
                   'query_by': ','.join(fields or FIELDS), 'drop_tokens_threshold': 0,
                   'num_typos': 2, 'split_join_tokens': 'off', 'prefix': True,
-                  'query_by_weights': ','.join(str(dict(zip(FIELDS,(6,5,2,4,3,1)))[f]) for f in (fields or FIELDS)),
+                  'query_by_weights': ','.join(str(dict(zip(FIELDS,(6,5,2,4,3,1,5)))[f]) for f in (fields or FIELDS)),
                   'vector_query': 'embedding:('+json.dumps(vector)+f', k:{limit}, alpha:{self.alpha}, distance_threshold:{self.distance})',
                   'exclude_fields': 'embedding'}
         response = await self.client.multi_search.perform({'searches': [params]}, {})
@@ -102,7 +103,7 @@ async def evaluate(corpus, encoder):
             vectors = encoder.encode(texts)
             collection = 'disc_nlu_vectors'
             await client.collections.create({'name':collection,'fields':[
-                {'name':f,'type':'string[]' if f.endswith('_aliases') else 'string'} for f in FIELDS]+
+                {'name':f,'type':'string[]' if f.endswith('_aliases') or f == 'artists' else 'string'} for f in FIELDS]+
                 [{'name':'generation','type':'string','index':False},
                  {'name':'embedding','type':'float[]','num_dim':encoder.info['dimensions']}]})
             payload = []
@@ -110,6 +111,8 @@ async def evaluate(corpus, encoder):
                 projected = {**doc,'embedding':vector.tolist()}
                 for name in ('title','artist','album'):
                     projected[name+'_aliases']=projected_aliases(doc[name],[])
+                projected['artist_aliases'] = list(dict.fromkeys(alias
+                    for name in artist_names(doc['artist']) for alias in projected_aliases(name, [])))
                 payload.append(projected)
             imported=await client.collections[collection].documents.import_(payload,{'action':'create'})
             if len(imported)!=len(docs) or not all(r.get('success') for r in imported):
@@ -140,7 +143,7 @@ async def evaluate(corpus, encoder):
                 return rows
             report={'corpus_sha256':digest(corpus),'catalog_generation':head['generation'],
                     'embedding_pipeline':encoder.signature,'document_template':'artist — title — album; v1',
-                    'scope':'Track candidates only. All variants share lexical-v3 constraints and exact-match fast path. No learned interpreter or player access.',
+                    'scope':'Track candidates only. All variants share lexical-v4 constraints and exact-match fast path. No learned interpreter or player access.',
                     'variants':{}}
             # Choose distance/alpha using only artist-disjoint development queries.
             for mode in ('lexical','vector','hybrid'):

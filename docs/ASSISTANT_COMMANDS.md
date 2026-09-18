@@ -184,7 +184,7 @@ returns the intent offline; `ask 'Pause'` connects to the device.
 | `Resume` / `Продолжи` | Toggle only from confirmed paused; already playing sends nothing |
 | `Stop`, `Stop music` / `Стоп`, `Останови музыку` | Pause while preserving position and native queue; report this explicitly, not as hardware stop |
 | `Next`, `Next track` / `Следующий`, `Следующий трек` | Send stock next once and observe the actual result |
-| `Previous`, `Previous track` / `Предыдущий`, `Предыдущий трек` | Stock previous: after >10 seconds it restarts the current track |
+| `Previous`, `Previous track` / `Предыдущий`, `Предыдущий трек` | Select the preceding row of the fresh native queue, regardless of elapsed time; first row is a no-op |
 
 Neither interface has an Assistant-managed continuation executor: `Stop` reports assistant
 continuation as inactive. It does not clear the native queue, seek to zero or
@@ -194,8 +194,14 @@ cancellation belongs to the future recommendation executor.
 Unknown/loading state or a silent now-playing read blocks blind controls.
 Stopped-state resume is unverified; use an explicit music selection. Toggle is
 not atomic with its state read: external button presses and EOF can race it.
-Unconfirmed writes are reported as uncertain and never retried. A restart requires
-observed progress rollback; an unchanged title alone cannot confirm navigation.
+Unconfirmed writes are reported as uncertain and never retried. Assistant previous
+uses one explicit queue selection and verifies the target row, rather than issuing
+two native previous commands. This also avoids the native restart interval between
+10 and 12 seconds. In random mode it follows displayed queue order, not playback
+history. At the first row it returns `already_satisfied` / `queue_start` without
+wrapping, restarting or changing play mode. Selecting a predecessor starts playback
+even if the current recording was paused. The low-level Controller native previous
+operation keeps its original restart semantics.
 See the [playback contract](ASSISTANT_PLAYBACK.md).
 
 ## Language dictionaries

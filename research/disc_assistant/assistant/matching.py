@@ -4,6 +4,13 @@ import re
 
 from research.disc_assistant.assistant.languages import normalized
 from research.disc_assistant.library.transliteration import fold
+from research.disc_assistant.library.artists import artist_names
+
+
+def artist_similarity(query, credit, aliases):
+    # Literal members outrank aliases, including aliases of the complete credit.
+    return max((similarity(query, name, aliases.get('artists', {}).get(name, []))
+                for name in artist_names(credit)), key=lambda result: result[0])
 
 
 def words(value):

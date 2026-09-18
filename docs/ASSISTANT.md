@@ -27,6 +27,20 @@ then agree error limits; later component improvements are separate tasks.
 [Offline shadow reports and review queues](ASSISTANT_SHADOW_REPORTS.md) are now
 implemented. They support interpretation analysis, not physical-device acceptance.
 
+The [physical baseline](ASSISTANT_BASELINE.md) is in progress, with RU-01–19
+recorded privately and one disputed expectation kept separate. The owner proposed
+[repeatable Assistant scenarios against the emulator](ASSISTANT_EMULATOR_ACCEPTANCE.md)
+as the next validation direction. The opt-in runner is implemented with synthetic
+media, real Typesense, independent readback and per-case reports; its regression
+results remain separate from physical acceptance. The initial 36-case run exposed
+multi-artist retrieval and late previous/restart semantics. Library now projects
+semicolon-separated artist membership for search/ranking while preserving stock
+selectors; existing snapshots require `/index`, not another sync. The regression
+manifest has 46 cases; current measurements are in the emulator acceptance document.
+Assistant previous now uses explicit guarded predecessor selection at every elapsed
+position. First row is a no-op; native Controller previous semantics are unchanged.
+This supersedes the restart behavior described in historical increments below.
+
 
 ## Goal and first deliverable
 

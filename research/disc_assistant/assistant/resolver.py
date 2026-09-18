@@ -2,12 +2,13 @@
 from research.disc_assistant.assistant.intents import Intent, names, normalized
 from research.disc_assistant.assistant.matching import similarity, exact_name
 from research.disc_assistant.library.transliteration import fold
+from research.disc_assistant.library.artists import artist_names
 
 
 def infer(intent, documents, aliases):
     if intent.kind != 'auto' or intent.artist is not None:
         return intent
-    artists = sorted({d['artist'] for d in documents})
+    artists = sorted({name for d in documents for name in artist_names(d['artist'])})
     q = normalized(intent.query)
     entries = [(alias, artist) for artist in artists for alias in names(artist, aliases.get('artists', {}))]
     if any(q == alias for alias, _ in entries):
@@ -53,7 +54,7 @@ def infer(intent, documents, aliases):
             if fold(q[:end]) != prefix or q[end].isspace():
                 continue
             suffix = q[end:]
-            if len(suffix) >= 3 and any(d['artist'] == artist and exact_name(
+            if len(suffix) >= 3 and any(artist in artist_names(d['artist']) and exact_name(
                     suffix, d['title'], aliases.get('titles', {}).get(d['title'], [])) for d in documents):
                 fused.add((artist, suffix))
     if len(fused) == 1:

@@ -320,6 +320,13 @@ class DiscSession:
     def previous_track(self):
         return self.control('previous')
 
+    def previous_in_queue(self):
+        """Select the preceding queue row; never use the native restart shortcut."""
+        from controller.fiio_http import HTTPClient
+        from controller.queue import previous_in_queue
+        return self._perform('previous', lambda client: previous_in_queue(self.config, client,
+            HTTPClient(self.config.host, self.config.http_port, self.config.timeout)))
+
     def set_play_mode(self, mode):
         from controller.controls import set_mode
         from controller.models import PlayMode

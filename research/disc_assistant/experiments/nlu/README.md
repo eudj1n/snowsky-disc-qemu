@@ -71,7 +71,8 @@ Parsed/resolved intentions are retained to separate this from missing candidates
 
 Vectors encode `artist — title — album`. Lexical queries use projected spellings;
 semantic queries preserve the resolved original spelling. The experiment compares
-raw top-1/recall@10 and the final result after shared lexical-v3 constraints,
+raw top-1/recall@10 and the final result after shared lexical-v4 constraints
+(historical committed measurements used lexical-v3 and remain unchanged),
 including exact-match fast paths, artist scope and edition checks. It does not
 replace the final ranker with a vector score or add an artist-vector classifier.
 Final preview retrieval can request up to 50 candidates; raw recall@10 is a separate

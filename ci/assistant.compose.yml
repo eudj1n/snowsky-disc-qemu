@@ -1,0 +1,32 @@
+# Used only by ci/assistant.sh, with ci/compose.yml (no host ports).
+services:
+  typesense:
+    image: typesense/typesense:30.2
+    environment:
+      TYPESENSE_API_KEY: ${ASSISTANT_TEST_KEY:?isolated test key required}
+      TYPESENSE_DATA_DIR: /data
+    volumes:
+      - assistant-search:/data
+    cap_drop: [ALL]
+    security_opt: ["no-new-privileges:true"]
+  assistant:
+    image: disc-assistant-acceptance:local
+    build:
+      context: .
+      dockerfile: ci/assistant.Dockerfile
+    environment:
+      CI_DISPOSABLE: "1"
+      FW_VERSION: ${FW_VERSION}
+      ASSISTANT_TEST_KEY: ${ASSISTANT_TEST_KEY}
+      ASSISTANT_SOURCE_REVISION: ${ASSISTANT_SOURCE_REVISION}
+    volumes:
+      - ./:/repo:ro
+      - work:/guest:ro
+      - ${ASSISTANT_REPORT_DIR}:/reports
+    read_only: true
+    tmpfs: [/tmp]
+    cap_drop: [ALL]
+    security_opt: ["no-new-privileges:true"]
+    command: ["python", "-m", "tests.integration.assistant_check"]
+volumes:
+  assistant-search:

@@ -4,10 +4,25 @@ Prepared **2026-09-18**. The owner confirmed physical `my-player`, text RU/EN
 first, supplied six artist/title targets and natural Russian command variants,
 and authorized binding from the synchronized library. The concrete private packet
 is now frozen: **30 RU / 21 EN cases**, with complete expected typed intentions
-and device-outcome predicates. **No physical run has started.** The initial generic
+and device-outcome predicates. **The physical run is in progress.** The initial generic
 matrix below remains a template; use the bound private packet for this run.
 This supports [MVP issue #21](https://github.com/eudj1n/snowsky-disc-qemu/issues/21)
 and the [baseline-first acceptance policy](ASSISTANT_MVP.md).
+
+Current checkpoint: RU cases 01–19 have evidence recorded privately. Fourteen
+meet their functional expectations; two requests were missed, one confirmation
+was uncertain, and one previous-track request retained the current recording.
+The remaining case has disputed rejection-only gold: the owner correctly noted
+that its apparent nonmusic target could be a song title. Preserve the original
+attempt and review annotation; do not report it as an established Assistant defect.
+RU extensions, the final RU locale switch and the EN block remain pending.
+Raw interpretation/journal auditing and threshold agreement are also pending.
+The next operator case is RU-21; RU-20 changes locale and remains last in its block.
+
+The owner proposed [emulator scenario automation](ASSISTANT_EMULATOR_ACCEPTANCE.md)
+to reduce manual work. The opt-in end-to-end Assistant runner is now implemented.
+Emulator observations are a separate cohort, not replacement
+evidence for this frozen physical baseline.
 
 ## Owner input needed
 

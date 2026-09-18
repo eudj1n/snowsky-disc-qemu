@@ -5,9 +5,10 @@ from uuid import uuid4
 
 from research.disc_assistant.library.store import StaleSnapshot
 from research.disc_assistant.library.transliteration import projected_aliases, fingerprint
+from research.disc_assistant.library.artists import artist_names, split_artists
 
-SCHEMA_VERSION = 2
-FIELDS = ['title', 'artist', 'album', 'title_aliases', 'artist_aliases', 'album_aliases']
+SCHEMA_VERSION = 3
+FIELDS = ['title', 'artist', 'album', 'title_aliases', 'artist_aliases', 'album_aliases', 'artists']
 
 
 def signature(aliases, server):
@@ -39,14 +40,16 @@ class Search:
         documents = store.documents(generation)
         for doc in documents:
             doc['album_aliases'] = projected_aliases(doc['album'], [])
-            doc['artist_aliases'] = projected_aliases(doc['artist'], self.aliases.get('artists', {}).get(doc['artist'], []))
+            doc['artist_aliases'] = list(dict.fromkeys(alias
+                for name in artist_names(doc['artist'])
+                for alias in projected_aliases(name, self.aliases.get('artists', {}).get(name, []))))
             doc['title_aliases'] = projected_aliases(doc['title'], self.aliases.get('titles', {}).get(doc['title'], []))
         # Random per attempt: no in-place updates and no exposed partial collections.
         name = 'disc_prototype_' + uuid4().hex
         collection = self.client.collections[name]
         try:
             await self.client.collections.create({'name': name, 'fields': [
-                {'name': field, 'type': 'string[]' if field.endswith('_aliases') else 'string'}
+                {'name': field, 'type': 'string[]' if field.endswith('_aliases') or field == 'artists' else 'string'}
                 for field in FIELDS] + [{'name': 'generation', 'type': 'string', 'index': False}]})
             for start in range(0, len(documents), 200):
                 batch = documents[start:start + 200]
@@ -76,7 +79,7 @@ class Search:
         fields = list(fields) if fields is not None else FIELDS
         if not fields or any(field not in FIELDS for field in fields):
             raise ValueError('unsupported search fields')
-        weights = dict(zip(FIELDS, (6, 5, 2, 4, 3, 1)))
+        weights = dict(zip(FIELDS, (6, 5, 2, 4, 3, 1, 5)))
         head = store.verify_index(device, self.signature)
         reply = await self.client.collections[head['collection']].documents.search({
             'q': query.strip(), 'query_by': ','.join(fields), 'query_by_weights': ','.join(str(weights[f]) for f in fields),
@@ -94,11 +97,13 @@ class Search:
             document = hit['document']
             row = store.db.execute('SELECT * FROM tracks WHERE id=? AND generation=?',
                                    (document.get('id'), head['generation'])).fetchone()
-            if row is None or any(document.get(k) != row[k] for k in ('generation', 'title', 'artist', 'album')):
+            if (row is None or any(document.get(k) != row[k] for k in ('generation', 'title', 'artist', 'album'))
+                    or document.get('artists') != split_artists(row['artist'])):
                 raise StaleSnapshot('search result disagrees with SQLite; rebuild the index')
             evidence = [{'field': h['field'], 'matched_tokens': h.get('matched_tokens', [])}
                         for h in hit.get('highlights', []) if h.get('field') in FIELDS]
             hits.append({'id': row['id'], 'title': row['title'], 'artist': row['artist'],
+                         'artists': split_artists(row['artist']),
                          'album': row['album'], 'source': json.loads(row['source']),
                          'match': evidence, 'text_match': str(hit.get('text_match', ''))})
         return {'device': device, 'generation': head['generation'], 'observed_at': head['observed_at'],

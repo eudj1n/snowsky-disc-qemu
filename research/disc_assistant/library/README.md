@@ -47,6 +47,29 @@ edition is not silently replaced with a studio recording.
 Search spelling projection lives in `transliteration.toml` and `transliteration.py`.
 The current table folds Cyrillic to Latin for matching; it does not assert phonetic
 or ISO transliteration equivalence. Exact source metadata is unchanged. The table
-fingerprint participates in schema-v2 index signatures. After changing it, restart
+fingerprint participates in versioned index signatures. After changing it, restart
 the process and rebuild the index; add paired spelling/collision tests before
 extending the table. This Library utility has no dependency on command locales.
+
+## Multiple artist credits
+
+`artists.py` derives an ordered `artists` array from an explicit semicolon-delimited
+source tag: `Eminem;Dido` becomes `["Eminem", "Dido"]`. Members are trimmed; blank
+members and case-insensitive Unicode-equivalent duplicates are omitted. Commas,
+slashes, ampersands and `feat.` are not separators: they may be part of an artist's
+name. Changing separator policy requires evidence and regression coverage.
+
+The literal `artist` and source row remain unchanged in SQLite. `Store.documents`
+projects the array from existing snapshots, so no database migration or device
+rescan is needed. Typesense schema 3 indexes both the full credit and the members;
+each member also contributes configured aliases and spelling projections. Restart
+the Assistant and run `/index` (or `run.sh index`) after upgrading. Old index
+signatures are rejected until rebuilt.
+
+Ranking policy `lexical-v4` matches a track by any credited member, including a
+member followed by a title without a separator. Literal members outrank alias
+collisions. The selected candidate retains the full original credit: fresh device
+catalog checks and playback use the stock artist selector, never a fabricated
+member-only selector. This does not create an aggregate queue of every solo and
+collaborative recording by a person. Artist-only commands select one matching
+native artist group under the existing deterministic ranking policy.
