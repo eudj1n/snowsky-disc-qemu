@@ -205,3 +205,13 @@ locale cases to `experiments/nlu/slot_acceptance.json` and compare each source.
 Adding templates here extends diagnostics, not the live rule vocabulary. Missing
 optional files leave ordinary literal commands working, with slots unavailable
 and no locale-specific compound guard. New grammars need review before deployment.
+
+## Literal grammar and the shared guard
+
+Live play prefixes and controls come from the ordinary locale dictionary. The
+single-action guard includes those action phrases automatically, in addition to
+the optional diagnostic understanding grammar. Check new synonyms through
+`interpret_request`, not only the low-level parser: a valid music reference must
+survive the same guard used by the console. Semicolons inside music credits are
+allowed; a following command verb still identifies a sequence. Balanced outer
+quotes protect literal titles, including conjunctions and command words.

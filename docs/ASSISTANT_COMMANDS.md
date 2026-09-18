@@ -154,6 +154,17 @@ highlighted in this first theme; each result uses its status color.
 
 ## Music requests
 
+Russian play prefixes: `включи`, `играй`, `запусти`. `хватит` means stop;
+`назад` selects the preceding queue row, and `вперед` / `вперёд` mean next.
+These are literal locale entries, not fuzzy control classification.
+
+Semicolon-delimited credits remain intact: `Play Eminem;Dido — Stan`.
+Quote a whole command-like title: `Play track "Pause and Resume"` or
+`Играй трек «Стоп; затем продолжи»`. Outer quotes are removed, internal names
+and punctuation are preserved. Unquoted action sequences still fail the shared
+single-action gate. Ambiguous words are not globally removed from song names.
+
+
 | English / Russian example | Meaning |
 | --- | --- |
 | `Play Linkin Park` / `Включи Linkin Park` | Whole artist when its name or alias matches |

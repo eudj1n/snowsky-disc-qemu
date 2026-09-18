@@ -1,5 +1,5 @@
 {
-  "version": 4,
+  "version": 5,
   "cohort": "emulator-regression",
   "tracks": [
     {
@@ -867,6 +867,146 @@
         "mutation": "none",
         "status": [
           "already_satisfied"
+        ]
+      }
+    },
+    {
+      "id": "en-credit",
+      "locale": "en",
+      "command": "Play Test Atlas;Test Guest — Shared Signal",
+      "setup": {
+        "track": "beta",
+        "state": "playing",
+        "progress_seconds": 3
+      },
+      "expected": {
+        "effect": "track",
+        "mutation": "required",
+        "status": [
+          "playing"
+        ],
+        "target": "duet"
+      }
+    },
+    {
+      "id": "ru-credit",
+      "locale": "ru",
+      "command": "Включи Test Atlas;Test Guest — Shared Signal",
+      "setup": {
+        "track": "beta",
+        "state": "playing",
+        "progress_seconds": 3
+      },
+      "expected": {
+        "effect": "track",
+        "mutation": "required",
+        "status": [
+          "playing"
+        ],
+        "target": "duet"
+      }
+    },
+    {
+      "id": "ru-igrai",
+      "locale": "ru",
+      "command": "Играй Test Atlas — Signal Gamma",
+      "setup": {
+        "track": "beta",
+        "state": "playing",
+        "progress_seconds": 3
+      },
+      "expected": {
+        "effect": "track",
+        "mutation": "required",
+        "status": [
+          "playing"
+        ],
+        "target": "gamma"
+      }
+    },
+    {
+      "id": "ru-zapusti",
+      "locale": "ru",
+      "command": "Запусти Test Atlas — Signal Alpha",
+      "setup": {
+        "track": "beta",
+        "state": "playing",
+        "progress_seconds": 3
+      },
+      "expected": {
+        "effect": "track",
+        "mutation": "required",
+        "status": [
+          "playing"
+        ],
+        "target": "alpha"
+      }
+    },
+    {
+      "id": "ru-hvatit",
+      "locale": "ru",
+      "command": "Хватит",
+      "setup": {
+        "track": "beta",
+        "state": "playing",
+        "progress_seconds": 3
+      },
+      "expected": {
+        "effect": "paused",
+        "mutation": "required",
+        "status": [
+          "confirmed"
+        ]
+      }
+    },
+    {
+      "id": "ru-vpered",
+      "locale": "ru",
+      "command": "Вперёд",
+      "setup": {
+        "track": "beta",
+        "state": "playing",
+        "progress_seconds": 3
+      },
+      "expected": {
+        "effect": "next",
+        "mutation": "required",
+        "status": [
+          "confirmed"
+        ]
+      }
+    },
+    {
+      "id": "ru-nazad",
+      "locale": "ru",
+      "command": "Назад",
+      "setup": {
+        "track": "beta",
+        "state": "playing",
+        "progress_seconds": 3
+      },
+      "expected": {
+        "effect": "previous",
+        "mutation": "required",
+        "status": [
+          "confirmed"
+        ]
+      }
+    },
+    {
+      "id": "ru-semicolon-sequence",
+      "locale": "ru",
+      "command": "Играй Test Atlas; затем хватит",
+      "setup": {
+        "track": "beta",
+        "state": "playing",
+        "progress_seconds": 3
+      },
+      "expected": {
+        "effect": "unchanged",
+        "mutation": "none",
+        "status": [
+          "error"
         ]
       }
     }

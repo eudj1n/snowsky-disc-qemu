@@ -31,7 +31,7 @@ class UnsupportedCommand(ValueError):
 
 
 class RuleInterpreter:
-    info = ProviderInfo('rules', 'literal-v2', 'local')
+    info = ProviderInfo('rules', 'literal-v3', 'local')
 
     async def interpret(self, text, context):
         rules = load_languages((context.locale,))

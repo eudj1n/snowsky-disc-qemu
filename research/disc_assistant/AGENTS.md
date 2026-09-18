@@ -80,7 +80,8 @@ Disagreement is not error. Provider unavailability is not a semantic vote. Repor
 separate locale, text/speech, STT fingerprint and source revision. Gold metrics
 require explicit reviewed labels; never treat command outcomes or predictions as gold.
 
-Owner-supplied synonyms are baseline cases, not yet dictionary changes. The
+The owner-supplied RU synonyms are now live dictionary entries (review stage 2).
+Original physical attempts remain frozen. The
 requested default-track policy and explicit album target are recorded gaps. Current
 `auto` semantics remain; no album intent or physical album-command acceptance is
 claimed. Measure this candidate before tuning these cases.

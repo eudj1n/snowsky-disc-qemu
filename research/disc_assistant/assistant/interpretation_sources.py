@@ -74,7 +74,7 @@ def validate(value, provider, text):
 
 
 class LiteralSource:
-    name, version = 'literal', 'literal-v2'
+    name, version = 'literal', 'literal-v3'
 
     async def evaluate(self, text, context):
         rules = load_languages((context.locale,))
@@ -87,7 +87,7 @@ class LiteralSource:
 
 
 class SlotSource:
-    name, version = 'slots', 'single-action-v1'
+    name, version = 'slots', 'single-action-v2'
 
     async def evaluate(self, text, context):
         result = extract(text, context.locale)

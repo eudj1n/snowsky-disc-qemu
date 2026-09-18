@@ -57,6 +57,18 @@ def parse(text, rules=None):
     explicit = rules.prefix('targets', query)
     if explicit:
         kind, query = explicit
+    return music_intent(query, kind)
+
+
+def music_intent(query, kind='auto'):
+    # Quotes delimit a literal music reference, including dashes/conjunctions.
+    # Only balanced outer quotes are removed; punctuation inside names survives.
+    quotes = {'"': '"', '«': '»', '“': '”'}
+    if len(query) >= 2 and query[0] in quotes and query[-1] == quotes[query[0]]:
+        value = query[1:-1].strip()
+        if not value:
+            raise ValueError('empty music reference')
+        return Intent(value, kind)
     parts = re.split(r'\s+[—–-]\s+', query, maxsplit=1) if kind != 'artist' else [query]
     if len(parts) == 2:
         return Intent(query, 'track', parts[0].strip(), parts[1].strip())

@@ -6,7 +6,7 @@ import tomllib
 
 from research.disc_assistant.assistant.command_catalog import digest
 from research.disc_assistant.assistant.languages import load_languages, normalized, literal_pattern
-from research.disc_assistant.assistant.intents import Intent, ControlIntent, LanguageIntent, language_target
+from research.disc_assistant.assistant.intents import Intent, ControlIntent, LanguageIntent, language_target, music_intent
 from research.disc_assistant.assistant.explain import template_value
 
 DIRECTORY = Path(__file__).parent / 'locales/understanding'
@@ -73,17 +73,28 @@ def single_action(text, locale, rules=None):
                 start = match[1]['start']
                 masked = ' ' * start + masked[start:]
                 break
+    # Live locale dictionaries also contribute prefixes and action words. Adding
+    # a synonym must not create a hole in the shared single-action gate.
+    literal = load_languages((locale,))
+    music = literal.prefix('commands', text.strip())
+    if music and music[0] == 'play':
+        start = text.rfind(music[1])
+        masked = ' ' * start + masked[start:]
+    actions = set(context['actions']) | {p for p, _ in literal.commands}
+    modifiers = '|'.join(literal_pattern(p) for p in context['action_modifiers'])
+    action = r'(?:(?:' + modifiers + r')\s+){0,2}(?:' + '|'.join(literal_pattern(p) for p in sorted(actions, key=len, reverse=True)) + r')(?!\w)'
     reason = None
     if unclosed:
         reason = 'unclosed_quoted_reference'
-    elif ';' in masked:
+    elif ';' in masked and not music:
+        reason = 'multiple_actions'
+    elif re.search(r';\s*(?:(?:' + '|'.join(literal_pattern(p) for p in context['connectors'])
+                   + r')\s+)?' + action, masked, re.IGNORECASE):
         reason = 'multiple_actions'
     else:
         for conjunction in [*context['connectors'], ',']:
-            modifiers = '|'.join(literal_pattern(p) for p in context['action_modifiers'])
             pattern = ((r'(?<!\w)' if conjunction != ',' else '') + literal_pattern(conjunction)
-                       + r'\s+(?:(?:' + modifiers + r')\s+){0,2}(?:'
-                       + '|'.join(literal_pattern(p) for p in context['actions']) + r')(?!\w)')
+                       + r'\s+' + action)
             if re.search(pattern, masked, re.IGNORECASE):
                 reason = 'multiple_actions'
                 break
@@ -147,8 +158,7 @@ def extract(text, locale):
             return {**base, 'status': 'incomplete', 'label': 'play', 'reason': 'missing_music_reference'}
         start = text.find(value, span['start'])
         span = {'name': 'query', 'start': start, 'end': start+len(value), 'text': value}
-        parts = re.split(r'\s+[—–-]\s+', value, maxsplit=1) if kind != 'artist' else [value]
-        intent = Intent(value, 'track', *parts) if len(parts) == 2 else Intent(value, kind)
+        intent = Intent(value, kind) if quoted else music_intent(value, kind)
         return {**base, 'status': 'recognized', 'label': 'play', 'intent': asdict(intent), 'spans': [span], 'reason': 'music_slot'}
     if phrase_matches(text, context['negation']):
         return {**base, 'reason': 'negated_command'}
