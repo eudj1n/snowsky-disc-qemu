@@ -13,10 +13,10 @@ See the [prototype guide](../README.md) for setup, commands and acceptance, and 
 | `intents.py`, `ranking.py` | Bilingual play grammar and explained best-match ranking |
 | `languages.py`, `locales/*.toml` | Validated language dictionaries; merged literal command/target/version phrases |
 | `playback.py` | Serialized, fresh Controller selection and playback-state verification |
-| `device.py`, `controls.py` | Shared sequential connection/lock; state-aware pause/resume/stop/next/previous |
-| `queue.py` | Paginated native queue observation; optional verified repeat-list preparation |
+| `device.py`, `controls.py` | Application ownership and intent adapters over Controller controls; Assistant Stop policy |
+| `queue.py` | Controller queue adapter; Assistant continuous-context opt-in |
 | `session.py` | Catalog synchronization using a borrowed persistent session or a one-shot connection |
-| `live.py` | Single TCP receiver, event/state routing, session ownership, pacing and observation-only reconnect |
+| `live.py` | Thin config/ownership adapter over `controller.session.DiscSession` |
 | `console.py` | Foreground application, startup sync/index and interactive text/maintenance commands |
 | `requirements.txt` | Python runtime pins: official Typesense async SDK and aiohttp |
 | `compose.yaml`, `.env.example` | Independent local Typesense service |
@@ -78,3 +78,9 @@ for later sessions; `reset` removes it and restores TOML defaults. The dictionar
 file and enable its code to extend forms for existing semantics. Unknown keys or
 conflicting meanings fail configuration validation. Music-name aliases remain
 separate. See the [dictionary format](../../../docs/ASSISTANT_COMMANDS.md#language-dictionaries).
+
+The reusable device core is now in [Controller](../../../docs/CONTROLLER_API.md):
+receiver/reconnect, scan/state reduction, pagination, controls, mode readback and
+queue/selection verification. Assistant supplies storage ownership and policy;
+Controller imports no research/application modules. Legacy internal re-exports
+keep the research CLI/test entry points compatible during promotion.

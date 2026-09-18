@@ -3,7 +3,9 @@
 Desktop prototype: **device catalog → SQLite → Typesense → ranked text commands → playback**.
 The experiment lives entirely here until it is ready for promotion into the main
 project. The [plan](../../docs/ASSISTANT.md) describes the wider assistant/dock work.
-It runs independently of the emulator and only imports its public controller package.
+It runs independently of the emulator and uses the shared
+[Controller session/state API](../../docs/CONTROLLER_API.md) and guarded device helpers.
+Language, catalog/search policy and the request journal remain in this prototype.
 
 - [assistant/](assistant/README.md): configuration, one-shot CLI and a persistent interactive session.
 - [library/](library/README.md): complete catalog reads, snapshot storage and search.

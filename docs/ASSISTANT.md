@@ -357,31 +357,29 @@ preserve mode. Arbitrary queue plans and their cancellation remain future work.
 These rules follow [DISC capabilities](DISC_CAPABILITIES.md),
 [remote control](REMOTE_CONTROL.md) and [track completion](TRACK_END.md).
 
-## Shared Controller API follow-up
+## Shared Controller API
 
-The synthetic TCP handler in `research/disc_assistant/check.py` deliberately uses
-raw tags to model a device. Keep independent wire fixtures so tests can detect
-encoding/decoding mistakes. Application code should not need those tags.
+Implemented after the request journal on 2026-09-18. The common
+[Controller API](CONTROLLER_API.md) now owns the persistent receiver/session,
+partial-state reduction, scan guards, bounded HTTP pagination, state-aware controls,
+mode readback, final selection verification and native queue observations.
+`DiscSession` exposes immutable normalized snapshots/results and named operations
+for a software remote without raw-tag handling. Controller imports no research,
+Assistant, emulator or firmware modules.
 
-Controller already exposes operations such as `settings`, `now_playing`,
-`play_artist` and `play_queue_index`. The persistent receiver/state reducer and
-state-aware controls currently prototyped in Assistant are candidates for a shared
-Controller session API, usable by both Assistant and a software remote:
+Assistant uses thin configuration/ownership adapters and shared Controller
+operations. It retains language parsing, catalog snapshot reconciliation, search,
+ranking, automatic-match policy, Stop-as-pause semantics, continuous-context
+opt-in and the request journal. One-shot CLI and existing journal/output contracts
+remain supported. A Controller session contains no personal storage path or search
+configuration; the application supplies ownership locking.
 
-- Controller: framing/transports, capabilities, one connection/reader, serialized
-  requests, typed playback/connection observations, pacing, reconnect without
-  mutation replay, guarded device operations and explicit uncertain outcomes.
-- Assistant: language preferences, intent parsing, search/ranking, automatic match
-  policy, command history and recommendations. Assistant `Stop` is currently a
-  pause-preserving-queue policy, not evidence of a native absolute stop command.
-- A future application backend owns one Controller session and shares it across
-  Assistant/remote adapters. A reusable class alone does not permit two independent
-  processes to compete for the stock single-client TCP endpoint; cross-process
-  sharing requires a separate IPC/backend boundary.
-
-Extract and validate that reusable core without importing research, library or
-Assistant code from Controller. Retain the existing diagnostic API during migration.
-The preference/language increment does not perform this Controller refactor.
+The synthetic TCP test peer deliberately retains raw tags as independent protocol
+fixtures. A future backend shares one session across Assistant/remote adapters;
+separate processes still cannot compete for the stock single-client connection.
+No HTTP/IPC service or full web remote is added by this extraction. Existing
+diagnostic TCP/WS/HTTP APIs remain unchanged; the persistent facade is currently
+TCP-only with an explicitly bounded playback surface.
 
 ## History, preferences and external enrichment
 
@@ -599,8 +597,8 @@ Implemented next at the owner's request, before shared Controller API extraction
 See the [journal contract](ASSISTANT_HISTORY.md). This does not implement listening
 interval reconciliation, favorites-derived preferences or personalized ranking.
 
-Next: define the common Controller API and its boundaries, then extract shared
-session/state behavior for Assistant and a software remote. Keep Assistant policy,
-languages and request storage out of Controller. Physical acceptance, measured
-ranking, microphone input, recommendations and repository promotion remain
+The subsequent shared Controller extraction is now implemented; see
+[the API boundary](CONTROLLER_API.md). Next: physical session/playback acceptance
+and representative ranking evaluation, followed by microphone input or a remote
+adapter over this shared session. Recommendations and repository promotion remain
 separate subsequent work.

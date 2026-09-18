@@ -126,9 +126,9 @@ observed listening and favorites must remain distinct signals. A pause alone doe
 not establish dislike. Recommendation features and listening aggregates are later
 work; this increment provides their request-side evidence.
 
-Next, define and extract the shared Controller session/state API for Assistant
-and a software remote. Keep language preferences, command journals, ranking and
-recommendation policy in Assistant. See the [API boundary plan](ASSISTANT.md#shared-controller-api-follow-up).
+The subsequent [shared Controller API](CONTROLLER_API.md) extraction is now
+implemented. Language preferences, command journals, ranking and recommendation
+policy remain in Assistant; device session/state behavior is reusable independently.
 
 Validation covers schema migration, malformed commands, source attribution,
 ranking/selection provenance, duplicate entries, bounded candidates, missing search,

@@ -11,7 +11,7 @@ This is one repository and one shared Docker toolchain, with no new service.
 | --- | --- | --- |
 | `emulator/scripts/`, `emulator/shims/`, `emulator/runtime/` | Guest setup, boot/stop, SD/network stubs, physical input, framebuffer and PCM | Shared `firmware.profile`; native tools from `docker/` |
 | `viewer/server.py`, `viewer/static/` | HTTP/SSE presentation, browser input/audio, shared device CSS | Emulator runtime adapter; no controller transport |
-| `controller/` | Physical-device TCP/HTTP/WS clients, discovery, optional bridges and network diagnostics | Python standard library; `aiohttp` for WS client/bridge; no emulator, firmware or research imports |
+| `controller/` | Physical-device TCP/HTTP/WS clients, shared session/state/control API, discovery, optional bridges and network diagnostics | Python standard library; `aiohttp` for WS client/bridge; no emulator, firmware or research imports |
 | `firmware/profile.py`, `firmware/v*.json`, `firmware/tools/` | Reviewed profiles/fingerprints, acquisition, extraction, OTA and inventory tools | Native extraction tools where needed |
 | `research/ghidra/`, `research/diagnostics/` | Ghidra, ELF tables, GDB and process-memory inspection | Firmware profiles; emulator process helpers for live memory probes |
 | `research/browser/` | Experimental TinyEMU/WASM runtime, local bundle builder and browser UI | Reviewed firmware preparation/shims; pinned public TinyEMU, Linux and QEMU inputs; separate build image |
@@ -23,6 +23,10 @@ This is one repository and one shared Docker toolchain, with no new service.
 profiles. `docker/` describes the shared development/test environment. Neither is
 just build output. The public entry points `run.sh` and `compose.yaml` remain at
 the root.
+
+The [shared Controller API](CONTROLLER_API.md) owns persistent device state and
+verified playback operations. Assistant owns its language/search/history policy;
+the Controller does not import research or select application storage paths.
 
 The viewer's adapter creates a `Device`, `Buttons`, `Peripherals`, `Touch` and
 `Framebuffer` for one rootfs. Emulator runtime owns event bytes, coordinate

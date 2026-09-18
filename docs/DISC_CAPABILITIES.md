@@ -1,8 +1,9 @@
 # DISC local protocol: controller capability summary
 
 Research checkpoint: 2026-09-16, active firmware **V2.57**, physical-app evidence
-from **FiiO Control 4.6.0 on iPhone**. This is the implementation contract for a
-future locally hosted backend/frontend. The emulator viewer, diagnostic clients
+from **FiiO Control 4.6.0 on iPhone**. This is the protocol implementation contract for a
+locally hosted backend/frontend. The [shared Controller session API](CONTROLLER_API.md)
+now provides persistent state and a bounded playback facade for application adapters. The emulator viewer, diagnostic clients
 and WebSocket adapter exist; a complete multi-browser web remote is subsequent
 product work. M21/FiiO Music is a different implementation, not a DISC profile.
 

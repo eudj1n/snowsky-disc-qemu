@@ -7,6 +7,7 @@ import unittest
 from unittest.mock import Mock, patch
 
 from controller.fiio_link import frame
+from controller import controls as device_controls
 from research.disc_assistant.assistant import controls
 from research.disc_assistant.assistant.__main__ import main
 from research.disc_assistant.assistant.config import Config
@@ -99,9 +100,9 @@ class ControlsTests(unittest.TestCase):
 
     def test_restart_requires_progress_evidence(self):
         before = self.client.snapshot
-        with patch.object(controls, 'observe', return_value=(before, 1000)):
+        with patch.object(device_controls, 'observe', return_value=(before, 1000)):
             self.assertEqual(controls.verify(self.client, before, 12000, 'previous', 1)[1], 'restarted')
-        with patch.object(controls, 'observe', return_value=(before, None)), \
+        with patch.object(device_controls, 'observe', return_value=(before, None)), \
                 patch.object(controls.time, 'monotonic', side_effect=[0, 0, 0, 2]), \
                 patch.object(controls.time, 'sleep'):
             self.assertEqual(controls.verify(self.client, before, None, 'previous', 1), (None, None))
@@ -115,7 +116,7 @@ class ControlsTests(unittest.TestCase):
     def test_external_track_change_does_not_confirm_toggle(self):
         before = self.client.snapshot
         after = dict(before, state=1, song={**before['song'], 'song_name': 'Other'})
-        with patch.object(controls, 'observe', return_value=(after, None)), \
+        with patch.object(device_controls, 'observe', return_value=(after, None)), \
                 patch.object(controls.time, 'monotonic', side_effect=[0, 0, 0, 2]), \
                 patch.object(controls.time, 'sleep'):
             self.assertEqual(controls.verify(self.client, before, None, 'pause', 1), (None, None))

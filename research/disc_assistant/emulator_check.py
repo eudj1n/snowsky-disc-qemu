@@ -95,11 +95,10 @@ def persistent(config, store, ranking, short_ranking):
             assert refreshed['generation'] == ranking['generation']
             result = execute(replace(config, continuous_context=True), store, ranking, shared=client)
             assert result['status'] == 'playing', result
-        for action, expected in [('pause', 'confirmed'), ('pause', 'already_satisfied'), ('resume', 'confirmed')]:
-            with session.operation() as client:
-                result = control(config, ControlIntent(action), shared=client)
-                assert result['status'] == expected, result
-            assert session.client is initial
+        from tests.integration.session_check import check_session
+        selected = ranking['candidates'][0]
+        check_session(session, artist=selected['artist'], album=selected['album'], index=result['fresh_position'])
+        assert session.client is initial
         with session.operation() as client:
             result = execute(replace(config, continuous_context=True), store, short_ranking, shared=client)
             assert result['status'] == 'playing', result
