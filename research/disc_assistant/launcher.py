@@ -110,7 +110,8 @@ def wait_ready(config, timeout=45):
 def main(argv=None):
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--config', default=os.environ.get('DISC_ASSISTANT_CONFIG', '~/disc-assistant.toml'))
-    parser.add_argument('command', choices=('setup', 'up', 'down', 'start', 'listen', 'language', 'sync', 'status', 'queue', 'index', 'search', 'rank', 'ask', 'test', 'check'))
+    parser.add_argument('--source', choices=('cli', 'scheduled'))
+    parser.add_argument('command', choices=('setup', 'up', 'down', 'start', 'listen', 'language', 'history', 'sync', 'status', 'queue', 'index', 'search', 'rank', 'ask', 'test', 'check'))
     parser.add_argument('arguments', nargs=argparse.REMAINDER)
     args = parser.parse_args(argv)
     config_path = Path(args.config).expanduser()
@@ -118,7 +119,7 @@ def main(argv=None):
         config_path = Path(os.environ.get('DISC_ASSISTANT_CALLER_DIR', os.getcwd())) / config_path
     config_path = config_path.resolve()
     try:
-        if args.command not in ('search', 'rank', 'ask', 'language') and args.arguments:
+        if args.command not in ('search', 'rank', 'ask', 'language', 'history') and args.arguments:
             raise ValueError('unexpected arguments; see run.sh help')
         if args.command == 'setup':
             subprocess.run([sys.executable, '-m', 'pip', 'install', '-r',
@@ -143,8 +144,21 @@ def main(argv=None):
             from research.disc_assistant.assistant.languages import load_languages
             from research.disc_assistant.assistant.preferences import effective_config
             config = effective_config(config)
-            needs_search = not isinstance(parse(args.arguments[0], load_languages(config.languages)), ControlIntent)
-        env = environment(config) if needs_search else dict(os.environ)
+            try:
+                needs_search = not isinstance(parse(args.arguments[0], load_languages(config.languages)), ControlIntent)
+            except ValueError:
+                # Let the application journal rejected natural-language input.
+                needs_search = False
+        env = dict(os.environ)
+        if needs_search:
+            try:
+                env = environment(config)
+            except (OSError, ValueError):
+                if args.command == 'up':
+                    raise
+                # Forward to the application so search-configuration failures are
+                # journaled too. Never fall back to a possibly stale exported key.
+                env.pop(config.api_key_env, None)
         if args.command in ('start', 'listen'):
             try:
                 env = environment(config)
@@ -162,7 +176,8 @@ def main(argv=None):
             wait_ready(config)
             return 0
         return subprocess.run([sys.executable, '-m', 'research.disc_assistant.assistant',
-                               '--config', str(config_path), args.command, *args.arguments],
+                               '--config', str(config_path),
+                               *(['--source', args.source] if args.source else []), args.command, *args.arguments],
                               cwd=ROOT, env=env).returncode
     except KeyboardInterrupt:
         return 130

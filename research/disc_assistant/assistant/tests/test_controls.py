@@ -135,7 +135,7 @@ class ControlsTests(unittest.TestCase):
                 socket.sendall(frame(tag, payload))
             self.assertEqual(raw.sendall.call_count, 1)
 
-    def test_cli_controls_and_dry_run_need_no_search_or_database(self):
+    def test_cli_controls_and_dry_run_need_no_search_or_catalog_database(self):
         path = self.directory / 'config.toml'
         path.write_text(f'[device]\nkey="test"\nhost="localhost"\n[storage]\ndata_dir="{self.config.data_dir}"')
         with patch('research.disc_assistant.assistant.__main__.Store') as store, \
@@ -149,4 +149,6 @@ class ControlsTests(unittest.TestCase):
             control.assert_called_once()
             store.assert_not_called()
             search.assert_not_called()
-        self.assertFalse(self.config.data_dir.exists())
+        self.assertFalse((self.config.data_dir / 'library.sqlite3').exists())
+        from research.disc_assistant.assistant.journal import history_command
+        self.assertEqual([r['status'] for r in history_command(self.config)['requests']], ['confirmed', 'planned'])

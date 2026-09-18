@@ -35,6 +35,12 @@ timeout = 8
 # False preserves the player's existing mode. Controls never change it.
 continuous_context = false
 
+[journal]
+# Local text/decision evidence in assistant.sqlite3; never a playback replay queue.
+enabled = true
+retention_days = 90
+max_requests = 10000 # Completed requests; recent in-flight requests are retained separately.
+
 # Optional explicit search aliases; these do not rewrite device metadata.
 [aliases.artists]
 "Linkin Park" = ["линкин парк"]

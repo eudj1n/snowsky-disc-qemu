@@ -12,6 +12,7 @@ activation is unnecessary. `ask` starts the best match without a choice dialogue
 | --- | --- | --- |
 | `./research/disc_assistant/run.sh setup` | Prepare the environment, config and private search key; preserve existing settings | None |
 | `./research/disc_assistant/run.sh start` | Start Typesense, connect, sync/index, then open the persistent text console | Read only until a playback command is entered |
+| `./research/disc_assistant/run.sh history [ARGS]` | Inspect, export, prune or clear the local request journal | None; offline |
 | `./research/disc_assistant/run.sh language [CODES\|reset]` | Show/set saved command dictionaries, or reset to TOML defaults | None; offline |
 | `./research/disc_assistant/run.sh listen` | Open the persistent console with existing data; no Docker startup or automatic sync/index | Initial handshake and state reads |
 | `./research/disc_assistant/run.sh up` | Start local Typesense and await readiness | None |
@@ -47,6 +48,7 @@ input is idle. `listen` currently means text input, not microphone capture.
 
 | Console command | Behavior |
 | --- | --- |
+| `/history [ARGS]` | Inspect recent requests, `show ID`, `export PATH`, `prune`, or `clear --yes`; see [history](ASSISTANT_HISTORY.md) |
 | `/help` | List text and maintenance commands |
 | `/language [CODES\|reset]` | Show/set saved command dictionaries immediately; `reset` restores TOML defaults |
 | `/status` | Show connection generation, latest playback observations and local catalog/index state |
@@ -233,6 +235,17 @@ request and may restart a recording. Device operations share a data-directory
 lock, not a lock against external controllers. There is no atomic device revision.
 One-shot events are retained within each operation. The console continuously
 reduces events throughout its session; listening history is not collected.
+
+## Request journal
+
+Console requests and one-shot application commands are journaled by default in
+`assistant.sqlite3`, including invalid phrases and search/operation failures.
+Results include `request_id` when saved; use `/history show ID` or one-shot
+`history show ID` to inspect stages. The journal retains bounded search candidates,
+the automatic selection and operation outcomes without treating them as listens.
+Use `--source scheduled` before the CLI command for cron attribution. History
+inspection/export/clear is not itself journaled. Retention defaults to 90 days and
+10,000 completed requests. See [storage, commands and limits](ASSISTANT_HISTORY.md).
 
 ## Queue and remaining work
 

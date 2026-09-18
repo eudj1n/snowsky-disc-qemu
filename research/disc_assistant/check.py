@@ -274,6 +274,30 @@ page_size = 2
                 assert again.returncode == 0 and again.stdout.count('"reused": true') == 2, again.stdout
                 assert cli('status')['collection'] == rebuilt['collection']
                 print('PASS: persistent start -> sync/index -> console uses one handshake/socket; unchanged snapshot/index reused; missing projection rebuilt', flush=True)
+                # Journal evidence survives CLI processes and console exit.
+                before = link.mutations
+                cli('ask', 'unknown natural command', success=False)
+                rejected = cli('history')['requests'][0]
+                rejection = cli('history', 'show', rejected['id'])
+                assert rejection['status'] == 'error'
+                assert rejection['events'][-2]['payload']['category'] == 'unrecognized_or_invalid_command'
+                scheduled = cli('--source', 'scheduled', 'rank', 'Pause')
+                assert cli('history', 'show', scheduled['request_id'])['source'] == 'scheduled'
+                fuzzy_log = cli('history', 'show', fuzzy['request_id'])
+                assert any(e['phase'] == 'retrieval' for e in fuzzy_log['events'])
+                played_log = cli('history', 'show', continuous['request_id'])
+                assert played_log['outcome']['operation_id'] == continuous['operation_id']
+                assert any(e['phase'] == 'selection' for e in played_log['events'])
+                entries = cli('history', '100')['requests']
+                assert any(r['source'] == 'interactive' and r['status'] == 'playing' for r in entries)
+                assert any(r['source'] == 'startup' and r['command'] == 'index' for r in entries)
+                export = Path(tmp) / 'history.jsonl'
+                assert cli('history', 'export', str(export))['exported'] == len(entries)
+                assert key not in export.read_text()
+                assert cli('history', 'clear', '--yes')['removed'] == len(entries)
+                assert cli('history')['requests'] == []
+                assert link.mutations == before
+                print('PASS: persistent request/search/selection/outcome journal, rejected commands, scheduled origin, export and clear', flush=True)
             finally:
                 link.shutdown()
                 catalog.shutdown()

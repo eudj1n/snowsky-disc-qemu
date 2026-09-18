@@ -118,11 +118,14 @@ def ordered(candidates):
         int(c['track_id'].rsplit(':', 1)[1]) if c['kind'] == 'track' else -1))
 
 
-async def rank(config, store, search, text):
+async def rank(config, store, search, text, *, trace=None):
     rules = load_languages(config.languages)
     head = store.verify_index(config.device_key, search.signature)
     documents = store.documents(head['generation'])
     intent = infer(parse(text, rules), documents, config.aliases)
+    if trace:
+        from dataclasses import asdict
+        trace.event('intent_resolved', asdict(intent))
     if intent.artist is not None:
         known = {d['artist'] for d in documents if normalized(intent.artist)
                  in names(d['artist'], config.aliases.get('artists', {}))}
@@ -142,8 +145,12 @@ async def rank(config, store, search, text):
             candidates.extend(exact)
         else:
             query = (intent.artist + ' ' + intent.title) if intent.artist is not None else intent.query
+            if trace:
+                trace.event('search_query', {'query': query, 'limit': 50})
             response = await search.search(store, config.device_key, query, limit=50,
                                            fields=('title', 'artist', 'title_aliases', 'artist_aliases', 'album'))
+            if trace:
+                trace.search(response, phase='retrieval')
             if response['generation'] != head['generation']:
                 raise StaleSnapshot('catalog changed during ranking; repeat the command')
             pool = [dict(r, id=r['id']) for r in response['candidates'] if not known or r['artist'] in known]
@@ -156,4 +163,5 @@ async def rank(config, store, search, text):
     return {'status': 'ranked' if candidates else 'not_found', 'query': intent.query,
             'intent': intent.kind, 'generation': head['generation'], 'device': config.device_key,
             'retrieval': retrieval, 'candidates': candidates[:10],
+            'candidate_count': len(candidates), 'candidates_truncated': len(candidates) > 10,
             'ranking_policy': 'lexical-v1; scores are not probabilities; no history/likes'}

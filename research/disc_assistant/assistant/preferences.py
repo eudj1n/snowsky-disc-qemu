@@ -1,41 +1,16 @@
 """Persistent Assistant preferences, separate from catalog snapshots and secrets."""
 from dataclasses import replace
 import json
-import os
 from pathlib import Path
-import sqlite3
 
+from research.disc_assistant.assistant.database import connect
 from research.disc_assistant.assistant.languages import LOCALES, load_languages
 
 
 class Preferences:
     def __init__(self, directory):
-        directory = Path(directory)
-        directory.mkdir(parents=True, exist_ok=True, mode=0o700)
-        self.path = directory / 'assistant.sqlite3'
-        try:
-            descriptor = os.open(self.path, os.O_CREAT | os.O_EXCL | os.O_WRONLY, 0o600)
-        except FileExistsError:
-            pass
-        else:
-            os.close(descriptor)
-        self.db = sqlite3.connect(self.path, timeout=10)
-        try:
-            version = self.db.execute('PRAGMA user_version').fetchone()[0]
-            if version not in (0, 1):
-                raise ValueError(f'unsupported assistant database version {version}')
-            if version == 0:
-                self.db.executescript('''
-                    BEGIN IMMEDIATE;
-                    CREATE TABLE IF NOT EXISTS settings (
-                        key TEXT PRIMARY KEY, value_json TEXT NOT NULL,
-                        updated_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ','now')));
-                    PRAGMA user_version=1;
-                    COMMIT;
-                ''')
-        except BaseException:
-            self.db.close()
-            raise
+        self.path = Path(directory) / 'assistant.sqlite3'
+        self.db = connect(directory)
 
     def __enter__(self):
         return self

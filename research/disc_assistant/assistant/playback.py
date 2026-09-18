@@ -156,5 +156,5 @@ def execute(config, store, ranking, *, shared=None):
         except (OSError, ValueError, RuntimeError) as exc:
             attempted = bool(client and client.mutation_attempted) or result.get('mode_change', {}).get('mutation_attempted', False)
             result.update(status='uncertain' if attempted else 'not_sent', mutation_attempted=attempted,
-                          reason=str(exc), retry='never automatic')
+                          reason=str(exc), error_type=type(exc).__name__, retry='never automatic')
     return result

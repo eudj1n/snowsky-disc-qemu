@@ -3,6 +3,7 @@ import asyncio
 from dataclasses import replace
 import json
 import os
+import shlex
 import sys
 from uuid import uuid4
 
@@ -12,6 +13,7 @@ from research.disc_assistant.assistant.intents import ControlIntent, parse
 from research.disc_assistant.assistant.languages import load_languages
 from research.disc_assistant.assistant.live import DeviceSession
 from research.disc_assistant.assistant.preferences import effective_config, language_command
+from research.disc_assistant.assistant.journal import Trace, history_command
 from research.disc_assistant.assistant.playback import execute as play
 from research.disc_assistant.assistant.queue import observe as queue
 from research.disc_assistant.assistant.ranking import rank
@@ -23,16 +25,18 @@ HELP = '''Enter Play … / Включи …, Pause / Пауза, Resume / Про
 Next track / Следующий трек, Previous track / Предыдущий трек.
 /connect  /disconnect  /status  /queue  /sync  /index
 /search TEXT  /rank TEXT  /language [ru|en|ru en|reset]  /help  /exit
+/history [LIMIT|show ID|export PATH|prune|clear --yes]
 Events are read continuously. Disconnect/exit never stop music or Typesense.
 One-shot device commands require /exit to release the local ownership lock.
 Offline run.sh search/index/status remain available while this console is open.'''
 
 
 class Application:
-    def __init__(self, config: Config, *, session_factory=DeviceSession):
+    def __init__(self, config: Config, *, session_factory=DeviceSession, source='interactive'):
         self.base_config, self.session_factory = config, session_factory
         self.config = effective_config(config)
         self.rules = load_languages(self.config.languages)
+        self.session_id, self.source = uuid4().hex, source
 
     def __enter__(self):
         self.session = self.session_factory(self.config)
@@ -62,9 +66,12 @@ class Application:
         except (OSError, ValueError, RuntimeError) as exc:
             attempted = bool(client and client.mutation_attempted)
             return {'operation_id': operation_id, 'status': 'uncertain' if attempted else 'not_sent',
-                    'mutation_attempted': attempted, 'reason': str(exc)}
+                    'mutation_attempted': attempted, 'reason': str(exc), 'error_type': type(exc).__name__}
 
-    async def search(self, command, text='', *, reuse=False):
+    async def search(self, command, text='', *, reuse=False, trace=None):
+        if trace:
+            trace.catalog(self.store)
+            trace.event('search', {'command': command, 'query': text})
         key = os.environ.get(self.config.api_key_env, '')
         if not key.strip():
             raise ValueError(f'search is unavailable: set {self.config.api_key_env}; controls remain available')
@@ -85,8 +92,12 @@ class Application:
                         pass
                 return await search.build(self.store, self.config.device_key)
             if command == 'rank':
-                return await rank(self.config, self.store, search, text)
-            return await search.search(self.store, self.config.device_key, text)
+                result = await rank(self.config, self.store, search, text, trace=trace)
+            else:
+                result = await search.search(self.store, self.config.device_key, text)
+            if trace:
+                trace.search(result, phase='ranking' if command == 'rank' else 'retrieval')
+            return result
         finally:
             await client.api_call.aclose()
 
@@ -98,7 +109,21 @@ class Application:
         return {'session': self.session.status(), 'library': head,
                 'language': {'enabled': list(self.config.languages)}}
 
-    def request(self, line):
+    def request(self, line, *, source=None, reuse_index=False):
+        if not line.strip():
+            return None
+        # Inspection/export/clear must not reinsert data or journal the export path.
+        if line.strip().split(maxsplit=1)[0] == '/history':
+            return history_command(self.config, shlex.split(line.strip())[1:])
+        command = line.strip().split(maxsplit=1)[0][1:] if line.strip().startswith('/') else 'ask'
+        with Trace(self.config, command, line, source=source or self.source, session_id=self.session_id) as trace:
+            if hasattr(self, 'session'):
+                state = self.session.status()
+                trace.event('connection', {k: state[k] for k in ('generation', 'connection')})
+            trace.event('parse', {})
+            return trace.finish(self._request(line, trace, reuse_index=reuse_index))
+
+    def _request(self, line, trace, *, reuse_index=False):
         line = line.strip()
         if not line:
             return None
@@ -106,6 +131,7 @@ class Application:
             command, _, text = line[1:].partition(' ')
             text = text.strip()
             if command == 'language':
+                trace.event('preference', {'name': 'language.enabled'})
                 result = language_command(self.base_config, text.split())
                 rules = load_languages(result['enabled'])
                 self.config = replace(self.config, languages=rules.enabled)
@@ -116,9 +142,10 @@ class Application:
                     raise ValueError(f'/{command} needs text')
                 if command == 'rank':
                     intent = parse(text, self.rules)
+                    trace.intent(intent)
                     if isinstance(intent, ControlIntent):
                         return {'status': 'planned', 'action': intent.action, 'requires_search': False}
-                return asyncio.run(self.search(command, text))
+                return asyncio.run(self.search(command, text, trace=trace))
             if text:
                 raise ValueError(f'/{command} takes no arguments')
             if command == 'help':
@@ -134,43 +161,50 @@ class Application:
                 self.session.connect()
                 return self.session.status()
             if command == 'queue':
+                trace.event('execution_started', {'action': 'queue', 'read_only': True})
                 return self.device_call(lambda client: queue(self.config, shared=client))
             if command == 'sync':
+                trace.event('execution_started', {'action': 'sync', 'read_only': True})
                 return self.device_call(lambda client: sync(self.config, self.store, shared=client, reuse_unchanged=True))
             if command == 'index':
-                return asyncio.run(self.search('index'))
+                trace.event('index', {})
+                return asyncio.run(self.search('index', reuse=reuse_index, trace=trace))
             raise ValueError('unknown console command; use /help')
         intent = parse(line, self.rules)
+        trace.intent(intent)
         if isinstance(intent, ControlIntent):
+            trace.event('execution_started', {'action': intent.action})
             return self.device_call(lambda client: control(self.config, intent, shared=client))
         # Pin the request to the current connection BEFORE potentially slow search.
         generation = self.session.status()['generation']
-        ranking = asyncio.run(self.search('rank', line))
+        ranking = asyncio.run(self.search('rank', line, trace=trace))
         if not ranking['candidates']:
             return ranking
+        trace.select(ranking)
         def execute(client):
             if generation != self.session.status()['generation']:
                 raise ConnectionError('session changed during search; request a new selection')
             return play(self.config, self.store, ranking, shared=client)
+        trace.event('execution_started', {'action': 'play'})
         return self.device_call(execute)
 
 
-def run(config, *, bootstrap=False, input_fn=input, output=print):
+def run(config, *, bootstrap=False, input_fn=input, output=print, source='interactive'):
     def emit(result):
         if result is not None:
             output(json.dumps(result, ensure_ascii=False, indent=2))
 
-    with Application(config) as app:
+    with Application(config, source=source) as app:
         try:
             app.session.wait_ready(config.timeout * 4 + 1)
             output('Persistent DISC console. /help lists commands; /exit releases the connection.')
             emit(app.status())
             if bootstrap:
                 try:
-                    imported = app.request('/sync')
+                    imported = app.request('/sync', source='startup')
                     emit(imported)
                     if imported.get('status') not in ('not_sent', 'uncertain'):
-                        emit(asyncio.run(app.search('index', reuse=True)))
+                        emit(app.request('/index', source='startup', reuse_index=True))
                 except Exception as exc:
                     output(f'Startup search preparation unavailable ({type(exc).__name__}); controls remain available.')
             while True:
@@ -183,10 +217,11 @@ def run(config, *, bootstrap=False, input_fn=input, output=print):
                 except (EOFError, KeyboardInterrupt):
                     raise
                 except (ValueError, OSError, RuntimeError) as exc:
-                    emit({'status': 'error', 'reason': str(exc)})
+                    emit({'status': 'error', 'reason': str(exc), 'request_id': getattr(exc, 'request_id', None)})
                 except Exception as exc:
                     # SDK errors can include server bodies. Never print secrets.
                     emit({'status': 'error', 'reason': type(exc).__name__,
+                          'request_id': getattr(exc, 'request_id', None),
                           'hint': 'check search configuration; /status and playback controls remain available'})
         except (EOFError, KeyboardInterrupt):
             output('Console closed. In-flight writes are not replayed; inspect player state if interrupted.')

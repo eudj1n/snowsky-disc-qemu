@@ -101,5 +101,5 @@ def execute(config, intent, *, shared=None):
     except (OSError, ValueError, RuntimeError) as exc:
         attempted = bool(client and client.mutation_attempted)
         result.update(status='uncertain' if attempted else 'not_sent', mutation_attempted=attempted,
-                      reason=str(exc))
+                      reason=str(exc), error_type=type(exc).__name__)
     return result

@@ -6,7 +6,8 @@ See the [prototype guide](../README.md) for setup, commands and acceptance, and 
 
 | File | Responsibility |
 | --- | --- |
-| `__main__.py` | `start`, `listen`, `language`, `sync`, `status`, `queue`, `index`, `search`, `rank`, `ask`; JSON output and errors |
+| `__main__.py` | `start`, `listen`, `language`, `history`, `sync`, `status`, `queue`, `index`, `search`, `rank`, `ask`; JSON output and errors |
+| `database.py`, `journal.py` | Schema migrations, bounded request/decision events, retention, inspection/export/clear |
 | `preferences.py` | Versioned Assistant SQLite settings; persistent command languages, override/reset and effective configuration |
 | `config.py`, `config.example.toml` | Explicit device/search/storage configuration and aliases |
 | `intents.py`, `ranking.py` | Bilingual play grammar and explained best-match ranking |
@@ -56,7 +57,9 @@ status contract for scripts and cron. Their initial connection refusal is retrie
 within the timeout before handshake/mutations; established one-shot sessions are
 not reconnected. They require the interactive process to release the shared
 ownership lock before device access. Offline search/index/status remain independent.
-There is no IPC endpoint, durable operation journal or history collector yet.
+The request/decision journal now retains bounded local evidence, including operation
+IDs and outcomes. It is not an IPC endpoint, replay mechanism or listening-history
+collector. See the [journal contract](../../../docs/ASSISTANT_HISTORY.md).
 
 Explicit continuous context has two named mutation phases, mode then selection;
 each allows at most one write and reports partial results. Controls never change

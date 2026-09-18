@@ -208,8 +208,9 @@ operational limits remain in TOML/environment, not in this preferences table.
 One-shot `run.sh language [CODES|reset]` manages the same setting without search
 or a device connection. An already-open console reloads external changes through
 `/language` or on restart. Catalog sync/index rebuilding does not erase preferences.
-Back up both SQLite databases; language selection does not create a catalog or
-collect request/listening history. That journal remains a separate next increment.
+Back up both SQLite databases; language selection does not create a catalog. Schema 2 additionally stores the
+request/decision journal in `requests` and `request_events`, preserving existing
+settings. Listening intervals are not collected yet.
 
 An override must be absolute (or start with `~`) and outside the repository.
 New data directories are private to the user. Back up SQLite with all prototype
@@ -259,6 +260,27 @@ Stop Typesense with:
 
 `down` keeps the index volume and also works if the TOML/key is missing. The
 runner does not expose volume deletion. It never stops the emulator or deletes SQLite.
+
+## Request history
+
+Input, parsing, search candidates, ranking, automatic selection and operation
+outcomes are now retained locally, including unrecognized phrases and failures.
+Use the returned `request_id` to inspect a request; these are observations, not
+proof of completed listening or a queue of commands to replay.
+
+```text
+/history
+/history show REQUEST_ID
+/history export "/absolute/path/request history.jsonl"
+/history clear --yes
+```
+
+One-shot `run.sh history` has the same commands. For cron attribution, run
+`run.sh --source scheduled ask 'Pause'`. Collection defaults to enabled with
+90-day retention and 10,000 completed requests. Configure `[journal].enabled`,
+`retention_days` and `max_requests` in TOML. Restart the console after config/code
+updates. See the [journal contract](../../docs/ASSISTANT_HISTORY.md) for migration,
+bounded evidence, export, retention and interrupted-operation semantics.
 
 ## Verification and promotion
 

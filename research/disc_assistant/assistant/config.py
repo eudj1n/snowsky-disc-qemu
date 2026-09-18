@@ -26,6 +26,9 @@ class Config:
     max_requests: int = 10000
     languages: tuple[str, ...] = DEFAULT_LANGUAGES
     continuous_context: bool = False
+    journal_enabled: bool = True
+    journal_retention_days: int = 90
+    journal_max_requests: int = 10000
 
 
 def default_data_dir():
@@ -57,7 +60,8 @@ def load(path):
                'sync': {'page_size', 'timeout', 'max_tracks', 'max_requests'},
                'aliases': {'artists', 'titles'},
                'language': {'enabled'},
-               'playback': {'continuous_context'}}
+               'playback': {'continuous_context'},
+               'journal': {'enabled', 'retention_days', 'max_requests'}}
     if set(raw) - set(allowed):
         raise ValueError('unknown configuration section')
     for section, keys in allowed.items():
@@ -69,6 +73,10 @@ def load(path):
     continuous = raw.get('playback', {}).get('continuous_context', False)
     if type(continuous) is not bool:
         raise ValueError('playback.continuous_context must be a boolean')
+    journal = raw.get('journal', {})
+    journal_enabled = journal.get('enabled', True)
+    if type(journal_enabled) is not bool:
+        raise ValueError('journal.enabled must be a boolean')
     for field, mapping in aliases.items():
         if not isinstance(mapping, dict):
             raise ValueError(f'aliases.{field} must be a table')
@@ -98,4 +106,6 @@ def load(path):
         number(sync.get('page_size', 200), 'page_size', 1, 200),
         number(sync.get('timeout', 8), 'timeout', 1, 120),
         number(sync.get('max_tracks', 100000), 'max_tracks', 1, 1000000),
-        number(sync.get('max_requests', 10000), 'max_requests', 2, 100000), languages, continuous)
+        number(sync.get('max_requests', 10000), 'max_requests', 2, 100000), languages, continuous,
+        journal_enabled, number(journal.get('retention_days', 90), 'journal.retention_days', 1, 3650),
+        number(journal.get('max_requests', 10000), 'journal.max_requests', 1, 1000000))

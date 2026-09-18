@@ -226,12 +226,11 @@ navigation, mode changes and selections are never replayed. Each new selection
 revalidates source rows. Central pacing enforces the 2.1-second mutation interval
 across console commands, in addition to existing operation checks.
 
-Device-operation results include an operation ID, but the current synchronous
-console has no durable operation journal or result lookup API. Interrupted output
-must not be interpreted as proof that a write did not occur. Before adding IPC or
-an asynchronous UI, provide bounded result retention and uncertainty records so
-reconnecting callers can inspect an operation without submitting it again. Such
-records must never become a replay queue.
+Device-operation results include an operation ID. The [request journal](ASSISTANT_HISTORY.md)
+now links it to parsed input, search/selection evidence and observed outcomes.
+Pending/interrupted records do not prove that nothing was dispatched. This is
+local inspection storage, not an idempotent IPC result service or a replay queue;
+a future asynchronous API must define operation lookup and caller retry semantics.
 
 ### Startup, one-shot compatibility and acceptance
 
@@ -269,5 +268,6 @@ Validation on 2026-09-18:
 
 Physical sleep, Wi-Fi recovery, button transitions and competition with FiiO
 Control require separate acceptance; emulator success does not establish them.
-Next: bounded physical playback/session validation, then M3 microphone input.
+Next: define/extract the shared Controller API after the request-journal slice;
+physical playback/session validation and M3 microphone input follow separately.
 Arbitrary recommendation-plan execution remains a later increment.

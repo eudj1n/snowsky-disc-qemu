@@ -117,6 +117,16 @@ class LauncherTests(unittest.TestCase):
         with patch.object(launcher.subprocess, 'run', side_effect=KeyboardInterrupt):
             self.assertEqual(launcher.main(['--config', str(self.config), 'listen']), 130)
 
+    def test_rejected_input_and_missing_search_key_reach_application_journal(self):
+        self.initialize()
+        with patch.object(launcher.subprocess, 'run', return_value=Mock(returncode=1)) as run, \
+                patch.object(launcher, 'environment', side_effect=ValueError('missing key')):
+            self.assertEqual(launcher.main(['--config', str(self.config), 'ask', 'unrecognized input']), 1)
+            self.assertEqual(run.call_args.args[0][-2:], ['ask', 'unrecognized input'])
+            self.assertEqual(launcher.main(['--config', str(self.config), '--source', 'scheduled', 'ask', 'Play Numb']), 1)
+            self.assertEqual(run.call_args.args[0][-4:], ['--source', 'scheduled', 'ask', 'Play Numb'])
+            self.assertNotIn('TYPESENSE_API_KEY', run.call_args.kwargs['env'])
+
     def test_down_needs_no_config_and_keeps_volumes(self):
         with patch.object(launcher.subprocess, 'run', return_value=Mock(returncode=0)) as run:
             self.assertEqual(launcher.main(['--config', str(self.config), 'down']), 0)

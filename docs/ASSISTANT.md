@@ -119,7 +119,9 @@ Keep infrastructure configuration (device endpoints, storage paths, search secre
 in TOML/environment. Add future mutable preferences through validated named keys
 and explicit schema migrations; do not turn settings into arbitrary runtime flags.
 Catalog refresh/reindex cannot erase preferences. Back up both databases. This
-increment does not yet persist commands, search decisions or listening history.
+initial preference increment did not persist requests. Schema 2 now adds the
+[request/decision journal](ASSISTANT_HISTORY.md) while preserving settings;
+listening intervals remain separate later work.
 
 Validation: 125 prototype tests and the firmware-free project suite (313 Python /
 37 JavaScript) pass. Preference tests cover reopen, precedence/reset, immediate
@@ -391,16 +393,14 @@ Track skips only when evidence supports that attribution. Seeking is not elapsed
 listening. Completion must follow observed firmware behavior; retain partial or
 unknown sessions when evidence is insufficient.
 
-The next journal increment should assign one request ID before parsing and record
-input source (interactive, one-shot, scheduled, later voice), original/normalized
-text, parsed intent or failure, catalog/index generations and policy versions.
-Retain a bounded candidate set with scores/reasons, the selected match and whether
-selection was automatic or explicit. Link device operation IDs and outcomes;
-distinguish unsupported intent, no match, stale index, search outage, not-sent and
-uncertain execution. Store metadata/provenance with snapshot-scoped IDs so old
-records remain interpretable after catalog retention changes. Do not retain raw
-microphone audio by default. Add export, clearing and bounded retention with the
-journal rather than accumulating an unbounded debug log.
+The implemented [request journal](ASSISTANT_HISTORY.md) assigns one request ID
+before parsing and records source, original/normalized text, parsed intent or
+failure, catalog/index generations and policy versions. It retains bounded search
+and ranking candidates with scores/reasons, marks the automatic selection, and
+links operation IDs/outcomes. Unknown phrases remain available for later intent
+analysis; the current grammar does not invent unsupported intentions. Metadata
+and snapshot provenance keep old records interpretable. Export, explicit clearing
+and bounded retention are available. Microphone audio is not retained.
 
 An automatic best match is the algorithm's decision, not an explicit user like.
 Scheduled commands are distinct from manual requests; search or dispatch does not
@@ -562,8 +562,9 @@ invalidates pending work and permits observation-only reconnect; explicit
 
 The previous one-shot flow remains supported for scripts and cron. Device commands
 require exclusive ownership of the same data directory; offline operations remain
-independent. There is no local IPC forwarding, durable operation journal or
-history collector in this increment. See the [session contract](ASSISTANT_PLAYBACK.md#m2c-persistent-device-session)
+independent. This original M2c checkpoint did not include local IPC or durable
+history. The later request-journal increment below adds inspection storage;
+listening-history collection and IPC remain separate work. See the [session contract](ASSISTANT_PLAYBACK.md#m2c-persistent-device-session)
 and [console command table](ASSISTANT_COMMANDS.md#interactive-console).
 
 Unchanged catalog snapshots are reused only after two full equal network reads.
@@ -579,9 +580,27 @@ shared sync/control/queue, reconnect without mutation replay, silent final-stop
 reads on a healthy connection, and explicit disconnect remaining disconnected.
 No new physical playback/session acceptance is claimed.
 
-Next: evaluate `rank` on representative physical-library queries and validate
-bounded `ask`/console playback, controls, native continuation, idle/sleep and Wi-Fi
-recovery on deliberately selected physical music, then add button-driven microphone
-input (M3). Continue in `research/disc_assistant/`; promotion, repository splitting,
-arbitrary recommendation queues, history and choice dialogue remain later work.
-Native playback still uses guarded Controller APIs; no firmware command was added.
+## Request-journal increment, 2026-09-18
+
+Implemented next at the owner's request, before shared Controller API extraction:
+
+- Private Assistant SQLite schema 2 preserves settings and adds request/event
+  tables. Requests commit before parsing, with source/session/device attribution.
+- Parsing, catalog/index/rule versions, bounded retrieval/ranking candidates,
+  automatic best-match selection and operation IDs/outcomes remain separate evidence.
+- Invalid phrases, search failures, stale indexes, not-sent/uncertain execution and
+  interrupted/pending requests remain inspectable. No mutation is replayed.
+- Console and one-shot paths share collection; `--source scheduled` labels cron
+  requests. Automatic preparation is marked `startup`. Commands for recent/detail
+  inspection, JSONL export, pruning and explicit clearing are available offline.
+- Default retention is 90 days / 10,000 completed requests, with configurable
+  collection and limits. Preferences/catalog survive history clearing.
+
+See the [journal contract](ASSISTANT_HISTORY.md). This does not implement listening
+interval reconciliation, favorites-derived preferences or personalized ranking.
+
+Next: define the common Controller API and its boundaries, then extract shared
+session/state behavior for Assistant and a software remote. Keep Assistant policy,
+languages and request storage out of Controller. Physical acceptance, measured
+ranking, microphone input, recommendations and repository promotion remain
+separate subsequent work.
