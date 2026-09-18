@@ -89,3 +89,13 @@ max_requests = 10000 # Completed requests; recent in-flight requests are retaine
 shadow = false
 # Cooperative async deadline; local CPU/filesystem work is not preempted.
 shadow_timeout_ms = 100
+
+# Optional local model evidence; primary rules retain exclusive execution.
+[structured]
+enabled = false
+# endpoint = "http://127.0.0.1:18120/v1/chat/completions"
+# model = "disc-commands" # match the explicitly started server alias
+# model_path = "/absolute/path/model.gguf" # operator-declared fingerprint
+timeout = 10
+# For /explain, explicitly raise [interpretation].shadow_timeout_ms if needed.
+# /shadow on records this source too, waiting up to that shared deadline.

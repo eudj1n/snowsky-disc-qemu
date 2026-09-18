@@ -18,7 +18,8 @@ The MVP accepts **one action with its arguments**. It has no command list, plann
 conditional execution, delayed actions or clarification dialogue. A shared policy
 runs before the primary provider for text and post-STT input, even with shadow off.
 It rejects known sequencing/alternative connectors followed by another action,
-commas between recognized actions, semicolons and unclosed double quotes.
+commas/semicolons followed by recognized actions and unclosed double quotes.
+Semicolons inside a captured artist credit remain part of its music reference.
 `Find and play song Clouds` names one semantic action. `Play Blur and then stop`
 or `Stop the music or maybe resume instead` is unsupported, without partial execution.
 
@@ -51,10 +52,14 @@ Current sources:
 
 - `literal`: existing locale parser; reports its own raw decision.
 - `slots`: locale-authored context and argument extraction, including inflected
-  language names, quoted titles and explicit artist/track qualifiers.
+  language names, quoted titles and explicit artist/track/album qualifiers.
 - `command_model`: existing imported portable classifier, opened through read-only
   SQLite without migrations, seeding or lock waiting. A play/language class alone
   is `incomplete`; this source never borrows slots or invents arguments.
+
+- `structured_model` (opt-in): local schema-constrained model extracting one label,
+  target kind and original text span. Separate model, prompt and schema hashes;
+  it is never included in the diagnostic priority selector or live execution.
 
 Missing, locked, stale or untrained model storage produces `unavailable`. Invalid
 provider output and ordinary provider exceptions are isolated; exception bodies
@@ -167,3 +172,55 @@ never as ground truth. Compare calibrated per-source policies against a learned
 selector on false activations, complete-intent accuracy, abstention and latency.
 A selector must return the same validated intention contract and remain behind
 single-action/Controller boundaries. Complex commands remain outside this MVP.
+
+## Optional structured local model
+
+The ordinary requirements already include its HTTP dependency; Torch and a model
+are not installed automatically. Start a dedicated compatible llama.cpp server
+explicitly with an installed GGUF (the measured runtime/model are pinned in the
+[comparison report](ASSISTANT_REVIEW_EVALUATION.md)):
+
+```sh
+llama-server -m /absolute/path/model.gguf --alias disc-commands \
+  --host 127.0.0.1 --port 18120 -c 2048 -np 1 -t 4 -n 192
+```
+
+```toml
+[interpretation]
+shadow_timeout_ms = 1000
+
+[structured]
+enabled = true
+endpoint = "http://127.0.0.1:18120/v1/chat/completions"
+model = "disc-commands"
+model_path = "/absolute/path/model.gguf"
+timeout = 10
+```
+
+`/explain TEXT` now includes the fourth source. `/shadow on` also records it during
+normal requests. Primary rules still decide; model disagreement cannot replace a
+rejection, fill missing arguments or execute an action. `structured.enabled=false`
+is the default. The service receives only input text, interaction locale and the
+cached playback label, not catalog contents or command history. Only explicit
+loopback IP endpoints are accepted; redirects/environment proxies are disabled.
+
+The schema is `{label, kind, query}`. Music and language queries must be original
+input substrings. The shared music parser creates track/album typed arguments;
+language names resolve through installed locale dictionaries. Controls/rejections
+must have an empty query and `kind=none`. Extra fields, truncated output, a wrong
+model alias, invalid locale/arguments or an oversized response become unavailable
+evidence. Response validation is bounded to 64 KiB and 192 output tokens. No raw
+SDK bodies or exception messages are journaled. A file digest identifies the
+operator-configured model; the server does not attest that it loaded that file.
+
+Prompt and schema hashes are retained by offline shadow reports, so changing a
+prompt does not silently merge measurements. Scores are absent: there is no
+fabricated confidence. New locale support still requires corpus evidence for that
+model; accepting the locale dictionary does not prove model comprehension.
+
+The existing shared shadow deadline is 100 ms by default, explicitly configurable
+up to 30 seconds. It covers all sources; the model request also has its own timeout.
+`/explain` and shadow collection wait up to this chosen deadline, so a larger value
+can add command latency. Cancellation is propagated, no request is retried, and
+server lifecycle remains operator-owned. Use `/explain` for model experiments
+without live-command latency.

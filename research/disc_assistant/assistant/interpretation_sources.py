@@ -142,7 +142,11 @@ class CommandModelSource:
 
 
 def default_sources(config):
-    return (LiteralSource(), SlotSource(), CommandModelSource(config.data_dir))
+    sources = (LiteralSource(), SlotSource(), CommandModelSource(config.data_dir))
+    if config.structured.get('enabled', False):
+        from research.disc_assistant.assistant.structured_source import StructuredSource
+        sources += (StructuredSource(config.structured),)
+    return sources
 
 
 async def measured(provider, text, context):

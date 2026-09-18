@@ -28,7 +28,7 @@ def number(value):
 def provenance(raw):
     """Allowlisted model/rule identity, not arbitrary SDK data or device paths."""
     result = {}
-    for key in ('snapshot', 'source_hash', 'model_sha256', 'rules_sha256', 'grammar_sha256'):
+    for key in ('snapshot', 'source_hash', 'model_sha256', 'rules_sha256', 'grammar_sha256', 'prompt_sha256', 'schema_sha256'):
         value = raw.get(key)
         if value is not None:
             if not isinstance(value, str) or not HASH.fullmatch(value):

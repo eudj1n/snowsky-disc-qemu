@@ -36,6 +36,7 @@ class Config:
     speech: dict = field(default_factory=dict)
     shadow: bool = False
     shadow_timeout_ms: int = 100
+    structured: dict = field(default_factory=dict)
 
 
 def default_data_dir():
@@ -63,6 +64,7 @@ def load(path):
         raw = tomllib.load(stream)
     allowed = {'interpretation': {'shadow', 'shadow_timeout_ms'}, 'device': {'key', 'host', 'tcp_port', 'http_port'},
                'storage': {'data_dir'},
+               'structured': {'enabled', 'endpoint', 'model', 'model_path', 'timeout'},
                'typesense': {'host', 'port', 'protocol', 'api_key_env'},
                'sync': {'page_size', 'timeout', 'max_tracks', 'max_requests'},
                'aliases': {'artists', 'titles'},
@@ -102,7 +104,18 @@ def load(path):
     shadow = interpretation.get('shadow', False)
     if type(shadow) is not bool:
         raise ValueError('interpretation.shadow must be a boolean')
-    shadow_timeout = number(interpretation.get('shadow_timeout_ms', 100), 'interpretation.shadow_timeout_ms', 1, 2000)
+    shadow_timeout = number(interpretation.get('shadow_timeout_ms', 100), 'interpretation.shadow_timeout_ms', 1, 30000)
+    structured = raw.get('structured', {})
+    if type(structured.get('enabled', False)) is not bool:
+        raise ValueError('structured.enabled must be a boolean')
+    number(structured.get('timeout', 10), 'structured.timeout', 1, 30)
+    if structured.get('enabled', False):
+        from research.disc_assistant.assistant.local_service import endpoint
+        endpoint(structured.get('endpoint'), '/v1/chat/completions')
+        text(structured.get('model'), 'structured.model')
+        model_path = text(structured.get('model_path'), 'structured.model_path')
+        if not Path(model_path).expanduser().is_absolute():
+            raise ValueError('structured.model_path must be absolute')
     terminal = raw.get('terminal', {})
     speech = raw.get('speech', {})
     if speech.get('backend', 'cli') not in ('cli', 'server') or type(speech.get('catalog_hints', False)) is not bool:
@@ -163,4 +176,4 @@ def load(path):
         number(sync.get('max_requests', 10000), 'max_requests', 2, 100000), locale, continuous,
         journal_enabled, number(journal.get('retention_days', 90), 'journal.retention_days', 1, 3650),
         number(journal.get('max_requests', 10000), 'journal.max_requests', 1, 1000000), terminal,
-        response['mode'], dialogue, speech, shadow, shadow_timeout)
+        response['mode'], dialogue, speech, shadow, shadow_timeout, structured)

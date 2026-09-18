@@ -30,8 +30,12 @@ push after each. External review is input for comparison, not a specification.
    CLI 318 ms / resident 226 ms median; hints improve exact intentions 12/24 to
    18/24 on 12 repeated synthetic samples. **301 tests and 6/6 emulator cases**
    passed. See [comparison details](ASSISTANT_REVIEW_EVALUATION.md).
-5. **Pending:** structured local-model evidence as an optional shadow source,
-   validated typed arguments and comparative reports; primary rules retain execution.
+5. **Complete:** optional structured-model source, strict schema/typed arguments,
+   original-text spans, bounded loopback transport and prompt/model fingerprints.
+   Real Qwen 0.5B comparison: 5/16 RU and 7/16 EN exact positives; 5/9 and 6/9
+   undisputed negative activations. It remains shadow-only, excluded from priority.
+   **308 prototype tests** passed; real CLI `explain` confirmed no mutation.
+   Final shared verification: **353 Python / 37 JavaScript tests passed**.
 
 ## Evidence boundaries
 

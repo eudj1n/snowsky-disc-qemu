@@ -63,11 +63,12 @@ The owner authorized five sequential increments, each committed and pushed.
 Current implementation includes persistent sessions/reconnect without mutation replay,
 CLI/console, library snapshots/Typesense, ranking, continuation through native queues,
 play/pause/resume/stop/next/previous, localized responses, journal/timing/debug,
-file STT and synthetic speech checks, offline command snapshots and diagnostic models.
+file STT (CLI or opt-in resident server with bounded catalog hints) and synthetic speech checks, offline command snapshots and diagnostic models.
 The owner has reported live-player playback/controls working. This is not yet a
 representative, quantified end-to-end baseline or agreed MVP acceptance.
 
-Independent sources are `literal`, `slots` and `command_model`. `/shadow on`
+Independent sources are `literal`, `slots`, `command_model` and opt-in
+`structured_model` (loopback service; excluded from diagnostic priority). `/shadow on`
 records comparisons; **primary rules retain execution**. `/explain` never searches
 or executes. The shared bounded single-action guard also runs with shadow off.
 Slot/context improvements beyond that guard remain diagnostic. Score weighting,

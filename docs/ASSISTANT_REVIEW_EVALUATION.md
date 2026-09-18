@@ -75,3 +75,49 @@ an optional backend, not a default model change or a hardware performance claim.
 Resident mode and hints remain opt-in. Hint truncation and snapshot fingerprint
 are logged; the endpoint cannot attest its loaded model, so that binding is
 explicitly operator-configured.
+
+## Structured model evidence
+
+Pinned runtime: official llama.cpp **b11039**, macOS ARM64 release asset SHA-256
+`5e97da2172606284b390fb2bd2fedc03ec8bafd8eaa7d7e840bf46e3f675aa94`.
+Pinned model: official [Qwen2.5-0.5B-Instruct-GGUF](https://huggingface.co/Qwen/Qwen2.5-0.5B-Instruct-GGUF),
+revision `9217f5db79a29953eb74d5343926648285ec7e67`, Q4_K_M file SHA-256
+`74a4da8c9fdbcd15bd1f6d01d621410d31c6fc00986f5eb687824e7b93d7a9db`.
+The desktop run used Metal, context 2048, one parallel slot, four CPU threads,
+192 output tokens, temperature/seed zero. This is **not a Pi benchmark**.
+The adapter uses the server's [schema-constrained chat API](https://github.com/ggml-org/llama.cpp/blob/b11039/tools/server/README.md).
+
+`python -m research.disc_assistant.experiments.structured_compare --model-path
+MODEL_GGUF --output NEW_DIR` compares live rules (including the shared gate),
+slots and structured evidence. It never connects to a player. The 40 existing
+slot examples remain unchanged; 12 explicit album/credit/title/injection/sequence
+regressions were added. No training, prompt tuning or source promotion occurred.
+All 52 cases have examined regression status, not independent holdout status.
+
+| Source | Exact positive intentions RU / 16 | EN / 16 | Undisputed negative activations RU / 9 | EN / 9 |
+| --- | --- | --- | --- | --- |
+| Live rules + guard | 7 | 7 | 0 | 0 |
+| Diagnostic slots | 14 | 14 | 0 | 0 |
+| Qwen structured evidence | 5 | 7 | 5 | 6 |
+
+There are also two original rejection-only examples, one per locale, that the
+owner previously disputed because they can be music titles (room lights).
+Their original gold and results remain in the reports with explicit review flags;
+they are not counted as established live-rule defects. Including that original
+gold gives one activation per locale for live rules, zero for slots, and six/seven
+for the model. These are interpretation outputs, **not unintended device writes**.
+
+The model adapter marked **10 RU / 7 EN results unavailable due to invalid output**
+(e.g. argument not an original substring or control with music arguments). These
+are separately counted, not successful rejections. Model medians: **119.790 ms RU,
+110.287 ms EN**, including validation. Valid JSON and an exact argument substring
+still failed to prevent false semantic activations. This model/configuration is
+therefore retained only as an optional shadow source, with no execution or
+priority-selector promotion. Other model sizes/prompts need separate frozen
+comparisons; these results do not establish that the whole approach is unsuitable.
+
+Reports: `/tmp/disc-review-structured-01` and `-02`. The second records explicit
+invalid-output counters and the existing gold dispute; model/prompt/schema remain
+unchanged. Real CLI `explain` also returned all four sources with
+`mutation_attempted=false` using an isolated configuration. Model artifacts and
+raw local reports are outside Git.

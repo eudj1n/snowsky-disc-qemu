@@ -63,8 +63,9 @@ validated intention only when recognized:
 
 The `RuleInterpreter` wraps the existing literal grammar. Local-model and remote
 implementations can implement the same protocol and be explicitly injected into
-`Application`, console `run` or CLI `main` in Python. Only the rules backend ships;
-there is no configurable network endpoint or automatic local/remote fallback.
+`Application`, console `run` or CLI `main` in Python. The executing backend remains rules. An optional loopback structured-model
+source contributes only shadow evidence; it is not an executing Interpreter and
+there is no automatic local/remote fallback.
 Each provider identifies its name, version and `local`/`remote` execution through
 `ProviderInfo`. Backend adapters should translate their own transport/model failures
 to `ProviderUnavailable`; the boundary also maps unexpected backend exceptions to a sanitized provider error.

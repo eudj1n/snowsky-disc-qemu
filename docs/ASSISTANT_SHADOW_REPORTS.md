@@ -121,3 +121,8 @@ agreement-only sample is an independent acceptance set. This tool does not fit o
 calibrate weights, evaluate a newly selected model, infer quality from consensus,
 or measure physical execution. The next product gate is the
 [MVP end-to-end baseline](ASSISTANT_MVP.md), followed by agreed thresholds.
+
+Structured-model evidence retains model, prompt and schema fingerprints as
+separate revision identity. Changing only a prompt therefore splits report groups
+even when the model file is unchanged. Invalid model output is unavailable
+evidence, never a vote or a successful negative prediction.
