@@ -76,6 +76,8 @@ def main(argv=None, *, interpreter=None, transcriber=None, synthesizer=None):
     response = sub.add_parser('response', help='show/set saved speech policy')
     response.add_argument('arguments', nargs='*')
     sub.add_parser('locales', help='validate installed command and response locales')
+    sub.add_parser('explain', help='preview intent/arguments without execution').add_argument('text')
+    sub.add_parser('commands', help='command snapshots: show, rebuild or import FILE').add_argument('arguments', nargs='*')
     history = sub.add_parser('history', help='inspect/export/prune/clear the local request journal')
     history.add_argument('arguments', nargs=argparse.REMAINDER)
     sub.add_parser('sync', help='read the device catalog twice and publish a SQLite snapshot')
@@ -142,7 +144,14 @@ def main(argv=None, *, interpreter=None, transcriber=None, synthesizer=None):
                 args.text = transcription['command_text']
             intent = (asyncio.run(interpret_request(args.text, InterpretationContext(config.locale),
                         interpreter=interpreter, trace=trace)) if args.command in ('ask', 'rank') else None)
-            if args.command == 'transcribe':
+            if args.command == 'explain':
+                from research.disc_assistant.assistant.explain import preview
+                result = preview(config, args.text, trace)
+            elif args.command == 'commands':
+                from research.disc_assistant.assistant.command_catalog import command
+                result = command(config, args.arguments)
+                trace.event('command_catalog', result)
+            elif args.command == 'transcribe':
                 result = {'status': 'transcribed'}
             elif args.command in ('synthesize', 'speech-samples', 'speech-check'):
                 from research.disc_assistant.assistant.voice.samples import speech_command

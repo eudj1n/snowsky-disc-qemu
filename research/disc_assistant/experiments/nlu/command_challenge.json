@@ -1,0 +1,414 @@
+{
+  "version": 1,
+  "description": "Authored before supervised training; no tuning on these cases. Not an independent human corpus. Original intents.json test is regression only after earlier inspection.",
+  "cases": [
+    {
+      "id": "en-challenge-1",
+      "locale": "en",
+      "label": "pause",
+      "text": "Please pause playback for a moment",
+      "intent": {
+        "action": "pause"
+      }
+    },
+    {
+      "id": "en-challenge-2",
+      "locale": "en",
+      "label": "pause",
+      "text": "Hold the current song",
+      "intent": {
+        "action": "pause"
+      }
+    },
+    {
+      "id": "en-challenge-3",
+      "locale": "en",
+      "label": "resume",
+      "text": "You can resume playback now",
+      "intent": {
+        "action": "resume"
+      }
+    },
+    {
+      "id": "en-challenge-4",
+      "locale": "en",
+      "label": "resume",
+      "text": "Keep the music going",
+      "intent": {
+        "action": "resume"
+      }
+    },
+    {
+      "id": "en-challenge-5",
+      "locale": "en",
+      "label": "stop",
+      "text": "Stop the audio completely",
+      "intent": {
+        "action": "stop"
+      }
+    },
+    {
+      "id": "en-challenge-6",
+      "locale": "en",
+      "label": "stop",
+      "text": "End the current playback session",
+      "intent": {
+        "action": "stop"
+      }
+    },
+    {
+      "id": "en-challenge-7",
+      "locale": "en",
+      "label": "next",
+      "text": "Skip forward a song please",
+      "intent": {
+        "action": "next"
+      }
+    },
+    {
+      "id": "en-challenge-8",
+      "locale": "en",
+      "label": "next",
+      "text": "Move on to another track",
+      "intent": {
+        "action": "next"
+      }
+    },
+    {
+      "id": "en-challenge-9",
+      "locale": "en",
+      "label": "previous",
+      "text": "Return to the preceding track",
+      "intent": {
+        "action": "previous"
+      }
+    },
+    {
+      "id": "en-challenge-10",
+      "locale": "en",
+      "label": "previous",
+      "text": "Go back to the song before this one",
+      "intent": {
+        "action": "previous"
+      }
+    },
+    {
+      "id": "en-challenge-11",
+      "locale": "en",
+      "label": "play",
+      "text": "Please play artist Radiohead",
+      "intent": {
+        "query": "Radiohead",
+        "kind": "artist",
+        "artist": null,
+        "title": null
+      }
+    },
+    {
+      "id": "en-challenge-12",
+      "locale": "en",
+      "label": "play",
+      "text": "I want to hear Massive Attack — Teardrop",
+      "intent": {
+        "query": "Massive Attack — Teardrop",
+        "kind": "track",
+        "artist": "Massive Attack",
+        "title": "Teardrop"
+      }
+    },
+    {
+      "id": "en-challenge-13",
+      "locale": "en",
+      "label": "play",
+      "text": "Play song Do Not Disturb",
+      "intent": {
+        "query": "Do Not Disturb",
+        "kind": "track",
+        "artist": null,
+        "title": null
+      }
+    },
+    {
+      "id": "en-challenge-14",
+      "locale": "en",
+      "label": "play",
+      "text": "Play track Pause",
+      "intent": {
+        "query": "Pause",
+        "kind": "track",
+        "artist": null,
+        "title": null
+      }
+    },
+    {
+      "id": "en-challenge-15",
+      "locale": "en",
+      "label": "language",
+      "text": "Please switch language to Russian",
+      "intent": {
+        "locale": "ru"
+      }
+    },
+    {
+      "id": "en-challenge-16",
+      "locale": "en",
+      "label": "language",
+      "text": "Use English for commands please",
+      "intent": {
+        "locale": "en"
+      }
+    },
+    {
+      "id": "en-challenge-17",
+      "locale": "en",
+      "label": "reject",
+      "text": "Could you explain why playback stopped?"
+    },
+    {
+      "id": "en-challenge-18",
+      "locale": "en",
+      "label": "reject",
+      "text": "Do not interrupt the current song"
+    },
+    {
+      "id": "en-challenge-19",
+      "locale": "en",
+      "label": "reject",
+      "text": "He asked whether we should skip this track"
+    },
+    {
+      "id": "en-challenge-20",
+      "locale": "en",
+      "label": "reject",
+      "text": "The next song was recorded in London"
+    },
+    {
+      "id": "en-challenge-21",
+      "locale": "en",
+      "label": "reject",
+      "text": "I paused the film yesterday"
+    },
+    {
+      "id": "en-challenge-22",
+      "locale": "en",
+      "label": "reject",
+      "text": "Do not play track Pause"
+    },
+    {
+      "id": "en-challenge-23",
+      "locale": "en",
+      "label": "reject",
+      "text": "\"Resume playback\" is written on the screen"
+    },
+    {
+      "id": "en-challenge-24",
+      "locale": "en",
+      "label": "reject",
+      "text": "Increase the volume a little"
+    },
+    {
+      "id": "ru-challenge-1",
+      "locale": "ru",
+      "label": "pause",
+      "text": "Пожалуйста приостанови воспроизведение ненадолго",
+      "intent": {
+        "action": "pause"
+      }
+    },
+    {
+      "id": "ru-challenge-2",
+      "locale": "ru",
+      "label": "pause",
+      "text": "Сделай паузу в музыке",
+      "intent": {
+        "action": "pause"
+      }
+    },
+    {
+      "id": "ru-challenge-3",
+      "locale": "ru",
+      "label": "resume",
+      "text": "Теперь можно продолжить воспроизведение",
+      "intent": {
+        "action": "resume"
+      }
+    },
+    {
+      "id": "ru-challenge-4",
+      "locale": "ru",
+      "label": "resume",
+      "text": "Пусть музыка снова играет",
+      "intent": {
+        "action": "resume"
+      }
+    },
+    {
+      "id": "ru-challenge-5",
+      "locale": "ru",
+      "label": "stop",
+      "text": "Полностью останови музыку",
+      "intent": {
+        "action": "stop"
+      }
+    },
+    {
+      "id": "ru-challenge-6",
+      "locale": "ru",
+      "label": "stop",
+      "text": "Заверши текущее воспроизведение",
+      "intent": {
+        "action": "stop"
+      }
+    },
+    {
+      "id": "ru-challenge-7",
+      "locale": "ru",
+      "label": "next",
+      "text": "Переключи на следующую композицию пожалуйста",
+      "intent": {
+        "action": "next"
+      }
+    },
+    {
+      "id": "ru-challenge-8",
+      "locale": "ru",
+      "label": "next",
+      "text": "Давай перейдем к следующей песне",
+      "intent": {
+        "action": "next"
+      }
+    },
+    {
+      "id": "ru-challenge-9",
+      "locale": "ru",
+      "label": "previous",
+      "text": "Верни предыдущую композицию",
+      "intent": {
+        "action": "previous"
+      }
+    },
+    {
+      "id": "ru-challenge-10",
+      "locale": "ru",
+      "label": "previous",
+      "text": "Давай послушаем прошлую песню",
+      "intent": {
+        "action": "previous"
+      }
+    },
+    {
+      "id": "ru-challenge-11",
+      "locale": "ru",
+      "label": "play",
+      "text": "Пожалуйста включи исполнителя Radiohead",
+      "intent": {
+        "query": "Radiohead",
+        "kind": "artist",
+        "artist": null,
+        "title": null
+      }
+    },
+    {
+      "id": "ru-challenge-12",
+      "locale": "ru",
+      "label": "play",
+      "text": "Хочу послушать Massive Attack — Teardrop",
+      "intent": {
+        "query": "Massive Attack — Teardrop",
+        "kind": "track",
+        "artist": "Massive Attack",
+        "title": "Teardrop"
+      }
+    },
+    {
+      "id": "ru-challenge-13",
+      "locale": "ru",
+      "label": "play",
+      "text": "Включи песню Не отпускай",
+      "intent": {
+        "query": "Не отпускай",
+        "kind": "track",
+        "artist": null,
+        "title": null
+      }
+    },
+    {
+      "id": "ru-challenge-14",
+      "locale": "ru",
+      "label": "play",
+      "text": "Включи трек Пауза",
+      "intent": {
+        "query": "Пауза",
+        "kind": "track",
+        "artist": null,
+        "title": null
+      }
+    },
+    {
+      "id": "ru-challenge-15",
+      "locale": "ru",
+      "label": "language",
+      "text": "Пожалуйста переключи язык на английский",
+      "intent": {
+        "locale": "en"
+      }
+    },
+    {
+      "id": "ru-challenge-16",
+      "locale": "ru",
+      "label": "language",
+      "text": "Используй русский язык команд пожалуйста",
+      "intent": {
+        "locale": "ru"
+      }
+    },
+    {
+      "id": "ru-challenge-17",
+      "locale": "ru",
+      "label": "reject",
+      "text": "Объясни почему музыка остановилась"
+    },
+    {
+      "id": "ru-challenge-18",
+      "locale": "ru",
+      "label": "reject",
+      "text": "Не прерывай текущую композицию"
+    },
+    {
+      "id": "ru-challenge-19",
+      "locale": "ru",
+      "label": "reject",
+      "text": "Он спросил стоит ли пропустить этот трек"
+    },
+    {
+      "id": "ru-challenge-20",
+      "locale": "ru",
+      "label": "reject",
+      "text": "Следующую песню записали в Лондоне"
+    },
+    {
+      "id": "ru-challenge-21",
+      "locale": "ru",
+      "label": "reject",
+      "text": "Вчера я поставил фильм на паузу"
+    },
+    {
+      "id": "ru-challenge-22",
+      "locale": "ru",
+      "label": "reject",
+      "text": "Не включай трек Пауза"
+    },
+    {
+      "id": "ru-challenge-23",
+      "locale": "ru",
+      "label": "reject",
+      "text": "«Продолжи воспроизведение» написано на экране"
+    },
+    {
+      "id": "ru-challenge-24",
+      "locale": "ru",
+      "label": "reject",
+      "text": "Сделай звук немного громче"
+    }
+  ]
+}

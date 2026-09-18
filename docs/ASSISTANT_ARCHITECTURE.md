@@ -151,8 +151,10 @@ edition is not silently replaced with a studio recording.
 
 ## Migration and storage
 
-The existing schema-2 settings table stores `language.locale` and `response.mode`.
-No catalog/history rewrite or schema bump is required. Migration and startup
+The settings table stores `language.locale` and `response.mode`. The current
+Assistant database is schema 3; the language refactor itself required no schema
+bump. The later [command catalog](ASSISTANT_COMMAND_CATALOG.md) migration adds
+snapshot tables without rewriting settings/history. Language migration and startup
 resolution occur in one SQLite transaction; validation failure preserves old keys.
 Existing configuration files are read compatibly and are never rewritten.
 
@@ -220,3 +222,13 @@ They evaluate class labels and candidate sources without installing a live
 Interpreter provider. Label similarity cannot fabricate music/language slots;
 prototype vector candidates still pass through the common final ranker. See the
 [measured checkpoint](ASSISTANT_NLU_RESEARCH.md#first-model-experiment-checkpoint).
+
+## Diagnostic learned interpretation
+
+`/explain TEXT` is an explicit non-executing application command. It compares the
+existing parser with extraction templates/guards and an optional portable learned
+classifier from a versioned locale snapshot. It does not register a new executing
+provider, resolve a music catalog, call Controller or change language from the
+text. `/commands` manages that snapshot independently of Library generations.
+See [the command catalog](ASSISTANT_COMMAND_CATALOG.md) for storage, publication,
+training boundaries and the remaining acceptance gates.

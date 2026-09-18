@@ -46,8 +46,10 @@ is personal data and is stored locally as supplied within the input limit.
 ## Storage and failure semantics
 
 The journal uses `assistant.sqlite3` in `[storage].data_dir`, alongside the separate
-`library.sqlite3`. Schema **2** adds `requests` and `request_events` to the existing
-`settings` table. Migration from schema 1 preserves preferences under a transaction;
+`library.sqlite3`. The current schema is **3**: schema 2 added `requests` and
+`request_events` to `settings`; schema 3 adds independent
+[command snapshots](ASSISTANT_COMMAND_CATALOG.md). Migration preserves preferences
+and existing requests/events under a transaction;
 unknown schema versions are rejected. Event foreign keys cascade when a request
 is removed. New database/export files are private to the user.
 

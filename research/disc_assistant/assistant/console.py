@@ -28,7 +28,8 @@ HELP = '''Enter Play … / Включи …, Pause / Пауза, Resume / Про
 Next track / Следующий трек, Previous track / Предыдущий трек.
 Commands use one active locale; /language CODE changes input and replies.
 /connect  /disconnect  /device  /status  /queue  /sync  /index
-/search TEXT  /rank TEXT  /language [CODE|reset]  /help  /clear  /exit
+/search TEXT  /rank TEXT  /explain TEXT  /commands [rebuild|import FILE]
+/language [CODE|reset]  /help  /clear  /exit
 /response [mode none|errors|all|reset]  /locales
 /debug [on|off]  Stream request traces for this console session
 /transcribe FILE  /rank --audio FILE  /ask --audio FILE  (PCM WAV input)
@@ -190,6 +191,14 @@ class Application:
         if line.startswith('/'):
             command, _, text = line[1:].partition(' ')
             text = text.strip()
+            if command == 'explain':
+                from research.disc_assistant.assistant.explain import preview
+                return preview(self.config, text, trace)
+            if command == 'commands':
+                from research.disc_assistant.assistant.command_catalog import command as catalog_command
+                result = catalog_command(self.config, shlex.split(text))
+                trace.event('command_catalog', result)
+                return result
             if command == 'debug':
                 if text not in ('', 'on', 'off'):
                     raise ValueError('/debug accepts on or off')

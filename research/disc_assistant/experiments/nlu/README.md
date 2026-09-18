@@ -156,3 +156,79 @@ for command execution. Next compare a classifier trained on explicit hard
 negatives (including negation and reported speech), improve slot extraction and
 exercise structured Natural Language Search on a typed metadata fixture. Do not
 rewrite the test corpus to make the current model pass.
+
+## Supervised command study
+
+The separate `train_commands` runner now compares supervised linear heads on text
+TF-IDF and frozen MiniLM vectors. The first uses shared standard-library feature
+extraction and exports portable JSON for `/explain`; the second measures whether
+the frozen embedding geometry helps after supervised training. Neither fine-tunes
+the encoder or enables live command execution. Reference vectors are exported
+alongside the text model and can be published atomically to the Assistant command
+catalog. See [storage and import](../../../../docs/ASSISTANT_COMMAND_CATALOG.md).
+
+```sh
+lab=/tmp/disc-nlu-lab
+"$lab/venv/bin/python" -m research.disc_assistant.experiments.nlu.train_commands \
+  --work "$lab" --output "$lab/commands-study"
+```
+
+Use the same prepared isolated environment and local model. No Docker, network,
+player or user library is needed. The new output directory contains the report,
+RU/EN bundles and an isolated `import-check/assistant.sqlite3` that verifies actual
+publication. Normal Assistant settings are never read or changed.
+
+Training uses only the 42 authored examples in each locale's command catalog:
+three per positive class and 21 explicit negatives. That small, uneven class
+support is a limitation of this baseline. Vocabulary and IDF are fitted on training
+only; logistic regression uses C=0.1/1/10, no class reweighting, and a frozen encoder.
+The existing 26-case development split selects C, score and margin. Score grid
+0.35/0.45/0.55/0.65/0.75/0.85/0.95/1.01 and margins 0/0.05/0.10/0.15 minimize false
+activation, then maximize macro-F1 and correctness; ties prefer smaller C and more
+conservative acceptance. Softmax scores are not calibrated probabilities of being
+a valid command. Thresholds select the standalone classifier, not the rule guards.
+
+The previously inspected 38-case test split is now **regression evidence**, not a
+fresh holdout. `command_challenge.json` adds 24 cases per locale, authored before
+this supervised run and excluded from fitting/calibration. It includes unfamiliar
+controls, negative/reporting contexts and music names containing control/negation
+words. It is still authored text, not independently collected human speech.
+Normalized duplicate text across source/development/regression/challenge is rejected.
+
+[Recorded evidence](evaluations/2026-09-18-commands.json) preserves parameters,
+development trials, hashes, raw/thresholded classifier measures and complete
+pipeline results. Runtime JSON scores match scikit-learn on all 130 phrases per
+locale to 1e-10. Actual bundle publication passes for both locales.
+
+| Diagnostic pipeline on new challenge | RU correct commands / 16 | RU false activations / 8 | EN correct commands / 16 | EN false activations / 8 |
+| --- | --- | --- | --- | --- |
+| Existing rules | 2 | 0 | 2 | 0 |
+| Extraction templates and guards | 5 | 0 | 5 | 0 |
+| Templates/guards plus trained text fallback | 6 | 0 | 5 | 0 |
+
+All recognized positive candidate intentions in that challenge match their full
+expected arguments. On the older regression set the combined preview identifies
+4/22 commands in each locale with 0/16 false activations; complete positive intents
+are 4/22 RU and 3/22 EN. The remaining EN slot mismatch is visible in the report.
+The guards address known failures, so regression improvements are not independent
+proof of generalization.
+
+The standalone RU text model accepts 3/16 correct challenge commands, the embedding
+head 0/16; both have 0/8 false activations. EN calibration selects **reject-all for
+both heads**, despite the handcrafted extraction path recognizing five commands.
+The combined preview's apparent success must not be attributed to its EN classifier.
+The report retains raw scores so conservative rejection is visible, not presented
+as model quality. These results do not establish that fine-tuning cannot help.
+
+The portable bundles are 909,125 bytes RU / 814,306 bytes EN, including all reference
+vectors and embedding provenance. Standard-library scoring in the desktop research
+process takes p50/p95 0.131/0.168 ms RU and 0.115/0.145 ms EN on 72 warm probes each.
+These timings exclude loading, SQLite, slot extraction, STT and the embedding
+encoder; the process also loaded research dependencies. They are not full request
+latency, memory measurements or Raspberry Pi acceptance. The exported scorer
+requires neither Torch nor the 499 MB encoder at runtime.
+
+Decision: keep learned commands **preview-only**. Improve the training set,
+compare class balancing and later encoder fine-tuning with independent evaluation,
+and measure the exported runtime on Pi. Microphone capture, semantic music
+fallback and structured Typesense Natural Language Search remain separate tasks.

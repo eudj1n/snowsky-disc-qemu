@@ -238,3 +238,26 @@ A database changes storage and startup work, not the similarity geometry:
 intent, correct slots and tested rejection behavior. The current measurements
 therefore still call for negative-aware classification/context handling before
 promoting the cached command vectors into a live interpreter.
+
+## Supervised command checkpoint, 2026-09-18
+
+The [command catalog and `/explain`](ASSISTANT_COMMAND_CATALOG.md) are implemented.
+Locale TOML files remain authoritative; schema-3 SQLite stores atomic snapshots,
+example vectors and optional portable classifiers, rejecting stale/mismatched
+imports. `/explain` replaces the proposed `/interpret` name and compares raw rules,
+slot extraction/guards and the optional model without execution or library search.
+
+The [supervised study](../research/disc_assistant/experiments/nlu/README.md#supervised-command-study)
+compares linear heads on text features and frozen MiniLM vectors. The encoder is
+not fine-tuned. On a new authored challenge, templates/guards recognize 5/16
+commands per locale; the text fallback adds one RU command and no EN commands.
+Neither combined preview falsely activates on eight negatives per locale, but
+EN model calibration rejects everything. The old test is explicitly regression
+now; thresholds use development only. Desktop portable scoring is below 0.2 ms
+p95, excluding loading/STT/encoder work; no Pi performance claim follows.
+
+Completed: command reference storage, model publication, diagnostic explanation,
+initial supervised comparison and bounded argument extraction. Still open: broader
+independent intent data, balanced training/fine-tuning comparisons, real STT error
+coverage, Pi resource measurements, vector music fallback and typed NL filters.
+Do not promote either classifier to `ask` from these small authored results.

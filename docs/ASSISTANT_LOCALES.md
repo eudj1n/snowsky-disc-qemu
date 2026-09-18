@@ -147,3 +147,33 @@ Completion discovers the new filenames automatically. Changing locale updates
 commands and responses together. It does not restrict music metadata or switch
 the player UI. See the [response contract](ASSISTANT_RESPONSES.md) for persistence,
 speech eligibility and reserved dialogue semantics.
+
+## Optional command-learning references
+
+The diagnostic `/explain` has a separate, optional
+`assistant/locales/commands/<code>.toml` source. Add this alongside the ordinary
+command/response locale pair to support explanation and future learned intents.
+Copy the structure of `commands/en.toml`, preserving version 1 and semantic labels
+`pause`, `resume`, `stop`, `next`, `previous`, `play`, `language`, `reject`.
+
+- Set `locale` to the new code. Give each example a stable, unique ID and a
+  nonempty original phrase. Multiple formulations per action are expected.
+- Supply literal play templates with exactly one `{query}` and language templates
+  with exactly one `{language}`. Templates are escaped literals, not regular
+  expressions. Preserve all pattern categories, including negatives and quotes.
+- Add explicit non-command examples: ordinary conversation, negation and reported
+  speech. Review labels with a fluent speaker; a request to continue playing is
+  not a negative merely because it says “without pausing”.
+- Keep development/test examples outside this reference file. Adding a failed test
+  phrase to training turns it into regression evidence, not a holdout success.
+
+Select the locale, run `commands rebuild`, and inspect representative `/explain`
+results. This validates the additional source; `/locales` still validates the
+ordinary grammar/response pair. Rebuild clears the active trained classifier.
+Training/import must match the new source hash. Runtime snapshot/scoring code uses
+locale data without per-language branches; the initial research runner's corpus
+and comparison loop currently cover RU/EN only and need a separate evaluation
+corpus before extending that experiment to another language.
+
+This file is optional for ordinary rule-based `ask`; without it `/explain` cannot
+load a command catalog. See [catalog schema, boundaries and reproduction](ASSISTANT_COMMAND_CATALOG.md).

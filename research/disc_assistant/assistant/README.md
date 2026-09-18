@@ -10,6 +10,7 @@ See the [prototype guide](../README.md) for setup, commands and acceptance, and 
 | `database.py`, `journal.py` | Schema migrations, bounded request/decision events, retention, inspection/export/clear |
 | `preferences.py` | Versioned Assistant SQLite settings; one persistent locale and speech policy with atomic legacy migration, override/reset and effective configuration |
 | `config.py`, `config.example.toml` | Explicit device/search/storage configuration and aliases |
+| `command_catalog.py`, `command_features.py`, `explain.py` | Versioned locale references, portable classifier and non-executing explanation preview |
 | `interpreter.py`, `intents.py` | Replaceable text/context interpretation, literal grammar and validated intentions |
 | `resolver.py`, `matching.py`, `ranking.py` | Catalog name resolution and explained ranking of interpreted music requests |
 | `providers.py`, `speech.py` | Provider identity and independent asynchronous STT/TTS/capture/output contracts |

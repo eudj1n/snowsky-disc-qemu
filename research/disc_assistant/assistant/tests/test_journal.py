@@ -56,7 +56,7 @@ class JournalTests(unittest.TestCase):
                              "INSERT INTO settings VALUES('language.enabled','[\"ru\"]','old');"
                              'PRAGMA user_version=1;')
         with Journal(self.config) as journal:
-            self.assertEqual(journal.db.execute('PRAGMA user_version').fetchone()[0], 2)
+            self.assertEqual(journal.db.execute('PRAGMA user_version').fetchone()[0], 3)
         self.assertEqual(language_command(self.config)['locale'], 'ru')
         self.assertFalse((self.config.data_dir / 'library.sqlite3').exists())
 

@@ -23,6 +23,8 @@ Usage: research/disc_assistant/run.sh [--config PATH] [--source cli|scheduled] [
   queue          Read actual device queue and play mode; no search/index needed
   index          Rebuild Typesense from SQLite
   search QUERY   Return candidates (optional --limit N); no playback
+  explain TEXT Preview intent/arguments and rejection reasons; never executes
+  commands [rebuild|import FILE]  Inspect/publish command snapshots for preview
   rank TEXT      Explain the best matches for Включи … / Play …, without playback
   ask TEXT       Play the best match, or Pause / Resume / Stop / Next / Previous
   transcribe WAV Recognize a PCM WAV file without interpreting or executing it

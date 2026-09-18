@@ -440,3 +440,10 @@ plus real Typesense lexical/vector/hybrid retrieval against synthetic metadata.
 It uses explicit isolated dependencies/model preparation and read-only reports;
 normal `run.sh start`/`ask` behavior and requirements are unchanged. The guide
 contains reproduction commands, measured results and remaining limitations.
+
+The [command catalog and explanation preview](../../docs/ASSISTANT_COMMAND_CATALOG.md)
+add `run.sh explain TEXT` / `/explain TEXT` and `commands [rebuild|import FILE]`.
+They keep locale examples, reference vectors and optional trained text classifiers
+in versioned Assistant SQLite snapshots. They require no new runtime dependencies
+and never change the executing interpreter. The supervised study and import
+instructions are linked from that guide.

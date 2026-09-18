@@ -20,7 +20,7 @@ def connect(directory):
         # Read the schema version under the migration lock, including concurrent startup.
         db.execute('BEGIN IMMEDIATE')
         version = db.execute('PRAGMA user_version').fetchone()[0]
-        if version not in (0, 1, 2):
+        if version not in (0, 1, 2, 3):
             raise ValueError(f'unsupported assistant database version {version}')
         if version == 0:
             db.execute('''CREATE TABLE settings (
@@ -40,6 +40,18 @@ def connect(directory):
             db.execute('CREATE INDEX request_events_request ON request_events(request_id,id)')
             db.execute('CREATE INDEX requests_started ON requests(started_at)')
             db.execute('PRAGMA user_version=2')
+        if version < 3:
+            db.execute('''CREATE TABLE command_snapshots (
+                id TEXT PRIMARY KEY, locale TEXT NOT NULL, source_hash TEXT NOT NULL,
+                payload_json TEXT NOT NULL, created_at TEXT NOT NULL
+                DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ','now')))''')
+            db.execute('''CREATE TABLE command_examples (
+                snapshot_id TEXT NOT NULL REFERENCES command_snapshots(id),
+                example_id TEXT NOT NULL, label TEXT NOT NULL, text TEXT NOT NULL,
+                vector_json TEXT, PRIMARY KEY(snapshot_id, example_id))''')
+            db.execute('''CREATE TABLE command_heads (
+                locale TEXT PRIMARY KEY, snapshot_id TEXT NOT NULL REFERENCES command_snapshots(id))''')
+            db.execute('PRAGMA user_version=3')
         db.commit()
     except BaseException:
         db.close()

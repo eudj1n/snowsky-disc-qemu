@@ -6,6 +6,9 @@ Run [`run.sh`](../research/disc_assistant/run.sh) from the repository root; virt
 activation is unnecessary. `ask` starts the best match without a choice dialogue.
 `rank` explains the same decision without connecting to the device.
 
+`explain` compares intent interpretation without searching or execution; see the
+[command catalog](ASSISTANT_COMMAND_CATALOG.md).
+
 ## Launcher and maintenance
 
 | Command | Behavior | Device effect |
@@ -27,6 +30,8 @@ activation is unnecessary. `ask` starts the best match without a choice dialogue
 | `./research/disc_assistant/run.sh --language en rank 'Play Linkin Park — Numb'` | Explain ranking or a control intent | None |
 | `./research/disc_assistant/run.sh --language en ask 'Play Linkin Park — Numb'` | Select the best candidate, check fresh rows, dispatch once and verify playback | Starts playback |
 | `./research/disc_assistant/run.sh --language en ask 'Pause'` | Execute a state-aware control | See the control table below |
+| `./research/disc_assistant/run.sh explain TEXT` | Preview rules, candidate intention, arguments and rejection reasons | None; offline |
+| `./research/disc_assistant/run.sh commands [rebuild\|import FILE]` | Inspect/publish the active locale command snapshot; rebuild clears its model | None; local database only |
 | `./research/disc_assistant/run.sh test` | Run prototype unit tests | None |
 | `./research/disc_assistant/run.sh check` | Exercise real CLI/controller/SDK against disposable Typesense and a synthetic player | No physical device used |
 | `./research/disc_assistant/run.sh transcribe FILE` | Transcribe PCM WAV with the active locale; return raw and normalized text | None |
@@ -83,6 +88,8 @@ The key is a user-assigned namespace, not a discovered hardware identity.
 | `/queue` | Read the native queue and mode using the shared connection |
 | `/search TEXT` | Search metadata without playback |
 | `/rank TEXT` | Explain a music ranking or control intent without playback |
+| `/explain TEXT` | Compare literal and diagnostic intent/argument parsing, without execution or music search |
+| `/commands [rebuild\|import FILE]` | Inspect/publish command references and optional trained classifier for the active locale |
 | `/exit` | Close the session and release the local ownership lock; keep music and Typesense running |
 
 In a capable terminal, `prompt_toolkit` provides Up/Down recall, Ctrl-R history

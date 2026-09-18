@@ -12,7 +12,9 @@ and the [command table](ASSISTANT_COMMANDS.md).
 The [interpreter, speech and locale architecture](ASSISTANT_ARCHITECTURE.md) is now
 implemented. It supersedes the merged-language/separate-response policy recorded
 in the historical increments below.
-The current device contract is [DISC capabilities](DISC_CAPABILITIES.md).
+The [command catalog and explanation preview](ASSISTANT_COMMAND_CATALOG.md) are
+also implemented; learned classification remains diagnostic while the live
+interpreter uses rules. The current device contract is [DISC capabilities](DISC_CAPABILITIES.md).
 
 ## Goal and first deliverable
 
@@ -813,3 +815,28 @@ no live semantic command rollout or training claim. Full evidence, resource
 observations and limitations are in the experiment guide. All 229 prototype tests
 pass. Next: broader vector-fallback evaluation, trained negative-aware intent
 classification/slots and typed Natural Language Search; human speech remains open.
+
+## Command snapshots and supervised explanation, 2026-09-18
+
+Implemented [versioned command references and `/explain`](ASSISTANT_COMMAND_CATALOG.md)
+(the owner's preferred name for the proposed `/interpret`). Per-locale TOML
+examples/templates compile into Assistant schema-3 snapshots; explicit JSON import
+adds validated model provenance, reference embeddings and a portable text
+classifier. Stale grammar/source changes require an explicit rebuild/retrain.
+Existing preferences/history survive migration; normal execution stays on rules.
+
+The isolated supervised experiment compares word/character TF-IDF and frozen
+MiniLM linear classifiers, with development-only thresholds and a new authored
+challenge. The combined preview recognizes 6/16 RU and 5/16 EN commands, versus
+2/16 each for existing rules, and no false activations on eight negatives each.
+Most improvement comes from explicit extraction: EN model selection rejects all
+predictions. This is not evidence for enabling a learned execution provider.
+See [full results and limitations](../research/disc_assistant/experiments/nlu/README.md#supervised-command-study).
+
+Validation: 241 firmware-free tests, including snapshot rollback/staleness,
+schema-2 migration, slots, negation, CLI/console execution boundaries and split
+isolation; actual training/export/import and scorer parity on 130 cases per locale.
+No physical player, microphone or Pi acceptance was performed in this increment.
+Next: independent command/STT examples and better supervised coverage, then a new
+holdout comparison before enabling the provider. Vector music fallback, structured
+NL filters, microphone input and spoken replies remain separately pending.

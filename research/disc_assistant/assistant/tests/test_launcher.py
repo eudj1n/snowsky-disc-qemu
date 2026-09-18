@@ -87,7 +87,7 @@ class LauncherTests(unittest.TestCase):
         self.env_file.write_text('invalid secret file')
         with patch.object(launcher.subprocess, 'run', return_value=Mock(returncode=0)), \
                 patch.object(launcher, 'environment', side_effect=ValueError('search key missing')):
-            for command in ('ask', 'rank'):
+            for command in ('ask', 'rank', 'explain'):
                 self.assertEqual(launcher.main(['--config', str(self.config), command, 'Пауза']), 0)
 
     def test_start_runs_up_then_one_console_process_and_listen_skips_docker(self):
