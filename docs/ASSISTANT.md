@@ -628,3 +628,34 @@ The prompt displays `[device].key`; `/device` reports configured endpoints and
 cached session state, including while disconnected. It performs no network query
 or target switch. Connected/disconnected command coverage and the 154-test
 prototype suite pass.
+
+
+## Localized response increment, 2026-09-18
+
+Implemented a common response layer for console and one-shot requests. Results
+retain their operation evidence and add `response.code/text/language/speak/interactive`.
+Confirmed, already-satisfied, uncertain, not-sent, interrupted and invalid requests
+receive distinct localized feedback. Maintenance results can have no user-facing
+text. This does not change best-match selection or retry device mutations.
+
+RU/EN templates live in `assistant/locales/replies/`. Persistent response language
+and speech mode (`none`, `errors`, `all`) are independent of accepted command
+languages; scheduled/startup requests are always silent. The journal records
+responses plus template provenance. `interactive` remains false and enabling
+`[dialogue]` is rejected until a request-bound dialogue state machine exists.
+No TTS, microphone input or spoken-delivery tracking is implemented.
+
+Community locales require command and response TOML catalogs, with automatic
+filename discovery and validation of full coverage, literal phrase conflicts and
+safe template parameters. See the [response contract](ASSISTANT_RESPONSES.md) and
+[locale contribution guide](ASSISTANT_LOCALES.md). Console `/response` and `/locales`
+and equivalent one-shot commands expose settings and validation.
+
+Next: physical use feedback and ranking evaluation, then a microphone/voice adapter
+consuming the same response contract. Dialogue, listening-derived recommendations
+and promotion out of research remain separate work.
+
+Validation: 173 prototype tests pass, including contributed-locale loading,
+response policies, CLI/console/journal parity, preference recovery and template
+validation. Disposable acceptance with synthetic TCP/HTTP peers and real
+Typesense also passes. No firmware or physical-device behavior was changed.

@@ -23,6 +23,16 @@ api_key_env = "TYPESENSE_API_KEY"
 # Omit this section to default to both languages.
 enabled = ["ru", "en"]
 
+[response]
+# Independent of accepted command languages and device UI language.
+# Saved /response settings override these defaults; /response reset restores them.
+language = "ru"
+mode = "errors" # none: no speech; errors: problems only; all: every nonempty reply.
+
+[dialogue]
+# Reserved for future conversational flows. True is currently rejected.
+enabled = false
+
 [sync]
 page_size = 200
 max_tracks = 100000

@@ -111,7 +111,7 @@ def main(argv=None):
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--config', default=os.environ.get('DISC_ASSISTANT_CONFIG', '~/disc-assistant.toml'))
     parser.add_argument('--source', choices=('cli', 'scheduled'))
-    parser.add_argument('command', choices=('setup', 'up', 'down', 'start', 'listen', 'language', 'history', 'sync', 'status', 'queue', 'index', 'search', 'rank', 'ask', 'test', 'check'))
+    parser.add_argument('command', choices=('setup', 'up', 'down', 'start', 'listen', 'language', 'response', 'locales', 'history', 'sync', 'status', 'queue', 'index', 'search', 'rank', 'ask', 'test', 'check'))
     parser.add_argument('arguments', nargs=argparse.REMAINDER)
     args = parser.parse_args(argv)
     config_path = Path(args.config).expanduser()
@@ -119,7 +119,7 @@ def main(argv=None):
         config_path = Path(os.environ.get('DISC_ASSISTANT_CALLER_DIR', os.getcwd())) / config_path
     config_path = config_path.resolve()
     try:
-        if args.command not in ('search', 'rank', 'ask', 'language', 'history') and args.arguments:
+        if args.command not in ('search', 'rank', 'ask', 'language', 'response', 'history') and args.arguments:
             raise ValueError('unexpected arguments; see run.sh help')
         if args.command == 'setup':
             subprocess.run([sys.executable, '-m', 'pip', 'install', '-r',

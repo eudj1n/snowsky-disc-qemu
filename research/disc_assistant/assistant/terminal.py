@@ -16,9 +16,10 @@ from prompt_toolkit.styles import Style
 
 from research.disc_assistant.assistant.journal import console_history, recallable
 from research.disc_assistant.assistant.languages import LOCALES
+from research.disc_assistant.assistant.responses import MODES, available_reply_languages
 
 COMMANDS = ('/connect', '/disconnect', '/device', '/status', '/queue', '/sync', '/index',
-            '/search', '/rank', '/language', '/help', '/history', '/clear', '/exit')
+            '/search', '/rank', '/language', '/response', '/locales', '/help', '/history', '/clear', '/exit')
 
 DEFAULT_STYLES = {
     'prompt': 'ansicyan bold',
@@ -46,6 +47,17 @@ class CommandCompleter(Completer):
             options = [p.stem for p in sorted(LOCALES.glob('*.toml')) if p.stem not in chosen]
             if not any(chosen):
                 options.append('reset')
+        elif text.startswith('/response '):
+            parts = text[len('/response '):].split(' ')
+            prefix = parts[-1]
+            if len(parts) == 1:
+                options = ('language', 'mode', 'reset')
+            elif len(parts) == 2 and parts[0] == 'language':
+                options = available_reply_languages()
+            elif len(parts) == 2 and parts[0] == 'mode':
+                options = MODES
+            else:
+                options = ()
         elif text.startswith('/history '):
             prefix = text[len('/history '):]
             options = ('show', 'export', 'prune', 'clear')

@@ -1,5 +1,6 @@
 """Desktop prototype: catalog search, ranked text requests and verified playback."""
 import argparse
+from dataclasses import replace
 import asyncio
 import json
 import os
@@ -11,8 +12,9 @@ from research.disc_assistant.assistant.ranking import rank
 from research.disc_assistant.assistant.playback import execute, device_lock
 from research.disc_assistant.assistant.intents import parse, ControlIntent
 from research.disc_assistant.assistant.languages import load_languages
-from research.disc_assistant.assistant.preferences import effective_config, language_command
+from research.disc_assistant.assistant.preferences import effective_config, language_command, response_command
 from research.disc_assistant.assistant.journal import Trace, history_command, outcome
+from research.disc_assistant.assistant.responses import Responses, attach_response, exception_result, validate_locales
 from research.disc_assistant.assistant.controls import execute as control
 from research.disc_assistant.assistant.queue import observe as observe_queue
 from research.disc_assistant.library.store import Store
@@ -68,6 +70,9 @@ def main(argv=None):
     sub.add_parser('start', help='connect, sync, index and enter the persistent console')
     language = sub.add_parser('language', help='show/set saved command languages, or reset to TOML defaults')
     language.add_argument('languages', nargs='*')
+    response = sub.add_parser('response', help='show/set saved response language and speech policy')
+    response.add_argument('arguments', nargs='*')
+    sub.add_parser('locales', help='validate installed command and response locales')
     history = sub.add_parser('history', help='inspect/export/prune/clear the local request journal')
     history.add_argument('arguments', nargs=argparse.REMAINDER)
     sub.add_parser('sync', help='read the device catalog twice and publish a SQLite snapshot')
@@ -82,19 +87,29 @@ def main(argv=None):
         command = sub.add_parser(name, help=help_text)
         command.add_argument('text')
     args = parser.parse_args(argv)
+    config = None
     try:
         config = load(args.config)
+        base_config = config
         if args.command == 'history':
-            print(json.dumps(history_command(config, args.arguments), ensure_ascii=False, indent=2))
+            config = effective_config(config)
+            print(json.dumps(attach_response(config, history_command(config, args.arguments),
+                command='history', source=args.source or 'cli'), ensure_ascii=False, indent=2))
             return 0
         if args.command in ('listen', 'start'):
             from research.disc_assistant.assistant.console import run
             return run(config, bootstrap=args.command == 'start', source=args.source or 'interactive')
-        if args.command in ('ask', 'rank'):
+        if args.command not in ('language', 'response'):
             config = effective_config(config)
+        elif not (args.command == 'response' and args.arguments == ['reset']):
+            # Preference recovery must not load a broken command-language override.
+            current = response_command(base_config)
+            config = replace(config, response_language=current['language'], response_mode=current['mode'])
         text = getattr(args, 'text', getattr(args, 'query', args.command))
         if args.command == 'language':
             text = 'language ' + ' '.join(args.languages)
+        if args.command == 'response':
+            text = 'response ' + ' '.join(args.arguments)
         with Trace(config, args.command, text, source=args.source or 'cli') as trace:
             trace.event('parse', {})
             intent = parse(args.text, load_languages(config.languages)) if args.command in ('ask', 'rank') else None
@@ -102,7 +117,15 @@ def main(argv=None):
                 trace.intent(intent)
             if args.command == 'language':
                 trace.event('preference', {'name': 'language.enabled'})
-                result = language_command(config, args.languages)
+                result = language_command(base_config, args.languages)
+            elif args.command == 'response':
+                trace.event('preference', {'name': 'response.preferences'})
+                result = response_command(base_config, args.arguments)
+                config = replace(config, response_language=result['language'], response_mode=result['mode'])
+                trace.responses = Responses(config.response_language, config.response_mode)
+                trace.event('response_preferences', trace.responses.context())
+            elif args.command == 'locales':
+                result = validate_locales()
             elif args.command == 'queue':
                 trace.event('execution_started', {'action': 'queue', 'read_only': True})
                 result = observe_queue(config)
@@ -118,10 +141,14 @@ def main(argv=None):
         print(json.dumps(result, ensure_ascii=False, indent=2))
         return 1 if result.get('status') in ('not_sent', 'uncertain') else 0
     except (ValueError, OSError, RuntimeError) as exc:
+        if config is not None:
+            print(json.dumps(exception_result(config, exc, source=args.source or 'cli'), ensure_ascii=False, indent=2))
         suffix = f' (request {exc.request_id})' if hasattr(exc, 'request_id') else ''
         print(f'Assistant: {exc}{suffix}', file=sys.stderr)
         return 1
     except Exception as exc:
+        if config is not None:
+            print(json.dumps(exception_result(config, exc, source=args.source or 'cli'), ensure_ascii=False, indent=2))
         # SDK errors can contain server response bodies. Keep personal data and
         # credentials out of accidental terminal logs.
         suffix = f' (request {exc.request_id})' if hasattr(exc, 'request_id') else ''

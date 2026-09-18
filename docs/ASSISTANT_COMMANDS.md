@@ -13,6 +13,8 @@ activation is unnecessary. `ask` starts the best match without a choice dialogue
 | `./research/disc_assistant/run.sh setup` | Prepare the environment, config and private search key; preserve existing settings | None |
 | `./research/disc_assistant/run.sh start` | Start Typesense, connect, sync/index, then open the persistent text console | Read only until a playback command is entered |
 | `./research/disc_assistant/run.sh history [ARGS]` | Inspect, export, prune or clear the local request journal | None; offline |
+| `./research/disc_assistant/run.sh response [ARGS]` | Show/set response language, speech policy, or reset defaults | None; offline |
+| `./research/disc_assistant/run.sh locales` | Validate installed locale pairs and merged phrases | None; offline |
 | `./research/disc_assistant/run.sh language [CODES\|reset]` | Show/set saved command dictionaries, or reset to TOML defaults | None; offline |
 | `./research/disc_assistant/run.sh listen` | Open the persistent console with existing data; no Docker startup or automatic sync/index | Initial handshake and state reads |
 | `./research/disc_assistant/run.sh up` | Start local Typesense and await readiness | None |
@@ -55,6 +57,8 @@ The key is a user-assigned namespace, not a discovered hardware identity.
 | `/history [ARGS]` | Inspect recent requests, `show ID`, `export PATH`, `prune`, or `clear --yes`; see [history](ASSISTANT_HISTORY.md) |
 | `/help` | List text and maintenance commands |
 | `/clear` | Clear the terminal screen; keep input history, journal and playback |
+| `/response [language CODE\|mode none\|errors\|all\|reset]` | Show/set saved response language and speech policy; see [responses](ASSISTANT_RESPONSES.md) |
+| `/locales` | Validate installed command/response catalogs and their merged phrases |
 | `/language [CODES\|reset]` | Show/set saved command dictionaries immediately; `reset` restores TOML defaults |
 | `/status` | Show connection generation, latest playback observations and local catalog/index state |
 | `/device` | Show the current configuration key, host, TCP/HTTP ports and cached session state; also works while disconnected |
@@ -74,7 +78,7 @@ Ctrl-D on an empty input or `/exit` closes the session. Ctrl-C during an operati
 still exits without replaying any possible device write. `/help` renders readable
 multiline text. Other operation results retain their JSON format.
 
-Completion covers slash commands, `/language` codes, `/history` subcommands and
+Completion covers slash commands, `/language` codes, `/response` locales/modes, `/history` subcommands and
 command phrases from the enabled TOML dictionaries. It follows `/language` changes
 immediately. Music-library completion is deferred; completion does not query or
 control the player. Suggestions never execute without Enter.
@@ -208,12 +212,15 @@ its selection until restart. TOML edits require restart.
 This selects command dictionaries (including their version phrases), not the
 player's UI language or a metadata-language filter. Artist/title text may still
 use any language. `/language` and other slash commands stay available in every
-selection. Replies/help remain English; microphone recognition is not implemented.
+selection. User responses have a separate `/response language CODE` preference;
+technical help remains English. Microphone recognition is not implemented.
 No sync or index rebuild is required.
 
 The bilingual setting is also the default for older configs. Dictionaries merge, allowing mixed
 requests such as `Play песню Numb`. `search` continues accepting arbitrary text.
-Add `assistant/locales/<code>.toml`, enable its code, and add tests. Example:
+For a community contribution, add complete command and response catalogs following
+[the locale guide](ASSISTANT_LOCALES.md). This partial command example illustrates
+the phrase format:
 
 ```toml
 [commands]

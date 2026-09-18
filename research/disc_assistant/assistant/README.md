@@ -6,11 +6,12 @@ See the [prototype guide](../README.md) for setup, commands and acceptance, and 
 
 | File | Responsibility |
 | --- | --- |
-| `__main__.py` | `start`, `listen`, `language`, `history`, `sync`, `status`, `queue`, `index`, `search`, `rank`, `ask`; JSON output and errors |
+| `__main__.py` | `start`, `listen`, `language`, `response`, `locales`, `history`, `sync`, `status`, `queue`, `index`, `search`, `rank`, `ask`; JSON output and errors |
 | `database.py`, `journal.py` | Schema migrations, bounded request/decision events, retention, inspection/export/clear |
-| `preferences.py` | Versioned Assistant SQLite settings; persistent command languages, override/reset and effective configuration |
+| `preferences.py` | Versioned Assistant SQLite settings; persistent command languages and response policy, override/reset and effective configuration |
 | `config.py`, `config.example.toml` | Explicit device/search/storage configuration and aliases |
 | `intents.py`, `ranking.py` | Bilingual play grammar and explained best-match ranking |
+| `responses.py`, `locales/replies/*.toml` | Shared localized feedback, speech policy, template validation and reserved dialogue contract |
 | `languages.py`, `locales/*.toml` | Validated language dictionaries; merged literal command/target/version phrases |
 | `playback.py` | Serialized, fresh Controller selection and playback-state verification |
 | `device.py`, `controls.py` | Application ownership and intent adapters over Controller controls; Assistant Stop policy |
@@ -85,3 +86,16 @@ receiver/reconnect, scan/state reduction, pagination, controls, mode readback an
 queue/selection verification. Assistant supplies storage ownership and policy;
 Controller imports no research/application modules. Legacy internal re-exports
 keep the research CLI/test entry points compatible during promotion.
+
+## User responses and locale contributions
+
+Every traced result includes a `response` object with `code`, nullable localized
+`text`, `language`, `speak` and reserved `interactive: false`. Console and one-shot
+commands share the policy; the journal records the generated reply and template
+provenance. Defaults are Russian replies and speech eligibility for problems only.
+`/response language en` and `/response mode all` persist independently of `/language`.
+No audio or dialogue is implemented. See the [response contract](../../../docs/ASSISTANT_RESPONSES.md).
+
+Community locales consist of command and response TOML catalogs. Follow the
+[contribution guide](../../../docs/ASSISTANT_LOCALES.md), then run `/locales` or the
+standalone validator. No runtime Python registry edits are required.

@@ -3,6 +3,8 @@
 Implemented in the research prototype on **2026-09-18**. This records requests,
 search decisions and operation outcomes for later analysis. It does not yet
 collect listening intervals or change ranking/recommendations.
+[Localized responses](ASSISTANT_RESPONSES.md) record generation and eligibility,
+not proof of console display or spoken delivery.
 
 ## What is recorded
 
@@ -21,6 +23,7 @@ marked `scheduled` requests, and automatic `startup` preparation.
 | Selection | Best candidate, rank, snapshot generation and `automatic_best_match` method; recorded only for a requested launch |
 | Execution | Start of the operation, linked operation ID, reported mutation attempt, observed result/state and separate mode-change outcome when available |
 | Failure | Stage, category and exception class, or `not_sent`/`uncertain` operation outcome; playback confirmation retains a compact last observation; raw exception bodies are excluded |
+| User response | Generated code/text/language, speech eligibility and reserved dialogue flag; request context pins policy, version and template hash |
 | Timing | Per-event UTC timestamp and elapsed milliseconds from request start |
 
 `rank` and `search` retain candidates without claiming playback selection. A

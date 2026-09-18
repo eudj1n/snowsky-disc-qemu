@@ -13,6 +13,7 @@ from uuid import uuid4
 from research.disc_assistant.assistant.database import connect
 from research.disc_assistant.assistant.languages import load_languages, normalized
 from research.disc_assistant.library.store import StaleSnapshot
+from research.disc_assistant.assistant.responses import Responses
 
 
 class JournalWriteError(RuntimeError):
@@ -70,7 +71,7 @@ def outcome(result):
     safe = {k: result[k] for k in ('status', 'operation_id', 'mutation_attempted', 'action',
             'outcome', 'state', 'fresh_position', 'metadata_equivalent_rows', 'assistant_continuation',
             'device_stop_semantics', 'enabled', 'source', 'reused', 'generation', 'index_generation',
-            'track_count', 'error_type', 'requested', 'previous', 'confirmation') if k in result}
+            'track_count', 'error_type', 'requested', 'previous', 'confirmation', 'response') if k in result}
     if result.get('status') in ('not_sent', 'uncertain'):
         safe['failure_category'] = result['status']
     if 'mode_change' in result:
@@ -145,6 +146,7 @@ class Trace:
         self.id, self.stage = uuid4().hex, 'input'
         self.journal = None
         self.started = time.monotonic()
+        self.responses = Responses(config.response_language, config.response_mode)
 
     def __enter__(self):
         if not self.config.journal_enabled:
@@ -155,7 +157,8 @@ class Trace:
             rules = asdict(load_languages(self.config.languages))
             context = {'languages': list(self.config.languages), 'parser_version': 'literal-v1',
                        'language_rules_sha256': hashlib.sha256(json.dumps(rules, sort_keys=True).encode()).hexdigest(),
-                       'selection_policy': 'automatic-best-match', 'continuous_context': self.config.continuous_context}
+                       'selection_policy': 'automatic-best-match', 'continuous_context': self.config.continuous_context,
+                       'response': self.responses.context()}
             with durable_write(self.journal.db):
                 self.journal.db.execute('''INSERT INTO requests
                     (id,session_id,source,device,command,input,normalized_input,input_truncated,context_json,started_at)
@@ -189,7 +192,8 @@ class Trace:
         self.event('selection', {'method': 'automatic_best_match', 'rank': 1,
                                  'generation': result['generation'], 'candidate': candidate(result['candidates'][0])})
 
-    def finish(self, result):
+    def finish(self, result, *, failure=None):
+        self.responses.attach(result, command=self.command, source=self.source, failure=failure)
         safe = outcome(result)
         status = result.get('status', 'completed') if result else 'completed'
         self.event('result', safe)
@@ -206,7 +210,7 @@ class Trace:
         try:
             if exc is not None and self.journal is not None:
                 exc.request_id = self.id
-            if exc is not None and self.journal is not None and not isinstance(exc, JournalWriteError):
+            if exc is not None and not isinstance(exc, JournalWriteError):
                 if isinstance(exc, StaleSnapshot):
                     category = 'stale_index_or_catalog'
                 elif isinstance(exc, (KeyboardInterrupt, SystemExit)):
@@ -221,7 +225,8 @@ class Trace:
                     category = 'execution_error'
                 # Class/category only: exception text may contain credentials or server bodies.
                 self.event('error', {'stage': self.stage, 'category': category, 'type': type(exc).__name__})
-                self.finish({'status': 'interrupted' if category == 'interrupted' else 'error'})
+                exc.assistant_result = self.finish(
+                    {'status': 'interrupted' if category == 'interrupted' else 'error'}, failure=category)
         finally:
             if self.journal is not None:
                 self.journal.__exit__()

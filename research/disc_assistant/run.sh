@@ -14,7 +14,9 @@ Usage: research/disc_assistant/run.sh [--config PATH] [--source cli|scheduled] C
   down           Stop local Typesense, preserving its volume
   start          Start Typesense, connect, sync/index, then keep an interactive console
   listen         Persistent console using existing catalog/index; no Docker startup
-  language [CODES|reset]  Show/set saved command languages (ru, en, or ru en)
+  language [CODES|reset]  Show/set saved command languages (installed locale codes)
+  response [ARGS] Show/set reply language CODE, mode none|errors|all, or reset
+  locales        Validate installed command and response locales
   history [ARGS] View recent requests; show ID, export PATH, prune, clear --yes
   sync           Read the selected DISC catalog into SQLite
   status         Show local catalog/index status

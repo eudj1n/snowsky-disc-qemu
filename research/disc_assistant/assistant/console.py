@@ -12,8 +12,9 @@ from research.disc_assistant.assistant.controls import execute as control
 from research.disc_assistant.assistant.intents import ControlIntent, parse
 from research.disc_assistant.assistant.languages import load_languages
 from research.disc_assistant.assistant.live import DeviceSession
-from research.disc_assistant.assistant.preferences import effective_config, language_command
+from research.disc_assistant.assistant.preferences import effective_config, language_command, response_command
 from research.disc_assistant.assistant.journal import Trace, history_command
+from research.disc_assistant.assistant.responses import Responses, attach_response, exception_result, validate_locales
 from research.disc_assistant.assistant.playback import execute as play
 from research.disc_assistant.assistant.queue import observe as queue
 from research.disc_assistant.assistant.ranking import rank
@@ -24,7 +25,8 @@ from research.disc_assistant.library.store import Store
 HELP = '''Enter Play … / Включи …, Pause / Пауза, Resume / Продолжи, Stop / Стоп,
 Next track / Следующий трек, Previous track / Предыдущий трек.
 /connect  /disconnect  /device  /status  /queue  /sync  /index
-/search TEXT  /rank TEXT  /language [ru|en|ru en|reset]  /help  /clear  /exit
+/search TEXT  /rank TEXT  /language [CODES|reset]  /help  /clear  /exit
+/response [language CODE|mode none|errors|all|reset]  /locales
 /history [LIMIT|show ID|export PATH|prune|clear --yes]
 Terminal: Up/Down history, Ctrl-R search, Tab completion, Right accepts a suggestion,
 Ctrl-L clears the screen, Ctrl-C cancels input, Ctrl-D on empty input exits.
@@ -109,7 +111,9 @@ class Application:
         head['index_current'] = bool(head['generation'] and head['generation'] == head['index_generation']
                                     and head['index_signature'] == signature(self.config.aliases, server))
         return {'session': self.session.status(), 'library': head,
-                'language': {'enabled': list(self.config.languages)}}
+                'language': {'enabled': list(self.config.languages)},
+                'response_preferences': {'language': self.config.response_language, 'mode': self.config.response_mode},
+                'dialogue': {'enabled': False}}
 
     def device(self):
         state = self.session.status()
@@ -122,7 +126,8 @@ class Application:
             return None
         # Inspection/export/clear must not reinsert data or journal the export path.
         if line.strip().split(maxsplit=1)[0] == '/history':
-            return history_command(self.config, shlex.split(line.strip())[1:])
+            return attach_response(self.config, history_command(self.config, shlex.split(line.strip())[1:]),
+                                   command='history', source=source or self.source)
         command = line.strip().split(maxsplit=1)[0][1:] if line.strip().startswith('/') else 'ask'
         with Trace(self.config, command, line, source=source or self.source, session_id=self.session_id) as trace:
             if hasattr(self, 'session'):
@@ -145,6 +150,13 @@ class Application:
                 self.config = replace(self.config, languages=rules.enabled)
                 self.rules = rules
                 return result
+            if command == 'response':
+                trace.event('preference', {'name': 'response.preferences'})
+                result = response_command(self.base_config, text.split())
+                self.config = replace(self.config, response_language=result['language'], response_mode=result['mode'])
+                trace.responses = Responses(self.config.response_language, self.config.response_mode)
+                trace.event('response_preferences', trace.responses.context())
+                return result
             if command in ('search', 'rank'):
                 if not text:
                     raise ValueError(f'/{command} needs text')
@@ -156,6 +168,8 @@ class Application:
                 return asyncio.run(self.search(command, text, trace=trace))
             if text:
                 raise ValueError(f'/{command} takes no arguments')
+            if command == 'locales':
+                return validate_locales()
             if command == 'help':
                 return {'help': HELP}
             if command == 'exit':
@@ -253,12 +267,10 @@ def run(config, *, bootstrap=False, input_fn=None, output=print, source='interac
                 except (EOFError, KeyboardInterrupt):
                     raise
                 except (ValueError, OSError, RuntimeError) as exc:
-                    emit({'status': 'error', 'reason': str(exc), 'request_id': getattr(exc, 'request_id', None)})
+                    emit(dict(exception_result(app.config, exc, source=source), reason=str(exc)))
                 except Exception as exc:
                     # SDK errors can include server bodies. Never print secrets.
-                    emit({'status': 'error', 'reason': type(exc).__name__,
-                          'request_id': getattr(exc, 'request_id', None),
-                          'hint': 'check search configuration; /status and playback controls remain available'})
+                    emit(exception_result(app.config, exc, source=source))
         except (EOFError, KeyboardInterrupt):
             write('Console closed. In-flight writes are not replayed; inspect player state if interrupted.')
     return 0

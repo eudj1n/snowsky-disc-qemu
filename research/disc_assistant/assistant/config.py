@@ -6,6 +6,7 @@ import sys
 import tomllib
 
 from research.disc_assistant.assistant.languages import DEFAULT_LANGUAGES, load_languages
+from research.disc_assistant.assistant.responses import DEFAULT_LANGUAGE, validate_response_preferences
 
 
 @dataclass(frozen=True)
@@ -30,6 +31,9 @@ class Config:
     journal_retention_days: int = 90
     journal_max_requests: int = 10000
     terminal: dict = field(default_factory=dict)
+    response_language: str = DEFAULT_LANGUAGE
+    response_mode: str = 'errors'
+    dialogue_enabled: bool = False
 
 
 def default_data_dir():
@@ -61,6 +65,8 @@ def load(path):
                'sync': {'page_size', 'timeout', 'max_tracks', 'max_requests'},
                'aliases': {'artists', 'titles'},
                'language': {'enabled'},
+               'response': {'language', 'mode'},
+               'dialogue': {'enabled'},
                'playback': {'continuous_context'},
                'journal': {'enabled', 'retention_days', 'max_requests'},
                'terminal': {'color', 'prompt', 'input', 'result', 'error', 'warning', 'suggestion'}}
@@ -79,6 +85,11 @@ def load(path):
     journal_enabled = journal.get('enabled', True)
     if type(journal_enabled) is not bool:
         raise ValueError('journal.enabled must be a boolean')
+    response = raw.get('response', {})
+    response = validate_response_preferences(response.get('language', DEFAULT_LANGUAGE), response.get('mode', 'errors'))
+    dialogue = raw.get('dialogue', {}).get('enabled', False)
+    if dialogue is not False:
+        raise ValueError('dialogue.enabled must be false; dialogue is not implemented')
     terminal = raw.get('terminal', {})
     if type(terminal.get('color', True)) is not bool:
         raise ValueError('terminal.color must be a boolean')
@@ -116,4 +127,5 @@ def load(path):
         number(sync.get('max_tracks', 100000), 'max_tracks', 1, 1000000),
         number(sync.get('max_requests', 10000), 'max_requests', 2, 100000), languages, continuous,
         journal_enabled, number(journal.get('retention_days', 90), 'journal.retention_days', 1, 3650),
-        number(journal.get('max_requests', 10000), 'journal.max_requests', 1, 1000000), terminal)
+        number(journal.get('max_requests', 10000), 'journal.max_requests', 1, 1000000), terminal,
+        response['language'], response['mode'], dialogue)

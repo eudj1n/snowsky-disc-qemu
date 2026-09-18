@@ -18,6 +18,9 @@ artist or track after fresh device checks. The owner deferred interactive choice
 there is no confirmation prompt, including for fuzzy matches. Browser UI,
 microphone, listening history and lyrics follow later.
 See the [command table and ranking policy](../../docs/ASSISTANT_COMMANDS.md).
+Localized [user responses](../../docs/ASSISTANT_RESPONSES.md) include text, speech
+eligibility and reserved dialogue metadata. [New locales](../../docs/ASSISTANT_LOCALES.md)
+can be contributed as TOML catalogs without runtime Python changes.
 
 ## Run on a computer
 
@@ -60,6 +63,8 @@ opens a text console. Enter commands directly, without `ask` or shell quotes:
 ```text
 local-disc-emulator> /device
 local-disc-emulator> /language ru en
+local-disc-emulator> /response language ru
+local-disc-emulator> /response mode errors
 local-disc-emulator> Включи Linkin Park - Numb
 local-disc-emulator> Пауза
 local-disc-emulator> Resume
@@ -79,7 +84,10 @@ existing snapshot/index, without Docker startup or automatic sync/index. This is
 text input; microphone capture is not implemented yet. `/help` lists console
 commands. `/language ru` or `/language en` selects command dictionaries and saves
 the choice for later sessions; `/language ru en` enables both, and `/language reset`
-restores TOML defaults. `/sync` refreshes the catalog; `/index` rebuilds search after changes.
+restores TOML defaults. `/response` independently saves response language and
+speech policy (`none`, `errors`, `all`); defaults are `ru` and `errors`. Debug JSON
+includes reply text even when `speak` is false. No speech synthesis or dialogue
+runs yet. `/locales` checks installed catalogs. `/sync` refreshes the catalog; `/index` rebuilds search after changes.
 
 The terminal uses `prompt_toolkit`: Up/Down recall, Ctrl-R history search, Tab
 completion, history suggestions accepted with Right, and Ctrl-L or `/clear` to
