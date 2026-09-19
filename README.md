@@ -6,7 +6,7 @@ The real stock interface, media library and audio decoder run under `qemu-user`.
 Browse an SD card, play a track, navigate by touch and operate the player's buttons
 without a physical device.
 
-[Quick start](#run-the-emulator) · [Viewer](#viewer) · [Controller](#controller) · [FiiO Control compatibility](#fiio-control-compatibility) · [Source releases](https://github.com/eudj1n/snowsky-disc-qemu/releases) · [Validation & screenshots](docs/STATUS.md)
+[Quick start](#run-the-emulator) · [Viewer](#viewer) · [Controller](#controller) · [Disc Assistant](#experimental-disc-assistant) · [FiiO Control compatibility](#fiio-control-compatibility) · [Source releases](https://github.com/eudj1n/snowsky-disc-qemu/releases) · [Validation & screenshots](docs/STATUS.md)
 
 <table>
   <tr>
@@ -23,7 +23,7 @@ without a physical device.
 
 *Actual V2.57 emulator captures ([capture details](docs/images/README.md)). The browser viewer adds the CSS device and interactive controls shown below.*
 
-Three components share one repository:
+Three core components share one repository, alongside the research experiments below:
 
 - **Emulator** — runs the original MIPS firmware in Docker, provides the device interfaces
   it needs, and makes its UI, storage, audio and local protocol available for testing.
@@ -157,6 +157,49 @@ The prototype supports the stock menu, taps, swipes, Back and screen sleep/wake.
 Audio, SD/media import and saved state are not connected; lockscreen stability
 remains an open research item. It has a separate build/run command under
 `research/browser/`. See the [reproduction guide and limitations](docs/BROWSER.md).
+
+## Experimental: Disc Assistant
+
+**Control music with text or voice commands**, such as “Play Linkin Park — Numb”,
+“Включи исполнителя Иван Дорн” or “Pause”. The Python prototype combines a
+synchronized catalog, SQLite snapshots, Typesense search and ranked selection
+with the shared Controller API for a physical DISC or the emulator.
+
+It offers a persistent terminal console and a separate browser interface for
+text and microphone input, with local Whisper Server transcription and optional
+Piper spoken replies. Commands and responses use one saved locale (RU or EN);
+TOML catalogs support adding languages. Request history, timing and traces help
+inspect interpretation, search and observed playback effects.
+
+With Python 3.11+, Docker Compose and an accessible player or booted emulator:
+
+```sh
+./research/disc_assistant/run.sh setup --all
+# Review ~/disc-assistant.toml before connecting to your target.
+./research/disc_assistant/run.sh web --bootstrap
+# Open http://localhost:8090.
+```
+
+For the text console instead, run `./research/disc_assistant/run.sh start`.
+The generated config initially targets the local emulator (TCP 12100, direct
+HTTP 12113); a physical DISC normally uses HTTP 12103. Close other control clients
+before connecting. The Assistant has its own launcher and optional services;
+the root emulator launcher does not start it. See the
+[setup and console guide](research/disc_assistant/README.md),
+[web guide](docs/ASSISTANT_WEB.md) and [speech setup](docs/ASSISTANT_TTS.md).
+
+**Software MVP accepted on 2026-09-19:** all 64 declared V2.57 emulator text
+scenarios passed (35 RU / 29 EN), including 19 no-mutation cases with zero
+observed mutation writes. The [acceptance report](docs/ASSISTANT_MVP_ACCEPTANCE.md)
+records the evidence and reproduction commands. This known regression cohort
+does not establish human-speech accuracy or hardware performance.
+
+The implementation remains under `research/disc_assistant/`: one action per
+request, automatic best-match selection and no replay of uncertain commands.
+Learned interpretation experiments are read-only comparisons; dialogue and dock
+hardware remain future work. Follow-ups track
+[physical-device acceptance](https://github.com/eudj1n/snowsky-disc-qemu/issues/23)
+and [speech quality/platform performance](https://github.com/eudj1n/snowsky-disc-qemu/issues/24).
 
 ## Historical experiment: diskOS UI preview
 
@@ -292,6 +335,7 @@ source layout, dependency boundaries and test locations.
 | **Controller** | [Capabilities](docs/DISC_CAPABILITIES.md) · [Network](docs/NETWORK.md) · [Protocol](docs/PROTOCOL.md) · [WebSocket](docs/WEBSOCKET.md) · [Opt-in phone LAN bridge](docs/DISCOVERY.md) | `controller/fiio_link.py`, `controller/bridge/ws_bridge.py`, `controller/bridge/lan_bridge.py` |
 | **Firmware research** | [Acquisition](firmware/README.md) · [Porting](docs/PORTING.md) · [Reverse engineering](docs/RE.md) | `firmware/`, `research/ghidra/` |
 | **Browser experiment** | [Build, results and next milestone](docs/BROWSER.md) | `research/browser/`, `research/tests/test_browser_*.js` |
+| **Disc Assistant experiment** | [Setup](research/disc_assistant/README.md) · [Architecture](docs/ASSISTANT_ARCHITECTURE.md) · [Accepted software MVP](docs/ASSISTANT_MVP_ACCEPTANCE.md) | `research/disc_assistant/`, shared `controller/` API |
 | **Historical diskOS experiment** | [Preview results, limitations and status](docs/DISKOS_PREVIEW.md) | `research/diskos/` |
 | **Contributing** | [CI](docs/CI.md) · [Agent instructions](AGENTS.md) | `ci/`, `.github/workflows/` |
 

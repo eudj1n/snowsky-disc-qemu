@@ -3,7 +3,8 @@
 The repository follows the layout agreed in
 [issue #7](https://github.com/eudj1n/snowsky-disc-qemu/issues/7). The preceding DISC
 protocol checkpoint was committed separately (`f5d0968`, merged by `d4e956c`).
-This is one repository and one shared Docker toolchain, with no new service.
+The core components share one repository and Docker toolchain. Research
+experiments can have separate launchers and optional services, as listed below.
 
 ## Ownership and dependencies
 
@@ -15,6 +16,7 @@ This is one repository and one shared Docker toolchain, with no new service.
 | `firmware/profile.py`, `firmware/v*.json`, `firmware/tools/` | Reviewed profiles/fingerprints, acquisition, extraction, OTA and inventory tools | Native extraction tools where needed |
 | `research/ghidra/`, `research/diagnostics/` | Ghidra, ELF tables, GDB and process-memory inspection | Firmware profiles; emulator process helpers for live memory probes |
 | `research/browser/` | Experimental TinyEMU/WASM runtime, local bundle builder and browser UI | Reviewed firmware preparation/shims; pinned public TinyEMU, Linux and QEMU inputs; separate build image |
+| `research/disc_assistant/` | Experimental text/voice command flow, console/web adapters, catalog snapshots/search, locale/response policy and request history | Shared Controller API; SQLite/Typesense; optional Whisper Server and Piper; separate launcher/services |
 | `research/diskos/` | Historical, unsupported source-built diskOS UI preview and isolated launcher | Pinned upstream source; legacy V2.40 runtime and emulator helpers; no supported-profile promotion |
 | `tests/integration/`, `tests/fixtures/` | Cross-component acceptance and generated media | The components under test |
 | `ci/` | Test discovery, disposable Compose orchestration and cleanup | Test implementations under `tests/` |
@@ -68,6 +70,15 @@ The [browser experiment](BROWSER.md) has a separate shell entry point:
 downloaded inputs, generated images and served firmware remain in ignored
 `work/browser-disc/`. It is maintained as experimental research on `2.x` and
 does not start through the normal `run.sh`, viewer or Compose services.
+
+The [Disc Assistant](../research/disc_assistant/README.md) has its own
+`./research/disc_assistant/run.sh` launcher: `setup --all` installs its optional
+speech runtime, `web --bootstrap` starts the browser interface and `start` opens
+the text console. Neither the root launcher nor Viewer starts these services.
+Tests live with the prototype; `ci/assistant.sh` orchestrates disposable firmware
+acceptance implemented under `tests/integration/`. Its
+[software MVP is accepted](ASSISTANT_MVP_ACCEPTANCE.md), while the implementation
+remains under research and uses the shared Controller without reverse imports.
 
 The [historical diskOS preview](DISKOS_PREVIEW.md) preserves its own Compose file,
 `bash research/diskos/build.sh /absolute/path/to/diskos` builder, and in-container
