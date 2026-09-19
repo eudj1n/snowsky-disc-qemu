@@ -6,7 +6,10 @@ Some vendor kernels omit `CONFIG_TASK_IO_ACCOUNTING` and `/proc/self/io`.
 by this project's owner on the same Orange Pi with an earlier Armbian version,
 describes a brpc static-initializer crash before `main()`: Typesense exits 139
 without logs. The owner confirmed the file is also absent on the current kernel;
-this is the matching trigger, not yet a successful run on the updated board.
+this is the matching trigger. After enabling the wrapper, the owner reported a
+working flow and supplied a trace with successful search on the updated board.
+Playback confirmation and voice latency remain separate open items in
+[current status](ASSISTANT_STATUS.md).
 
 ## Diagnose
 

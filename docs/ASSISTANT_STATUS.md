@@ -6,6 +6,24 @@ Conversation and local experiments do not replace device evidence.
 
 ## Typesense on vendor kernels, 2026-09-19
 
+**Owner follow-up:** the updated flow now works on the Orange Pi, and the supplied
+trace contains a successful Typesense retrieval. This confirms search startup/use
+on the current board, not quantified MVP acceptance. One 2.165-second RU recording
+with multilingual base took 13.472 seconds to the command result: adapter
+transcription 8.557 seconds (including model evidence/client overhead), about
+1.06 seconds between transcription and execution-start events, and 3.727 seconds
+from execution start to result. The Typesense query/retrieval event gap was only
+52 ms and is not a server-only measurement. TTS delivery is outside this trace.
+
+The selected artist was correct despite an STT spelling error. Execution returned
+`uncertain` / `CatalogChanged` with playing metadata for that artist. Code review
+places this failure in the subsequent queue-validation stage; the failing field
+is not present in the trace. Do not mark it confirmed solely from artist metadata
+or repeat the mutation. Next work: expose the queue mismatch evidence; measure
+the fixed 2.1-second pre-selection delay and per-event durable journal writes;
+compare STT decoding/thread/quantization options on identical recordings before
+changing quality defaults. No measured Docker overhead or speedup is established.
+
 The owner confirmed missing `/proc/self/io` on the current Orange Pi / Armbian,
 matching the trigger in their upstream Typesense issue #2998. The explicit
 `[typesense].io_accounting_compat = true` option now builds a Typesense 30.2
@@ -20,8 +38,8 @@ the shim allowed the same binary to reach normal startup. Disposable HTTP checks
 passed health, indexing and search with ordinary and missing proc I/O. C probes
 cover pre-main use, fopen/fopen64, missing/present/denied reads and scope boundaries.
 The full 341-test prototype suite passed, followed by all 11 installer tests
-including the additional wrapper-build regression. Orange Pi runtime acceptance
-is still pending; no physical-player command was sent.
+including the additional wrapper-build regression. Initial checks sent no
+physical-player commands; the later owner result is recorded above.
 
 ## Russian voice and previous-track alias, 2026-09-19
 

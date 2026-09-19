@@ -52,8 +52,11 @@ misrecognized both commands; do not present this plumbing check as accuracy.
 Orange Pi: the owner confirmed `/proc/self/io` is absent on the current Armbian
 kernel, matching the trigger in their Typesense issue #2998. The opt-in
 `[typesense].io_accounting_compat` wrapper and diagnostics are documented in
-`../../docs/ASSISTANT_TYPESENSE.md`. Do not enable it automatically or claim board
-acceptance from Docker fault injection; fallback process I/O metrics are zeros.
+`../../docs/ASSISTANT_TYPESENSE.md`. The owner subsequently confirmed working
+search on the board; one voice trace took 13.47 seconds and ended uncertain during
+queue verification despite matching artist playback. See current status for
+timings and next diagnostic work. Do not infer quantified MVP acceptance or
+Docker performance overhead; fallback process I/O metrics are zeros.
 
 Start with `../../docs/ASSISTANT_STATUS.md`: current review follow-up and evidence.
 The owner authorized five sequential increments, each committed and pushed.
