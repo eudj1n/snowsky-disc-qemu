@@ -4,6 +4,24 @@ This is the short continuation index. [The roadmap](ASSISTANT.md) preserves
 historical decisions; [MVP acceptance](ASSISTANT_MVP.md) defines completion.
 Conversation and local experiments do not replace device evidence.
 
+## Benchmark existing native Whisper, 2026-09-19
+
+`speech-benchmark --server http://127.0.0.1:PORT/inference` now reuses an existing
+local server without Docker inspection, process startup/stop, model loading or
+config changes. It compares the same beam5/greedy profiles and frozen audio.
+`--server-threads`/`--server-label` are optional declarations, not setters or
+attestation. Thread sweeps and multiple reference models are rejected in this
+mode; restart the external server explicitly between runs. Reports distinguish
+external execution, unmeasured startup and reference-file-only model hashes.
+See [native-server instructions](ASSISTANT_SPEECH_BENCHMARK.md#existing-native-server-no-docker).
+
+**354 prototype tests passed**. A native v1.9.4 CPU server completed four requests
+(two decoder profiles, warmup and measured repeat) on existing synthetic RU audio;
+the server was still running afterward and was stopped only by its owning test
+harness. HTTP tests prohibit every Docker/process-management call and cover error
+reports and rejection boundaries. No board speed/quality conclusion follows from
+this local plumbing check; the owner's comparative measurements remain separate.
+
 ## Owner's first Orange Pi latency comparison, 2026-09-19
 
 The owner supplied console timings for two RU recordings using base, threads 2/4,

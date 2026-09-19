@@ -71,6 +71,12 @@ behavior is unchanged. 352 prototype tests and native Docker plumbing passed;
 Orange Pi comparative measurements remain pending. One Controller WebSocket
 timeout reproduces on the untouched baseline (details in current status).
 
+The benchmark also accepts `--server http://127.0.0.1:PORT/inference` to use an
+existing native server without any Docker/process lifecycle calls. In that mode
+one reference model is allowed, `--threads` is rejected and `--server-threads` is
+only operator-declared metadata; weights/build/threads are not server-attested.
+Restart the external server explicitly between thread/model comparisons.
+
 Start with `../../docs/ASSISTANT_STATUS.md`: current review follow-up and evidence.
 The owner authorized five sequential increments, each committed and pushed.
 

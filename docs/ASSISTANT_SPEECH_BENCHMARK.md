@@ -6,7 +6,7 @@ Production defaults are unchanged. There is no DISC connection, search, journal,
 catalog hints or TTS in the benchmark.
 
 The pinned server accepts beam/best-of per request; threads are a startup option.
-Each model/thread pair gets a sequential, temporary Docker server with an ephemeral
+By default each model/thread pair gets a sequential, temporary Docker server with an ephemeral
 loopback port and a read-only model mount. Both decoders share that server; their
 order alternates across cases/repeats. Existing services/config are untouched.
 Owned containers are removed on success, failure or Ctrl-C. Abrupt kill/power loss
@@ -14,7 +14,7 @@ may leave `disc-stt-bench-*` containers; inspect that prefix before manual clean
 
 ## Run
 
-Prerequisite: existing `setup --all` installation, local image
+For Docker mode, prerequisite: existing `setup --all` installation, local image
 `disc-assistant-whisper:1.9.4`, and an installed model. No downloads or builds occur
 in the benchmark. Run on the board being measured, from `research/disc_assistant`.
 Avoid concurrent voice requests/CPU-heavy work; record cooling, power and other
@@ -52,6 +52,54 @@ If no recordings exist, create a synthetic plumbing sample using installed Piper
 Synthesis selects/persists RU as usual. Use unused output names. Synthetic samples
 do not replace microphone recordings for product accuracy evaluation.
 
+## Existing native server (no Docker)
+
+Use `--server` for an already running whisper.cpp HTTP server. The benchmark makes
+**no Docker or process-management calls** in this mode. Python dependencies from
+`run.sh setup` are sufficient; `setup --all` is not required. A native server must
+be installed/launched separately. For a CPU comparison with our Docker settings:
+
+```sh
+whisper-server -m /path/to/ggml-base.bin --host 127.0.0.1 --port 8080 \
+  -t 4 -ng -nf -nlp
+```
+
+Keep it running in another terminal, then from `research/disc_assistant`:
+
+```sh
+./run.sh speech-benchmark --audio ~/dorn.wav --locale ru \
+  --server http://127.0.0.1:8080/inference \
+  --model /path/to/ggml-base.bin --server-threads 4 \
+  --server-label whisper.cpp-v1.9.4-native-cpu \
+  --output ~/bench-dorn-native-t4
+```
+
+Use the **same model file loaded by the server**. `--model` can be omitted when
+the TOML model already matches it. The hash identifies that reference file; this
+mode cannot attest the model actually loaded by an external server. Image ID and
+architecture are null, startup is excluded/unmeasured, and execution is explicitly
+`external_server`. The first-request flag means first request in this benchmark,
+not cold server startup. All other input freezing, transcript and summary behavior
+is shared with Docker mode.
+
+`--server-threads 4` and `--server-label` are optional **operator declarations** for
+the report. They do not set threads or verify the binary/backend; an omitted
+thread declaration is unknown (`null`). `--threads` is rejected with `--server`
+instead of pretending to sweep threads through HTTP. Multiple `--model` arguments
+are also rejected: the tool never calls a model-loading endpoint.
+
+To compare two threads, restart the native server yourself with `-t 2`, then run
+the same frozen inputs with `--server-threads 2` and a new output directory. Use
+the same whisper.cpp revision, model bytes, CPU/GPU backend and other server flags
+before attributing a difference to Docker. The server must implement our pinned
+multipart `/inference` contract, including `beam_size`/`best_of`; alternate
+OpenAI-compatible endpoints are not supported by this adapter.
+
+Only explicit loopback URLs such as `127.0.0.1` or `::1` are accepted. No shutdown,
+restart, model loading or external-service cleanup happens, including on errors.
+The two decoding profiles still vary per request. Avoid concurrent clients while
+measuring; the endpoint does not provide isolation from other workloads.
+
 ## Models and quantization
 
 The configured model is used unless `--model` is supplied. Repeat it to compare
@@ -67,7 +115,7 @@ up to four existing files against the identical frozen audio:
 The quantized file must already exist. The tool does not quantize/download it.
 Treat quantization as an experiment, not guaranteed speed or quality parity; see
 [whisper.cpp quantization](https://github.com/ggml-org/whisper.cpp#quantization).
-The report records model/grammar hashes, Docker image ID/architecture, threads and decoder
+The report records model/grammar hashes, Docker image ID/architecture (when managed), threads and decoder
 settings. The mounted model is operator-bound; the HTTP API does not attest loaded
 weights. A model change during a group excludes that group's rows from summaries.
 
@@ -104,3 +152,10 @@ transcription responses, two containers cleaned up. This verifies execution and
 reporting, not Orange Pi speed or recognition quality. Tests cover frozen input,
 hash mismatch, labels, warmup/cold exclusions, errors, startup cleanup and default
 decoder preservation. Compare several actual recordings before choosing defaults.
+
+Existing-server mode was also exercised against a native whisper.cpp v1.9.4 CPU
+binary using a saved synthetic RU WAV: four successful responses, both decoders,
+server still running after the benchmark. Only the test harness stopped its own
+process. Synthetic HTTP tests prohibit all Docker/process-management calls, check
+error reports and unknown thread metadata, and reject ambiguous sweeps/nonlocal
+URLs. These are implementation checks, not Orange Pi speed or quality acceptance.

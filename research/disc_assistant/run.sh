@@ -14,6 +14,7 @@ Usage: research/disc_assistant/run.sh [--config PATH] [--source cli|scheduled] [
   speech-down    Stop speech services, preserving installed models
   speech-benchmark --samples DIR --output DIR [--threads 2 4] [--repeats 3]
                  Compare isolated Whisper decoders/threads; or use --audio WAV --locale ru
+                 --server http://127.0.0.1:8080/inference uses an existing server, without Docker
   up             Start local Typesense and wait for readiness
   down           Stop local Typesense, preserving its volume
   start          Start Typesense, connect, sync/index, then keep an interactive console

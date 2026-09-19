@@ -1,7 +1,7 @@
-"""Fixed-audio STT comparison in disposable servers; never connects to DISC."""
+"""Fixed-audio STT comparison in temporary or existing servers; no DISC access."""
 import argparse
 import asyncio
-from contextlib import contextmanager
+from contextlib import contextmanager, nullcontext
 from dataclasses import asdict
 import hashlib
 import json
@@ -19,6 +19,7 @@ import urllib.request
 from research.disc_assistant.assistant.interpreter import interpret_request, InterpretationContext
 from research.disc_assistant.assistant.languages import normalized, load_languages
 from research.disc_assistant.assistant.responses import locale_code
+from research.disc_assistant.assistant.local_service import endpoint
 from research.disc_assistant.assistant.speech import SpeechContext
 from research.disc_assistant.assistant.voice.backends import model_digest
 from research.disc_assistant.assistant.voice.files import audio_details, command_text, load_audio, resolve_path
@@ -161,19 +162,31 @@ def summarize(rows):
 
 
 async def benchmark(args, config):
+    external = args.server is not None
+    if external:
+        endpoint(args.server, '/inference')
+        if args.threads is not None:
+            raise ValueError('--threads starts Docker profiles; for --server use --server-threads as a declaration only')
+        if len(args.model or []) > 1:
+            raise ValueError('--server uses one already loaded model; specify at most one --model')
+    elif args.server_threads is not None or args.server_label is not None:
+        raise ValueError('--server-threads/--server-label require --server')
+    thread_counts = [args.server_threads] if external else (args.threads or [2, 4])
     cases = cases_from_inputs(args.samples, args.audio, args.locale or config.locale)
     models = [resolve_path(p) for p in (args.model or [config.speech.get('model', '')])]
-    if any(not p.is_file() or ',' in str(p) for p in models) or len(set(models)) != len(models):
-        raise ValueError('select unique existing model files (paths cannot contain commas)')
+    if any(not p.is_file() or (not external and ',' in str(p)) for p in models) or len(set(models)) != len(models):
+        raise ValueError('select unique existing model files (Docker mount paths cannot contain commas)')
     fingerprints = []
     for path in models:
         stat = path.stat()
         fingerprints.append({'model': path.name, 'sha256': model_digest(str(path), stat.st_size, stat.st_mtime_ns)})
-    try:
-        image = json.loads(subprocess.check_output(['docker', 'image', 'inspect', IMAGE], text=True,
-                                                  stderr=subprocess.DEVNULL, timeout=15))[0]
-    except (OSError, subprocess.SubprocessError) as exc:
-        raise RuntimeError('benchmark requires Docker and the installed Whisper image; run setup --all first') from exc
+    image = {'Id': None, 'Architecture': None}
+    if not external:
+        try:
+            image = json.loads(subprocess.check_output(['docker', 'image', 'inspect', IMAGE], text=True,
+                                                      stderr=subprocess.DEVNULL, timeout=15))[0]
+        except (OSError, subprocess.SubprocessError) as exc:
+            raise RuntimeError('benchmark requires Docker and the installed Whisper image; run setup --all first') from exc
     output = resolve_path(args.output)
     repo = Path(__file__).resolve().parents[3]
     if output == repo or repo in output.parents:
@@ -190,21 +203,29 @@ async def benchmark(args, config):
     records, profiles, failures = [], [], []
     report = {'version': 1, 'scope': 'STT and interpreter only; no search, device execution, journal or TTS',
               'status': 'running', 'image_id': image['Id'], 'image_architecture': image['Architecture'],
+              'execution': 'external_server' if external else 'managed_docker',
+              'server_url': args.server, 'server_label': args.server_label,
+              'first_request_scope': 'benchmark_run' if external else 'fresh_server',
               'runner_system': platform.system(), 'runner_machine': platform.machine(),
               'grammar_sha256': {locale: hashlib.sha256(json.dumps(asdict(load_languages((locale,))),
                                     sort_keys=True).encode()).hexdigest() for locale in {c['locale'] for c in cases}},
               'catalog_hints': False, 'repeats': args.repeats, 'warmup_per_decoder': args.warmup,
-              'model_binding': 'checksum of read-only mounted operator file; endpoint does not attest weights',
+              'model_binding': ('checksum of operator reference file only; server model is not attested or loaded by benchmark'
+                                if external else 'checksum of read-only mounted operator file; endpoint does not attest weights'),
               'models': fingerprints, 'profiles': profiles, 'failures': failures}
     private_json(output / 'run.json', report)
     try:
         with open(output / 'rows.jsonl', 'x', encoding='utf-8', opener=lambda p, f: os.open(p, f, 0o600)) as stream:
             for model_index, (model, fingerprint) in enumerate(zip(models, fingerprints)):
-                for threads in args.threads:
-                    group = f'm{model_index}-t{threads}'
-                    print(f'Starting {group}: {model.name}, {threads} threads', flush=True)
+                for threads in thread_counts:
+                    group = 'external' if external else f'm{model_index}-t{threads}'
+                    if external:
+                        print(f'Using existing server: {args.server}; threads={threads} (operator-declared, not changed)', flush=True)
+                    else:
+                        print(f'Starting {group}: {model.name}, {threads} threads', flush=True)
                     try:
-                        with server(model, threads) as (url, startup_ms):
+                        context = nullcontext((args.server, None)) if external else server(model, threads)
+                        with context as (url, startup_ms):
                             providers = []
                             for label, beam, best in DECODERS:
                                 provider = WhisperServer({'model': str(model), 'server_url': url,
@@ -214,6 +235,7 @@ async def benchmark(args, config):
                                     raise ValueError('model changed before comparison')
                                 profile = group + '-' + label
                                 profiles.append({'id': profile, 'threads': threads, 'model_sha256': fingerprint['sha256'],
+                                                 'threads_binding': 'operator_declared_not_server_attested' if external else 'launch_arguments',
                                                  'decoder': evidence['decoder'], 'startup_ms': startup_ms})
                                 providers.append((profile, provider))
                             first_request = True
@@ -256,13 +278,19 @@ def main(argv, config):
     parser.add_argument('--locale', help='locale for unlabelled audio; defaults to config')
     parser.add_argument('--output', required=True, help='new private directory outside the checkout')
     parser.add_argument('--model', action='append', help='existing model file; repeat to compare quantization/models')
-    parser.add_argument('--threads', type=int, nargs='+', default=[2, 4])
+    parser.add_argument('--threads', type=int, nargs='+', help='Docker thread profiles; default 2 4')
+    parser.add_argument('--server', help='existing loopback /inference URL; no Docker or process lifecycle calls')
+    parser.add_argument('--server-threads', type=int, help='declare existing server threads for the report; does not change them')
+    parser.add_argument('--server-label', help='operator-provided server build/backend label (not attested)')
     parser.add_argument('--repeats', type=int, default=3)
     parser.add_argument('--warmup', type=int, default=1)
     parser.add_argument('--timeout', type=int, default=120)
     args = parser.parse_args(argv)
     if (not 1 <= args.repeats <= 20 or not 0 <= args.warmup <= 5 or not 1 <= args.timeout <= 600
-            or not 1 <= len(args.threads) <= 8 or any(not 1 <= n <= 64 for n in args.threads)
-            or len(set(args.threads)) != len(args.threads) or len(args.model or []) > 4):
+            or (args.threads is not None and (not 1 <= len(args.threads) <= 8
+                or any(not 1 <= n <= 64 for n in args.threads) or len(set(args.threads)) != len(args.threads)))
+            or (args.server_threads is not None and not 1 <= args.server_threads <= 64)
+            or (args.server_label is not None and (not 1 <= len(args.server_label) <= 120
+                or any(ord(c) < 32 for c in args.server_label))) or len(args.model or []) > 4):
         raise ValueError('invalid benchmark bounds (see speech-benchmark --help)')
     return asyncio.run(benchmark(args, config))

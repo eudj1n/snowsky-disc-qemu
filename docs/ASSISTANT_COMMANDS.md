@@ -16,7 +16,7 @@ activation is unnecessary. `ask` starts the best match without a choice dialogue
 | `./research/disc_assistant/run.sh setup` | Prepare the environment, config and private search key; preserve existing settings | None |
 | `./research/disc_assistant/run.sh setup --all [--whisper-model base\|small]` | Install runtime, pinned speech models and Docker images; back up/update speech config | None |
 | `./research/disc_assistant/run.sh speech-up` / `speech-down` | Start/stop managed Whisper Server and Piper | None |
-| `./research/disc_assistant/run.sh speech-benchmark --samples DIR --output DIR` | Compare fixed audio with temporary Whisper servers; also accepts `--audio WAV --locale ru` | None; [benchmark guide](ASSISTANT_SPEECH_BENCHMARK.md) |
+| `./research/disc_assistant/run.sh speech-benchmark --samples DIR --output DIR` | Compare fixed audio with temporary Whisper servers; `--server URL` uses an existing server without Docker; also accepts `--audio WAV --locale ru` | None; [benchmark guide](ASSISTANT_SPEECH_BENCHMARK.md) |
 | `./research/disc_assistant/run.sh start` | Start Typesense, connect, sync/index, then open the persistent text console | Read only until a playback command is entered |
 | `./research/disc_assistant/run.sh history [ARGS]` | Inspect, export, prune or clear the local request journal | None; offline |
 | `./research/disc_assistant/run.sh response [ARGS]` | Show/set speech policy, or reset its default | None; offline |

@@ -8,6 +8,7 @@ from types import SimpleNamespace
 import unittest
 from unittest.mock import patch
 import wave
+from aiohttp import web
 
 from research.disc_assistant.experiments import speech_benchmark as bench
 from research.disc_assistant.assistant.speech import Transcription, SpeechUnavailable
@@ -25,7 +26,8 @@ class BenchmarkTests(unittest.IsolatedAsyncioTestCase):
         self.model = self.root / 'model.bin'
         self.model.write_bytes(b'fixture model')
         self.args = SimpleNamespace(samples=None, audio=[str(self.audio)], locale='en', model=[str(self.model)],
-                                    output=str(self.root / 'report'), threads=[2, 4], repeats=2, warmup=1, timeout=1)
+                                    output=str(self.root / 'report'), threads=[2, 4], repeats=2, warmup=1, timeout=1,
+                                    server=None, server_threads=None, server_label=None)
         self.config = SimpleNamespace(locale='en', speech={})
         self.starts, self.stops, self.seen = [], [], []
 
@@ -131,3 +133,67 @@ class BenchmarkTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(removed, ['docker', 'rm', '-f', created[created.index('--name') + 1]])
         self.assertIn('127.0.0.1::18119', created)
         self.assertNotIn('--privileged', created)
+
+    async def test_existing_http_server_without_docker_and_with_unattested_identity(self):
+        forms = []
+        status = 200
+        async def infer(request):
+            data = await request.post()
+            forms.append((data['beam_size'], data['best_of'], data['file'].file.read()))
+            return web.json_response({'task': 'transcribe', 'language': 'english', 'text': 'Pause.'}, status=status)
+        app = web.Application()
+        app.router.add_post('/inference', infer)
+        runner = web.AppRunner(app)
+        await runner.setup()
+        self.addAsyncCleanup(runner.cleanup)
+        site = web.TCPSite(runner, '127.0.0.1', 0)
+        await site.start()
+        port = site._server.sockets[0].getsockname()[1]
+        self.args.server = f'http://127.0.0.1:{port}/inference'
+        self.args.threads = None
+        self.args.server_threads = 4
+        self.args.server_label = 'fixture native CPU'
+        with patch.object(bench.subprocess, 'run', side_effect=AssertionError('must not manage a process')), \
+                patch.object(bench.subprocess, 'check_output', side_effect=AssertionError('must not inspect Docker')), \
+                patch.object(bench, 'server', side_effect=AssertionError('must not create a container')), \
+                redirect_stdout(io.StringIO()):
+            self.assertEqual(await bench.benchmark(self.args, self.config), 0)
+            report = json.loads((self.root / 'report/report.json').read_text())
+            self.assertEqual(report['execution'], 'external_server')
+            self.assertIsNone(report['image_id'])
+            self.assertIsNone(report['image_architecture'])
+            self.assertEqual(report['first_request_scope'], 'benchmark_run')
+            self.assertEqual(report['server_label'], 'fixture native CPU')
+            self.assertEqual(len(report['profiles']), 2)
+            for profile in report['profiles']:
+                self.assertEqual(profile['threads'], 4)
+                self.assertEqual(profile['threads_binding'], 'operator_declared_not_server_attested')
+                self.assertIsNone(profile['startup_ms'])
+            self.assertEqual(len(forms), 6)
+            self.assertEqual({(a, b) for a, b, _ in forms}, {('5', '5'), ('1', '1')})
+            self.assertTrue(all(data == self.audio.read_bytes() for _, _, data in forms))
+            # Reuse the still-running external server; failures do not stop it either.
+            status = 503
+            self.args.output = str(self.root / 'failed-report')
+            self.args.server_threads = None
+            self.assertEqual(await bench.benchmark(self.args, self.config), 1)
+            report = json.loads((self.root / 'failed-report/report.json').read_text())
+            self.assertTrue(all(p['threads'] is None for p in report['profiles']))
+            self.assertEqual(len(forms), 12)
+
+    async def test_existing_server_rejects_ambiguous_model_thread_sweeps_and_nonlocal_url(self):
+        self.args.server = 'http://127.0.0.1:8080/inference'
+        with patch.object(bench.subprocess, 'check_output', side_effect=AssertionError('no Docker')):
+            with self.assertRaisesRegex(ValueError, '--threads'):
+                await bench.benchmark(self.args, self.config)
+            self.args.threads = None
+            self.args.model.append(str(self.model))
+            with self.assertRaisesRegex(ValueError, 'one already loaded model'):
+                await bench.benchmark(self.args, self.config)
+            self.args.model.pop()
+            for url in ('http://192.168.1.2:8080/inference', 'http://127.0.0.1:8080/load',
+                        'http://name:secret@127.0.0.1:8080/inference'):
+                self.args.server = url
+                with self.assertRaises(ValueError):
+                    await bench.benchmark(self.args, self.config)
+        self.assertFalse(Path(self.args.output).exists())
