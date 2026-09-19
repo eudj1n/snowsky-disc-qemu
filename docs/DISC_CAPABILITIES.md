@@ -42,11 +42,11 @@ labelled owner observation; neither implies every variant or hardware output.
 | File transfer | Browse, create folders, upload with progress checks, explicit single-file deletion under SD path guards | Stock HTTP + emulator checks; distinct from deleting an index/list entry. No claim of an atomic file/index transaction. [HTTP](HTTP_API.md). |
 | Library scan/reset | Start/cancel scan; explicit-confirmation index reset; documented recovery | Emulator acceptance. Cancellation can leave a partial replacement index. Reset preserves files but does not preserve every library relationship. Exact app reset sequence unobserved; no personal-library reset requested. [Scan](LIBRARY_SCAN.md), [reset](LIBRARY_RESET.md). |
 | Category Delete | Seven scopes and recovery effects documented; physical scoped-track flags 0/1 confirmed | Raw diagnostic contract, **no public general source-delete helper**. Album-group Delete is UI-unsupported; selected-list source deletion can affect other lists or leave stale references. [Deletion matrix](LIBRARY_DELETE.md). |
-| Audio settings | Gain, DRE, filters, SPDIF, channel balance; basic device PEQ user-band/master controls | Emulator readback/persistence; physical codec/filter mappings and settings evidence as documented. No measurement of DSP/audio output; full PEQ workflows deferred. [Settings](REMOTE_SETTINGS.md). |
+| Audio settings | Gain, DRE, filters, SPDIF, channel balance; device PEQ user-band/master controls and stock preset labels | All 21 supported codes/ten User slots checked over TCP/WS. Physical BYPASS=`00F0` only echoes/reapplies the previous mode; public writes remain rejected. Device Save is a no-op; edits persist directly. Reset restores current User bands/master. Local Save/Apply captured: bulk Apply format mismatch reproduced in V2.57; public JSON helper applies correctly. Disposable checks cover reconnect/isolation/restoration. Share requires login and is deferred by owner; editor/Auto EQ remain open; no DSP measurement. [Settings](REMOTE_SETTINGS.md), [PEQ](PEQ.md). |
 | Playback preferences | Read gapless, folder jump and ReplayGain from common settings | Setters rejected by the network allowlist. Artist classification, track display and list gesture mode have no validated remote getter/setter. Local UI callbacks are not network APIs. [Restrictions](REMOTE_SETTINGS.md#playback-preferences-v257). |
 | Work mode / Bluetooth | USB/local/AirPlay mode control and five Bluetooth source-codec preferences | Emulator transitions/persistence + physical app frames. No proof of USB/AirPlay audio, headphone negotiation or achieved bitrate. [Modes](REMOTE_MODES_THEMES.md). |
 | Wallpapers | Five system slots and one custom slot; selection, system metadata editing, full custom PNG upload; opacity, exact RGB, four styles, independent overlays | System edits read/merge/write/verify and activate. Physical alpha/RGB saves confirmed; custom must resend full PNG. Locked display may require unlock/relock. [Theme contract](REMOTE_MODES_THEMES.md#system-theme-editing). |
-| Formats / EOF | Ordinary audio plus CUE/DSF/DFF metadata/selection; five local EOF modes | Emulator checks with generated fixtures; identity collisions and stale favorites documented. Native DSD output/SACD ISO are not covered. [Formats](FORMATS.md), [EOF](TRACK_END.md). |
+| Formats / EOF | Ordinary audio plus CUE/DSF/DFF and one stereo SACD ISO metadata/selection; five ordinary local EOF modes | Generated fixtures and a separate owner-approved ISO test. Identity collisions and lossy favorites documented. Native DSD output, ISO EOF/seek, multichannel and DST remain unvalidated. [Formats](FORMATS.md), [SACD](SACD.md), [EOF](TRACK_END.md). |
 
 Physical screenshot inventory and per-capture limitations: [FiiO Control evidence](FIIO_CONTROL_APP.md).
 
@@ -88,9 +88,14 @@ Physical screenshot inventory and per-capture limitations: [FiiO Control evidenc
 - [#11](https://github.com/eudj1n/snowsky-disc-qemu/issues/11): FiiO account/cloud
   synchronization and Official wallpapers. Owner reports registration/sign-in is
   required; no cloud capture/login requested for the local task.
-- [#9](https://github.com/eudj1n/snowsky-disc-qemu/issues/9): full PEQ preset/BYPASS,
-  device/local Save, Auto EQ and cloud flows.
-- [#8](https://github.com/eudj1n/snowsky-disc-qemu/issues/8): SACD ISO sample/metadata.
+- [#9](https://github.com/eudj1n/snowsky-disc-qemu/issues/9): remaining PEQ editor,
+  and Auto EQ flows without an account; Share/login is deferred to #11. Preset/BYPASS and device/local Save/Apply are
+  captured; Local Apply's bulk-format mismatch is reproduced on V2.57, while
+  the public JSON helper applies the intended bands correctly. See [PEQ](PEQ.md).
+- [#8](https://github.com/eudj1n/snowsky-disc-qemu/issues/8): stereo ISO metadata,
+  selection/favorites and same-path title replacement verified; committed in
+  PR #20. Different track-layout replacement remains unchecked; seek/EOF,
+  DST/multichannel and hardware output are separate extensions. See [scope and limits](SACD.md).
 - [#7](https://github.com/eudj1n/snowsky-disc-qemu/issues/7): repository separation.
 - Subsequent product work: local backend/frontend and Docker packaging, browser
   state service, production reconnect/conflict UI. Exact FiiO slider-formula

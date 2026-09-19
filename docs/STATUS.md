@@ -1,6 +1,17 @@
 # Status
 
-_Current overview updated 2026-09-17. Dated experiments below retain their original findings._
+_Current overview updated 2026-09-19. Dated experiments below retain their original findings._
+
+Owner accepted the current PEQ/SACD checkpoint for PR #20 integration into `2.x`.
+Remaining #8/#9 research is optional backlog, not a blocker for this checkpoint.
+No firmware tag, stable release or new hardware validation is implied.
+
+Issue #8 audit: the limited stereo SACD metadata/identity checkpoint is committed
+in PR #20, including title replacement at the same path and exact restoration.
+Replacing the image with different tracks/layout remains unchecked; seek/EOF,
+DST/multichannel and hardware output are extensions. Issue #8 remains open with
+those limits; this status audit does not rerun media or change PEQ #9's pause.
+See [SACD status](SACD.md#status-audit-2026-09-17).
 
 ## Current capabilities
 
@@ -26,10 +37,10 @@ peripheral controls. See the [README](../README.md) for setup and the visual ove
 | **Custom playlist playback** | V2.57 TCP/WS whole-list and track selection with fresh HTTP name/bounds checks. Tests distinguish list position from SQLite ID and cover rename/edit/position shifts. Physical app comparison remains separate. | [Playlist contract](PLAYLISTS.md) |
 | **Genres / folders / bulk selection** | V2.57 guarded playback and grouped bulk add; index-only deletion/rescan tested. Physical genre hierarchy/scoped-album commands confirmed. Captured whole-genre Play all now tested and used; indexed genre tracks retain type 10. Folder/bulk app flows remain unobserved. Source/group deletion is not exposed. | [Library contract](LIBRARY_BROWSING.md) |
 | **Natural track/list end** | V2.57 five-mode EOF behavior observed over TCP/WS on a short WAV/FLAC custom queue: stop, repeat-one, wrap and random continuation. Gapless/folder jump off. Final stop leaves the queue intact but `0202` silent; loading state 2 is not terminal stop. | [EOF contract and acceptance](TRACK_END.md) |
-| **CUE / DSD metadata** | Generated V2.57 CUE/WAV, DSF and DFF index and select over TCP/WS; CUE queue/favorites use positions. Stock IDs can collide, CUE track fields are lossy and HTTP can mark the wrong row. SACD ISO and native DSD output remain unvalidated. | [Formats and identity](FORMATS.md) |
+| **CUE / DSD metadata** | Generated V2.57 CUE/WAV, DSF and DFF index and select over TCP/WS; CUE queue/favorites use positions. Stock IDs can collide, CUE track fields are lossy and HTTP can mark the wrong row. One owner-approved stereo SACD ISO also has TCP/WS metadata, queue and favorite checks; native DSD output remains unvalidated. | [Formats and identity](FORMATS.md), [SACD](SACD.md) |
 | **Scan cancellation** | V2.57 TCP/WS cooperative cancellation leaves a partial replacement index; finish event is shared with full scans. Fresh full scanning restores the complete catalog; source files are unchanged. | [Scan contract](LIBRARY_SCAN.md) |
 | **Library reset** | Dedicated V2.57 `0621` discards index/favorites, not files/settings/custom-list rows. Requires explicit confirmation. Immediate replies can be inconsistent; rescan alone does not recreate favorites. | [Reset scope and recovery](LIBRARY_RESET.md) |
-| **Remote settings** | TCP/WS gain, DRE, filter, SPDIF, channel balance and user PEQ/master gain with readback and SQLite persistence checks. Stock Gain/filter labels mapped; all six iPhone filter rows now physically paired with codes and restoration confirmed. Balance checks opposite-channel DAC writes. Hardware DSP response remains unvalidated. | [Settings protocol](REMOTE_SETTINGS.md) |
+| **Remote settings** | TCP/WS gain, DRE, filter, SPDIF, channel balance and user PEQ/master gain with readback and SQLite persistence checks. Stock Gain/filter labels mapped; all six iPhone filter rows now physically paired with codes and restoration confirmed. Balance checks opposite-channel DAC writes. All supported EQ preset codes and ten User slots have focused isolation/restoration checks; app BYPASS/Save captures are deferred. Hardware DSP response remains unvalidated. | [Settings protocol](REMOTE_SETTINGS.md), [PEQ](PEQ.md) |
 | **Playback preferences** | V2.57 gapless, folder jump and ReplayGain are readable via fresh `0501` snapshots. Six local UI setter tags are rejected by the independent TCP allowlist, also through the WS bridge; no remote setters exposed. | [Evidence and limits](REMOTE_SETTINGS.md#playback-preferences-v257) |
 | **Modes and lock screen** | Stock USB/local/AirPlay control transitions, five Bluetooth source-codec preferences, five system themes, full custom PNG/overlay metadata and four V2.57 custom styles. Physical audio and screen rendering need separate checks. | [Modes and themes](REMOTE_MODES_THEMES.md) |
 | **OTA monitoring** | Daily catalog check and one tracking Issue per new main-OS/recovery pair. First GitHub-hosted run passed. Package metadata/signature and one chunk were checked separately; guest installation remains untested. | [OTA](OTA.md) |

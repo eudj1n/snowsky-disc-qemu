@@ -1,0 +1,174 @@
+{
+  "source": "2026-09-17-221148.pcap",
+  "sha256": "f21288d4a6ba5e57920bf60363c4c0a6ddc2b6263f745aefaded75f44e82b355",
+  "packets": 1942,
+  "truncated": 0,
+  "duration": 59.69167494773865,
+  "start": "2026-09-17T22:11:49.281804+05:00",
+  "end": "2026-09-17T22:12:48.973479+05:00",
+  "device_packet_counts": {
+    "12100": 130,
+    "12103": 54
+  },
+  "firmware": 257,
+  "note": "Physical Local p1 Apply follow-up. No band getter between Apply and Reset: screenshot is UI evidence, not applied-profile device readback. Captured Reset/reselection restores the baseline, then Off is acknowledged. Network identifiers, unrelated state and artwork omitted.",
+  "screenshot": {
+    "source": "IMG_6841.PNG",
+    "sha256": "27339d75b20a5f9d2a0b925ad9a3458e7675467397dcfc0938321043872c636b"
+  },
+  "baseline": {
+    "bands": {
+      "packet": 1043,
+      "seconds": 22.059575,
+      "tag": "a628",
+      "direction": "disc",
+      "wire": "a628009C0000000900000020004600000000400046000000007D004600000000FA004600000001F4004600000003E8004600000007D000460000000FA000460000001F4000460000003E80004600"
+    },
+    "master": {
+      "packet": 1041,
+      "seconds": 22.048367,
+      "tag": "a629",
+      "direction": "disc",
+      "wire": "a629000C0000"
+    }
+  },
+  "apply": [
+    {
+      "packet": 1423,
+      "seconds": 33.29617,
+      "tag": "0630",
+      "direction": "app",
+      "wire": "0630000cFFBF"
+    },
+    {
+      "packet": 1425,
+      "seconds": 33.297227,
+      "tag": "0678",
+      "direction": "app",
+      "wire": "0678009c00000009FFDD0020004600000000400046000000007D004600000000FA004600000001F4004600000003E8004600000007D000460000000FA000460000001F4000460000003E80004600"
+    }
+  ],
+  "master_reply": {
+    "packet": 1427,
+    "seconds": 33.322137,
+    "tag": "a629",
+    "direction": "disc",
+    "wire": "a629000CFFBF"
+  },
+  "reset": {
+    "request": {
+      "packet": 1433,
+      "seconds": 44.110129,
+      "tag": "0675",
+      "direction": "app",
+      "wire": "0675000c0000"
+    },
+    "bands": {
+      "packet": 1435,
+      "seconds": 44.145857,
+      "tag": "a628",
+      "direction": "disc",
+      "wire": "a628009C0000000900000020004700000000400047000000007D004700000000FA004700000001F4004700000003E8004700000007D000470000000FA000470000001F4000470000003E80004700"
+    },
+    "master": {
+      "packet": 1437,
+      "seconds": 44.150045,
+      "tag": "a629",
+      "direction": "disc",
+      "wire": "a629000C0000"
+    }
+  },
+  "reselected_reset": {
+    "selection": {
+      "packet": 1773,
+      "seconds": 51.028405,
+      "tag": "0690",
+      "direction": "app",
+      "wire": "0690000c00A9"
+    },
+    "reply": {
+      "packet": 1798,
+      "seconds": 51.038472,
+      "tag": "a639",
+      "direction": "disc",
+      "wire": "a639000C00A9"
+    },
+    "bands": {
+      "packet": 1806,
+      "seconds": 51.077936,
+      "tag": "a628",
+      "direction": "disc",
+      "wire": "a628009C0000000900000020004600000000400046000000007D004600000000FA004600000001F4004600000003E8004600000007D000460000000FA000460000001F4000460000003E80004600"
+    },
+    "master": {
+      "packet": 1804,
+      "seconds": 51.066673,
+      "tag": "a629",
+      "direction": "disc",
+      "wire": "a629000C0000"
+    }
+  },
+  "final_off": {
+    "selection": {
+      "packet": 1919,
+      "seconds": 53.812451,
+      "tag": "0690",
+      "direction": "app",
+      "wire": "0690000c00FF"
+    },
+    "reply": {
+      "packet": 1921,
+      "seconds": 53.823828,
+      "tag": "a639",
+      "direction": "disc",
+      "wire": "a639000C00FF"
+    },
+    "bands": {
+      "packet": 1929,
+      "seconds": 53.857646,
+      "tag": "a628",
+      "direction": "disc",
+      "wire": "a628009C0000000900000020004600000000400046000000007D004600000000FA004600000001F4004600000003E8004600000007D000460000000FA000460000001F4000460000003E80004600"
+    },
+    "master": {
+      "packet": 1927,
+      "seconds": 53.847298,
+      "tag": "a629",
+      "direction": "disc",
+      "wire": "a629000C0000"
+    }
+  },
+  "app_request_tags": [
+    "0599",
+    "0501",
+    "0607",
+    "0627",
+    "0639",
+    "0202",
+    "0629",
+    "0628",
+    "0628",
+    "0690",
+    "0629",
+    "0628",
+    "0675",
+    "0690",
+    "0629",
+    "0628",
+    "0690",
+    "0629",
+    "0628",
+    "0630",
+    "0678",
+    "0675",
+    "0690",
+    "0629",
+    "0628",
+    "0690",
+    "0629",
+    "0628",
+    "0690",
+    "0629",
+    "0628"
+  ]
+}

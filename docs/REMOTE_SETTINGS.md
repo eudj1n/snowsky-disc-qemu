@@ -42,16 +42,25 @@ dB and physical filter response are not inferred from numeric values.
 EQ network **255 = off**, **160..169 = user presets 1..10**. Those user presets map
 to database `EQ_TYPE` **11..20**. Other observed mappings (network → database):
 `0→1, 1→5, 2→2, 3→6, 4→3, 5→7, 6→4, 8→8, 9→9, 10→10`.
-Acceptance exercises off/current restoration and first user preset, not every preset.
+The original settings acceptance exercises off/current restoration and the first
+user preset. The expanded investigation has its own [PEQ scenario](PEQ.md).
+`EQ_LABELS` maps the verified stock device names to these **network** values.
 
-The owner's physical-app screenshots additionally show **BYPASS** as a separate
-tile from Off, device versus local PEQ Save destinations, Auto EQ and local/
-retrieval/catalog tabs. Their wire mappings/workflows are not established; do not
-alias BYPASS to 255 or claim Auto EQ from the existing band setter. See the
+Physical captures identify **BYPASS** as `00F0`, distinct from Off `00FF`:
+V2.57 echoes 240 while reapplying the previous selected mode, so public setters
+continue to reject it. Device Save sends `0626/0000`, whose handler is a no-op;
+band/master writes already persist. Reset is `0675/0000` for the current User
+profile. Local Save creates an app card without an additional captured device
+write. Local Apply sends a bulk hex layout incompatible with V2.57's setter;
+the existing JSON helper correctly applies the intended bands. See the
+[capture and reproduction](PEQ.md#physical-local-apply-and-v257-format-mismatch-2026-09-17).
+Share requires login per owner and is deferred; export, Auto EQ and retrieval/catalog workflows remain unverified;
+do not claim Auto EQ from the existing band setter. See the
 [screen audit](FIIO_CONTROL_APP.md#genre-hierarchy-batch-actions-and-peq-third-batch-2026-09-16).
-The owner deferred this larger PEQ investigation to
-[issue #9](https://github.com/eudj1n/snowsky-disc-qemu/issues/9); no new PEQ capture
-or implementation is required by the current library audit.
+The owner resumed [issue #9](https://github.com/eudj1n/snowsky-disc-qemu/issues/9)
+on 2026-09-17; see the [static contract, focused tests and capture sequence](PEQ.md).
+The [device-edit/Save/Reset evidence](PEQ.md#physical-device-editing-save-and-reset-2026-09-17)
+distinguishes physical readback from static and disposable-emulator checks.
 
 ## Gain and filter labels (V2.57)
 
@@ -222,6 +231,12 @@ number. Positions are 0..9. All five fields are required by our client:
 
 The helper bounds frequency to 20..20000 Hz, gain to -24..12 dB and Q to 0.1..20.
 These are conservative client bounds, not a claim that every edge was audio-tested.
+
+The physical iOS editor also sends an alternative compact hex form of `0678`.
+Its record layout differs from `a628` below; do not copy the getter layout into
+a setter. The helper retains JSON writes. See [PEQ](PEQ.md#compact-write-and-command-semantics)
+for the captured signed fields, local-only immediate reply, Save no-op and reset
+semantics. No public save/reset helper is added by that capture analysis.
 
 The `a628` response contains a four-digit extension (`0000`), followed by ASCII hex
 encoding of bytes:

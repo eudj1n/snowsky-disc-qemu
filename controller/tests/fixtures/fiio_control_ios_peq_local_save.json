@@ -1,0 +1,225 @@
+{
+  "source": "2026-09-17-215948.pcap",
+  "sha256": "6eb208b8e179aed0c592515c4e41c4745bbec68a4d48efcf92f022bd4df08322",
+  "packets": 2805,
+  "truncated": 0,
+  "duration": 179.39966893196106,
+  "start": "2026-09-17T21:59:48.664526+05:00",
+  "end": "2026-09-17T22:02:48.064195+05:00",
+  "device_packet_counts": {
+    "12100": 123,
+    "12103": 55
+  },
+  "firmware": 257,
+  "note": "Local Save p1/p2 is shown in screenshots. Capture ends 22:02:48, before 22:03 screenshots associated with Apply; no claim of applied-profile device readback or its apparent shifted frequency labels. No new handshake after initial connection. Only PEQ evidence retained; network addresses, track metadata and cover bytes excluded.",
+  "app_request_tags": [
+    "0599",
+    "0501",
+    "0607",
+    "0627",
+    "0639",
+    "0202",
+    "0629",
+    "0628",
+    "0628",
+    "0690",
+    "0629",
+    "0628",
+    "0690",
+    "0629",
+    "0628",
+    "0678",
+    "0630",
+    "0690",
+    "0629",
+    "0628",
+    "0690",
+    "0629",
+    "0628",
+    "0675",
+    "0690",
+    "0629",
+    "0628",
+    "0690",
+    "0629",
+    "0628"
+  ],
+  "screenshots": [
+    {
+      "source": "IMG_6833.PNG",
+      "sha256": "0d410b340e3f2c3d2c06fb19786db7f4caab2b903bb72d77f394f62316fbd692"
+    },
+    {
+      "source": "IMG_6834.PNG",
+      "sha256": "20cd0bf7f91c17703c8fb75a483b0f3fd0ab791bd306d3bf08e83d4b18e5520a"
+    },
+    {
+      "source": "IMG_6835.PNG",
+      "sha256": "d7485db1f03736c678d1a939a2a398d01ec8401578413a4402e7728af58b8ae3"
+    },
+    {
+      "source": "IMG_6836.PNG",
+      "sha256": "b0c1932db41eb631aba83c46e7c4474dad3e269ee2cc2b1f2d3d136038c18037"
+    },
+    {
+      "source": "IMG_6837.PNG",
+      "sha256": "8acf056460bd71565de5826125919a577a5b224900dadabf77d5ee3d14a0680e"
+    },
+    {
+      "source": "IMG_6838.PNG",
+      "sha256": "6c9da87289dfa1ba6a887d63f2c7ef03c08995ec4230c8a3f69d730698146eb1"
+    },
+    {
+      "source": "IMG_6839.PNG",
+      "sha256": "550293748fb28cf9dd78856123f8d1136aa88b167f40c0614634e3314c0693f8"
+    }
+  ],
+  "baseline": {
+    "bands": {
+      "packet": 611,
+      "seconds": 16.265329,
+      "tag": "a628",
+      "direction": "disc",
+      "wire": "a628009C0000000900000020004600000000400046000000007D004600000000FA004600000001F4004600000003E8004600000007D000460000000FA000460000001F4000460000003E80004600"
+    },
+    "master": {
+      "packet": 609,
+      "seconds": 16.254658,
+      "tag": "a629",
+      "direction": "disc",
+      "wire": "a629000C0000"
+    }
+  },
+  "band_write": {
+    "packet": 960,
+    "seconds": 34.155333,
+    "tag": "0678",
+    "direction": "app",
+    "wire": "0678001e00000000FFDD0020004600"
+  },
+  "master_write": {
+    "packet": 972,
+    "seconds": 45.253089,
+    "tag": "0630",
+    "direction": "app",
+    "wire": "0630000cFFBF"
+  },
+  "master_reply": {
+    "packet": 974,
+    "seconds": 45.298296,
+    "tag": "a629",
+    "direction": "disc",
+    "wire": "a629000CFFBF"
+  },
+  "reselected_edit": {
+    "selection": {
+      "packet": 2050,
+      "seconds": 126.846302,
+      "tag": "0690",
+      "direction": "app",
+      "wire": "0690000c00A9"
+    },
+    "selection_reply": {
+      "packet": 2052,
+      "seconds": 126.864058,
+      "tag": "a639",
+      "direction": "disc",
+      "wire": "a639000C00A9"
+    },
+    "bands_query": {
+      "packet": 2056,
+      "seconds": 126.866409,
+      "tag": "0628",
+      "direction": "app",
+      "wire": "0628001000000009"
+    },
+    "bands": {
+      "packet": 2060,
+      "seconds": 126.900972,
+      "tag": "a628",
+      "direction": "disc",
+      "wire": "a628009C00000009FFDD0020004600000000400046000000007D004600000000FA004600000001F4004600000003E8004600000007D000460000000FA000460000001F4000460000003E80004600"
+    },
+    "master_query": {
+      "packet": 2054,
+      "seconds": 126.865608,
+      "tag": "0629",
+      "direction": "app",
+      "wire": "0629000c0000"
+    },
+    "master": {
+      "packet": 2058,
+      "seconds": 126.890408,
+      "tag": "a629",
+      "direction": "disc",
+      "wire": "a629000CFFBF"
+    }
+  },
+  "reset": {
+    "request": {
+      "packet": 2086,
+      "seconds": 157.115745,
+      "tag": "0675",
+      "direction": "app",
+      "wire": "0675000c0000"
+    },
+    "bands": {
+      "packet": 2088,
+      "seconds": 157.157673,
+      "tag": "a628",
+      "direction": "disc",
+      "wire": "a628009C0000000900000020004700000000400047000000007D004700000000FA004700000001F4004700000003E8004700000007D000470000000FA000470000001F4000470000003E80004700"
+    },
+    "master": {
+      "packet": 2090,
+      "seconds": 157.161803,
+      "tag": "a629",
+      "direction": "disc",
+      "wire": "a629000C0000"
+    }
+  },
+  "reselected_reset": {
+    "selection": {
+      "packet": 2586,
+      "seconds": 169.185626,
+      "tag": "0690",
+      "direction": "app",
+      "wire": "0690000c00A9"
+    },
+    "selection_reply": {
+      "packet": 2588,
+      "seconds": 169.202214,
+      "tag": "a639",
+      "direction": "disc",
+      "wire": "a639000C00A9"
+    },
+    "bands_query": {
+      "packet": 2592,
+      "seconds": 169.212178,
+      "tag": "0628",
+      "direction": "app",
+      "wire": "0628001000000009"
+    },
+    "bands": {
+      "packet": 2596,
+      "seconds": 169.234261,
+      "tag": "a628",
+      "direction": "disc",
+      "wire": "a628009C0000000900000020004600000000400046000000007D004600000000FA004600000001F4004600000003E8004600000007D000460000000FA000460000001F4000460000003E80004600"
+    },
+    "master_query": {
+      "packet": 2590,
+      "seconds": 169.211542,
+      "tag": "0629",
+      "direction": "app",
+      "wire": "0629000c0000"
+    },
+    "master": {
+      "packet": 2594,
+      "seconds": 169.2239,
+      "tag": "a629",
+      "direction": "disc",
+      "wire": "a629000C0000"
+    }
+  }
+}

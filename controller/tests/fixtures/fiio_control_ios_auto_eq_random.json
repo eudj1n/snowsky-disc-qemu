@@ -1,0 +1,117 @@
+{
+  "source": "2026-09-17-224456.pcap",
+  "sha256": "96b218b0199f14586873008aa76bf416ee914c3371ed6120093be010326d04ba",
+  "packets": 684,
+  "truncated": 0,
+  "duration": 30.474334001541138,
+  "start": "2026-09-17T22:44:57.111083+05:00",
+  "end": "2026-09-17T22:45:27.585417+05:00",
+  "device_packet_counts": {
+    "12100": 40,
+    "12103": 46
+  },
+  "firmware": 257,
+  "note": "One Random press requested. Screenshot changes both selected datasets while red PEQ and visible gains remain zero. Only initial device reads captured; no final reread or confirmed save. Unrelated state, network identifiers and artwork omitted.",
+  "requests": [
+    {
+      "packet": 126,
+      "seconds": 3.81892,
+      "direction": "app",
+      "tag": "0599",
+      "wire": "0599000c0000"
+    },
+    {
+      "packet": 130,
+      "seconds": 3.849964,
+      "direction": "app",
+      "tag": "0501",
+      "wire": "05010008"
+    },
+    {
+      "packet": 132,
+      "seconds": 3.856738,
+      "direction": "app",
+      "tag": "0607",
+      "wire": "0607000c0000"
+    },
+    {
+      "packet": 134,
+      "seconds": 3.85748,
+      "direction": "app",
+      "tag": "0627",
+      "wire": "062700100000A0A9"
+    },
+    {
+      "packet": 134,
+      "seconds": 3.85748,
+      "direction": "app",
+      "tag": "0639",
+      "wire": "0639000c0000"
+    },
+    {
+      "packet": 142,
+      "seconds": 3.893305,
+      "direction": "app",
+      "tag": "0202",
+      "wire": "02020008"
+    },
+    {
+      "packet": 146,
+      "seconds": 3.913928,
+      "direction": "app",
+      "tag": "0629",
+      "wire": "0629000c0000"
+    },
+    {
+      "packet": 148,
+      "seconds": 3.914315,
+      "direction": "app",
+      "tag": "0628",
+      "wire": "0628001000000009"
+    },
+    {
+      "packet": 208,
+      "seconds": 5.057492,
+      "direction": "app",
+      "tag": "0628",
+      "wire": "0628001000000009"
+    }
+  ],
+  "peq_reads": [
+    {
+      "packet": 144,
+      "seconds": 3.913095,
+      "direction": "disc",
+      "tag": "a639",
+      "wire": "a639000C00A9"
+    },
+    {
+      "packet": 159,
+      "seconds": 3.951233,
+      "direction": "disc",
+      "tag": "a629",
+      "wire": "a629000C0000"
+    },
+    {
+      "packet": 161,
+      "seconds": 3.96106,
+      "direction": "disc",
+      "tag": "a628",
+      "wire": "a628009C0000000900000020004600000000400046000000007D004600000000FA004600000001F4004600000003E8004600000007D000460000000FA000460000001F4000460000003E80004600"
+    },
+    {
+      "packet": 210,
+      "seconds": 5.100308,
+      "direction": "disc",
+      "tag": "a628",
+      "wire": "a628009C0000000900000020004600000000400046000000007D004600000000FA004600000001F4004600000003E8004600000007D000460000000FA000460000001F4000460000003E80004600"
+    }
+  ],
+  "http_requests": [
+    "GET /image/cover/"
+  ],
+  "screenshot": {
+    "source": "IMG_6848.PNG",
+    "sha256": "54d16410a6a01c340842f26fd8bbc76bd271bdcacd12d2452bb96d92aad08fbb"
+  }
+}

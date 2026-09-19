@@ -28,7 +28,7 @@ Active firmware: **V2.57**. Local protocol research is finalized in
 - Library scan cancellation and dedicated index reset with recovery checks;
   reset preserves source files. [Scan](docs/LIBRARY_SCAN.md), [reset](docs/LIBRARY_RESET.md).
 - Remote audio settings with verified stock Gain and physical-app filter mapping, channel balance
-  and basic PEQ helpers; read-only gapless,
+  and PEQ helpers with stock preset labels and ten-slot isolation checks; read-only gapless,
   folder-jump and ReplayGain preferences. [Settings and limits](docs/REMOTE_SETTINGS.md).
 - Work-mode/codec preferences and custom wallpaper uploads, including four styles
   and captured color/Date save behavior, with verified safe name limits. System
@@ -39,8 +39,9 @@ Active firmware: **V2.57**. Local protocol research is finalized in
   and rediscovery after disconnect. [Compatibility and limits](docs/DISCOVERY.md).
 - USB-power emulation that inhibits stock idle shutdown, plus idle/reconnect
   checks. USB data/DAC is not emulated. [Power behavior](docs/IDLE_POWER.md).
-- CUE/DSF/DFF metadata and track-selection checks; native DSD output and SACD ISO
-  remain outside this coverage. [Formats](docs/FORMATS.md).
+- CUE/DSF/DFF metadata and track-selection checks, plus opt-in stereo SACD ISO
+  catalog/queue/favorites checks using approved local media. Native DSD output remains
+  unvalidated. [Formats](docs/FORMATS.md), [SACD scope](docs/SACD.md).
 - Sanitized physical-app fixtures, focused integration scenarios and optional
   local failure logs, including captured genre browsing/album selection.
   Long power tests run only when relevant. [Testing](docs/CI.md).
@@ -48,6 +49,11 @@ Active firmware: **V2.57**. Local protocol research is finalized in
   download or promotion. Optional viewer Power-on script for custom startup.
 
 ### Changed
+
+- PEQ coverage now includes physical FiiO Control preset, Save/Reset and local
+  preset workflows. The client retains validated JSON writes because the app's
+  bulk Local Apply format is incompatible with V2.57. Auto EQ and broader SACD
+  checks remain explicit follow-ups. [PEQ](docs/PEQ.md), [SACD](docs/SACD.md).
 
 - Viewer now draws a responsive CSS device with visible physical buttons and
   audio/USB/microSD connectors, removing the photo skin and manual alignment.

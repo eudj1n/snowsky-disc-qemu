@@ -1,0 +1,64 @@
+{
+  "source": "2026-09-17-225312.pcap",
+  "sha256": "b94145d096cad59bb4fd122792b4088e27ad9cb017c76395b7519d700457a73d",
+  "packets": 1057,
+  "truncated": 0,
+  "duration": 47.97738695144653,
+  "start": "2026-09-17T22:53:13.092067+05:00",
+  "end": "2026-09-17T22:54:01.069454+05:00",
+  "device_packet_counts": {
+    "12100": 14
+  },
+  "note": "Owner reports disconnect after Save-result screenshot. This capture contains two unanswered Link handshakes only; no Save, profile readback, Reset or restoration evidence. TCP ACK does not establish Link handshake success. Reset provenance may include capture/proxy behavior; cause unresolved. Network identifiers omitted.",
+  "link": [
+    {
+      "packet": 889,
+      "seconds": 41.892744,
+      "direction": "app",
+      "tag": "0599",
+      "wire": "0599000c0000"
+    },
+    {
+      "packet": 1044,
+      "seconds": 45.264879,
+      "direction": "app",
+      "tag": "0599",
+      "wire": "0599000c0000"
+    }
+  ],
+  "screenshot": {
+    "source": "IMG_6851.PNG",
+    "sha256": "b0267ce5b35588e1a7f0aeb8ac1c95623118fa4f14ddc5f61d335d953534702f",
+    "visible_master_db": -4.6,
+    "visible_bands": [
+      {
+        "frequency": 29,
+        "gain": 0.9
+      },
+      {
+        "frequency": 135,
+        "gain": -2.0
+      },
+      {
+        "frequency": 277,
+        "gain": -1.0
+      },
+      {
+        "frequency": 307,
+        "gain": 1.0
+      },
+      {
+        "frequency": 424,
+        "gain": 2.6
+      },
+      {
+        "frequency": 674,
+        "gain": -0.9
+      },
+      {
+        "frequency": 1602,
+        "gain": -2.5
+      }
+    ]
+  }
+}

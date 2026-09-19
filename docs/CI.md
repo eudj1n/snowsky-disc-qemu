@@ -64,6 +64,12 @@ Keep the real five-minute firmware threshold and 310-second USB observation.
 Shortened timers would test a different condition. Document any validation not
 run; earlier success is not evidence for a subsequently changed implementation.
 
+Focused V2.57 `CI_SCENARIO=peq` exercises all supported device presets and ten
+user slots independently of unrelated settings. `CI_SCENARIO=sacd` additionally
+requires an owner-approved `CI_SACD_ISO=/absolute/path/to/sample.iso`; it uses a
+temporary copy and is never selected by `full` or hosted CI. Its logs/PCM must
+remain local because the input may be private. See [PEQ](PEQ.md) and [SACD](SACD.md).
+
 The research Assistant has a separate, opt-in end-to-end runner:
 `bash ci/assistant.sh OTA_DIR NEW_REPORT_DIR`. It provisions generated media,
 Typesense and a disposable V2.57 guest without published ports or personal settings.
