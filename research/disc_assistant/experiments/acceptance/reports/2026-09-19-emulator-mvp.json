@@ -1,0 +1,610 @@
+{
+  "version": 1,
+  "date": "2026-09-19",
+  "scope": "Accepted software MVP: known emulator regression, not physical or human-speech acceptance",
+  "candidate_commit": "48477e8",
+  "execution_base_revision": "45590a2bdc2258adce95cf1a7af0d17c5c555d25",
+  "source_patch_sha256": "74e4313ac5e65071713e3150f7cef5122f8a93f6cbcc3e8942c93e1da92ff0cb",
+  "source_report_sha256": "c0a2cad04004092546b7f801613bbc208c67c61defcb87e272d5c7392d4f12f6",
+  "source_provenance_sha256": "1658c10610449aa50291a21f09a37f322464d93fad7411e2c8fac65872400c41",
+  "manifest_version": 7,
+  "manifest_sha256": "095362ad4b9a53518de6a8717a9eb413f00485e5c452093b1e0027db95fb0bb6",
+  "firmware": "2.57",
+  "dependencies": {
+    "typesense": "2.0.0",
+    "aiohttp": "3.14.3",
+    "prompt_toolkit": "3.0.53"
+  },
+  "counts": {
+    "planned": 64,
+    "submitted": 64,
+    "passed": 64,
+    "failed": 0,
+    "blocked": 0,
+    "by_locale": {
+      "en": 29,
+      "ru": 35
+    },
+    "no_mutation_cases": 19,
+    "unexpected_writes_in_no_mutation_cases": 0
+  },
+  "verification": "Fresh device/queue readback, declared fixture gold and instrumented command writes; no listening or screenshot-based acceptance",
+  "cases": [
+    {
+      "id": "en-track",
+      "outcome": "passed",
+      "response_status": "playing",
+      "expected_mutation": "required",
+      "observed_mutation_writes": 1,
+      "failed_checks": [],
+      "command_ms": 324.13
+    },
+    {
+      "id": "en-cyrillic",
+      "outcome": "passed",
+      "response_status": "playing",
+      "expected_mutation": "required",
+      "observed_mutation_writes": 1,
+      "failed_checks": [],
+      "command_ms": 307.145
+    },
+    {
+      "id": "en-artist",
+      "outcome": "passed",
+      "response_status": "playing",
+      "expected_mutation": "required",
+      "observed_mutation_writes": 1,
+      "failed_checks": [],
+      "command_ms": 333.987
+    },
+    {
+      "id": "en-duplicate",
+      "outcome": "passed",
+      "response_status": "playing",
+      "expected_mutation": "required",
+      "observed_mutation_writes": 1,
+      "failed_checks": [],
+      "command_ms": 300.839
+    },
+    {
+      "id": "en-shared-artist",
+      "outcome": "passed",
+      "response_status": "playing",
+      "expected_mutation": "required",
+      "observed_mutation_writes": 1,
+      "failed_checks": [],
+      "command_ms": 334.987
+    },
+    {
+      "id": "en-pause",
+      "outcome": "passed",
+      "response_status": "confirmed",
+      "expected_mutation": "required",
+      "observed_mutation_writes": 1,
+      "failed_checks": [],
+      "command_ms": 76.794
+    },
+    {
+      "id": "en-pause-again",
+      "outcome": "passed",
+      "response_status": "already_satisfied",
+      "expected_mutation": "none",
+      "observed_mutation_writes": 0,
+      "failed_checks": [],
+      "command_ms": 2002.22
+    },
+    {
+      "id": "en-resume",
+      "outcome": "passed",
+      "response_status": "confirmed",
+      "expected_mutation": "required",
+      "observed_mutation_writes": 1,
+      "failed_checks": [],
+      "command_ms": 1999.296
+    },
+    {
+      "id": "en-resume-again",
+      "outcome": "passed",
+      "response_status": "already_satisfied",
+      "expected_mutation": "none",
+      "observed_mutation_writes": 0,
+      "failed_checks": [],
+      "command_ms": 80.948
+    },
+    {
+      "id": "en-stop",
+      "outcome": "passed",
+      "response_status": "confirmed",
+      "expected_mutation": "required",
+      "observed_mutation_writes": 1,
+      "failed_checks": [],
+      "command_ms": 80.593
+    },
+    {
+      "id": "en-stop-again",
+      "outcome": "passed",
+      "response_status": "already_satisfied",
+      "expected_mutation": "none",
+      "observed_mutation_writes": 0,
+      "failed_checks": [],
+      "command_ms": 1990.909
+    },
+    {
+      "id": "en-next",
+      "outcome": "passed",
+      "response_status": "confirmed",
+      "expected_mutation": "required",
+      "observed_mutation_writes": 1,
+      "failed_checks": [],
+      "command_ms": 181.281
+    },
+    {
+      "id": "en-previous",
+      "outcome": "passed",
+      "response_status": "confirmed",
+      "expected_mutation": "required",
+      "observed_mutation_writes": 1,
+      "failed_checks": [],
+      "command_ms": 283.277
+    },
+    {
+      "id": "en-previous-late",
+      "outcome": "passed",
+      "response_status": "confirmed",
+      "expected_mutation": "required",
+      "observed_mutation_writes": 1,
+      "failed_checks": [],
+      "command_ms": 295.47
+    },
+    {
+      "id": "en-missing",
+      "outcome": "passed",
+      "response_status": "not_found",
+      "expected_mutation": "none",
+      "observed_mutation_writes": 0,
+      "failed_checks": [],
+      "command_ms": 46.197
+    },
+    {
+      "id": "en-negation",
+      "outcome": "passed",
+      "response_status": "error",
+      "expected_mutation": "none",
+      "observed_mutation_writes": 0,
+      "failed_checks": [],
+      "command_ms": 23.776
+    },
+    {
+      "id": "en-compound",
+      "outcome": "passed",
+      "response_status": "error",
+      "expected_mutation": "none",
+      "observed_mutation_writes": 0,
+      "failed_checks": [],
+      "command_ms": 17.108
+    },
+    {
+      "id": "en-language",
+      "outcome": "passed",
+      "response_status": "confirmed",
+      "expected_mutation": "none",
+      "observed_mutation_writes": 0,
+      "failed_checks": [],
+      "command_ms": 28.828
+    },
+    {
+      "id": "ru-track",
+      "outcome": "passed",
+      "response_status": "playing",
+      "expected_mutation": "required",
+      "observed_mutation_writes": 1,
+      "failed_checks": [],
+      "command_ms": 293.273
+    },
+    {
+      "id": "ru-cyrillic",
+      "outcome": "passed",
+      "response_status": "playing",
+      "expected_mutation": "required",
+      "observed_mutation_writes": 1,
+      "failed_checks": [],
+      "command_ms": 321.803
+    },
+    {
+      "id": "ru-artist",
+      "outcome": "passed",
+      "response_status": "playing",
+      "expected_mutation": "required",
+      "observed_mutation_writes": 1,
+      "failed_checks": [],
+      "command_ms": 353.848
+    },
+    {
+      "id": "ru-duplicate",
+      "outcome": "passed",
+      "response_status": "playing",
+      "expected_mutation": "required",
+      "observed_mutation_writes": 1,
+      "failed_checks": [],
+      "command_ms": 329.871
+    },
+    {
+      "id": "ru-shared-artist",
+      "outcome": "passed",
+      "response_status": "playing",
+      "expected_mutation": "required",
+      "observed_mutation_writes": 1,
+      "failed_checks": [],
+      "command_ms": 333.998
+    },
+    {
+      "id": "ru-pause",
+      "outcome": "passed",
+      "response_status": "confirmed",
+      "expected_mutation": "required",
+      "observed_mutation_writes": 1,
+      "failed_checks": [],
+      "command_ms": 77.175
+    },
+    {
+      "id": "ru-pause-again",
+      "outcome": "passed",
+      "response_status": "already_satisfied",
+      "expected_mutation": "none",
+      "observed_mutation_writes": 0,
+      "failed_checks": [],
+      "command_ms": 1998.088
+    },
+    {
+      "id": "ru-resume",
+      "outcome": "passed",
+      "response_status": "confirmed",
+      "expected_mutation": "required",
+      "observed_mutation_writes": 1,
+      "failed_checks": [],
+      "command_ms": 2007.622
+    },
+    {
+      "id": "ru-resume-again",
+      "outcome": "passed",
+      "response_status": "already_satisfied",
+      "expected_mutation": "none",
+      "observed_mutation_writes": 0,
+      "failed_checks": [],
+      "command_ms": 74.027
+    },
+    {
+      "id": "ru-stop",
+      "outcome": "passed",
+      "response_status": "confirmed",
+      "expected_mutation": "required",
+      "observed_mutation_writes": 1,
+      "failed_checks": [],
+      "command_ms": 78.2
+    },
+    {
+      "id": "ru-stop-again",
+      "outcome": "passed",
+      "response_status": "already_satisfied",
+      "expected_mutation": "none",
+      "observed_mutation_writes": 0,
+      "failed_checks": [],
+      "command_ms": 1996.157
+    },
+    {
+      "id": "ru-next",
+      "outcome": "passed",
+      "response_status": "confirmed",
+      "expected_mutation": "required",
+      "observed_mutation_writes": 1,
+      "failed_checks": [],
+      "command_ms": 194.876
+    },
+    {
+      "id": "ru-previous",
+      "outcome": "passed",
+      "response_status": "confirmed",
+      "expected_mutation": "required",
+      "observed_mutation_writes": 1,
+      "failed_checks": [],
+      "command_ms": 296.597
+    },
+    {
+      "id": "ru-previous-late",
+      "outcome": "passed",
+      "response_status": "confirmed",
+      "expected_mutation": "required",
+      "observed_mutation_writes": 1,
+      "failed_checks": [],
+      "command_ms": 296.22
+    },
+    {
+      "id": "ru-missing",
+      "outcome": "passed",
+      "response_status": "not_found",
+      "expected_mutation": "none",
+      "observed_mutation_writes": 0,
+      "failed_checks": [],
+      "command_ms": 41.693
+    },
+    {
+      "id": "ru-negation",
+      "outcome": "passed",
+      "response_status": "error",
+      "expected_mutation": "none",
+      "observed_mutation_writes": 0,
+      "failed_checks": [],
+      "command_ms": 19.926
+    },
+    {
+      "id": "ru-compound",
+      "outcome": "passed",
+      "response_status": "error",
+      "expected_mutation": "none",
+      "observed_mutation_writes": 0,
+      "failed_checks": [],
+      "command_ms": 26.547
+    },
+    {
+      "id": "ru-language",
+      "outcome": "passed",
+      "response_status": "confirmed",
+      "expected_mutation": "none",
+      "observed_mutation_writes": 0,
+      "failed_checks": [],
+      "command_ms": 34.651
+    },
+    {
+      "id": "en-shared-guest",
+      "outcome": "passed",
+      "response_status": "playing",
+      "expected_mutation": "required",
+      "observed_mutation_writes": 1,
+      "failed_checks": [],
+      "command_ms": 360.817
+    },
+    {
+      "id": "en-shared-prefix",
+      "outcome": "passed",
+      "response_status": "playing",
+      "expected_mutation": "required",
+      "observed_mutation_writes": 1,
+      "failed_checks": [],
+      "command_ms": 338.898
+    },
+    {
+      "id": "en-shared-fuzzy",
+      "outcome": "passed",
+      "response_status": "playing",
+      "expected_mutation": "required",
+      "observed_mutation_writes": 1,
+      "failed_checks": [],
+      "command_ms": 312.059
+    },
+    {
+      "id": "ru-shared-guest",
+      "outcome": "passed",
+      "response_status": "playing",
+      "expected_mutation": "required",
+      "observed_mutation_writes": 1,
+      "failed_checks": [],
+      "command_ms": 325.025
+    },
+    {
+      "id": "ru-shared-prefix",
+      "outcome": "passed",
+      "response_status": "playing",
+      "expected_mutation": "required",
+      "observed_mutation_writes": 1,
+      "failed_checks": [],
+      "command_ms": 328.874
+    },
+    {
+      "id": "ru-shared-fuzzy",
+      "outcome": "passed",
+      "response_status": "playing",
+      "expected_mutation": "required",
+      "observed_mutation_writes": 1,
+      "failed_checks": [],
+      "command_ms": 339.095
+    },
+    {
+      "id": "en-previous-paused",
+      "outcome": "passed",
+      "response_status": "confirmed",
+      "expected_mutation": "required",
+      "observed_mutation_writes": 1,
+      "failed_checks": [],
+      "command_ms": 2222.69
+    },
+    {
+      "id": "en-previous-first",
+      "outcome": "passed",
+      "response_status": "already_satisfied",
+      "expected_mutation": "none",
+      "observed_mutation_writes": 0,
+      "failed_checks": [],
+      "command_ms": 127.734
+    },
+    {
+      "id": "ru-previous-paused",
+      "outcome": "passed",
+      "response_status": "confirmed",
+      "expected_mutation": "required",
+      "observed_mutation_writes": 1,
+      "failed_checks": [],
+      "command_ms": 2225.536
+    },
+    {
+      "id": "ru-previous-first",
+      "outcome": "passed",
+      "response_status": "already_satisfied",
+      "expected_mutation": "none",
+      "observed_mutation_writes": 0,
+      "failed_checks": [],
+      "command_ms": 120.464
+    },
+    {
+      "id": "en-credit",
+      "outcome": "passed",
+      "response_status": "playing",
+      "expected_mutation": "required",
+      "observed_mutation_writes": 1,
+      "failed_checks": [],
+      "command_ms": 336.816
+    },
+    {
+      "id": "ru-credit",
+      "outcome": "passed",
+      "response_status": "playing",
+      "expected_mutation": "required",
+      "observed_mutation_writes": 1,
+      "failed_checks": [],
+      "command_ms": 327.887
+    },
+    {
+      "id": "ru-igrai",
+      "outcome": "passed",
+      "response_status": "playing",
+      "expected_mutation": "required",
+      "observed_mutation_writes": 1,
+      "failed_checks": [],
+      "command_ms": 348.906
+    },
+    {
+      "id": "ru-zapusti",
+      "outcome": "passed",
+      "response_status": "playing",
+      "expected_mutation": "required",
+      "observed_mutation_writes": 1,
+      "failed_checks": [],
+      "command_ms": 333.518
+    },
+    {
+      "id": "ru-hvatit",
+      "outcome": "passed",
+      "response_status": "confirmed",
+      "expected_mutation": "required",
+      "observed_mutation_writes": 1,
+      "failed_checks": [],
+      "command_ms": 79.554
+    },
+    {
+      "id": "ru-vpered",
+      "outcome": "passed",
+      "response_status": "confirmed",
+      "expected_mutation": "required",
+      "observed_mutation_writes": 1,
+      "failed_checks": [],
+      "command_ms": 187.705
+    },
+    {
+      "id": "ru-nazad",
+      "outcome": "passed",
+      "response_status": "confirmed",
+      "expected_mutation": "required",
+      "observed_mutation_writes": 1,
+      "failed_checks": [],
+      "command_ms": 298.931
+    },
+    {
+      "id": "ru-semicolon-sequence",
+      "outcome": "passed",
+      "response_status": "error",
+      "expected_mutation": "none",
+      "observed_mutation_writes": 0,
+      "failed_checks": [],
+      "command_ms": 20.188
+    },
+    {
+      "id": "en-album",
+      "outcome": "passed",
+      "response_status": "playing",
+      "expected_mutation": "required",
+      "observed_mutation_writes": 1,
+      "failed_checks": [],
+      "command_ms": 357.198
+    },
+    {
+      "id": "en-album-compilation",
+      "outcome": "passed",
+      "response_status": "playing",
+      "expected_mutation": "required",
+      "observed_mutation_writes": 1,
+      "failed_checks": [],
+      "command_ms": 350.075
+    },
+    {
+      "id": "en-album-scoped",
+      "outcome": "passed",
+      "response_status": "playing",
+      "expected_mutation": "required",
+      "observed_mutation_writes": 1,
+      "failed_checks": [],
+      "command_ms": 364.116
+    },
+    {
+      "id": "en-album-cyrillic",
+      "outcome": "passed",
+      "response_status": "playing",
+      "expected_mutation": "required",
+      "observed_mutation_writes": 1,
+      "failed_checks": [],
+      "command_ms": 360.97
+    },
+    {
+      "id": "en-album-missing",
+      "outcome": "passed",
+      "response_status": "not_found",
+      "expected_mutation": "none",
+      "observed_mutation_writes": 0,
+      "failed_checks": [],
+      "command_ms": 37.191
+    },
+    {
+      "id": "ru-album",
+      "outcome": "passed",
+      "response_status": "playing",
+      "expected_mutation": "required",
+      "observed_mutation_writes": 1,
+      "failed_checks": [],
+      "command_ms": 306.888
+    },
+    {
+      "id": "ru-album-compilation",
+      "outcome": "passed",
+      "response_status": "playing",
+      "expected_mutation": "required",
+      "observed_mutation_writes": 1,
+      "failed_checks": [],
+      "command_ms": 331.116
+    },
+    {
+      "id": "ru-album-scoped",
+      "outcome": "passed",
+      "response_status": "playing",
+      "expected_mutation": "required",
+      "observed_mutation_writes": 1,
+      "failed_checks": [],
+      "command_ms": 348.979
+    },
+    {
+      "id": "ru-album-cyrillic",
+      "outcome": "passed",
+      "response_status": "playing",
+      "expected_mutation": "required",
+      "observed_mutation_writes": 1,
+      "failed_checks": [],
+      "command_ms": 299.073
+    },
+    {
+      "id": "ru-album-missing",
+      "outcome": "passed",
+      "response_status": "not_found",
+      "expected_mutation": "none",
+      "observed_mutation_writes": 0,
+      "failed_checks": [],
+      "command_ms": 54.953
+    }
+  ]
+}

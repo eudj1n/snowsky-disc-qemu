@@ -4,25 +4,28 @@ Read the repository-root `AGENTS.md` first. This file applies to
 `research/disc_assistant/`; it supplements, not replaces, repository conventions.
 Conversation may be Russian; **tracked documentation and comments are English**.
 
-## Product boundary agreed on 2026-09-18
+## Product boundary updated 2026-09-19: software MVP accepted
 
-The MVP is the implemented end-to-end path **command input → interpretation →
-execution on DISC**, meeting explicitly accepted error limits. Text and existing
-file-based speech input are supported entry points. One action per request; no
-compound planning, conditional/delayed actions, confirmation dialogue or choice UI.
-A missing recording is a legitimate result, not an invitation to invent a match.
+The owner explicitly accepted **software MVP against the stock emulator**, and
+confirmed that the existing reproducible 64-case run suffices. Close/retain
+[MVP #21](https://github.com/eudj1n/snowsky-disc-qemu/issues/21) as completed within
+that scope; do not make new audio cohorts, physical hardware or performance
+optimization prerequisites for it. Read `../../docs/ASSISTANT_MVP_ACCEPTANCE.md`.
 
-The owner chose **measure the current baseline first, then agree numeric thresholds**.
-Do not invent an allowed error percentage or call the MVP accepted from unit tests,
-synthetic speech or interpreter-only accuracy. Count correct device outcomes and
-unintended actions separately; expose failures, abstentions and uncertain outcomes.
-See `../../docs/ASSISTANT_MVP.md` and
-[MVP issue #21](https://github.com/eudj1n/snowsky-disc-qemu/issues/21).
+Accepted candidate `48477e8`: 64/64 manifest-v7 text scenarios (35 RU / 29 EN),
+19 no-mutation cases with zero observed writes; 192 Controller, 354 prototype,
+365 shared Python and 37 JS tests passed. This is known regression acceptance,
+not an independent human-speech error bound. No new rerun was needed at closure.
 
-Improvements/replacements of individual stages are follow-up tasks, not an endless
-expansion of this MVP: wake word, learned selection, semantic
-retrieval, fine-tuning, recommendations, dialogues and Raspberry Pi/hardware acceptance.
-Keep this prototype under research until a separate promotion/split decision.
+Physical acceptance remains unpassed in [#23](https://github.com/eudj1n/snowsky-disc-qemu/issues/23).
+Keep its original 19-RU partial baseline, failures and disputed gold intact; measure
+that cohort before agreeing physical thresholds. [#24](https://github.com/eudj1n/snowsky-disc-qemu/issues/24)
+tracks speech quality and native/Docker/Orange Pi performance, explicitly deferred.
+
+One action per request, one saved locale and no uncertain mutation replay remain
+the product contract. Learned arbitration, fine-tuning, semantic retrieval,
+recommendations, dialogue, wake word and dock hardware are later work. Keep the
+prototype under research until a separately agreed promotion/repository split.
 
 ## Browser adapter checkpoint
 
@@ -48,6 +51,9 @@ RU/EN acceptance remains pending. Initial isolated-word Piper → base round tri
 misrecognized both commands; do not present this plumbing check as accuracy.
 
 ## Where to resume
+
+Software MVP is complete. Pick follow-up #23 or #24 with the owner; the historical
+physical/benchmark notes below are not blockers for the accepted software scope.
 
 The fixed command delay is now replaced by shared Controller `MutationPacer`:
 wait only for the remaining 2.1-second interval before fresh preflight, with a

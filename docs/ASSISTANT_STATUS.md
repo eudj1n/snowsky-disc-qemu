@@ -4,6 +4,22 @@ This is the short continuation index. [The roadmap](ASSISTANT.md) preserves
 historical decisions; [MVP acceptance](ASSISTANT_MVP.md) defines completion.
 Conversation and local experiments do not replace device evidence.
 
+## Software MVP accepted, 2026-09-19
+
+The owner explicitly accepted **emulator-based software MVP** closure and confirmed
+that the existing reproducible scenarios suffice; physical acceptance and speech/
+platform performance are follow-ups. The accepted record is **64/64** manifest-v7
+text scenarios (35 RU / 29 EN), including **19 no-mutation cases with zero writes**.
+The [acceptance report](ASSISTANT_MVP_ACCEPTANCE.md) includes the curated aggregate,
+provenance and reproduction instructions. No new audio run or repeated emulator
+run was required for closure. This is finite regression acceptance, not a universal
+speech-quality/error-rate claim. Candidate `48477e8` is committed and pushed.
+
+[MVP #21](https://github.com/eudj1n/snowsky-disc-qemu/issues/21) is complete in that
+scope. Continue separately in [physical acceptance #23](https://github.com/eudj1n/snowsky-disc-qemu/issues/23)
+or [speech/platform work #24](https://github.com/eudj1n/snowsky-disc-qemu/issues/24).
+The following dated sections preserve implementation and measurement history.
+
 ## Remaining-interval command pacing, 2026-09-19
 
 The unconditional 2.1-second sleeps before playback/control/queue navigation are
@@ -274,7 +290,7 @@ push after each. External review is input for comparison, not a specification.
   physical acceptance. Keep unsuccessful earlier runs and source provenance.
 - Physical `my-player-text-v2`: 19 RU observations remain frozen. Resume at RU-21;
   RU-20 is the final locale switch. One rejection-only expectation is disputed
-  because the text could be a recording title. No numeric MVP limits are agreed.
+  because the text could be a recording title. Physical acceptance limits are not yet agreed.
 - No learned execution, dialogue, compound planning, quantified human microphone acceptance, wake-word,
   Raspberry Pi performance or physical audio quality is implied by these increments.
 - Personal data, reports, audio, models and firmware-derived images stay outside Git.

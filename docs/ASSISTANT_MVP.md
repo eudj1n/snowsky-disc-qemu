@@ -1,69 +1,56 @@
-# Disc Assistant MVP boundary and acceptance
+# Disc Assistant software MVP: accepted scope
 
-Owner decision, **2026-09-18**: the MVP is a working end-to-end process from a
-received command through interpretation to execution on the physical DISC, with
-an agreed acceptable error level. **Measure the baseline first; agree numeric
-thresholds afterwards.** Implemented features and accepted product quality are
-separate checkpoints.
+**Accepted on 2026-09-19.** The owner explicitly changed the completion boundary
+from physical-device acceptance to the software path running against the stock
+DISC emulator, and confirmed that the existing reproducible scenarios are
+sufficient. No additional audio cohort or repeat of the completed run is a closure
+requirement. [MVP issue #21](https://github.com/eudj1n/snowsky-disc-qemu/issues/21)
+tracks this completed scope; the [acceptance report](ASSISTANT_MVP_ACCEPTANCE.md)
+records evidence and limits.
 
-The [MVP tracking issue #21](https://github.com/eudj1n/snowsky-disc-qemu/issues/21)
-carries the implementation/acceptance checklist. Local session handoff is
-[`research/disc_assistant/AGENTS.md`](../research/disc_assistant/AGENTS.md).
+## Completion criterion and result
 
-## Included path
+Receive one command, interpret it, resolve music when needed, execute through the
+Controller on stock V2.57, and verify the actual device/queue outcome independently
+of the Assistant's selected candidate. One action and one selected locale per
+request; uncertainty never permits automatic mutation replay.
 
-- Text in the CLI/console, or an audio file through the existing STT adapter.
-- One selected locale used for input and response, persisted between sessions.
-- One supported action with validated arguments: music selection, playback control
-  or a local language-setting command. No compound-command planner or dialogue.
-- Library retrieval/ranking where required, then high-level Controller execution
-  with fresh selection checks and observed outcome. Local language changes do not
-  require a device mutation.
-- Persistent device session, bounded reconnect behavior and no uncertain mutation replay.
-- Text response, correlation/timing and local decision evidence for diagnosis.
+The agreed emulator regression scope is manifest v7: **64/64 cases passed**
+(35 RU / 29 EN), with all declared checks satisfied. All **19 no-mutation cases**
+had **zero observed mutation writes**. These are finite-cohort acceptance results,
+not a statistical upper bound on errors for arbitrary speech or devices.
 
-Most of this path is implemented and the owner has reported successful physical
-playback/controls. File speech tests and source comparisons also exist. A frozen,
-representative physical-device baseline and numerical acceptance have **not** been
-completed. Shadow-report accuracy concerns interpretation, not device success.
+The prototype includes CLI, persistent console, web text/microphone input,
+Whisper adapters, Piper replies, library snapshots/search/ranking, controls and
+native queues, locale dictionaries, history and diagnostic traces. The 64-case
+end-to-end cohort uses **text input**. Existing speech/web/TTS checks and owner
+observations are supporting evidence, not a claim that all 64 cases used audio or
+that human speech accuracy has been accepted.
 
-The [first physical-player baseline](ASSISTANT_BASELINE.md) now has a private
-frozen 51-case text packet bound to the synchronized catalog and owner phrasing.
-Live preflight, execution and acceptance remain pending; audio/failure-scenario
-coverage still needs a later extension.
+## Deferred acceptance and improvements
 
-## Baseline and acceptance checklist
+- [Physical-device acceptance #23](https://github.com/eudj1n/snowsky-disc-qemu/issues/23):
+  preserve the original partial physical baseline and collect a separate current
+  candidate cohort, diagnose physical queue uncertainty, then agree physical
+  success/error thresholds after measurement.
+- [Speech quality and platform performance #24](https://github.com/eudj1n/snowsky-disc-qemu/issues/24): representative human RU/EN input,
+  native/Docker and Orange Pi comparisons, TTS pronunciation and remaining latency
+  work are separate from software MVP closure. See the linked follow-up in the
+  [acceptance report](ASSISTANT_MVP_ACCEPTANCE.md).
+- Learned source arbitration, semantic retrieval, fine-tuning, recommendations,
+  wake word/VAD, dialogue/compound planning and dock hardware remain later roadmap
+  work. Promotion from research or a repository split is a separate decision.
 
-1. Freeze an explicit single-action command set, expected complete intentions and
-   expected device outcomes, covering RU/EN separately and text/file speech separately.
-   Include ordinary successes, absent music, non-commands, unsupported/compound input
-   and failure scenarios. Record the device/library/locale/STT versions and fixture
-   assumptions. Reviewed shadow disagreements help find cases, but are a biased
-   sample; include ordinary agreements and independently collected user phrasing.
-2. Measure the current executing path on the real player with this set. Separate
-   correct confirmed outcomes, incorrect actions/selections, legitimate no-action
-   results, unintended mutations on negatives, technical failures and uncertain
-   observations. Preserve denominators and latency distributions by input/locale.
-   Do not count a timeout as proof that nothing played; use observation/evidence.
-3. Review the baseline with the owner and agree explicit thresholds for successful
-   outcomes and unintended device actions separately. Include minimum coverage and
-   the policy for uncertainty/technical failures; never improve a rate by dropping them.
-4. Freeze an acceptance set and run the agreed candidate against those thresholds.
-   If the baseline informed tuning, it is regression, not fresh acceptance evidence.
-   Record any device state changes and do not automatically replay uncertain commands.
-5. Close the MVP only after this end-to-end gate passes and instructions are reproducible.
+## Original physical baseline is preserved
 
-Numbers are deliberately pending the baseline, per owner decision. Unit tests,
-synthetic STT, source agreement and offline exact-intent scores are supporting
-checks; none substitutes for the device-outcome gate.
+The 2026-09-18 definition required physical DISC acceptance, with a baseline before
+numerical threshold agreement. That physical work is **deferred, not passed**.
+The private `my-player-text-v2` packet contains 51 planned text cases and 19 recorded
+RU observations, including misses, an uncertain confirmation, a wrong previous
+result and one disputed expectation. Do not rewrite or combine those records with
+new software results. The [physical worksheet](ASSISTANT_BASELINE.md) remains the
+historical evidence and future resumption guide.
 
-## Follow-up work outside MVP
-
-After this boundary is accepted, open separate tasks to improve or replace stages:
-real microphone/VAD/wake word, spoken response playback and portable TTS, learned
-source arbitration/calibration, encoder fine-tuning, music semantic retrieval,
-recommendations/history enrichment, online providers, dialogue/compound commands,
-Raspberry Pi resource acceptance and physical dock/audio hardware. These tasks
-must preserve the typed contracts and be compared against the established baseline.
-A production package/repository move is a separate decision, not an automatic part
-of every experiment or a prerequisite for the current research MVP.
+Keep personal exports/audio/library data and firmware-derived captures outside
+Git. The curated [software acceptance summary](../research/disc_assistant/experiments/acceptance/reports/2026-09-19-emulator-mvp.json)
+contains only generated-fixture case IDs, outcomes, timings and provenance hashes.

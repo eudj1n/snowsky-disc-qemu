@@ -1,5 +1,9 @@
 # Disc Assistant research prototype
 
+**Software MVP accepted (2026-09-19):** all 64 declared emulator scenarios passed.
+See [acceptance evidence and reproduction](../../docs/ASSISTANT_MVP_ACCEPTANCE.md).
+Physical-device and human-speech/performance acceptance remain separate follow-ups.
+
 Desktop prototype: **device catalog → SQLite → Typesense → ranked text commands → playback**.
 The experiment lives entirely here until it is ready for promotion into the main
 project. The [plan](../../docs/ASSISTANT.md) describes the wider assistant/dock work.

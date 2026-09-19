@@ -1,5 +1,13 @@
 # Physical-player baseline: preparation and operator worksheet
 
+**Deferred follow-up as of 2026-09-19:** this partial physical baseline is
+preserved in [issue #23](https://github.com/eudj1n/snowsky-disc-qemu/issues/23).
+It is not a blocker for the [accepted software MVP](ASSISTANT_MVP_ACCEPTANCE.md).
+The preparation notes and original candidate gaps below are historical; synonyms,
+album intents and explicit predecessor navigation have since been implemented.
+Do not rewrite the frozen private packet or append a changed candidate as if it
+were the original run.
+
 Prepared **2026-09-18**. The owner confirmed physical `my-player`, text RU/EN
 first, supplied six artist/title targets and natural Russian command variants,
 and authorized binding from the synchronized library. The concrete private packet

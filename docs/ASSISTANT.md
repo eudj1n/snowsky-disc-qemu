@@ -1,6 +1,9 @@
 # Disc Assistant: implementation plan
 
-Start with the [current checkpoint](ASSISTANT_STATUS.md) for active work and evidence.
+The **software MVP was accepted on 2026-09-19** against the existing 64/64
+emulator scenario run. See [acceptance and reproducibility](ASSISTANT_MVP_ACCEPTANCE.md).
+Physical acceptance and speech/platform work continue in issues #23/#24.
+Start with the [current checkpoint](ASSISTANT_STATUS.md) for follow-up work and evidence.
 
 The 2026-09-19 timing follow-up replaces fixed per-command sleeps with shared
 Controller remaining-interval pacing, preserving the stock gate, fresh preflight
@@ -32,8 +35,9 @@ The current device contract is [DISC capabilities](DISC_CAPABILITIES.md).
 
 The current [MVP boundary and acceptance gate](ASSISTANT_MVP.md) is tracked in
 [issue #21](https://github.com/eudj1n/snowsky-disc-qemu/issues/21): command input
-through execution on the device. The owner chose to measure the baseline first,
-then agree error limits; later component improvements are separate tasks.
+through execution on the stock emulator. The original physical-baseline-first
+policy is preserved for deferred physical acceptance in issue #23; later component
+improvements are separate tasks.
 [Offline shadow reports and review queues](ASSISTANT_SHADOW_REPORTS.md) are now
 implemented. They support interpretation analysis, not physical-device acceptance.
 
