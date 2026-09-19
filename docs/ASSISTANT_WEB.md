@@ -60,8 +60,10 @@ payload, then uses the same STT/interpretation/ranking/execution pipeline as CLI
 file input. Digital-zero silence is rejected; background-noise or hallucination
 rejection is not a solved speech detector.
 
-Web **always uses Whisper Server**, including when the same configuration selects
-CLI STT for one-shot commands. There is no silent CLI fallback. `setup --all`
+Web uses a resident STT server: **Whisper by default**, including when the same
+configuration selects CLI STT for one-shot commands. The experimental
+[GigaAM provider](ASSISTANT_GIGAAM.md) can be selected explicitly. There is no silent
+provider or CLI fallback. `setup --all`
 configures the multilingual model, server endpoint and optional managed lifecycle.
 `web --bootstrap` starts the managed stack; plain `web` expects it to be running.
 See [speech services and Piper replies](ASSISTANT_TTS.md) for installation,

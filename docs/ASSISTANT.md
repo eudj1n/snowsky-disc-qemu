@@ -5,6 +5,11 @@ emulator scenario run. See [acceptance and reproducibility](ASSISTANT_MVP_ACCEPT
 Physical acceptance and speech/platform work continue in issues #23/#24.
 Start with the [current checkpoint](ASSISTANT_STATUS.md) for follow-up work and evidence.
 
+The optional [native GigaAM experiment](ASSISTANT_GIGAAM.md) now adds a separate
+STT provider and fixed-audio comparison through the existing application path.
+The first synthetic Mac pilot preserves successes and music-name failures;
+Whisper remains the default. This is follow-up speech research, not a new MVP gate.
+
 The 2026-09-19 timing follow-up replaces fixed per-command sleeps with shared
 Controller remaining-interval pacing, preserving the stock gate, fresh preflight
 and no-replay guards. WebSocket cleanup and listener shutdown regressions are
@@ -18,8 +23,8 @@ automatically launches the best candidate. The owner explicitly deferred a
 choice/confirmation dialogue. File-based voice input and synthetic sample generation
 are implemented. [Disc Assistant Web](ASSISTANT_WEB.md) now adds browser microphone
 capture and text input through the shared application service. [Piper replies and
-common speech installation](ASSISTANT_TTS.md) are implemented; web uses Whisper
-Server. The owner reports microphone play/stop working on a physical player.
+common speech installation](ASSISTANT_TTS.md) are implemented; web defaults to
+Whisper Server, with GigaAM as an explicit experiment. The owner reports microphone play/stop working on a physical player.
 Quantified human microphone acceptance and listening history remain pending. See [voice setup and evaluation](ASSISTANT_VOICE.md)
 and the [command table](ASSISTANT_COMMANDS.md).
 The [interpreter, speech and locale architecture](ASSISTANT_ARCHITECTURE.md) is now

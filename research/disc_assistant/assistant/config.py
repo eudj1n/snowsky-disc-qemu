@@ -76,7 +76,7 @@ def load(path):
                'dialogue': {'enabled'},
                'playback': {'continuous_context'},
                'journal': {'enabled', 'retention_days', 'max_requests'},
-               'speech': {'backend', 'server_url', 'catalog_hints', 'model', 'whisper_executable', 'timeout', 'max_seconds', 'voices', 'stt_languages', 'rate'},
+               'speech': {'provider', 'backend', 'server_url', 'catalog_hints', 'model', 'whisper_executable', 'timeout', 'max_seconds', 'voices', 'stt_languages', 'rate'},
                'terminal': {'color', 'prompt', 'input', 'result', 'error', 'warning', 'suggestion', 'debug'}}
     if set(raw) - set(allowed):
         raise ValueError('unknown configuration section')
@@ -137,6 +137,13 @@ def load(path):
             raise ValueError('tts model paths must be absolute')
     terminal = raw.get('terminal', {})
     speech = raw.get('speech', {})
+    if speech.get('provider', 'whisper') not in ('whisper', 'gigaam'):
+        raise ValueError('speech.provider must be whisper or gigaam')
+    if speech.get('provider') == 'gigaam':
+        if speech.get('backend') != 'server' or speech.get('catalog_hints', False):
+            raise ValueError('GigaAM requires backend=server and catalog_hints=false')
+        if raw.get('services', {}).get('speech'):
+            raise ValueError('GigaAM is externally managed; set services.speech=false')
     if speech.get('backend', 'cli') not in ('cli', 'server') or type(speech.get('catalog_hints', False)) is not bool:
         raise ValueError('invalid speech backend or catalog_hints')
     if speech.get('backend') == 'server' or 'server_url' in speech:

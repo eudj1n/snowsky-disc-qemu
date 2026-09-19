@@ -1,8 +1,9 @@
 # Local speech services and Piper replies
 
 The desktop web path is **microphone → Whisper Server → Assistant → Controller →
-localized response → Piper → browser audio**. Web always uses Whisper Server;
-one-shot CLI/file workflows may still explicitly select the CLI STT backend.
+localized response → Piper → browser audio** by default. Web uses a resident STT
+server; an explicit [GigaAM experiment](ASSISTANT_GIGAAM.md) is also available.
+One-shot CLI/file workflows may still explicitly select the Whisper CLI backend.
 Piper is an optional `SpeechSynthesizer`, independent of interpretation and player
 control. Audio plays on the computer running the browser, not through DISC.
 

@@ -68,7 +68,8 @@ physical DISC normally uses HTTP **12103**. Choose a distinct persistent
 number. Both HTTP and TCP must point to the same device.
 
 For microphone input and spoken replies, use `setup --all`, then
-`./research/disc_assistant/run.sh web --bootstrap`. Web always uses Whisper Server.
+`./research/disc_assistant/run.sh web --bootstrap`. Web defaults to Whisper Server;
+the native [GigaAM comparison](../../docs/ASSISTANT_GIGAAM.md) is an explicit alternative.
 Enable sound on the page; choose All available replies to hear successful controls.
 See [speech setup and lifecycle](../../docs/ASSISTANT_TTS.md) for models, services,
 config backup and external engine options.

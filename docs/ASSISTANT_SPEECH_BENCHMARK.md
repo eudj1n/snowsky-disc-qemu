@@ -1,4 +1,18 @@
-# Fixed-audio Whisper comparison
+# Fixed-audio speech comparison
+
+Whisper remains the default. The opt-in [native GigaAM experiment](ASSISTANT_GIGAAM.md)
+uses `--provider gigaam --server URL --model /absolute/path/v3_ctc.ckpt` with the
+same frozen inputs, repeats, interpretation checks and private reports. It has one
+upstream default decoder profile, requires an already running worker, validates
+checkpoint identity on every response and records the worker's process peak RSS.
+That RSS includes startup/model loading and is not a per-request allocation.
+No Docker lifecycle calls or Whisper decoder parameters apply to GigaAM.
+
+Compare reports produced from the same `--samples` directory. A Cyrillic spelling
+of an English artist may fail exact text/intent comparison while still resolving
+correctly in catalog search. Silence has different worker-level handling; exclude
+it from speech latency aggregates. The common live pipeline rejects digital
+silence before either provider. Neither model is a proven noise/VAD detector.
 
 `speech-benchmark` compares the existing beam-size 5 / best-of 5 decoder with
 greedy / best-of 1, using configurable CPU thread counts (default 2 and 4).

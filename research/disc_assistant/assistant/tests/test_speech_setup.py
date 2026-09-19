@@ -148,6 +148,15 @@ class SpeechSetupTests(unittest.TestCase):
         self.assertNotEqual(before['DISC_PIPER_VOICES_SHA256'], first['DISC_PIPER_VOICES_SHA256'])
         self.assertEqual(first, speech_setup.environment(config))
 
+    def test_managed_whisper_never_reuses_a_gigaam_checkpoint(self):
+        checkpoint = self.root / 'v3_ctc.ckpt'
+        checkpoint.write_bytes(b'fixture GigaAM model')
+        config = replace(load(self.path), speech={'provider': 'gigaam', 'model': str(checkpoint)})
+        path, download = speech_setup.selected_whisper(config, None)
+        self.assertEqual(path.name, 'ggml-base.bin')
+        self.assertEqual(download, 'ggml-base.bin')
+        self.assertEqual(checkpoint.read_bytes(), b'fixture GigaAM model')
+
     def test_whisper_selection_preserves_custom_models_and_requires_explicit_replacement(self):
         config = load(self.path)
         custom = self.root / 'custom.bin'

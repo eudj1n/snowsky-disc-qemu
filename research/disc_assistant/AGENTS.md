@@ -36,7 +36,8 @@ and serves loopback port 8090. One worker owns application/SQLite; the existing
 Controller session receives events continuously. No queued/retried mutations,
 public/LAN serving, arbitrary slash commands or filesystem upload paths. Browser
 recording is bounded PCM capture, explicit stop/submit/cancel; no VAD/wake word.
-Web always uses Whisper Server; one-shot CLI can retain its configured CLI
+Web defaults to Whisper Server; explicit native GigaAM selection is documented in
+`../../docs/ASSISTANT_GIGAAM.md`. One-shot CLI can retain its configured Whisper CLI
 backend. `setup --all` installs the optional managed speech stack and pinned
 Whisper/Irina/Alba models outside Git; `web --bootstrap` starts speech and search.
 Setup preserves an installed Whisper model unless explicitly replaced. Piper
@@ -51,6 +52,14 @@ RU/EN acceptance remains pending. Initial isolated-word Piper → base round tri
 misrecognized both commands; do not present this plumbing check as accuracy.
 
 ## Where to resume
+
+The `codex/gigaam-stt` experiment adds `speech.provider` (default `whisper`) and a
+separate native CPU GigaAM worker with pinned upstream revision and checkpoint
+identity validation. `speech-benchmark --provider gigaam --server ... --model ...`
+uses the existing frozen-audio protocol, without Docker or device access. Worker
+dependencies/models stay outside the normal Assistant environment and Git. Keep
+the accepted MVP unchanged; do not promote a model from synthetic speech results.
+See `../../docs/ASSISTANT_GIGAAM.md` for setup, measured results and limits.
 
 Software MVP is complete. Pick follow-up #23 or #24 with the owner; the historical
 physical/benchmark notes below are not blockers for the accepted software scope.

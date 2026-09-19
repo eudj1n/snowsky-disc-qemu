@@ -53,10 +53,11 @@ warning = "ansiyellow bold"
 debug = "ansibrightblack"
 suggestion = "ansibrightblack italic"
 
-# Speech input. Web always uses Whisper Server; CLI can still use backend="cli".
+# Web uses a resident server; CLI can use backend="cli" with Whisper.
 # Optional file-based speech. Install engines/models explicitly; no automatic download.
 # See docs/ASSISTANT_VOICE.md. Use setup --all for managed Whisper Server and Piper (RU/EN).
 [speech]
+provider = "whisper" # opt-in native GigaAM: see docs/ASSISTANT_GIGAAM.md
 backend = "cli" # opt-in: "server" (model remains loaded in whisper-server)
 catalog_hints = false # bounded names from the active snapshot, never expected transcripts
 # server_url = "http://127.0.0.1:18119/inference"

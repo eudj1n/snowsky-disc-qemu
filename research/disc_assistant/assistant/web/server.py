@@ -61,7 +61,8 @@ class Runtime:
         return {**self.service.status(), 'device': self.service.device()['device'],
                 'locales': validate_locales()['locales'],
                 'max_seconds': self.service.config.speech.get('max_seconds', 30),
-                'speech': {'backend': 'server', 'server_url': self.config.speech.get('server_url')},
+                'speech': {'provider': self.config.speech.get('provider', 'whisper'),
+                           'backend': 'server', 'server_url': self.config.speech.get('server_url')},
                 'tts': {'backend': self.config.tts.get('backend', 'none')}}
 
     async def worker(self, fn):
@@ -175,10 +176,15 @@ class Runtime:
 
 
 def create_app(config, *, port=8090, factory=Application, language=None, bootstrap=False, synthesizer=None):
-    # Web speech always uses the resident server. One-shot CLI retains its explicit backend.
+    # Web uses the selected resident provider. Legacy configs still select Whisper.
+    if config.speech.get('provider') == 'gigaam' and (
+            not config.speech.get('server_url') or config.services.get('speech')):
+        raise ValueError('GigaAM needs an explicit external server with services.speech=false')
     speech = {**config.speech, 'backend': 'server',
               'server_url': config.speech.get('server_url', 'http://127.0.0.1:18119/inference')}
     config = replace(config, speech=speech)
+    if speech.get('provider') == 'gigaam':
+        config = replace(config, speech={**speech, 'max_seconds': min(speech.get('max_seconds', 30), 25)})
     runtime = Runtime(config, factory=factory, language=language, bootstrap=bootstrap, synthesizer=synthesizer)
     hosts = {f'127.0.0.1:{port}', f'localhost:{port}'}
 

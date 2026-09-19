@@ -136,17 +136,20 @@ async def transcribe_audio(config, audio, trace, *, provider=None):
     if details['digital_silence']:
         raise NoSpeech('no speech: digital silence')
     if provider is None:
-        from research.disc_assistant.assistant.voice.resident import WhisperServer
-        provider = WhisperServer(config.speech) if config.speech.get('backend', 'cli') == 'server' else WhisperCpp(config.speech)
+        from research.disc_assistant.assistant.voice.factory import transcriber
+        provider = transcriber(config.speech)
     vocabulary, evidence = catalog_vocabulary(config)
     trace.event('speech_vocabulary', evidence)
     context = SpeechContext(config.locale, trace.id, vocabulary)
     trace.event('transcription_started', {'provider': asdict(provider.info), 'locale': context.locale})
     started = time.monotonic()
     try:
-        if isinstance(provider, WhisperCpp):
+        from research.disc_assistant.assistant.voice.gigaam import GigaAMServer
+        if isinstance(provider, (WhisperCpp, GigaAMServer)):
             trace.event('speech_model', provider.evidence())
         result = await asyncio.wait_for(provider.transcribe(audio, context), config.speech.get('timeout', 120))
+        if isinstance(provider, GigaAMServer):
+            trace.event('speech_model_verified', provider.server_evidence)
     except (InvalidSpeech, SpeechUnavailable):
         raise
     except Exception as exc:

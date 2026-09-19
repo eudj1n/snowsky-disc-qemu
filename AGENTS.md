@@ -125,7 +125,8 @@ Physical acceptance (#23) and speech quality/native-Docker/Orange Pi performance
   console. Config defaults to `~/disc-assistant.toml`, targeting emulator TCP
   12100 and direct HTTP 12113 (physical DISC normally uses HTTP 12103).
 - `assistant/application.py` owns the common request flow; console/web are
-  adapters. Web uses Whisper Server; Piper replies require browser sound opt-in.
+  adapters. Web defaults to Whisper Server; the explicit native
+  [GigaAM experiment](docs/ASSISTANT_GIGAAM.md) is optional. Piper replies require browser sound opt-in.
   Assistant owns interpretation, response locale, search/ranking and history;
   `library/` owns catalog snapshots/indexing. Shared persistent state and guarded
   playback belong in [Controller](docs/CONTROLLER_API.md), with no research imports.

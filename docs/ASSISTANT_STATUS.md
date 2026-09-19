@@ -4,6 +4,25 @@ This is the short continuation index. [The roadmap](ASSISTANT.md) preserves
 historical decisions; [MVP acceptance](ASSISTANT_MVP.md) defines completion.
 Conversation and local experiments do not replace device evidence.
 
+## Optional native GigaAM pilot, 2026-09-19
+
+The separate `codex/gigaam-stt` branch adds a pinned native CPU worker, explicit
+`speech.provider` selection for CLI/Web and a GigaAM mode in the frozen-audio
+benchmark. Whisper defaults and the common interpretation/execution path remain.
+Model identity, unsupported locale/hints, invalid audio, busy-worker and error
+boundaries are checked without fallback or mutation replay.
+
+On this **M2 Max**, seven synthetic RU recordings plus silence were compared with
+native Whisper base, four threads. Speech-only medians: GigaAM v3 CTC 278.825 ms;
+Whisper beam 5 242.384 ms; Whisper greedy 210.215 ms. GigaAM resolved the Linkin Park
+artist through the existing catalog pipeline but lost the Numb and Ivan Dorn
+targets. These results do not justify replacing Whisper. See
+[setup, evidence and limits](ASSISTANT_GIGAAM.md); human speech, multilingual and
+board performance remain follow-ups. No firmware/physical acceptance was rerun.
+Validation passed: 361 prototype tests, final focused installer/adapter/Web checks,
+365 shared Python / 37 JS checks and both Assistant Web JS test files. Native CLI
+transcription and journal identity were also exercised with the actual model.
+
 ## Software MVP accepted, 2026-09-19
 
 The owner explicitly accepted **emulator-based software MVP** closure and confirmed

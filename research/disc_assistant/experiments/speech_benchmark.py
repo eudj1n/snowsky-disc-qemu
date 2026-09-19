@@ -24,6 +24,7 @@ from research.disc_assistant.assistant.speech import SpeechContext
 from research.disc_assistant.assistant.voice.backends import model_digest
 from research.disc_assistant.assistant.voice.files import audio_details, command_text, load_audio, resolve_path
 from research.disc_assistant.assistant.voice.resident import WhisperServer
+from research.disc_assistant.assistant.voice.gigaam import GigaAMServer
 from research.disc_assistant.assistant.voice.samples import read_json, comparable
 
 IMAGE = 'disc-assistant-whisper:1.9.4'
@@ -128,11 +129,13 @@ async def measure(provider, case, identity):
             actual = {'status': 'recognized', 'intent': asdict(intent)}
         except ValueError:
             actual = {'status': 'unrecognized'}
-        row.update(status='ok', text=result.text, actual=actual,
+        row.update(status='ok', text=result.text, no_speech=result.no_speech, actual=actual,
                    text_correct=(normalized(command_text(result.text)) == normalized(command_text(case['text'])))
                    if case['text'] is not None else None,
                    interpretation_correct=(comparable(actual) == comparable(case['expected']))
                    if case['expected'] is not None else None)
+        if isinstance(provider, GigaAMServer):
+            row['server_evidence'] = provider.server_evidence
     except Exception as exc:
         elapsed = (time.perf_counter() - started) * 1000
         row.update(status='error', error_type=type(exc).__name__,
@@ -163,6 +166,9 @@ def summarize(rows):
 
 async def benchmark(args, config):
     external = args.server is not None
+    provider_name = getattr(args, 'provider', 'whisper')
+    if provider_name == 'gigaam' and not external:
+        raise ValueError('GigaAM benchmark requires an explicitly started native --server')
     if external:
         endpoint(args.server, '/inference')
         if args.threads is not None:
@@ -203,14 +209,16 @@ async def benchmark(args, config):
     records, profiles, failures = [], [], []
     report = {'version': 1, 'scope': 'STT and interpreter only; no search, device execution, journal or TTS',
               'status': 'running', 'image_id': image['Id'], 'image_architecture': image['Architecture'],
-              'execution': 'external_server' if external else 'managed_docker',
+              'execution': 'external_server' if external else 'managed_docker', 'provider': provider_name,
               'server_url': args.server, 'server_label': args.server_label,
               'first_request_scope': 'benchmark_run' if external else 'fresh_server',
               'runner_system': platform.system(), 'runner_machine': platform.machine(),
               'grammar_sha256': {locale: hashlib.sha256(json.dumps(asdict(load_languages((locale,))),
                                     sort_keys=True).encode()).hexdigest() for locale in {c['locale'] for c in cases}},
               'catalog_hints': False, 'repeats': args.repeats, 'warmup_per_decoder': args.warmup,
-              'model_binding': ('checksum of operator reference file only; server model is not attested or loaded by benchmark'
+              'model_binding': ('reference checksum checked against GigaAM worker on each response'
+                                if provider_name == 'gigaam' else
+                                'checksum of operator reference file only; server model is not attested or loaded by benchmark'
                                 if external else 'checksum of read-only mounted operator file; endpoint does not attest weights'),
               'models': fingerprints, 'profiles': profiles, 'failures': failures}
     private_json(output / 'run.json', report)
@@ -227,16 +235,18 @@ async def benchmark(args, config):
                         context = nullcontext((args.server, None)) if external else server(model, threads)
                         with context as (url, startup_ms):
                             providers = []
-                            for label, beam, best in DECODERS:
-                                provider = WhisperServer({'model': str(model), 'server_url': url,
-                                                          'timeout': args.timeout}, beam_size=beam, best_of=best)
+                            decoders = [('default', None, None)] if provider_name == 'gigaam' else DECODERS
+                            for label, beam, best in decoders:
+                                settings = {'model': str(model), 'server_url': url, 'timeout': args.timeout}
+                                provider = (GigaAMServer(settings) if provider_name == 'gigaam' else
+                                            WhisperServer(settings, beam_size=beam, best_of=best))
                                 evidence = provider.evidence() # Hashing is outside the STT timer.
                                 if evidence['model_sha256'] != fingerprint['sha256']:
                                     raise ValueError('model changed before comparison')
                                 profile = group + '-' + label
                                 profiles.append({'id': profile, 'threads': threads, 'model_sha256': fingerprint['sha256'],
                                                  'threads_binding': 'operator_declared_not_server_attested' if external else 'launch_arguments',
-                                                 'decoder': evidence['decoder'], 'startup_ms': startup_ms})
+                                                 'decoder': evidence.get('decoder', 'upstream_default_greedy'), 'startup_ms': startup_ms})
                                 providers.append((profile, provider))
                             first_request = True
                             rounds = [(True, n, cases[:1]) for n in range(args.warmup)] + [
@@ -280,6 +290,8 @@ def main(argv, config):
     parser.add_argument('--model', action='append', help='existing model file; repeat to compare quantization/models')
     parser.add_argument('--threads', type=int, nargs='+', help='Docker thread profiles; default 2 4')
     parser.add_argument('--server', help='existing loopback /inference URL; no Docker or process lifecycle calls')
+    parser.add_argument('--provider', choices=('whisper', 'gigaam'), default='whisper',
+                        help='GigaAM requires --server and --model pointing to its .ckpt')
     parser.add_argument('--server-threads', type=int, help='declare existing server threads for the report; does not change them')
     parser.add_argument('--server-label', help='operator-provided server build/backend label (not attested)')
     parser.add_argument('--repeats', type=int, default=3)

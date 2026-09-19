@@ -82,7 +82,7 @@ def environment(config):
 
 def selected_whisper(config, model):
     """An omitted model option preserves an installed model, including custom builds."""
-    if model is None and config.speech.get('model'):
+    if model is None and config.speech.get('provider', 'whisper') == 'whisper' and config.speech.get('model'):
         installed = Path(config.speech['model']).expanduser()
         if installed.is_file():
             return installed, None
@@ -118,7 +118,7 @@ def install(config_path, *, model=None):
     for section in ('speech', 'tts', 'services'):
         if section not in document:
             document[section] = tomlkit.table()
-    document['speech'].update(backend='server', server_url='http://127.0.0.1:18119/inference',
+    document['speech'].update(provider='whisper', backend='server', server_url='http://127.0.0.1:18119/inference',
                               model=str(whisper_path))
     document['tts'].update(backend='piper', server_url='http://127.0.0.1:18121/synthesize', timeout=30)
     document['tts']['models'] = {locale: str(root / 'piper' / (voice + '.onnx')) for locale, voice in VOICES.items()}
@@ -156,7 +156,8 @@ def manage(config, command):
     if not config.services.get('speech'):
         raise ValueError('managed speech is not configured; run setup --all or start external services explicitly')
     root = config.data_dir / 'speech'
-    if (config.speech.get('server_url') != 'http://127.0.0.1:18119/inference'
+    if (config.speech.get('provider', 'whisper') != 'whisper'
+            or config.speech.get('server_url') != 'http://127.0.0.1:18119/inference'
             or config.tts.get('server_url') != 'http://127.0.0.1:18121/synthesize'
             or config.tts.get('models') != {locale: str(root / 'piper' / (voice + '.onnx')) for locale, voice in VOICES.items()}):
         raise ValueError('managed speech configuration changed; use services.speech=false for external services')
