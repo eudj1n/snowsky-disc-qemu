@@ -4,6 +4,36 @@ This is the short continuation index. [The roadmap](ASSISTANT.md) preserves
 historical decisions; [MVP acceptance](ASSISTANT_MVP.md) defines completion.
 Conversation and local experiments do not replace device evidence.
 
+## Remaining-interval command pacing, 2026-09-19
+
+The unconditional 2.1-second sleeps before playback/control/queue navigation are
+replaced by one Controller `MutationPacer`, shared by persistent and one-shot
+clients. It counts elapsed handshake/idle time and waits only for the remainder
+since a mutation attempt. Fresh connections still start a conservative interval;
+rapid mutations and mode-then-selection remain spaced. Reads/no-ops do not reset
+the deadline. Pacing runs before fresh state/catalog checks and again at the
+socket as a backstop. Disconnect cancels unsent persistent work; failed writes
+remain attempted/uncertain and cannot be replayed.
+
+Local regression: 192 Controller tests and 354 prototype tests passed. The full
+firmware-free container suite passed 365 Python and 37 JavaScript tests. Seven new
+pacing cases cover connection/idle time, rapid commands, mode then selection,
+failed writes, cancelled waits, closed sessions and a playback change during the
+wait. An Assistant fixture constructing a client without its constructor now
+supplies its test pacer. Journal durability and speech configuration are unchanged.
+The complete disposable V2.57 Assistant manifest v7 passed **64/64** (RU/EN),
+with independent fresh device/queue readback and mutation evidence. Local report:
+`/tmp/disc-pacing-acceptance-20260919/results/report.json`; temporary containers,
+network and volumes were removed. Example command latencies: EN/RU pause
+76.794/77.175 ms; EN/RU track selection 324.130/293.273 ms. EN resume immediately
+after setup pause still took 1999.296 ms, demonstrating the retained remaining
+interval. These are single local emulator observations, not a paired performance
+benchmark or Orange Pi/physical-device acceptance. Screenshots were captured by
+the runner but are not claimed visually reviewed. Earlier reports remain intact.
+
+Hardware STT diagnosis is deferred by owner request: native small exceeded the
+120-second benchmark request timeout, which does not itself prove a deadlock.
+
 ## Bridge cleanup regression resolved, 2026-09-19
 
 The previously reported invalid/oversized WebSocket test now passes: peer

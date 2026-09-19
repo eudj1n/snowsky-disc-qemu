@@ -40,6 +40,9 @@ class FakeClient:
     def begin_phase(self, name):
         pass
 
+    def wait_for_mutation(self):
+        pass
+
     def handshake(self):
         return '0306'
 

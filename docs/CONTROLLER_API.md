@@ -131,6 +131,17 @@ suppresses reconnect. Health reads use mode every 30 seconds when operations are
 idle, with capped backoff/jitter after loss. Physical sleep/Wi-Fi behavior remains
 a separate acceptance question.
 
+`PlaybackClient` and the persistent client share `MutationPacer`. New connections
+start one conservative 2.1-second interval because prior device activity is
+unknown; handshake/read time counts toward it. Later operations wait only for
+the remaining interval since an actual mutation attempt. Reads and rejected
+replays do not extend it, and an idle session has no fixed per-command sleep.
+Waits precede fresh state/catalog validation; the socket enforces the same deadline
+as a backstop and marks attempts before I/O, including failed writes. Persistent
+waits are interrupted by disconnect and cannot dispatch on a replacement connection.
+This does not coordinate external physical-button activity or provide atomic
+firmware state; normal confirmation and uncertain outcomes still apply.
+
 The persistent session is currently **TCP only**. Existing diagnostic TCP/WS/HTTP
 APIs remain available and compatible; they do not acquire these new lifecycle or
 state guarantees automatically. Extending the facade to other transports or

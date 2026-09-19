@@ -144,7 +144,7 @@ def previous_in_queue(config, client, http):
     try:
         if client.handshake() != '0306' or client.settings().get('soc_version') != 257:
             raise ValueError('queue navigation requires reviewed DISC V2.57')
-        time.sleep(2.1)
+        client.wait_for_mutation()
         before = snapshot(config, client, http)
         current = before['mark']
         state = before['state']

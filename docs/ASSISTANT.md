@@ -2,6 +2,11 @@
 
 Start with the [current checkpoint](ASSISTANT_STATUS.md) for active work and evidence.
 
+The 2026-09-19 timing follow-up replaces fixed per-command sleeps with shared
+Controller remaining-interval pacing, preserving the stock gate, fresh preflight
+and no-replay guards. WebSocket cleanup and listener shutdown regressions are
+resolved. Validation is recorded in the [current checkpoint](ASSISTANT_STATUS.md).
+
 Checkpoint: **2026-09-18**. The desktop prototype in
 [research/disc_assistant](../research/disc_assistant/README.md) now includes catalog
 import, SQLite snapshots, Typesense search, single-locale text commands (Russian or English), explained

@@ -49,6 +49,16 @@ misrecognized both commands; do not present this plumbing check as accuracy.
 
 ## Where to resume
 
+The fixed command delay is now replaced by shared Controller `MutationPacer`:
+wait only for the remaining 2.1-second interval before fresh preflight, with a
+conservative initial interval on each new connection and an interruptible live
+wait. Reads/no-ops do not reset it; failed mutation attempts do. Do not remove the
+stock integer-second gate or reintroduce per-operation sleeps. WS cleanup and LAN
+listener shutdown regressions are fixed; current validation is in the status doc.
+Orange Pi STT diagnosis is explicitly deferred by the owner: native small exceeded
+the benchmark's 120-second request timeout; this does not establish a deadlock,
+Docker overhead or a model-quality result.
+
 Orange Pi: the owner confirmed `/proc/self/io` is absent on the current Armbian
 kernel, matching the trigger in their Typesense issue #2998. The opt-in
 `[typesense].io_accounting_compat` wrapper and diagnostics are documented in
@@ -66,9 +76,10 @@ the subsequent queue read when diagnosing uncertain playback.
 `run.sh speech-benchmark` now compares frozen WAVs in sequential disposable Whisper
 servers (beam5/greedy, thread counts, optional existing models). No device or search
 access; private output contains reusable samples, hashes and labelled-only scores.
-See `../../docs/ASSISTANT_SPEECH_BENCHMARK.md`. Production decoder/wait/journal
-behavior is unchanged. 352 prototype tests and native Docker plumbing passed;
-Orange Pi comparative measurements remain pending. The historical Controller WebSocket
+See `../../docs/ASSISTANT_SPEECH_BENCHMARK.md`. The benchmark leaves production decoder/journal
+behavior unchanged; command pacing is the separate follow-up above. Initial
+352-test and native Docker plumbing checks passed; the owner's base-model latency
+pilot is recorded in current status, with transcript quality still unreviewed. The historical Controller WebSocket
 cleanup timeout is now fixed; all 28 bridge tests pass (see current status).
 
 The benchmark also accepts `--server http://127.0.0.1:PORT/inference` to use an
@@ -90,7 +101,8 @@ The owner authorized five sequential increments, each committed and pushed.
 - `../../docs/ASSISTANT_EMULATOR_ACCEPTANCE.md`: owner-proposed next validation
   direction, a disposable full Assistant/Typesense/stock-firmware scenario runner.
   Implemented via `bash ci/assistant.sh OTA_DIR NEW_REPORT_DIR [--case ID]`.
-  Manifest v4 has 46 cases. The initial 36-case run exposed shared-artist retrieval
+  The current manifest v7 has 64 cases (v4 had 46); the 2026-09-19 pacing
+  follow-up passed all 64 in one disposable run (see current status). The initial 36-case run exposed shared-artist retrieval
   and late previous/restart behavior. The 42-case follow-up passed all artist cases;
   Assistant previous now selects the explicit predecessor through Controller.
   First row is a no-op in every mode; random mode means displayed queue order.

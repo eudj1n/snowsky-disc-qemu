@@ -9,7 +9,7 @@ import time
 from uuid import uuid4
 
 from controller.fiio_link import Client, Frames, frame, playback_snapshot
-from controller.device import PlaybackClient, ObservedSocket
+from controller.device import PlaybackClient, ObservedSocket, MutationPacer
 from controller.events import validate_scan_events, merge_snapshot
 from controller.models import DeviceConfig, DeviceSnapshot, CommandResult
 
@@ -19,15 +19,9 @@ class LiveSocket(ObservedSocket):
         mutation = data[:4] in (b'0100', b'0101', b'0102', b'0201')
         if not mutation and data[:4] not in (b'0599', b'0501', b'0105', b'0202'):
             raise ValueError('command is outside the reviewed persistent-session surface')
-        if mutation:
-            remaining = self.session.last_write + 2.1 - time.monotonic()
-            if remaining > 0 and self.session.closed.wait(remaining):
-                raise ConnectionError('session ended before dispatch')
         if self.session.closed.is_set():
             raise ConnectionError('session ended; request was not replayed')
         try:
-            if mutation:
-                self.session.last_write = time.monotonic()
             return super().sendall(data)
         except OSError:
             self.session.close()
@@ -37,6 +31,7 @@ class LiveSocket(ObservedSocket):
 class LiveClient(Client):
     """Only _receive touches recv; request callers wait on a condition variable."""
     begin_phase = PlaybackClient.begin_phase
+    wait_for_mutation = PlaybackClient.wait_for_mutation
 
     def __init__(self, host, port, timeout):
         raw = socket.create_connection((host, port), timeout)
@@ -53,7 +48,7 @@ class LiveClient(Client):
         self.mutation_attempted = False
         self.mutation_phase = 'selection'
         self.attempted_phases = set()
-        self.last_write = 0
+        self.pacer = MutationPacer(closed=self.closed)
         self.handshake_value = None
         self.state, self.position, self.mode = {}, None, None
         self.playback = 'unknown'
@@ -353,7 +348,7 @@ class DiscSession:
         from controller.queue import snapshot
         def select(client):
             artist_command(artist, index, album)
-            time.sleep(2.1)
+            client.wait_for_mutation()
             http = HTTPClient(self.config.host, self.config.http_port, self.config.timeout)
             reader = CatalogReader(http, page_size=self.config.page_size, max_tracks=self.config.max_tracks,
                                    max_requests=self.config.max_requests)
@@ -389,7 +384,7 @@ class DiscSession:
         from controller.queue import snapshot
         def select(client):
             album_command(album)
-            time.sleep(2.1)
+            client.wait_for_mutation()
             http = HTTPClient(self.config.host, self.config.http_port, self.config.timeout)
             reader = CatalogReader(http, page_size=self.config.page_size, max_tracks=self.config.max_tracks,
                                    max_requests=self.config.max_requests)

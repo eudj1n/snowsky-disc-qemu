@@ -65,7 +65,8 @@ names and never reads expected transcripts or labels to form a prompt.
 Exact slot text is required here: a phonetic query recoverable by the catalog may
 still fail this measure. Conversely, a correct intention does not prove successful
 device playback. The no-command samples also contribute to this measure. Full
-command latency still includes the approximately 2.1-second device settling guard.
+command pacing retains the 2.1-second stock interval. The 2026-09-19 follow-up
+removed unconditional per-command sleeps; only the remaining interval is waited.
 No firmware timer was shortened to improve these figures.
 
 `/tmp/disc-review-speech-01` used mismatched upstream CLI/server decoder defaults;

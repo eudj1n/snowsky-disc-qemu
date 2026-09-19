@@ -72,9 +72,8 @@ def execute(config, store, ranking, *, shared=None):
                                     reason='mode preparation failed; selection was not sent',
                                     mutation_attempted=result['mode_change']['mutation_attempted'])
                     client.begin_phase('selection')
-                # Stock navigation ignores rapid commands. Give previous activity
-                # time to settle before fresh source preflight and selection.
-                time.sleep(2.1)
+                # Wait only for the remaining stock interval, then revalidate.
+                client.wait_for_mutation()
                 http = HTTPClient(config.host, config.http_port, config.timeout)
                 category, filters, rows, index, equivalents = fresh_selection(
                     config, store, ranking['generation'], selected, http)

@@ -46,7 +46,7 @@ native queue but must not revive a cancelled recommendation plan.
 1. Parse intent before opening search/storage. Under the shared device lock,
    connect (or borrow the persistent session), check handshake/firmware and retain
    interleaved events with one reader.
-2. Respect the stock timing gate (existing tests use 2.1 seconds), then read fresh
+2. Wait only for the remaining stock 2.1-second mutation interval, then read fresh
    state immediately before acting. Unknown/loading or silent reads do not justify
    a blind toggle. Stopped-state resume remains unverified: require a new selection.
 3. Return `already_satisfied` when appropriate. Otherwise mark the mutation attempt
@@ -238,8 +238,13 @@ unvalidated. New controls still require a fresh usable playback observation.
 Unsent mutations are cancelled across connection generations. Writes that may
 have started remain `uncertain`; reconnect restores observation only. Toggles,
 navigation, mode changes and selections are never replayed. Each new selection
-revalidates source rows. Central pacing enforces the 2.1-second mutation interval
-across console commands, in addition to existing operation checks.
+revalidates source rows. Shared Controller pacing enforces the 2.1-second mutation
+interval across console commands and one-shot mode/selection phases. Since
+2026-09-19, redundant unconditional operation sleeps are removed: elapsed idle and
+preflight time count toward the interval. Fresh connections retain a conservative
+initial interval; reads/no-ops do not restart it. Disconnect interrupts persistent
+waits. State/catalog checks run after pacing, so a delayed toggle does not use a
+pre-wait snapshot. See [Controller timing contract](CONTROLLER_API.md#protocol-and-concurrency-guarantees).
 
 Device-operation results include an operation ID. The [request journal](ASSISTANT_HISTORY.md)
 now links it to parsed input, search/selection evidence and observed outcomes.

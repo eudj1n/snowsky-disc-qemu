@@ -219,3 +219,24 @@ Review stage 4: **6/6 focused cases passed** after schema 4 rebuild and
 known-artist prefiltering (RU/EN track, fuzzy collaboration member and compilation
 album). Report: `/tmp/disc-review-stage4`. Prototype checks: 301. See
 [isolated search and speech comparisons](ASSISTANT_REVIEW_EVALUATION.md).
+
+## Shared timing guard checkpoint (2026-09-19)
+
+The full current **manifest v7 passed 64/64** after replacing unconditional command
+sleeps with remaining-interval pacing. This includes controls, early/late/paused
+previous, first-row no-op, compound artist credits, synonyms, single-action
+rejection, and complete/scoped/compilation/Cyrillic album selection. Device and
+queue readback verify outcomes independently of selected search candidates.
+
+Local evidence: `/tmp/disc-pacing-acceptance-20260919/results/report.json` and its
+per-case reports/screenshots. The source revision and working-tree patch are
+retained by the harness. Temporary containers, network and volumes were removed.
+Example EN/RU pause latencies were 76.794/77.175 ms; track selection took
+324.130/293.273 ms. Rapid EN resume after setup pause still took 1999.296 ms;
+the firmware interval remains enforced. These individual observations establish
+absence of the old unconditional delay, not a controlled hardware speedup.
+Screenshots are not claimed visually reviewed; no physical audio/MVP acceptance
+is inferred. Earlier failed and focused reports remain unchanged.
+
+Local Controller tests: 192 passed. Prototype tests: 354 passed. The final shared
+firmware-free container suite passed 365 Python / 37 JavaScript tests.

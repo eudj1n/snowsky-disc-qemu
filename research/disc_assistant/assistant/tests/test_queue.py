@@ -14,6 +14,7 @@ class QueueTests(unittest.TestCase):
 
     def test_mode_and_selection_each_allow_one_attempt_with_no_replay(self):
         client = PlaybackClient.__new__(PlaybackClient)
+        client.pacer = Mock()
         client.mutation_attempted, client.mutation_phase, client.attempted_phases = False, 'selection', set()
         raw = Mock()
         socket = ObservedSocket(raw, client)

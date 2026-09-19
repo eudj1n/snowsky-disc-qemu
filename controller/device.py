@@ -4,6 +4,36 @@ from controller.fiio_link import Client, frame
 from controller.events import validate_scan_events
 
 
+class MutationPacer:
+    """Respect the stock integer-second gate without delaying idle connections.
+
+    The last command before connection is unknown, so start with a conservative
+    interval. Thereafter only actual mutation attempts advance the deadline.
+    Call before fresh preflight; the socket also checks it as a final backstop.
+    Operations must be serialized by the owning client/session.
+    """
+    interval = 2.1
+
+    def __init__(self, *, closed=None):
+        self.closed = closed
+        self.last_attempt = time.monotonic()
+
+    def wait(self):
+        while True:
+            if self.closed is not None and self.closed.is_set():
+                raise ConnectionError('session ended before dispatch')
+            remaining = self.last_attempt + self.interval - time.monotonic()
+            if remaining <= 0:
+                return
+            if self.closed is None:
+                time.sleep(remaining)
+            elif self.closed.wait(remaining):
+                raise ConnectionError('session ended before dispatch')
+
+    def attempted(self):
+        self.last_attempt = time.monotonic()
+
+
 class ObservedSocket:
     def __init__(self, socket, session):
         self.socket, self.session = socket, session
@@ -18,6 +48,8 @@ class ObservedSocket:
                 raise RuntimeError('unexpected mutation in the current phase')
             if self.session.mutation_phase in self.session.attempted_phases:
                 raise RuntimeError('playback mutation replay refused')
+            self.session.wait_for_mutation()
+            self.session.pacer.attempted()
             self.session.attempted_phases.add(self.session.mutation_phase)
             self.session.mutation_attempted = True
         return self.socket.sendall(data)
@@ -43,7 +75,11 @@ class PlaybackClient(Client):
         self.mutation_attempted = False
         self.mutation_phase = 'selection'
         self.attempted_phases = set()
+        self.pacer = MutationPacer()
         self.socket = ObservedSocket(self.socket, self)
+
+    def wait_for_mutation(self):
+        self.pacer.wait()
 
     def begin_phase(self, name):
         if (name not in ('mode', 'selection') or name in self.attempted_phases

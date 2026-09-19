@@ -74,7 +74,7 @@ def control(client, action, timeout):
     try:
         if client.handshake() != '0306' or client.settings().get('soc_version') != 257:
             raise ValueError('controls require reviewed DISC V2.57')
-        time.sleep(2.1)
+        client.wait_for_mutation()
         before, position = observe(client)
         wanted = 0 if action == 'resume' else 1
         if action in ('pause', 'resume') and before['state'] == wanted:
@@ -101,6 +101,7 @@ def set_mode(client, mode):
     result = {'operation_id': uuid4().hex, 'requested': requested, 'status': 'not_sent', 'mutation_attempted': False}
     try:
         client.begin_phase('mode')
+        client.wait_for_mutation()
         result['previous'] = client.play_mode()
         if result['previous'] == requested:
             return dict(result, status='already_satisfied')
