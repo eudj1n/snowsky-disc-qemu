@@ -17,12 +17,15 @@ class LanBridgeTests(unittest.IsolatedAsyncioTestCase):
     async def asyncTearDown(self):
         for server in self.servers:
             server.close()
-            await server.wait_closed()
         if self.proxy:
             await self.proxy.close()
         for writer in self.writers:
             writer.close()
             await writer.wait_closed()
+        # Recent asyncio versions wait for accepted connections too. Close the
+        # owned clients/proxy before awaiting listener shutdown, not afterward.
+        for server in self.servers:
+            await server.wait_closed()
 
     async def server(self, handler):
         server = await asyncio.start_server(handler, '127.0.0.1', 0)

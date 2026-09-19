@@ -68,8 +68,8 @@ servers (beam5/greedy, thread counts, optional existing models). No device or se
 access; private output contains reusable samples, hashes and labelled-only scores.
 See `../../docs/ASSISTANT_SPEECH_BENCHMARK.md`. Production decoder/wait/journal
 behavior is unchanged. 352 prototype tests and native Docker plumbing passed;
-Orange Pi comparative measurements remain pending. One Controller WebSocket
-timeout reproduces on the untouched baseline (details in current status).
+Orange Pi comparative measurements remain pending. The historical Controller WebSocket
+cleanup timeout is now fixed; all 29 bridge tests pass (see current status).
 
 The benchmark also accepts `--server http://127.0.0.1:PORT/inference` to use an
 existing native server without any Docker/process lifecycle calls. In that mode

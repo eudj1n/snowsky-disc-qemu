@@ -71,6 +71,9 @@ Active firmware: **V2.57**. Local protocol research is finalized in
 
 ### Fixed
 
+- WebSocket bridge releases its connection slot even when an invalid peer disconnects
+  during cleanup, allowing the next client to connect. [Details](docs/WEBSOCKET.md).
+
 - LAN bridge timeout cleanup now releases the control connection even during
   continuous upstream notifications.
 - Stabilize library, SD and end-of-track tests around stock asynchronous behavior;

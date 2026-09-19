@@ -4,6 +4,17 @@ This is the short continuation index. [The roadmap](ASSISTANT.md) preserves
 historical decisions; [MVP acceptance](ASSISTANT_MVP.md) defines completion.
 Conversation and local experiments do not replace device evidence.
 
+## Bridge cleanup regression resolved, 2026-09-19
+
+The previously reported invalid/oversized WebSocket test now passes: peer
+cancellation during awaited cleanup could skip TCP close and leave the channel
+reserved. Cleanup now guarantees both. The regression checks upstream closure,
+registry release and a fresh handshake, without increasing its timeout.
+All 29 WebSocket/LAN bridge tests passed locally. The LAN fixture also now closes
+owned connections before awaiting listener shutdown, avoiding a teardown stall
+on current asyncio. No LAN listener was exposed; tests use synthetic loopback peers.
+See [bridge details](WEBSOCKET.md#cancelled-cleanup-regression-2026-09-19).
+
 ## Benchmark existing native Whisper, 2026-09-19
 
 `speech-benchmark --server http://127.0.0.1:PORT/inference` now reuses an existing
