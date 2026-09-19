@@ -1,0 +1,496 @@
+{
+  "version": 1,
+  "description": "Synthetic metadata; lexical references only, no lyrics/descriptions/real audio. Explicit canonical Lincoln Park is a distinct artist and must not map to Linkin Park.",
+  "tracks": [
+    {
+      "title": "Numb",
+      "artist": "Linkin Park",
+      "album": "Meteora"
+    },
+    {
+      "title": "Numb",
+      "artist": "Linkin Park",
+      "album": "Live in Texas"
+    },
+    {
+      "title": "Numb",
+      "artist": "Other Artist",
+      "album": "Other Album"
+    },
+    {
+      "title": "In the End",
+      "artist": "Linkin Park",
+      "album": "Hybrid Theory"
+    },
+    {
+      "title": "Breaking the Habit",
+      "artist": "Linkin Park",
+      "album": "Meteora"
+    },
+    {
+      "title": "Crawling",
+      "artist": "Linkin Park",
+      "album": "Hybrid Theory"
+    },
+    {
+      "title": "Numb",
+      "artist": "Lincoln Park",
+      "album": "Independent Sessions"
+    },
+    {
+      "title": "Hello",
+      "artist": "Adele",
+      "album": "25"
+    },
+    {
+      "title": "Hello",
+      "artist": "Lionel Richie",
+      "album": "Cant Slow Down"
+    },
+    {
+      "title": "Yellow",
+      "artist": "Coldplay",
+      "album": "Parachutes"
+    },
+    {
+      "title": "Viva La Vida",
+      "artist": "Coldplay",
+      "album": "Viva La Vida"
+    },
+    {
+      "title": "Uprising",
+      "artist": "Muse",
+      "album": "The Resistance"
+    },
+    {
+      "title": "Time",
+      "artist": "Pink Floyd",
+      "album": "The Dark Side of the Moon"
+    },
+    {
+      "title": "Time",
+      "artist": "Hans Zimmer",
+      "album": "Inception"
+    },
+    {
+      "title": "Stop",
+      "artist": "Sam Brown",
+      "album": "Stop"
+    },
+    {
+      "title": "Pause",
+      "artist": "Synthetic Artist",
+      "album": "Signals"
+    },
+    {
+      "title": "Тишина",
+      "artist": "Артист Ё",
+      "album": "Альбом"
+    },
+    {
+      "title": "Кукушка",
+      "artist": "Кино",
+      "album": "Чёрный альбом"
+    },
+    {
+      "title": "Звезда по имени Солнце",
+      "artist": "Кино",
+      "album": "Звезда по имени Солнце"
+    },
+    {
+      "title": "Искала",
+      "artist": "Земфира",
+      "album": "Прости меня моя любовь"
+    },
+    {
+      "title": "Группа крови",
+      "artist": "Кино",
+      "album": "Группа крови"
+    },
+    {
+      "title": "Город",
+      "artist": "Синтетический исполнитель",
+      "album": "Записи"
+    },
+    {
+      "title": "Cue entry",
+      "artist": "Cue Artist",
+      "album": "Cue Album"
+    },
+    {
+      "title": "Cue entry",
+      "artist": "Cue Artist",
+      "album": "Cue Album"
+    }
+  ],
+  "queries": [
+    {
+      "id": "development-1",
+      "split": "development",
+      "locale": "en",
+      "text": "Play Coldplay - Yelow",
+      "expected": {
+        "kind": "track",
+        "title": "Yellow",
+        "artist": "Coldplay",
+        "album": "Parachutes"
+      }
+    },
+    {
+      "id": "development-2",
+      "split": "development",
+      "locale": "en",
+      "text": "Play Coldplay - Viva La Vida",
+      "expected": {
+        "kind": "track",
+        "title": "Viva La Vida",
+        "artist": "Coldplay",
+        "album": "Viva La Vida"
+      }
+    },
+    {
+      "id": "development-3",
+      "split": "development",
+      "locale": "en",
+      "text": "Play Adele - Helo",
+      "expected": {
+        "kind": "track",
+        "title": "Hello",
+        "artist": "Adele",
+        "album": "25"
+      }
+    },
+    {
+      "id": "development-4",
+      "split": "development",
+      "locale": "en",
+      "text": "Play Lionel Richie - Hello",
+      "expected": {
+        "kind": "track",
+        "title": "Hello",
+        "artist": "Lionel Richie",
+        "album": "Cant Slow Down"
+      }
+    },
+    {
+      "id": "development-5",
+      "split": "development",
+      "locale": "en",
+      "text": "Play Coldplay - Yellow live",
+      "expected": null
+    },
+    {
+      "id": "development-6",
+      "split": "development",
+      "locale": "en",
+      "text": "Play Adele - DefinitelyMissing",
+      "expected": null
+    },
+    {
+      "id": "development-7",
+      "split": "development",
+      "locale": "ru",
+      "text": "Включи Кино - Кукушка",
+      "expected": {
+        "kind": "track",
+        "title": "Кукушка",
+        "artist": "Кино",
+        "album": "Чёрный альбом"
+      }
+    },
+    {
+      "id": "development-8",
+      "split": "development",
+      "locale": "ru",
+      "text": "Включи Kino - Gruppa krovi",
+      "expected": {
+        "kind": "track",
+        "title": "Группа крови",
+        "artist": "Кино",
+        "album": "Группа крови"
+      }
+    },
+    {
+      "id": "test-1",
+      "split": "test",
+      "locale": "en",
+      "text": "Play Linkin Park - Numb",
+      "expected": {
+        "kind": "track",
+        "title": "Numb",
+        "artist": "Linkin Park",
+        "album": "Meteora"
+      }
+    },
+    {
+      "id": "test-2",
+      "split": "test",
+      "locale": "ru",
+      "text": "Включи Линкин Парк - Намб",
+      "expected": {
+        "kind": "track",
+        "title": "Numb",
+        "artist": "Linkin Park",
+        "album": "Meteora"
+      }
+    },
+    {
+      "id": "test-3",
+      "split": "test",
+      "locale": "en",
+      "text": "Play Linkin Park - Nom",
+      "expected": {
+        "kind": "track",
+        "title": "Numb",
+        "artist": "Linkin Park",
+        "album": "Meteora"
+      }
+    },
+    {
+      "id": "test-4",
+      "split": "test",
+      "locale": "ru",
+      "text": "Включи Линкин Паркнамп",
+      "expected": {
+        "kind": "track",
+        "title": "Numb",
+        "artist": "Linkin Park",
+        "album": "Meteora"
+      }
+    },
+    {
+      "id": "test-5",
+      "split": "test",
+      "locale": "ru",
+      "text": "Включи лингин парбнамп",
+      "expected": {
+        "kind": "track",
+        "title": "Numb",
+        "artist": "Linkin Park",
+        "album": "Meteora"
+      }
+    },
+    {
+      "id": "test-6",
+      "split": "test",
+      "locale": "en",
+      "text": "Play Lincoln Park - Numb",
+      "expected": {
+        "kind": "track",
+        "title": "Numb",
+        "artist": "Lincoln Park",
+        "album": "Independent Sessions"
+      }
+    },
+    {
+      "id": "test-7",
+      "split": "test",
+      "locale": "en",
+      "text": "Play Other Artist - Numb",
+      "expected": {
+        "kind": "track",
+        "title": "Numb",
+        "artist": "Other Artist",
+        "album": "Other Album"
+      }
+    },
+    {
+      "id": "test-8",
+      "split": "test",
+      "locale": "en",
+      "text": "Play Linkn Park Numb",
+      "expected": {
+        "kind": "track",
+        "title": "Numb",
+        "artist": "Linkin Park",
+        "album": "Meteora"
+      }
+    },
+    {
+      "id": "test-9",
+      "split": "test",
+      "locale": "en",
+      "text": "Play Linkin Park - Numb live",
+      "expected": {
+        "kind": "track",
+        "title": "Numb",
+        "artist": "Linkin Park",
+        "album": "Live in Texas"
+      }
+    },
+    {
+      "id": "test-10",
+      "split": "test",
+      "locale": "en",
+      "text": "Play Linkin Park - Numb remix",
+      "expected": null
+    },
+    {
+      "id": "test-11",
+      "split": "test",
+      "locale": "en",
+      "text": "Play Linkin Park - Numb acoustic",
+      "expected": null
+    },
+    {
+      "id": "test-12",
+      "split": "test",
+      "locale": "en",
+      "text": "Play Linkin Park - Breaking the Habbitt",
+      "expected": {
+        "kind": "track",
+        "title": "Breaking the Habit",
+        "artist": "Linkin Park",
+        "album": "Meteora"
+      }
+    },
+    {
+      "id": "test-13",
+      "split": "test",
+      "locale": "en",
+      "text": "Play Linkin Park - In the And",
+      "expected": {
+        "kind": "track",
+        "title": "In the End",
+        "artist": "Linkin Park",
+        "album": "Hybrid Theory"
+      }
+    },
+    {
+      "id": "test-14",
+      "split": "test",
+      "locale": "en",
+      "text": "Play Muse - Uprizing",
+      "expected": {
+        "kind": "track",
+        "title": "Uprising",
+        "artist": "Muse",
+        "album": "The Resistance"
+      }
+    },
+    {
+      "id": "test-15",
+      "split": "test",
+      "locale": "en",
+      "text": "Play Pink Floyd - Time",
+      "expected": {
+        "kind": "track",
+        "title": "Time",
+        "artist": "Pink Floyd",
+        "album": "The Dark Side of the Moon"
+      }
+    },
+    {
+      "id": "test-16",
+      "split": "test",
+      "locale": "en",
+      "text": "Play Hans Zimmer - Time",
+      "expected": {
+        "kind": "track",
+        "title": "Time",
+        "artist": "Hans Zimmer",
+        "album": "Inception"
+      }
+    },
+    {
+      "id": "test-17",
+      "split": "test",
+      "locale": "en",
+      "text": "Play Sam Brown - Stop",
+      "expected": {
+        "kind": "track",
+        "title": "Stop",
+        "artist": "Sam Brown",
+        "album": "Stop"
+      }
+    },
+    {
+      "id": "test-18",
+      "split": "test",
+      "locale": "en",
+      "text": "Play Synthetic Artist - Pause",
+      "expected": {
+        "kind": "track",
+        "title": "Pause",
+        "artist": "Synthetic Artist",
+        "album": "Signals"
+      }
+    },
+    {
+      "id": "test-19",
+      "split": "test",
+      "locale": "en",
+      "text": "Play Artist E - Tishina",
+      "expected": {
+        "kind": "track",
+        "title": "Тишина",
+        "artist": "Артист Ё",
+        "album": "Альбом"
+      }
+    },
+    {
+      "id": "test-20",
+      "split": "test",
+      "locale": "ru",
+      "text": "Включи Артист Ё - Тишина",
+      "expected": {
+        "kind": "track",
+        "title": "Тишина",
+        "artist": "Артист Ё",
+        "album": "Альбом"
+      }
+    },
+    {
+      "id": "test-21",
+      "split": "test",
+      "locale": "ru",
+      "text": "Включи Земфира - Искала",
+      "expected": {
+        "kind": "track",
+        "title": "Искала",
+        "artist": "Земфира",
+        "album": "Прости меня моя любовь"
+      }
+    },
+    {
+      "id": "test-22",
+      "split": "test",
+      "locale": "en",
+      "text": "Play Cue Artist - Cue entry",
+      "expected": {
+        "kind": "track",
+        "title": "Cue entry",
+        "artist": "Cue Artist",
+        "album": "Cue Album"
+      }
+    },
+    {
+      "id": "test-23",
+      "split": "test",
+      "locale": "en",
+      "text": "Play DefinitelyUnknownArtist - Numb",
+      "expected": null
+    },
+    {
+      "id": "test-24",
+      "split": "test",
+      "locale": "en",
+      "text": "Play Linkin Park - DefinitelyUnknownRecording",
+      "expected": null
+    },
+    {
+      "id": "test-25",
+      "split": "test",
+      "locale": "ru",
+      "text": "Включи Земфира - Несуществующая песня",
+      "expected": null
+    },
+    {
+      "id": "test-26",
+      "split": "test",
+      "locale": "en",
+      "text": "Play Taylor Swift - Numb",
+      "expected": null
+    }
+  ]
+}

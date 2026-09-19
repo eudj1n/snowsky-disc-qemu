@@ -1,10 +1,15 @@
 # DISC local protocol: controller capability summary
 
 Research checkpoint: 2026-09-16, active firmware **V2.57**, physical-app evidence
-from **FiiO Control 4.6.0 on iPhone**. This is the implementation contract for a
-future locally hosted backend/frontend. The emulator viewer, diagnostic clients
+from **FiiO Control 4.6.0 on iPhone**. This is the protocol implementation contract for a
+locally hosted backend/frontend. The [shared Controller session API](CONTROLLER_API.md)
+now provides persistent state and a bounded playback facade for application adapters. The emulator viewer, diagnostic clients
 and WebSocket adapter exist; a complete multi-browser web remote is subsequent
 product work. M21/FiiO Music is a different implementation, not a DISC profile.
+
+Playback failures can expose bounded [queue confirmation diagnostics](ASSISTANT_QUEUE_DIAGNOSTICS.md)
+through `CommandResult.confirmation`. This adds evidence without relaxing guards
+or retrying a mutation.
 
 ## Transports and ownership
 
@@ -31,7 +36,7 @@ labelled owner observation; neither implies every variant or hardware output.
 | --- | --- | --- |
 | Playback | Play/pause toggle, next/previous, volume, seek, five play modes; metadata/position and cover reads | Emulator + physical captures. Previous after >10 s restarts the track. Absolute play/pause is not established. [Playback](REMOTE_CONTROL.md). |
 | Queue / favorites | Read queue, guarded positional selection, set/unset current-track favorite; V2.57 favorite positional selection | Emulator + physical captures. IDs are not interchangeable with positions. No arbitrary track-ID favorite setter. [Queue](REMOTE_CONTROL.md), [formats](FORMATS.md). |
-| Catalog / scoped playback | Tracks, artists → albums → tracks, albums, genres → albums → tracks, folders; guarded `play_artist`, `play_genre`, `play_folder` | Emulator + physical hierarchy/selection captures. Preserve artist/genre filters and literal names; folder indices include directories. Folder Play all is nonrecursive. [Browsing](LIBRARY_BROWSING.md). |
+| Catalog / scoped playback | Tracks, artists → albums → tracks, albums, genres → albums → tracks, folders; guarded `play_artist`, `play_album`, `play_genre`, `play_folder` | Emulator + physical hierarchy/selection captures. Preserve artist/genre filters and literal names; folder indices include directories. Folder Play all is nonrecursive. [Browsing](LIBRARY_BROWSING.md). |
 | Play all | All indexed songs and named album/artist/genre/folder/custom-list contexts | Emulator covers selectors; physical scoped commands captured. Four root-tab buttons sent no playback request in the observed app state; this is not firmware rejection. Do not invent root selectors from those taps. |
 | Custom playlists | Create/rename, guarded selection/playback, batch addition with source filters/ranges, remove members/delete list with files preserved | Emulator + physical track/group-add and rename captures. Destination/source positions need fresh reads; one physical 105-member list was read only through its first 100 rows. [Playlists](PLAYLISTS.md), [bulk add](LIBRARY_BROWSING.md). |
 | File transfer | Browse, create folders, upload with progress checks, explicit single-file deletion under SD path guards | Stock HTTP + emulator checks; distinct from deleting an index/list entry. No claim of an atomic file/index transaction. [HTTP](HTTP_API.md). |
@@ -109,3 +114,15 @@ no unrelated power/release gates are claimed rerun. Raw firmware, captures,
 artwork and experimental logs remain ignored; sanitized fixtures are tracked.
 The [research record](PROTOCOL_RESEARCH.md) preserves chronology and remaining
 follow-up boundaries. This summary is the current entry point for a controller.
+
+
+### Explicit predecessor helper
+
+`DiscSession.previous_in_queue()` provides one guarded selection of the preceding
+row in the current displayed queue, independent of elapsed position. It checks
+fresh membership/current state before sending and the target row afterwards;
+unknown state or an observed race blocks dispatch or returns uncertainty, never
+a replay. First row is a no-op in all modes. Native `previous_track()` remains
+unchanged. `Client.play_queue_index(index, http=...)` optionally uses an HTTP row
+preflight; omitting it retains the existing TCP queue-count check. See the
+[Assistant policy and evidence](ASSISTANT_PLAYBACK.md#explicit-previous-row-policy-2026-09-18).

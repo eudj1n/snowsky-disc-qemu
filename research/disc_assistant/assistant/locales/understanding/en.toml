@@ -1,0 +1,30 @@
+# Single-action diagnostic grammar. Literal templates; no locale-specific Python branches.
+version = 1
+locale = "en"
+
+[templates]
+play = ["play {query}", "put on {query}", "please play {query}", "please put on {query}", "I want to hear {query}", "I would like to hear {query}", "let us hear {query}", "start {query}", "could we listen to {query}", "find and play {query}"]
+artist = ["give me music by {query}", "I want music by the band {query}", "let us hear the band {query}", "play music by {query}"]
+track = ["start track {query}", "find and play song {query}"]
+language = ["switch language to {language}", "please switch language to {language}", "use {language} for commands", "use {language} for commands please", "answer in {language}", "speak to me in {language}", "let us talk in {language}", "change language to {language}", "select the {language} language", "move to {language}", "I want an {language} interface", "for commands choose {language}", "change our conversation language to {language}", "set {language} as the reply language", "from now on let us communicate in {language}", "let us return to using {language}", "I would prefer answers in {language}", "make {language} our conversation language", "the assistant should use {language} from now on"]
+
+[language_names]
+ru = ["Russian", "in Russian"]
+en = ["English", "in English"]
+
+[controls]
+pause = ["hold the music", "put playback on pause"]
+resume = ["keep the music going", "carry on listening"]
+stop = ["no more music please", "I am done listening turn it off"]
+next = ["play the next song"]
+previous = ["play the previous song"]
+
+[context]
+negation = ["do not", "don't", "never"]
+reported = ["he said", "she said", "someone wrote", "the label", "the word", "this is a story", "I will", "yesterday", "recorded in", "our schedule"]
+questions = ["what does", "what is", "how do", "why is", "are you able", "can you", "tell me", "explain"]
+nonmusic = ["the light", "the lights", "light", "lights", "the room lights", "a movie", "the television"]
+connectors = ["and then", "then", "and", "or", "after that", "before that"]
+action_modifiers = ["maybe", "please", "just"]
+actions = ["play", "put on", "pause", "resume", "continue", "stop", "turn off", "switch language", "skip", "next", "previous"]
+empty = ["nothing", "none"]

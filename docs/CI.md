@@ -64,6 +64,14 @@ Keep the real five-minute firmware threshold and 310-second USB observation.
 Shortened timers would test a different condition. Document any validation not
 run; earlier success is not evidence for a subsequently changed implementation.
 
+The research Assistant has a separate, opt-in end-to-end runner:
+`bash ci/assistant.sh OTA_DIR NEW_REPORT_DIR`. It provisions generated media,
+Typesense and a disposable V2.57 guest without published ports or personal settings.
+See [Assistant emulator scenarios](ASSISTANT_EMULATOR_ACCEPTANCE.md) for selected
+cases, JSON/Markdown reports and framebuffer evidence. This regression cohort is
+not part of `full`, hosted CI or physical-player MVP acceptance; known mismatches
+produce a nonzero exit status. Its oracle unit tests run in firmware-free CI.
+
 ### Branch policy after public publication
 
 - `2.x`: changes through pull requests, mandatory **Firmware-free checks** from

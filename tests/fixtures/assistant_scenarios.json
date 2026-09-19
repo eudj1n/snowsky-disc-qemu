@@ -1,0 +1,1224 @@
+{
+  "version": 7,
+  "cohort": "emulator-regression",
+  "tracks": [
+    {
+      "key": "alpha",
+      "title": "Signal Alpha",
+      "artist": "Test Atlas",
+      "album": "Test Album",
+      "number": 1
+    },
+    {
+      "key": "beta",
+      "title": "Signal Beta",
+      "artist": "Test Atlas",
+      "album": "Test Album",
+      "number": 2
+    },
+    {
+      "key": "gamma",
+      "title": "Signal Gamma",
+      "artist": "Test Atlas",
+      "album": "Test Album",
+      "number": 3
+    },
+    {
+      "key": "ru",
+      "title": "Тихий берег",
+      "artist": "Тестовый артист",
+      "album": "Русский альбом",
+      "number": 1
+    },
+    {
+      "key": "duet",
+      "title": "Shared Signal",
+      "artist": "Test Atlas;Test Guest",
+      "album": "Duets",
+      "number": 1
+    },
+    {
+      "key": "edition",
+      "title": "Signal Alpha",
+      "artist": "Test Atlas",
+      "album": "Other Edition",
+      "number": 1
+    },
+    {
+      "key": "comp-a",
+      "title": "Compilation North",
+      "artist": "Collection North",
+      "album": "Shared Collection",
+      "number": 1
+    },
+    {
+      "key": "comp-b",
+      "title": "Compilation South",
+      "artist": "Collection South",
+      "album": "Shared Collection",
+      "number": 2
+    }
+  ],
+  "cases": [
+    {
+      "id": "en-track",
+      "locale": "en",
+      "command": "Play Test Atlas — Signal Gamma",
+      "setup": {
+        "track": "beta",
+        "state": "playing",
+        "progress_seconds": 3
+      },
+      "expected": {
+        "effect": "track",
+        "mutation": "required",
+        "status": [
+          "playing"
+        ],
+        "target": "gamma"
+      }
+    },
+    {
+      "id": "en-cyrillic",
+      "locale": "en",
+      "command": "Play Тестовый артист — Тихий берег",
+      "setup": {
+        "track": "beta",
+        "state": "playing",
+        "progress_seconds": 3
+      },
+      "expected": {
+        "effect": "track",
+        "mutation": "required",
+        "status": [
+          "playing"
+        ],
+        "target": "ru"
+      }
+    },
+    {
+      "id": "en-artist",
+      "locale": "en",
+      "command": "Play artist Тестовый артист",
+      "setup": {
+        "track": "beta",
+        "state": "playing",
+        "progress_seconds": 3
+      },
+      "expected": {
+        "effect": "artist",
+        "mutation": "required",
+        "status": [
+          "playing"
+        ],
+        "target": "ru"
+      }
+    },
+    {
+      "id": "en-duplicate",
+      "locale": "en",
+      "command": "Play Test Atlas — Signal Alpha",
+      "setup": {
+        "track": "beta",
+        "state": "playing",
+        "progress_seconds": 3
+      },
+      "expected": {
+        "effect": "track",
+        "mutation": "required",
+        "status": [
+          "playing"
+        ],
+        "accepted_targets": [
+          "alpha",
+          "edition"
+        ],
+        "target": "alpha"
+      }
+    },
+    {
+      "id": "en-shared-artist",
+      "locale": "en",
+      "command": "Play Test Atlas — Shared Signal",
+      "setup": {
+        "track": "beta",
+        "state": "playing",
+        "progress_seconds": 3
+      },
+      "expected": {
+        "effect": "track",
+        "mutation": "required",
+        "status": [
+          "playing"
+        ],
+        "target": "duet"
+      }
+    },
+    {
+      "id": "en-pause",
+      "locale": "en",
+      "command": "Pause",
+      "setup": {
+        "track": "beta",
+        "state": "playing",
+        "progress_seconds": 3
+      },
+      "expected": {
+        "effect": "paused",
+        "mutation": "required",
+        "status": [
+          "confirmed"
+        ]
+      }
+    },
+    {
+      "id": "en-pause-again",
+      "locale": "en",
+      "command": "Pause",
+      "setup": {
+        "track": "beta",
+        "state": "paused",
+        "progress_seconds": 3
+      },
+      "expected": {
+        "effect": "paused",
+        "mutation": "none",
+        "status": [
+          "already_satisfied"
+        ]
+      }
+    },
+    {
+      "id": "en-resume",
+      "locale": "en",
+      "command": "Resume",
+      "setup": {
+        "track": "beta",
+        "state": "paused",
+        "progress_seconds": 3
+      },
+      "expected": {
+        "effect": "playing",
+        "mutation": "required",
+        "status": [
+          "confirmed"
+        ]
+      }
+    },
+    {
+      "id": "en-resume-again",
+      "locale": "en",
+      "command": "Resume",
+      "setup": {
+        "track": "beta",
+        "state": "playing",
+        "progress_seconds": 3
+      },
+      "expected": {
+        "effect": "playing",
+        "mutation": "none",
+        "status": [
+          "already_satisfied"
+        ]
+      }
+    },
+    {
+      "id": "en-stop",
+      "locale": "en",
+      "command": "Stop",
+      "setup": {
+        "track": "beta",
+        "state": "playing",
+        "progress_seconds": 3
+      },
+      "expected": {
+        "effect": "paused",
+        "mutation": "required",
+        "status": [
+          "confirmed"
+        ]
+      }
+    },
+    {
+      "id": "en-stop-again",
+      "locale": "en",
+      "command": "Stop",
+      "setup": {
+        "track": "beta",
+        "state": "paused",
+        "progress_seconds": 3
+      },
+      "expected": {
+        "effect": "paused",
+        "mutation": "none",
+        "status": [
+          "already_satisfied"
+        ]
+      }
+    },
+    {
+      "id": "en-next",
+      "locale": "en",
+      "command": "Next track",
+      "setup": {
+        "track": "beta",
+        "state": "playing",
+        "progress_seconds": 3
+      },
+      "expected": {
+        "effect": "next",
+        "mutation": "required",
+        "status": [
+          "confirmed"
+        ]
+      }
+    },
+    {
+      "id": "en-previous",
+      "locale": "en",
+      "command": "Previous track",
+      "setup": {
+        "track": "beta",
+        "state": "playing",
+        "progress_seconds": 3
+      },
+      "expected": {
+        "effect": "previous",
+        "mutation": "required",
+        "status": [
+          "confirmed"
+        ]
+      }
+    },
+    {
+      "id": "en-previous-late",
+      "locale": "en",
+      "command": "Previous track",
+      "setup": {
+        "track": "beta",
+        "state": "playing",
+        "progress_seconds": 12
+      },
+      "expected": {
+        "effect": "previous",
+        "mutation": "required",
+        "status": [
+          "confirmed"
+        ]
+      },
+      "note": "Product-contract probe: expect previous recording even after 12 seconds; stock restart behavior remains visible as a mismatch."
+    },
+    {
+      "id": "en-missing",
+      "locale": "en",
+      "command": "Play track ASSISTANT_ABSENT_7F91",
+      "setup": {
+        "track": "beta",
+        "state": "playing",
+        "progress_seconds": 3
+      },
+      "expected": {
+        "effect": "unchanged",
+        "mutation": "none",
+        "status": [
+          "not_found"
+        ]
+      }
+    },
+    {
+      "id": "en-negation",
+      "locale": "en",
+      "command": "Do not pause music",
+      "setup": {
+        "track": "beta",
+        "state": "playing",
+        "progress_seconds": 3
+      },
+      "expected": {
+        "effect": "unchanged",
+        "mutation": "none",
+        "status": [
+          "error"
+        ],
+        "response_codes": [
+          "command.unrecognized",
+          "command.unsupported"
+        ]
+      }
+    },
+    {
+      "id": "en-compound",
+      "locale": "en",
+      "command": "Play Test Atlas and then stop music",
+      "setup": {
+        "track": "beta",
+        "state": "playing",
+        "progress_seconds": 3
+      },
+      "expected": {
+        "effect": "unchanged",
+        "mutation": "none",
+        "status": [
+          "error"
+        ],
+        "response_codes": [
+          "command.unsupported"
+        ]
+      }
+    },
+    {
+      "id": "en-language",
+      "locale": "en",
+      "command": "Switch language to Russian",
+      "setup": {
+        "track": "beta",
+        "state": "playing",
+        "progress_seconds": 3
+      },
+      "expected": {
+        "effect": "unchanged",
+        "mutation": "none",
+        "status": [
+          "confirmed"
+        ],
+        "response_locale": "ru"
+      }
+    },
+    {
+      "id": "ru-track",
+      "locale": "ru",
+      "command": "Включи Test Atlas — Signal Gamma",
+      "setup": {
+        "track": "beta",
+        "state": "playing",
+        "progress_seconds": 3
+      },
+      "expected": {
+        "effect": "track",
+        "mutation": "required",
+        "status": [
+          "playing"
+        ],
+        "target": "gamma"
+      }
+    },
+    {
+      "id": "ru-cyrillic",
+      "locale": "ru",
+      "command": "Включи Тестовый артист — Тихий берег",
+      "setup": {
+        "track": "beta",
+        "state": "playing",
+        "progress_seconds": 3
+      },
+      "expected": {
+        "effect": "track",
+        "mutation": "required",
+        "status": [
+          "playing"
+        ],
+        "target": "ru"
+      }
+    },
+    {
+      "id": "ru-artist",
+      "locale": "ru",
+      "command": "Включи исполнителя Тестовый артист",
+      "setup": {
+        "track": "beta",
+        "state": "playing",
+        "progress_seconds": 3
+      },
+      "expected": {
+        "effect": "artist",
+        "mutation": "required",
+        "status": [
+          "playing"
+        ],
+        "target": "ru"
+      }
+    },
+    {
+      "id": "ru-duplicate",
+      "locale": "ru",
+      "command": "Включи Test Atlas — Signal Alpha",
+      "setup": {
+        "track": "beta",
+        "state": "playing",
+        "progress_seconds": 3
+      },
+      "expected": {
+        "effect": "track",
+        "mutation": "required",
+        "status": [
+          "playing"
+        ],
+        "accepted_targets": [
+          "alpha",
+          "edition"
+        ],
+        "target": "alpha"
+      }
+    },
+    {
+      "id": "ru-shared-artist",
+      "locale": "ru",
+      "command": "Включи Test Atlas — Shared Signal",
+      "setup": {
+        "track": "beta",
+        "state": "playing",
+        "progress_seconds": 3
+      },
+      "expected": {
+        "effect": "track",
+        "mutation": "required",
+        "status": [
+          "playing"
+        ],
+        "target": "duet"
+      }
+    },
+    {
+      "id": "ru-pause",
+      "locale": "ru",
+      "command": "Пауза",
+      "setup": {
+        "track": "beta",
+        "state": "playing",
+        "progress_seconds": 3
+      },
+      "expected": {
+        "effect": "paused",
+        "mutation": "required",
+        "status": [
+          "confirmed"
+        ]
+      }
+    },
+    {
+      "id": "ru-pause-again",
+      "locale": "ru",
+      "command": "Пауза",
+      "setup": {
+        "track": "beta",
+        "state": "paused",
+        "progress_seconds": 3
+      },
+      "expected": {
+        "effect": "paused",
+        "mutation": "none",
+        "status": [
+          "already_satisfied"
+        ]
+      }
+    },
+    {
+      "id": "ru-resume",
+      "locale": "ru",
+      "command": "Продолжи",
+      "setup": {
+        "track": "beta",
+        "state": "paused",
+        "progress_seconds": 3
+      },
+      "expected": {
+        "effect": "playing",
+        "mutation": "required",
+        "status": [
+          "confirmed"
+        ]
+      }
+    },
+    {
+      "id": "ru-resume-again",
+      "locale": "ru",
+      "command": "Продолжи",
+      "setup": {
+        "track": "beta",
+        "state": "playing",
+        "progress_seconds": 3
+      },
+      "expected": {
+        "effect": "playing",
+        "mutation": "none",
+        "status": [
+          "already_satisfied"
+        ]
+      }
+    },
+    {
+      "id": "ru-stop",
+      "locale": "ru",
+      "command": "Стоп",
+      "setup": {
+        "track": "beta",
+        "state": "playing",
+        "progress_seconds": 3
+      },
+      "expected": {
+        "effect": "paused",
+        "mutation": "required",
+        "status": [
+          "confirmed"
+        ]
+      }
+    },
+    {
+      "id": "ru-stop-again",
+      "locale": "ru",
+      "command": "Стоп",
+      "setup": {
+        "track": "beta",
+        "state": "paused",
+        "progress_seconds": 3
+      },
+      "expected": {
+        "effect": "paused",
+        "mutation": "none",
+        "status": [
+          "already_satisfied"
+        ]
+      }
+    },
+    {
+      "id": "ru-next",
+      "locale": "ru",
+      "command": "Следующий трек",
+      "setup": {
+        "track": "beta",
+        "state": "playing",
+        "progress_seconds": 3
+      },
+      "expected": {
+        "effect": "next",
+        "mutation": "required",
+        "status": [
+          "confirmed"
+        ]
+      }
+    },
+    {
+      "id": "ru-previous",
+      "locale": "ru",
+      "command": "Предыдущий трек",
+      "setup": {
+        "track": "beta",
+        "state": "playing",
+        "progress_seconds": 3
+      },
+      "expected": {
+        "effect": "previous",
+        "mutation": "required",
+        "status": [
+          "confirmed"
+        ]
+      }
+    },
+    {
+      "id": "ru-previous-late",
+      "locale": "ru",
+      "command": "Предыдущий трек",
+      "setup": {
+        "track": "beta",
+        "state": "playing",
+        "progress_seconds": 12
+      },
+      "expected": {
+        "effect": "previous",
+        "mutation": "required",
+        "status": [
+          "confirmed"
+        ]
+      },
+      "note": "Product-contract probe: expect previous recording even after 12 seconds; stock restart behavior remains visible as a mismatch."
+    },
+    {
+      "id": "ru-missing",
+      "locale": "ru",
+      "command": "Включи трек ASSISTANT_ABSENT_7F91",
+      "setup": {
+        "track": "beta",
+        "state": "playing",
+        "progress_seconds": 3
+      },
+      "expected": {
+        "effect": "unchanged",
+        "mutation": "none",
+        "status": [
+          "not_found"
+        ]
+      }
+    },
+    {
+      "id": "ru-negation",
+      "locale": "ru",
+      "command": "Не ставь музыку на паузу",
+      "setup": {
+        "track": "beta",
+        "state": "playing",
+        "progress_seconds": 3
+      },
+      "expected": {
+        "effect": "unchanged",
+        "mutation": "none",
+        "status": [
+          "error"
+        ],
+        "response_codes": [
+          "command.unrecognized",
+          "command.unsupported"
+        ]
+      }
+    },
+    {
+      "id": "ru-compound",
+      "locale": "ru",
+      "command": "Включи Test Atlas и затем останови музыку",
+      "setup": {
+        "track": "beta",
+        "state": "playing",
+        "progress_seconds": 3
+      },
+      "expected": {
+        "effect": "unchanged",
+        "mutation": "none",
+        "status": [
+          "error"
+        ],
+        "response_codes": [
+          "command.unsupported"
+        ]
+      }
+    },
+    {
+      "id": "ru-language",
+      "locale": "ru",
+      "command": "Переключи язык на английский",
+      "setup": {
+        "track": "beta",
+        "state": "playing",
+        "progress_seconds": 3
+      },
+      "expected": {
+        "effect": "unchanged",
+        "mutation": "none",
+        "status": [
+          "confirmed"
+        ],
+        "response_locale": "en"
+      }
+    },
+    {
+      "id": "en-shared-guest",
+      "locale": "en",
+      "command": "Play Test Guest — Shared Signal",
+      "setup": {
+        "track": "beta",
+        "state": "playing",
+        "progress_seconds": 3
+      },
+      "expected": {
+        "effect": "track",
+        "mutation": "required",
+        "status": [
+          "playing"
+        ],
+        "target": "duet"
+      }
+    },
+    {
+      "id": "en-shared-prefix",
+      "locale": "en",
+      "command": "Play Test Guest Shared Signal",
+      "setup": {
+        "track": "beta",
+        "state": "playing",
+        "progress_seconds": 3
+      },
+      "expected": {
+        "effect": "track",
+        "mutation": "required",
+        "status": [
+          "playing"
+        ],
+        "target": "duet"
+      }
+    },
+    {
+      "id": "en-shared-fuzzy",
+      "locale": "en",
+      "command": "Play Test Guest — Shared Signl",
+      "setup": {
+        "track": "beta",
+        "state": "playing",
+        "progress_seconds": 3
+      },
+      "expected": {
+        "effect": "track",
+        "mutation": "required",
+        "status": [
+          "playing"
+        ],
+        "target": "duet"
+      }
+    },
+    {
+      "id": "ru-shared-guest",
+      "locale": "ru",
+      "command": "Включи Test Guest — Shared Signal",
+      "setup": {
+        "track": "beta",
+        "state": "playing",
+        "progress_seconds": 3
+      },
+      "expected": {
+        "effect": "track",
+        "mutation": "required",
+        "status": [
+          "playing"
+        ],
+        "target": "duet"
+      }
+    },
+    {
+      "id": "ru-shared-prefix",
+      "locale": "ru",
+      "command": "Включи Test Guest Shared Signal",
+      "setup": {
+        "track": "beta",
+        "state": "playing",
+        "progress_seconds": 3
+      },
+      "expected": {
+        "effect": "track",
+        "mutation": "required",
+        "status": [
+          "playing"
+        ],
+        "target": "duet"
+      }
+    },
+    {
+      "id": "ru-shared-fuzzy",
+      "locale": "ru",
+      "command": "Включи Test Guest — Shared Signl",
+      "setup": {
+        "track": "beta",
+        "state": "playing",
+        "progress_seconds": 3
+      },
+      "expected": {
+        "effect": "track",
+        "mutation": "required",
+        "status": [
+          "playing"
+        ],
+        "target": "duet"
+      }
+    },
+    {
+      "id": "en-previous-paused",
+      "locale": "en",
+      "command": "Previous track",
+      "setup": {
+        "track": "beta",
+        "state": "paused",
+        "progress_seconds": 3
+      },
+      "expected": {
+        "effect": "previous",
+        "mutation": "required",
+        "status": [
+          "confirmed"
+        ]
+      }
+    },
+    {
+      "id": "en-previous-first",
+      "locale": "en",
+      "command": "Previous track",
+      "setup": {
+        "track": "alpha",
+        "state": "playing",
+        "progress_seconds": 3
+      },
+      "expected": {
+        "effect": "unchanged",
+        "mutation": "none",
+        "status": [
+          "already_satisfied"
+        ]
+      }
+    },
+    {
+      "id": "ru-previous-paused",
+      "locale": "ru",
+      "command": "Предыдущий трек",
+      "setup": {
+        "track": "beta",
+        "state": "paused",
+        "progress_seconds": 3
+      },
+      "expected": {
+        "effect": "previous",
+        "mutation": "required",
+        "status": [
+          "confirmed"
+        ]
+      }
+    },
+    {
+      "id": "ru-previous-first",
+      "locale": "ru",
+      "command": "Предыдущий трек",
+      "setup": {
+        "track": "alpha",
+        "state": "playing",
+        "progress_seconds": 3
+      },
+      "expected": {
+        "effect": "unchanged",
+        "mutation": "none",
+        "status": [
+          "already_satisfied"
+        ]
+      }
+    },
+    {
+      "id": "en-credit",
+      "locale": "en",
+      "command": "Play Test Atlas;Test Guest — Shared Signal",
+      "setup": {
+        "track": "beta",
+        "state": "playing",
+        "progress_seconds": 3
+      },
+      "expected": {
+        "effect": "track",
+        "mutation": "required",
+        "status": [
+          "playing"
+        ],
+        "target": "duet"
+      }
+    },
+    {
+      "id": "ru-credit",
+      "locale": "ru",
+      "command": "Включи Test Atlas;Test Guest — Shared Signal",
+      "setup": {
+        "track": "beta",
+        "state": "playing",
+        "progress_seconds": 3
+      },
+      "expected": {
+        "effect": "track",
+        "mutation": "required",
+        "status": [
+          "playing"
+        ],
+        "target": "duet"
+      }
+    },
+    {
+      "id": "ru-igrai",
+      "locale": "ru",
+      "command": "Играй Test Atlas — Signal Gamma",
+      "setup": {
+        "track": "beta",
+        "state": "playing",
+        "progress_seconds": 3
+      },
+      "expected": {
+        "effect": "track",
+        "mutation": "required",
+        "status": [
+          "playing"
+        ],
+        "target": "gamma"
+      }
+    },
+    {
+      "id": "ru-zapusti",
+      "locale": "ru",
+      "command": "Запусти Test Atlas — Signal Alpha",
+      "setup": {
+        "track": "beta",
+        "state": "playing",
+        "progress_seconds": 3
+      },
+      "expected": {
+        "effect": "track",
+        "mutation": "required",
+        "status": [
+          "playing"
+        ],
+        "target": "edition"
+      }
+    },
+    {
+      "id": "ru-hvatit",
+      "locale": "ru",
+      "command": "Хватит",
+      "setup": {
+        "track": "beta",
+        "state": "playing",
+        "progress_seconds": 3
+      },
+      "expected": {
+        "effect": "paused",
+        "mutation": "required",
+        "status": [
+          "confirmed"
+        ]
+      }
+    },
+    {
+      "id": "ru-vpered",
+      "locale": "ru",
+      "command": "Вперёд",
+      "setup": {
+        "track": "beta",
+        "state": "playing",
+        "progress_seconds": 3
+      },
+      "expected": {
+        "effect": "next",
+        "mutation": "required",
+        "status": [
+          "confirmed"
+        ]
+      }
+    },
+    {
+      "id": "ru-nazad",
+      "locale": "ru",
+      "command": "Назад",
+      "setup": {
+        "track": "beta",
+        "state": "playing",
+        "progress_seconds": 3
+      },
+      "expected": {
+        "effect": "previous",
+        "mutation": "required",
+        "status": [
+          "confirmed"
+        ]
+      }
+    },
+    {
+      "id": "ru-semicolon-sequence",
+      "locale": "ru",
+      "command": "Играй Test Atlas; затем хватит",
+      "setup": {
+        "track": "beta",
+        "state": "playing",
+        "progress_seconds": 3
+      },
+      "expected": {
+        "effect": "unchanged",
+        "mutation": "none",
+        "status": [
+          "error"
+        ]
+      }
+    },
+    {
+      "id": "en-album",
+      "locale": "en",
+      "command": "Play album Test Album",
+      "setup": {
+        "track": "beta",
+        "state": "playing",
+        "progress_seconds": 3
+      },
+      "expected": {
+        "effect": "album",
+        "mutation": "required",
+        "status": [
+          "playing"
+        ],
+        "target": "alpha",
+        "accepted_targets": [
+          "alpha",
+          "beta",
+          "gamma"
+        ]
+      }
+    },
+    {
+      "id": "en-album-compilation",
+      "locale": "en",
+      "command": "Play album Shared Collection",
+      "setup": {
+        "track": "beta",
+        "state": "playing",
+        "progress_seconds": 3
+      },
+      "expected": {
+        "effect": "album",
+        "mutation": "required",
+        "status": [
+          "playing"
+        ],
+        "target": "comp-a",
+        "accepted_targets": [
+          "comp-a",
+          "comp-b"
+        ]
+      }
+    },
+    {
+      "id": "en-album-scoped",
+      "locale": "en",
+      "command": "Play album Collection South — Shared Collection",
+      "setup": {
+        "track": "beta",
+        "state": "playing",
+        "progress_seconds": 3
+      },
+      "expected": {
+        "effect": "track",
+        "mutation": "required",
+        "status": [
+          "playing"
+        ],
+        "target": "comp-b"
+      }
+    },
+    {
+      "id": "en-album-cyrillic",
+      "locale": "en",
+      "command": "Play album Русский альбом",
+      "setup": {
+        "track": "beta",
+        "state": "playing",
+        "progress_seconds": 3
+      },
+      "expected": {
+        "effect": "album",
+        "mutation": "required",
+        "status": [
+          "playing"
+        ],
+        "target": "ru"
+      }
+    },
+    {
+      "id": "en-album-missing",
+      "locale": "en",
+      "command": "Play album Nonexistent Unrecorded XYZ",
+      "setup": {
+        "track": "beta",
+        "state": "playing",
+        "progress_seconds": 3
+      },
+      "expected": {
+        "effect": "unchanged",
+        "mutation": "none",
+        "status": [
+          "not_found"
+        ]
+      }
+    },
+    {
+      "id": "ru-album",
+      "locale": "ru",
+      "command": "Включи альбом Test Album",
+      "setup": {
+        "track": "beta",
+        "state": "playing",
+        "progress_seconds": 3
+      },
+      "expected": {
+        "effect": "album",
+        "mutation": "required",
+        "status": [
+          "playing"
+        ],
+        "target": "alpha",
+        "accepted_targets": [
+          "alpha",
+          "beta",
+          "gamma"
+        ]
+      }
+    },
+    {
+      "id": "ru-album-compilation",
+      "locale": "ru",
+      "command": "Включи альбом Shared Collection",
+      "setup": {
+        "track": "beta",
+        "state": "playing",
+        "progress_seconds": 3
+      },
+      "expected": {
+        "effect": "album",
+        "mutation": "required",
+        "status": [
+          "playing"
+        ],
+        "target": "comp-a",
+        "accepted_targets": [
+          "comp-a",
+          "comp-b"
+        ]
+      }
+    },
+    {
+      "id": "ru-album-scoped",
+      "locale": "ru",
+      "command": "Включи альбом Collection South — Shared Collection",
+      "setup": {
+        "track": "beta",
+        "state": "playing",
+        "progress_seconds": 3
+      },
+      "expected": {
+        "effect": "track",
+        "mutation": "required",
+        "status": [
+          "playing"
+        ],
+        "target": "comp-b"
+      }
+    },
+    {
+      "id": "ru-album-cyrillic",
+      "locale": "ru",
+      "command": "Включи альбом Русский альбом",
+      "setup": {
+        "track": "beta",
+        "state": "playing",
+        "progress_seconds": 3
+      },
+      "expected": {
+        "effect": "album",
+        "mutation": "required",
+        "status": [
+          "playing"
+        ],
+        "target": "ru"
+      }
+    },
+    {
+      "id": "ru-album-missing",
+      "locale": "ru",
+      "command": "Включи альбом Nonexistent Unrecorded XYZ",
+      "setup": {
+        "track": "beta",
+        "state": "playing",
+        "progress_seconds": 3
+      },
+      "expected": {
+        "effect": "unchanged",
+        "mutation": "none",
+        "status": [
+          "not_found"
+        ]
+      }
+    }
+  ]
+}

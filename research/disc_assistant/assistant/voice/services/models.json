@@ -1,0 +1,42 @@
+[
+  {
+    "file": "ggml-base.bin",
+    "url": "https://huggingface.co/ggerganov/whisper.cpp/resolve/5359861c739e955e79d9a303bcbc70fb988958b1/ggml-base.bin",
+    "sha256": "60ed5bc3dd14eea856493d334349b405782ddcaf0028d4b5df4088345fba2efe"
+  },
+  {
+    "file": "ggml-small.bin",
+    "url": "https://huggingface.co/ggerganov/whisper.cpp/resolve/5359861c739e955e79d9a303bcbc70fb988958b1/ggml-small.bin",
+    "sha256": "1be3a9b2063867b937e64e2ec7483364a79917e157fa98c5d94b5c1fffea987b"
+  },
+  {
+    "file": "piper/en_GB-alba-medium.onnx",
+    "url": "https://huggingface.co/rhasspy/piper-voices/resolve/c10ece1aade47bb51c153c893d14e5bf8e5b7117/en/en_GB/alba/medium/en_GB-alba-medium.onnx",
+    "sha256": "401369c4a81d09fdd86c32c5c864440811dbdcc66466cde2d64f7133a66ad03b"
+  },
+  {
+    "file": "piper/en_GB-alba-medium.onnx.json",
+    "url": "https://huggingface.co/rhasspy/piper-voices/resolve/c10ece1aade47bb51c153c893d14e5bf8e5b7117/en/en_GB/alba/medium/en_GB-alba-medium.onnx.json",
+    "sha256": "aa965a2f02ecced632c2694e1fc72bbff6d65f265fab567ca945918c73dd89f4"
+  },
+  {
+    "file": "piper/en_GB-alba-medium.MODEL_CARD",
+    "url": "https://huggingface.co/rhasspy/piper-voices/resolve/c10ece1aade47bb51c153c893d14e5bf8e5b7117/en/en_GB/alba/medium/MODEL_CARD",
+    "sha256": "fa166b1779404c470b0b6b4ba0238bc4a35bf89d2cd130c6788f697188b737d6"
+  },
+  {
+    "file": "piper/ru_RU-irina-medium.onnx",
+    "url": "https://huggingface.co/rhasspy/piper-voices/resolve/c10ece1aade47bb51c153c893d14e5bf8e5b7117/ru/ru_RU/irina/medium/ru_RU-irina-medium.onnx",
+    "sha256": "8ff38212d23da300bbe3705c645e6e5b9475f0bfde01558eb17813e22acaaaaa"
+  },
+  {
+    "file": "piper/ru_RU-irina-medium.onnx.json",
+    "url": "https://huggingface.co/rhasspy/piper-voices/resolve/c10ece1aade47bb51c153c893d14e5bf8e5b7117/ru/ru_RU/irina/medium/ru_RU-irina-medium.onnx.json",
+    "sha256": "c2ec28bb38e2b59e93b959b3e40348c1afebbd272f30fed5d41205d08e98a9d7"
+  },
+  {
+    "file": "piper/ru_RU-irina-medium.MODEL_CARD",
+    "url": "https://huggingface.co/rhasspy/piper-voices/resolve/c10ece1aade47bb51c153c893d14e5bf8e5b7117/ru/ru_RU/irina/medium/MODEL_CARD",
+    "sha256": "f4fc2deb0e8c6219f29202b8dd06c9638c5ffd50ad5c6b2c90cf1aa59d507593"
+  }
+]

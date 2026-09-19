@@ -173,3 +173,12 @@ builds, Compose validation, focused discovery and full local V2.57 integration
 passed. Two pre-existing EOF test assumptions surfaced in the full runs and were
 corrected with trace evidence before the successful third run; see the
 [failure/validation history](PROTOCOL_RESEARCH.md#lan-discovery-investigation-2026-09-16).
+
+### Host adapter shutdown regression (2026-09-19)
+
+On current asyncio, listener `wait_closed()` also waits for accepted connections.
+The bounded LAN adapter now stops accepting, closes its owned proxy connections,
+then awaits listener shutdown. Previously the reverse order could keep shutdown
+waiting for an active client. A lifecycle regression models an accepted connection
+and checks completion without binding LAN ports or sending discovery packets.
+Together with the WebSocket cleanup regression, all 29 bridge tests pass locally.

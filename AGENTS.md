@@ -103,6 +103,46 @@ component; cross-component scenarios and generated media live under `tests/`.
   (ports/mDNS, no stock debug unlock), `docs/DISKOS.md` (V2.40 builds;
   only the size cap blocks). Network/auth `mq_player` function addresses are in `research/ghidra/README.md`.
 
+## Disc Assistant research checkpoint
+
+The text/voice music assistant lives in `research/disc_assistant/`. Read its
+[AGENTS.md](research/disc_assistant/AGENTS.md) before changing it, then
+[architecture](docs/ASSISTANT_ARCHITECTURE.md) and
+[current status](docs/ASSISTANT_STATUS.md). Keep it under research until a
+separately agreed promotion or repository split; documentation remains English.
+
+The owner accepted the **software MVP against the stock V2.57 emulator** on
+2026-09-19: 64/64 text scenarios (35 RU / 29 EN), including 19 no-mutation cases
+with zero observed writes. [Acceptance evidence](docs/ASSISTANT_MVP_ACCEPTANCE.md)
+preserves the report, candidate and reproduction commands; issue #21 is complete.
+This is known regression acceptance, not a human-speech accuracy estimate.
+Physical acceptance (#23) and speech quality/native-Docker/Orange Pi performance
+(#24) are separate follow-ups, not reasons to reopen this accepted boundary.
+
+- Use `./research/disc_assistant/run.sh`, not the root emulator launcher.
+  `setup --all` installs the optional speech runtime; `web --bootstrap` starts
+  search/speech and the browser adapter on loopback 8090; `start` opens the text
+  console. Config defaults to `~/disc-assistant.toml`, targeting emulator TCP
+  12100 and direct HTTP 12113 (physical DISC normally uses HTTP 12103).
+- `assistant/application.py` owns the common request flow; console/web are
+  adapters. Web uses Whisper Server; Piper replies require browser sound opt-in.
+  Assistant owns interpretation, response locale, search/ranking and history;
+  `library/` owns catalog snapshots/indexing. Shared persistent state and guarded
+  playback belong in [Controller](docs/CONTROLLER_API.md), with no research imports.
+- Preserve one action per request, one saved input/response locale and fresh
+  selection/queue checks. Never automatically replay an uncertain mutation.
+  Learned sources remain shadow-only. The shared `MutationPacer` waits only for
+  the remaining stock 2.1-second interval before fresh preflight; do not restore
+  unconditional command sleeps or remove the firmware guard.
+- Stock control has one client owner: do not steal an active console/FiiO Control
+  connection. Keep private catalogs, journals, recordings, models and credentials
+  out of Git; commit only curated synthetic fixtures and sanitized reports.
+- Prototype checks: `./research/disc_assistant/run.sh test`. Firmware acceptance:
+  `bash ci/assistant.sh /absolute/path/to/main_os/ota_v257 /tmp/disc-new-run` uses
+  disposable emulator/search resources and generated media. Use a new output
+  directory and preserve the accepted report. Choose tests by impact; docs-only
+  updates do not require another firmware or physical-device run.
+
 ## Conventions
 
 - For another firmware/product, read `docs/PORTING.md` and its `docs/firmware/<version>.md`

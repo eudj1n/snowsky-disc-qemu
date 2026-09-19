@@ -1,0 +1,7 @@
+# Explicit opt-in; merged with compose.yaml by the launcher.
+services:
+  typesense:
+    image: disc-assistant-typesense:30.2-io-v1
+    build:
+      context: ./typesense_compat
+    pull_policy: build

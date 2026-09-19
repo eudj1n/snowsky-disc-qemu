@@ -97,6 +97,39 @@ class LibraryTests(unittest.IsolatedAsyncioTestCase):
                     with self.assertRaises(ValueError):
                         verify_folder(http, fixture['folder'], 1, rows[2]['name'])
 
+    async def test_album_clients_preserve_generic_scope_and_never_retry(self):
+        from controller.fiio_library import album_command, verify_album
+        for index in (None, 1):
+            tcp, ws = self.clients()
+            for client in (tcp, ws):
+                http = Mock()
+                http.catalog.return_value = page(index or 0, total=2)
+                command = album_command('Shared Album', index)
+                result = client.play_album('Shared Album', index, http=http)
+                if client is ws:
+                    await result
+                    ws.send.assert_awaited_once_with(*command)
+                else:
+                    tcp.socket.sendall.assert_called_once_with(frame(*command))
+                http.catalog.assert_called_once_with('album/song', offset=index or 0, limit=1, album='Shared Album')
+                http.catalog.return_value = page(total=0)
+                with self.assertRaises(ValueError):
+                    result = client.play_album('Shared Album', index, http=http)
+                    if client is ws:
+                        await result
+                sender = ws.send if client is ws else tcp.socket.sendall
+                self.assertEqual(sender.call_count, 1)
+                http.catalog.return_value = page(index or 0, total=2)
+                sender.side_effect = TimeoutError('uncertain')
+                with self.assertRaises(TimeoutError):
+                    result = client.play_album('Shared Album', index, http=http)
+                    if client is ws:
+                        await result
+                self.assertEqual(sender.call_count, 2)
+        for album in ('', 'unknown_album', 'x\0y'):
+            with self.assertRaises(ValueError):
+                album_command(album)
+
     def test_artist_scope_guards_and_utf8(self):
         command = artist_command('Artist Ё', 1, 'Shared Album')
         self.assertEqual(command, ('0100', '00010007{"artist":"Artist Ё", "album":"Shared Album"}'))

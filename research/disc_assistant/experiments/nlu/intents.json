@@ -1,0 +1,1810 @@
+{
+  "version": 1,
+  "description": "Authored RU/EN text baseline; not human audio. Explicit train/development/test split fixed before model evaluation. Test is an authored holdout, not independent collection.",
+  "cases": [
+    {
+      "id": "en-train-pause-1",
+      "locale": "en",
+      "split": "train",
+      "label": "pause",
+      "text": "Pause",
+      "intent": {
+        "action": "pause"
+      }
+    },
+    {
+      "id": "en-train-pause-2",
+      "locale": "en",
+      "split": "train",
+      "label": "pause",
+      "text": "Pause the music",
+      "intent": {
+        "action": "pause"
+      }
+    },
+    {
+      "id": "en-train-pause-3",
+      "locale": "en",
+      "split": "train",
+      "label": "pause",
+      "text": "Put playback on pause",
+      "intent": {
+        "action": "pause"
+      }
+    },
+    {
+      "id": "en-train-resume-1",
+      "locale": "en",
+      "split": "train",
+      "label": "resume",
+      "text": "Resume",
+      "intent": {
+        "action": "resume"
+      }
+    },
+    {
+      "id": "en-train-resume-2",
+      "locale": "en",
+      "split": "train",
+      "label": "resume",
+      "text": "Continue playback",
+      "intent": {
+        "action": "resume"
+      }
+    },
+    {
+      "id": "en-train-resume-3",
+      "locale": "en",
+      "split": "train",
+      "label": "resume",
+      "text": "Resume the song",
+      "intent": {
+        "action": "resume"
+      }
+    },
+    {
+      "id": "en-train-stop-1",
+      "locale": "en",
+      "split": "train",
+      "label": "stop",
+      "text": "Stop",
+      "intent": {
+        "action": "stop"
+      }
+    },
+    {
+      "id": "en-train-stop-2",
+      "locale": "en",
+      "split": "train",
+      "label": "stop",
+      "text": "Stop music",
+      "intent": {
+        "action": "stop"
+      }
+    },
+    {
+      "id": "en-train-stop-3",
+      "locale": "en",
+      "split": "train",
+      "label": "stop",
+      "text": "End playback",
+      "intent": {
+        "action": "stop"
+      }
+    },
+    {
+      "id": "en-train-next-1",
+      "locale": "en",
+      "split": "train",
+      "label": "next",
+      "text": "Next track",
+      "intent": {
+        "action": "next"
+      }
+    },
+    {
+      "id": "en-train-next-2",
+      "locale": "en",
+      "split": "train",
+      "label": "next",
+      "text": "Skip this song",
+      "intent": {
+        "action": "next"
+      }
+    },
+    {
+      "id": "en-train-next-3",
+      "locale": "en",
+      "split": "train",
+      "label": "next",
+      "text": "Go to the next song",
+      "intent": {
+        "action": "next"
+      }
+    },
+    {
+      "id": "en-train-previous-1",
+      "locale": "en",
+      "split": "train",
+      "label": "previous",
+      "text": "Previous track",
+      "intent": {
+        "action": "previous"
+      }
+    },
+    {
+      "id": "en-train-previous-2",
+      "locale": "en",
+      "split": "train",
+      "label": "previous",
+      "text": "Go back one song",
+      "intent": {
+        "action": "previous"
+      }
+    },
+    {
+      "id": "en-train-previous-3",
+      "locale": "en",
+      "split": "train",
+      "label": "previous",
+      "text": "Play the previous song",
+      "intent": {
+        "action": "previous"
+      }
+    },
+    {
+      "id": "en-train-play-1",
+      "locale": "en",
+      "split": "train",
+      "label": "play",
+      "text": "Play Queen",
+      "intent": {
+        "query": "Queen",
+        "kind": "auto",
+        "artist": null,
+        "title": null
+      },
+      "reference_span": [
+        5,
+        10
+      ]
+    },
+    {
+      "id": "en-train-play-2",
+      "locale": "en",
+      "split": "train",
+      "label": "play",
+      "text": "Put on Coldplay",
+      "intent": {
+        "query": "Coldplay",
+        "kind": "auto",
+        "artist": null,
+        "title": null
+      },
+      "reference_span": [
+        7,
+        15
+      ]
+    },
+    {
+      "id": "en-train-play-3",
+      "locale": "en",
+      "split": "train",
+      "label": "play",
+      "text": "I want to hear Yellow",
+      "intent": {
+        "query": "Yellow",
+        "kind": "auto",
+        "artist": null,
+        "title": null
+      },
+      "reference_span": [
+        15,
+        21
+      ]
+    },
+    {
+      "id": "en-train-language-1",
+      "locale": "en",
+      "split": "train",
+      "label": "language",
+      "text": "Switch language to Russian",
+      "intent": {
+        "locale": "ru"
+      }
+    },
+    {
+      "id": "en-train-language-2",
+      "locale": "en",
+      "split": "train",
+      "label": "language",
+      "text": "Use English for commands",
+      "intent": {
+        "locale": "en"
+      }
+    },
+    {
+      "id": "en-train-language-3",
+      "locale": "en",
+      "split": "train",
+      "label": "language",
+      "text": "Change the interface language"
+    },
+    {
+      "id": "en-train-reject-1",
+      "locale": "en",
+      "split": "train",
+      "label": "reject",
+      "text": "The weather is nice today",
+      "intent": null
+    },
+    {
+      "id": "en-train-reject-2",
+      "locale": "en",
+      "split": "train",
+      "label": "reject",
+      "text": "I bought a new player",
+      "intent": null
+    },
+    {
+      "id": "en-train-reject-3",
+      "locale": "en",
+      "split": "train",
+      "label": "reject",
+      "text": "What does pause mean?",
+      "intent": null
+    },
+    {
+      "id": "en-train-reject-4",
+      "locale": "en",
+      "split": "train",
+      "label": "reject",
+      "text": "Do not play music",
+      "intent": null
+    },
+    {
+      "id": "en-train-reject-5",
+      "locale": "en",
+      "split": "train",
+      "label": "reject",
+      "text": "She said next track",
+      "intent": null
+    },
+    {
+      "id": "en-train-reject-6",
+      "locale": "en",
+      "split": "train",
+      "label": "reject",
+      "text": "I will listen tomorrow",
+      "intent": null
+    },
+    {
+      "id": "en-development-pause-1",
+      "locale": "en",
+      "split": "development",
+      "label": "pause",
+      "text": "Could you pause playback?",
+      "intent": {
+        "action": "pause"
+      }
+    },
+    {
+      "id": "en-development-pause-2",
+      "locale": "en",
+      "split": "development",
+      "label": "pause",
+      "text": "Take a short break from the music",
+      "intent": {
+        "action": "pause"
+      }
+    },
+    {
+      "id": "en-development-resume-1",
+      "locale": "en",
+      "split": "development",
+      "label": "resume",
+      "text": "Keep playing the song",
+      "intent": {
+        "action": "resume"
+      }
+    },
+    {
+      "id": "en-development-resume-2",
+      "locale": "en",
+      "split": "development",
+      "label": "resume",
+      "text": "Carry on with playback",
+      "intent": {
+        "action": "resume"
+      }
+    },
+    {
+      "id": "en-development-stop-1",
+      "locale": "en",
+      "split": "development",
+      "label": "stop",
+      "text": "Stop the audio now",
+      "intent": {
+        "action": "stop"
+      }
+    },
+    {
+      "id": "en-development-stop-2",
+      "locale": "en",
+      "split": "development",
+      "label": "stop",
+      "text": "I am done listening, stop playback",
+      "intent": {
+        "action": "stop"
+      }
+    },
+    {
+      "id": "en-development-next-1",
+      "locale": "en",
+      "split": "development",
+      "label": "next",
+      "text": "Move forward to another track",
+      "intent": {
+        "action": "next"
+      }
+    },
+    {
+      "id": "en-development-next-2",
+      "locale": "en",
+      "split": "development",
+      "label": "next",
+      "text": "Skip ahead one song",
+      "intent": {
+        "action": "next"
+      }
+    },
+    {
+      "id": "en-development-previous-1",
+      "locale": "en",
+      "split": "development",
+      "label": "previous",
+      "text": "Return to the track before this one",
+      "intent": {
+        "action": "previous"
+      }
+    },
+    {
+      "id": "en-development-previous-2",
+      "locale": "en",
+      "split": "development",
+      "label": "previous",
+      "text": "Go one track backwards",
+      "intent": {
+        "action": "previous"
+      }
+    },
+    {
+      "id": "en-development-play-1",
+      "locale": "en",
+      "split": "development",
+      "label": "play",
+      "text": "Please play Adele",
+      "intent": {
+        "query": "Adele",
+        "kind": "auto",
+        "artist": null,
+        "title": null
+      },
+      "reference_span": [
+        12,
+        17
+      ]
+    },
+    {
+      "id": "en-development-play-2",
+      "locale": "en",
+      "split": "development",
+      "label": "play",
+      "text": "Start playing Hello",
+      "intent": {
+        "query": "Hello",
+        "kind": "auto",
+        "artist": null,
+        "title": null
+      },
+      "reference_span": [
+        14,
+        19
+      ]
+    },
+    {
+      "id": "en-development-language-1",
+      "locale": "en",
+      "split": "development",
+      "label": "language",
+      "text": "Please switch language to English",
+      "intent": {
+        "locale": "en"
+      }
+    },
+    {
+      "id": "en-development-language-2",
+      "locale": "en",
+      "split": "development",
+      "label": "language",
+      "text": "I would like Russian as the command language",
+      "intent": {
+        "locale": "ru"
+      }
+    },
+    {
+      "id": "en-development-reject-1",
+      "locale": "en",
+      "split": "development",
+      "label": "reject",
+      "text": "Do not pause the music",
+      "intent": null
+    },
+    {
+      "id": "en-development-reject-2",
+      "locale": "en",
+      "split": "development",
+      "label": "reject",
+      "text": "Never skip this song",
+      "intent": null
+    },
+    {
+      "id": "en-development-reject-3",
+      "locale": "en",
+      "split": "development",
+      "label": "reject",
+      "text": "No, do not stop",
+      "intent": null
+    },
+    {
+      "id": "en-development-reject-4",
+      "locale": "en",
+      "split": "development",
+      "label": "reject",
+      "text": "I like the previous album",
+      "intent": null
+    },
+    {
+      "id": "en-development-reject-5",
+      "locale": "en",
+      "split": "development",
+      "label": "reject",
+      "text": "The word resume is on the screen",
+      "intent": null
+    },
+    {
+      "id": "en-development-reject-6",
+      "locale": "en",
+      "split": "development",
+      "label": "reject",
+      "text": "Can this player play FLAC?",
+      "intent": null
+    },
+    {
+      "id": "en-development-reject-7",
+      "locale": "en",
+      "split": "development",
+      "label": "reject",
+      "text": "It is quiet here",
+      "intent": null
+    },
+    {
+      "id": "en-development-reject-8",
+      "locale": "en",
+      "split": "development",
+      "label": "reject",
+      "text": "Turn left at the next street",
+      "intent": null
+    },
+    {
+      "id": "en-development-reject-9",
+      "locale": "en",
+      "split": "development",
+      "label": "reject",
+      "text": "Switch on the lamp",
+      "intent": null
+    },
+    {
+      "id": "en-development-reject-10",
+      "locale": "en",
+      "split": "development",
+      "label": "reject",
+      "text": "Play",
+      "intent": null
+    },
+    {
+      "id": "en-development-reject-11",
+      "locale": "en",
+      "split": "development",
+      "label": "reject",
+      "text": "Switch language to",
+      "intent": null
+    },
+    {
+      "id": "en-development-reject-12",
+      "locale": "en",
+      "split": "development",
+      "label": "reject",
+      "text": "I am reading a book",
+      "intent": null
+    },
+    {
+      "id": "en-test-pause-1",
+      "locale": "en",
+      "split": "test",
+      "label": "pause",
+      "text": "Hold the music for a moment",
+      "intent": {
+        "action": "pause"
+      }
+    },
+    {
+      "id": "en-test-pause-2",
+      "locale": "en",
+      "split": "test",
+      "label": "pause",
+      "text": "Pause this while I answer the door",
+      "intent": {
+        "action": "pause"
+      }
+    },
+    {
+      "id": "en-test-pause-3",
+      "locale": "en",
+      "split": "test",
+      "label": "pause",
+      "text": "Suspend playback temporarily",
+      "intent": {
+        "action": "pause"
+      }
+    },
+    {
+      "id": "en-test-resume-1",
+      "locale": "en",
+      "split": "test",
+      "label": "resume",
+      "text": "Unpause the track",
+      "intent": {
+        "action": "resume"
+      }
+    },
+    {
+      "id": "en-test-resume-2",
+      "locale": "en",
+      "split": "test",
+      "label": "resume",
+      "text": "Let the song continue",
+      "intent": {
+        "action": "resume"
+      }
+    },
+    {
+      "id": "en-test-resume-3",
+      "locale": "en",
+      "split": "test",
+      "label": "resume",
+      "text": "Pick up playback where we left off",
+      "intent": {
+        "action": "resume"
+      }
+    },
+    {
+      "id": "en-test-stop-1",
+      "locale": "en",
+      "split": "test",
+      "label": "stop",
+      "text": "Shut the music off",
+      "intent": {
+        "action": "stop"
+      }
+    },
+    {
+      "id": "en-test-stop-2",
+      "locale": "en",
+      "split": "test",
+      "label": "stop",
+      "text": "That is enough music, stop it",
+      "intent": {
+        "action": "stop"
+      }
+    },
+    {
+      "id": "en-test-stop-3",
+      "locale": "en",
+      "split": "test",
+      "label": "stop",
+      "text": "Cease playback",
+      "intent": {
+        "action": "stop"
+      }
+    },
+    {
+      "id": "en-test-next-1",
+      "locale": "en",
+      "split": "test",
+      "label": "next",
+      "text": "This song is boring, move on",
+      "intent": {
+        "action": "next"
+      }
+    },
+    {
+      "id": "en-test-next-2",
+      "locale": "en",
+      "split": "test",
+      "label": "next",
+      "text": "Advance to the following track",
+      "intent": {
+        "action": "next"
+      }
+    },
+    {
+      "id": "en-test-next-3",
+      "locale": "en",
+      "split": "test",
+      "label": "next",
+      "text": "Jump over this track",
+      "intent": {
+        "action": "next"
+      }
+    },
+    {
+      "id": "en-test-previous-1",
+      "locale": "en",
+      "split": "test",
+      "label": "previous",
+      "text": "Bring back the last song",
+      "intent": {
+        "action": "previous"
+      }
+    },
+    {
+      "id": "en-test-previous-2",
+      "locale": "en",
+      "split": "test",
+      "label": "previous",
+      "text": "Rewind the playlist by one track",
+      "intent": {
+        "action": "previous"
+      }
+    },
+    {
+      "id": "en-test-previous-3",
+      "locale": "en",
+      "split": "test",
+      "label": "previous",
+      "text": "Return to the preceding song",
+      "intent": {
+        "action": "previous"
+      }
+    },
+    {
+      "id": "en-test-play-1",
+      "locale": "en",
+      "split": "test",
+      "label": "play",
+      "text": "Play Muse",
+      "intent": {
+        "query": "Muse",
+        "kind": "auto",
+        "artist": null,
+        "title": null
+      },
+      "reference_span": [
+        5,
+        9
+      ]
+    },
+    {
+      "id": "en-test-play-2",
+      "locale": "en",
+      "split": "test",
+      "label": "play",
+      "text": "Let me hear Uprising",
+      "intent": {
+        "query": "Uprising",
+        "kind": "auto",
+        "artist": null,
+        "title": null
+      },
+      "reference_span": [
+        12,
+        20
+      ]
+    },
+    {
+      "id": "en-test-play-3",
+      "locale": "en",
+      "split": "test",
+      "label": "play",
+      "text": "Play Stop",
+      "intent": {
+        "query": "Stop",
+        "kind": "auto",
+        "artist": null,
+        "title": null
+      },
+      "reference_span": [
+        5,
+        9
+      ]
+    },
+    {
+      "id": "en-test-play-4",
+      "locale": "en",
+      "split": "test",
+      "label": "play",
+      "text": "Play a song called Pause",
+      "intent": {
+        "query": "Pause",
+        "kind": "auto",
+        "artist": null,
+        "title": null
+      },
+      "reference_span": [
+        19,
+        24
+      ]
+    },
+    {
+      "id": "en-test-language-1",
+      "locale": "en",
+      "split": "test",
+      "label": "language",
+      "text": "Switch language to English",
+      "intent": {
+        "locale": "en"
+      }
+    },
+    {
+      "id": "en-test-language-2",
+      "locale": "en",
+      "split": "test",
+      "label": "language",
+      "text": "Set the command language to Russian",
+      "intent": {
+        "locale": "ru"
+      }
+    },
+    {
+      "id": "en-test-language-3",
+      "locale": "en",
+      "split": "test",
+      "label": "language",
+      "text": "Talk to me in English from now on",
+      "intent": {
+        "locale": "en"
+      }
+    },
+    {
+      "id": "en-test-reject-1",
+      "locale": "en",
+      "split": "test",
+      "label": "reject",
+      "text": "Please do not pause",
+      "intent": null
+    },
+    {
+      "id": "en-test-reject-2",
+      "locale": "en",
+      "split": "test",
+      "label": "reject",
+      "text": "Do not resume playback",
+      "intent": null
+    },
+    {
+      "id": "en-test-reject-3",
+      "locale": "en",
+      "split": "test",
+      "label": "reject",
+      "text": "Do not go to the next track",
+      "intent": null
+    },
+    {
+      "id": "en-test-reject-4",
+      "locale": "en",
+      "split": "test",
+      "label": "reject",
+      "text": "Keep the current language, do not change it",
+      "intent": null
+    },
+    {
+      "id": "en-test-reject-5",
+      "locale": "en",
+      "split": "test",
+      "label": "reject",
+      "text": "He asked me to stop the music",
+      "intent": null
+    },
+    {
+      "id": "en-test-reject-6",
+      "locale": "en",
+      "split": "test",
+      "label": "reject",
+      "text": "Explain the command next track",
+      "intent": null
+    },
+    {
+      "id": "en-test-reject-7",
+      "locale": "en",
+      "split": "test",
+      "label": "reject",
+      "text": "The song title is Stop",
+      "intent": null
+    },
+    {
+      "id": "en-test-reject-8",
+      "locale": "en",
+      "split": "test",
+      "label": "reject",
+      "text": "The next station is downtown",
+      "intent": null
+    },
+    {
+      "id": "en-test-reject-9",
+      "locale": "en",
+      "split": "test",
+      "label": "reject",
+      "text": "I pressed pause yesterday",
+      "intent": null
+    },
+    {
+      "id": "en-test-reject-10",
+      "locale": "en",
+      "split": "test",
+      "label": "reject",
+      "text": "If I say stop tomorrow, what happens?",
+      "intent": null
+    },
+    {
+      "id": "en-test-reject-11",
+      "locale": "en",
+      "split": "test",
+      "label": "reject",
+      "text": "No music right now",
+      "intent": null
+    },
+    {
+      "id": "en-test-reject-12",
+      "locale": "en",
+      "split": "test",
+      "label": "reject",
+      "text": "Play nothing",
+      "intent": null
+    },
+    {
+      "id": "en-test-reject-13",
+      "locale": "en",
+      "split": "test",
+      "label": "reject",
+      "text": "Turn the volume up",
+      "intent": null
+    },
+    {
+      "id": "en-test-reject-14",
+      "locale": "en",
+      "split": "test",
+      "label": "reject",
+      "text": "Switch language to Klingon",
+      "intent": null
+    },
+    {
+      "id": "en-test-reject-15",
+      "locale": "en",
+      "split": "test",
+      "label": "reject",
+      "text": "Could you",
+      "intent": null
+    },
+    {
+      "id": "en-test-reject-16",
+      "locale": "en",
+      "split": "test",
+      "label": "reject",
+      "text": "There is a problem with playback",
+      "intent": null
+    },
+    {
+      "id": "ru-train-pause-1",
+      "locale": "ru",
+      "split": "train",
+      "label": "pause",
+      "text": "Пауза",
+      "intent": {
+        "action": "pause"
+      }
+    },
+    {
+      "id": "ru-train-pause-2",
+      "locale": "ru",
+      "split": "train",
+      "label": "pause",
+      "text": "Поставь музыку на паузу",
+      "intent": {
+        "action": "pause"
+      }
+    },
+    {
+      "id": "ru-train-pause-3",
+      "locale": "ru",
+      "split": "train",
+      "label": "pause",
+      "text": "Приостанови воспроизведение",
+      "intent": {
+        "action": "pause"
+      }
+    },
+    {
+      "id": "ru-train-resume-1",
+      "locale": "ru",
+      "split": "train",
+      "label": "resume",
+      "text": "Продолжи",
+      "intent": {
+        "action": "resume"
+      }
+    },
+    {
+      "id": "ru-train-resume-2",
+      "locale": "ru",
+      "split": "train",
+      "label": "resume",
+      "text": "Продолжай играть",
+      "intent": {
+        "action": "resume"
+      }
+    },
+    {
+      "id": "ru-train-resume-3",
+      "locale": "ru",
+      "split": "train",
+      "label": "resume",
+      "text": "Возобнови воспроизведение",
+      "intent": {
+        "action": "resume"
+      }
+    },
+    {
+      "id": "ru-train-stop-1",
+      "locale": "ru",
+      "split": "train",
+      "label": "stop",
+      "text": "Стоп",
+      "intent": {
+        "action": "stop"
+      }
+    },
+    {
+      "id": "ru-train-stop-2",
+      "locale": "ru",
+      "split": "train",
+      "label": "stop",
+      "text": "Останови музыку",
+      "intent": {
+        "action": "stop"
+      }
+    },
+    {
+      "id": "ru-train-stop-3",
+      "locale": "ru",
+      "split": "train",
+      "label": "stop",
+      "text": "Прекрати воспроизведение",
+      "intent": {
+        "action": "stop"
+      }
+    },
+    {
+      "id": "ru-train-next-1",
+      "locale": "ru",
+      "split": "train",
+      "label": "next",
+      "text": "Следующий трек",
+      "intent": {
+        "action": "next"
+      }
+    },
+    {
+      "id": "ru-train-next-2",
+      "locale": "ru",
+      "split": "train",
+      "label": "next",
+      "text": "Пропусти эту песню",
+      "intent": {
+        "action": "next"
+      }
+    },
+    {
+      "id": "ru-train-next-3",
+      "locale": "ru",
+      "split": "train",
+      "label": "next",
+      "text": "Перейди к следующей композиции",
+      "intent": {
+        "action": "next"
+      }
+    },
+    {
+      "id": "ru-train-previous-1",
+      "locale": "ru",
+      "split": "train",
+      "label": "previous",
+      "text": "Предыдущий трек",
+      "intent": {
+        "action": "previous"
+      }
+    },
+    {
+      "id": "ru-train-previous-2",
+      "locale": "ru",
+      "split": "train",
+      "label": "previous",
+      "text": "Верни прошлую песню",
+      "intent": {
+        "action": "previous"
+      }
+    },
+    {
+      "id": "ru-train-previous-3",
+      "locale": "ru",
+      "split": "train",
+      "label": "previous",
+      "text": "Переключи на предыдущую композицию",
+      "intent": {
+        "action": "previous"
+      }
+    },
+    {
+      "id": "ru-train-play-1",
+      "locale": "ru",
+      "split": "train",
+      "label": "play",
+      "text": "Включи Кино",
+      "intent": {
+        "query": "Кино",
+        "kind": "auto",
+        "artist": null,
+        "title": null
+      },
+      "reference_span": [
+        7,
+        11
+      ]
+    },
+    {
+      "id": "ru-train-play-2",
+      "locale": "ru",
+      "split": "train",
+      "label": "play",
+      "text": "Поставь Би-2",
+      "intent": {
+        "query": "Би-2",
+        "kind": "auto",
+        "artist": null,
+        "title": null
+      },
+      "reference_span": [
+        8,
+        12
+      ]
+    },
+    {
+      "id": "ru-train-play-3",
+      "locale": "ru",
+      "split": "train",
+      "label": "play",
+      "text": "Хочу послушать Группу крови",
+      "intent": {
+        "query": "Группу крови",
+        "kind": "auto",
+        "artist": null,
+        "title": null
+      },
+      "reference_span": [
+        15,
+        27
+      ]
+    },
+    {
+      "id": "ru-train-language-1",
+      "locale": "ru",
+      "split": "train",
+      "label": "language",
+      "text": "Переключи язык на английский",
+      "intent": {
+        "locale": "en"
+      }
+    },
+    {
+      "id": "ru-train-language-2",
+      "locale": "ru",
+      "split": "train",
+      "label": "language",
+      "text": "Используй русский язык команд",
+      "intent": {
+        "locale": "ru"
+      }
+    },
+    {
+      "id": "ru-train-language-3",
+      "locale": "ru",
+      "split": "train",
+      "label": "language",
+      "text": "Измени язык интерфейса"
+    },
+    {
+      "id": "ru-train-reject-1",
+      "locale": "ru",
+      "split": "train",
+      "label": "reject",
+      "text": "Сегодня хорошая погода",
+      "intent": null
+    },
+    {
+      "id": "ru-train-reject-2",
+      "locale": "ru",
+      "split": "train",
+      "label": "reject",
+      "text": "Я купил новый плеер",
+      "intent": null
+    },
+    {
+      "id": "ru-train-reject-3",
+      "locale": "ru",
+      "split": "train",
+      "label": "reject",
+      "text": "Что означает пауза?",
+      "intent": null
+    },
+    {
+      "id": "ru-train-reject-4",
+      "locale": "ru",
+      "split": "train",
+      "label": "reject",
+      "text": "Не включай музыку",
+      "intent": null
+    },
+    {
+      "id": "ru-train-reject-5",
+      "locale": "ru",
+      "split": "train",
+      "label": "reject",
+      "text": "Она сказала следующий трек",
+      "intent": null
+    },
+    {
+      "id": "ru-train-reject-6",
+      "locale": "ru",
+      "split": "train",
+      "label": "reject",
+      "text": "Послушаю завтра",
+      "intent": null
+    },
+    {
+      "id": "ru-development-pause-1",
+      "locale": "ru",
+      "split": "development",
+      "label": "pause",
+      "text": "Можешь поставить на паузу?",
+      "intent": {
+        "action": "pause"
+      }
+    },
+    {
+      "id": "ru-development-pause-2",
+      "locale": "ru",
+      "split": "development",
+      "label": "pause",
+      "text": "Сделай небольшой перерыв в музыке",
+      "intent": {
+        "action": "pause"
+      }
+    },
+    {
+      "id": "ru-development-resume-1",
+      "locale": "ru",
+      "split": "development",
+      "label": "resume",
+      "text": "Продолжай воспроизведение песни",
+      "intent": {
+        "action": "resume"
+      }
+    },
+    {
+      "id": "ru-development-resume-2",
+      "locale": "ru",
+      "split": "development",
+      "label": "resume",
+      "text": "Включи воспроизведение после паузы",
+      "intent": {
+        "action": "resume"
+      }
+    },
+    {
+      "id": "ru-development-stop-1",
+      "locale": "ru",
+      "split": "development",
+      "label": "stop",
+      "text": "Останови звук сейчас",
+      "intent": {
+        "action": "stop"
+      }
+    },
+    {
+      "id": "ru-development-stop-2",
+      "locale": "ru",
+      "split": "development",
+      "label": "stop",
+      "text": "Я закончил слушать, останови воспроизведение",
+      "intent": {
+        "action": "stop"
+      }
+    },
+    {
+      "id": "ru-development-next-1",
+      "locale": "ru",
+      "split": "development",
+      "label": "next",
+      "text": "Давай другую песню после этой",
+      "intent": {
+        "action": "next"
+      }
+    },
+    {
+      "id": "ru-development-next-2",
+      "locale": "ru",
+      "split": "development",
+      "label": "next",
+      "text": "Перескочи на один трек вперёд",
+      "intent": {
+        "action": "next"
+      }
+    },
+    {
+      "id": "ru-development-previous-1",
+      "locale": "ru",
+      "split": "development",
+      "label": "previous",
+      "text": "Вернись к композиции перед этой",
+      "intent": {
+        "action": "previous"
+      }
+    },
+    {
+      "id": "ru-development-previous-2",
+      "locale": "ru",
+      "split": "development",
+      "label": "previous",
+      "text": "Перейди на один трек назад",
+      "intent": {
+        "action": "previous"
+      }
+    },
+    {
+      "id": "ru-development-play-1",
+      "locale": "ru",
+      "split": "development",
+      "label": "play",
+      "text": "Пожалуйста включи Сплин",
+      "intent": {
+        "query": "Сплин",
+        "kind": "auto",
+        "artist": null,
+        "title": null
+      },
+      "reference_span": [
+        18,
+        23
+      ]
+    },
+    {
+      "id": "ru-development-play-2",
+      "locale": "ru",
+      "split": "development",
+      "label": "play",
+      "text": "Начни играть Выхода нет",
+      "intent": {
+        "query": "Выхода нет",
+        "kind": "auto",
+        "artist": null,
+        "title": null
+      },
+      "reference_span": [
+        13,
+        23
+      ]
+    },
+    {
+      "id": "ru-development-language-1",
+      "locale": "ru",
+      "split": "development",
+      "label": "language",
+      "text": "Пожалуйста переключи язык на русский",
+      "intent": {
+        "locale": "ru"
+      }
+    },
+    {
+      "id": "ru-development-language-2",
+      "locale": "ru",
+      "split": "development",
+      "label": "language",
+      "text": "Хочу английский в качестве языка команд",
+      "intent": {
+        "locale": "en"
+      }
+    },
+    {
+      "id": "ru-development-reject-1",
+      "locale": "ru",
+      "split": "development",
+      "label": "reject",
+      "text": "Не ставь музыку на паузу",
+      "intent": null
+    },
+    {
+      "id": "ru-development-reject-2",
+      "locale": "ru",
+      "split": "development",
+      "label": "reject",
+      "text": "Не пропускай эту песню",
+      "intent": null
+    },
+    {
+      "id": "ru-development-reject-3",
+      "locale": "ru",
+      "split": "development",
+      "label": "reject",
+      "text": "Нет, не останавливай",
+      "intent": null
+    },
+    {
+      "id": "ru-development-reject-4",
+      "locale": "ru",
+      "split": "development",
+      "label": "reject",
+      "text": "Мне нравится предыдущий альбом",
+      "intent": null
+    },
+    {
+      "id": "ru-development-reject-5",
+      "locale": "ru",
+      "split": "development",
+      "label": "reject",
+      "text": "На экране написано продолжить",
+      "intent": null
+    },
+    {
+      "id": "ru-development-reject-6",
+      "locale": "ru",
+      "split": "development",
+      "label": "reject",
+      "text": "Этот плеер умеет играть FLAC?",
+      "intent": null
+    },
+    {
+      "id": "ru-development-reject-7",
+      "locale": "ru",
+      "split": "development",
+      "label": "reject",
+      "text": "Здесь тихо",
+      "intent": null
+    },
+    {
+      "id": "ru-development-reject-8",
+      "locale": "ru",
+      "split": "development",
+      "label": "reject",
+      "text": "На следующей улице поверни налево",
+      "intent": null
+    },
+    {
+      "id": "ru-development-reject-9",
+      "locale": "ru",
+      "split": "development",
+      "label": "reject",
+      "text": "Включи лампу",
+      "intent": null
+    },
+    {
+      "id": "ru-development-reject-10",
+      "locale": "ru",
+      "split": "development",
+      "label": "reject",
+      "text": "Включи",
+      "intent": null
+    },
+    {
+      "id": "ru-development-reject-11",
+      "locale": "ru",
+      "split": "development",
+      "label": "reject",
+      "text": "Переключи язык на",
+      "intent": null
+    },
+    {
+      "id": "ru-development-reject-12",
+      "locale": "ru",
+      "split": "development",
+      "label": "reject",
+      "text": "Я читаю книгу",
+      "intent": null
+    },
+    {
+      "id": "ru-test-pause-1",
+      "locale": "ru",
+      "split": "test",
+      "label": "pause",
+      "text": "Притормози музыку на минуту",
+      "intent": {
+        "action": "pause"
+      }
+    },
+    {
+      "id": "ru-test-pause-2",
+      "locale": "ru",
+      "split": "test",
+      "label": "pause",
+      "text": "Приостанови песню пока я отвечу на звонок",
+      "intent": {
+        "action": "pause"
+      }
+    },
+    {
+      "id": "ru-test-pause-3",
+      "locale": "ru",
+      "split": "test",
+      "label": "pause",
+      "text": "Давай пока сделаем паузу",
+      "intent": {
+        "action": "pause"
+      }
+    },
+    {
+      "id": "ru-test-resume-1",
+      "locale": "ru",
+      "split": "test",
+      "label": "resume",
+      "text": "Сними с паузы",
+      "intent": {
+        "action": "resume"
+      }
+    },
+    {
+      "id": "ru-test-resume-2",
+      "locale": "ru",
+      "split": "test",
+      "label": "resume",
+      "text": "Пусть песня играет дальше",
+      "intent": {
+        "action": "resume"
+      }
+    },
+    {
+      "id": "ru-test-resume-3",
+      "locale": "ru",
+      "split": "test",
+      "label": "resume",
+      "text": "Верни воспроизведение с места остановки",
+      "intent": {
+        "action": "resume"
+      }
+    },
+    {
+      "id": "ru-test-stop-1",
+      "locale": "ru",
+      "split": "test",
+      "label": "stop",
+      "text": "Выключи музыку",
+      "intent": {
+        "action": "stop"
+      }
+    },
+    {
+      "id": "ru-test-stop-2",
+      "locale": "ru",
+      "split": "test",
+      "label": "stop",
+      "text": "Хватит музыки, останови её",
+      "intent": {
+        "action": "stop"
+      }
+    },
+    {
+      "id": "ru-test-stop-3",
+      "locale": "ru",
+      "split": "test",
+      "label": "stop",
+      "text": "Прекрати играть",
+      "intent": {
+        "action": "stop"
+      }
+    },
+    {
+      "id": "ru-test-next-1",
+      "locale": "ru",
+      "split": "test",
+      "label": "next",
+      "text": "Эта песня надоела, давай дальше",
+      "intent": {
+        "action": "next"
+      }
+    },
+    {
+      "id": "ru-test-next-2",
+      "locale": "ru",
+      "split": "test",
+      "label": "next",
+      "text": "Переключись на следующую запись",
+      "intent": {
+        "action": "next"
+      }
+    },
+    {
+      "id": "ru-test-next-3",
+      "locale": "ru",
+      "split": "test",
+      "label": "next",
+      "text": "Давай пропустим эту композицию",
+      "intent": {
+        "action": "next"
+      }
+    },
+    {
+      "id": "ru-test-previous-1",
+      "locale": "ru",
+      "split": "test",
+      "label": "previous",
+      "text": "Хочу снова прошлый трек",
+      "intent": {
+        "action": "previous"
+      }
+    },
+    {
+      "id": "ru-test-previous-2",
+      "locale": "ru",
+      "split": "test",
+      "label": "previous",
+      "text": "Отмотай плейлист на одну песню назад",
+      "intent": {
+        "action": "previous"
+      }
+    },
+    {
+      "id": "ru-test-previous-3",
+      "locale": "ru",
+      "split": "test",
+      "label": "previous",
+      "text": "Верни ту композицию что была до этой",
+      "intent": {
+        "action": "previous"
+      }
+    },
+    {
+      "id": "ru-test-play-1",
+      "locale": "ru",
+      "split": "test",
+      "label": "play",
+      "text": "Включи Земфиру",
+      "intent": {
+        "query": "Земфиру",
+        "kind": "auto",
+        "artist": null,
+        "title": null
+      },
+      "reference_span": [
+        7,
+        14
+      ]
+    },
+    {
+      "id": "ru-test-play-2",
+      "locale": "ru",
+      "split": "test",
+      "label": "play",
+      "text": "Дай послушать Искала",
+      "intent": {
+        "query": "Искала",
+        "kind": "auto",
+        "artist": null,
+        "title": null
+      },
+      "reference_span": [
+        14,
+        20
+      ]
+    },
+    {
+      "id": "ru-test-play-3",
+      "locale": "ru",
+      "split": "test",
+      "label": "play",
+      "text": "Включи Стоп",
+      "intent": {
+        "query": "Стоп",
+        "kind": "auto",
+        "artist": null,
+        "title": null
+      },
+      "reference_span": [
+        7,
+        11
+      ]
+    },
+    {
+      "id": "ru-test-play-4",
+      "locale": "ru",
+      "split": "test",
+      "label": "play",
+      "text": "Включи песню Пауза",
+      "intent": {
+        "query": "Пауза",
+        "kind": "track",
+        "artist": null,
+        "title": null
+      },
+      "reference_span": [
+        13,
+        18
+      ]
+    },
+    {
+      "id": "ru-test-language-1",
+      "locale": "ru",
+      "split": "test",
+      "label": "language",
+      "text": "Переключи язык на русский",
+      "intent": {
+        "locale": "ru"
+      }
+    },
+    {
+      "id": "ru-test-language-2",
+      "locale": "ru",
+      "split": "test",
+      "label": "language",
+      "text": "Установи английский язык команд",
+      "intent": {
+        "locale": "en"
+      }
+    },
+    {
+      "id": "ru-test-language-3",
+      "locale": "ru",
+      "split": "test",
+      "label": "language",
+      "text": "Отвечай мне теперь по-русски",
+      "intent": {
+        "locale": "ru"
+      }
+    },
+    {
+      "id": "ru-test-reject-1",
+      "locale": "ru",
+      "split": "test",
+      "label": "reject",
+      "text": "Пожалуйста не делай паузу",
+      "intent": null
+    },
+    {
+      "id": "ru-test-reject-2",
+      "locale": "ru",
+      "split": "test",
+      "label": "reject",
+      "text": "Не продолжай воспроизведение",
+      "intent": null
+    },
+    {
+      "id": "ru-test-reject-3",
+      "locale": "ru",
+      "split": "test",
+      "label": "reject",
+      "text": "Не переключай на следующий трек",
+      "intent": null
+    },
+    {
+      "id": "ru-test-reject-4",
+      "locale": "ru",
+      "split": "test",
+      "label": "reject",
+      "text": "Оставь текущий язык, не меняй его",
+      "intent": null
+    },
+    {
+      "id": "ru-test-reject-5",
+      "locale": "ru",
+      "split": "test",
+      "label": "reject",
+      "text": "Он попросил меня остановить музыку",
+      "intent": null
+    },
+    {
+      "id": "ru-test-reject-6",
+      "locale": "ru",
+      "split": "test",
+      "label": "reject",
+      "text": "Объясни команду следующий трек",
+      "intent": null
+    },
+    {
+      "id": "ru-test-reject-7",
+      "locale": "ru",
+      "split": "test",
+      "label": "reject",
+      "text": "Песня называется Стоп",
+      "intent": null
+    },
+    {
+      "id": "ru-test-reject-8",
+      "locale": "ru",
+      "split": "test",
+      "label": "reject",
+      "text": "Следующая станция центральная",
+      "intent": null
+    },
+    {
+      "id": "ru-test-reject-9",
+      "locale": "ru",
+      "split": "test",
+      "label": "reject",
+      "text": "Я нажал паузу вчера",
+      "intent": null
+    },
+    {
+      "id": "ru-test-reject-10",
+      "locale": "ru",
+      "split": "test",
+      "label": "reject",
+      "text": "Если завтра скажу стоп, что произойдёт?",
+      "intent": null
+    },
+    {
+      "id": "ru-test-reject-11",
+      "locale": "ru",
+      "split": "test",
+      "label": "reject",
+      "text": "Сейчас не надо музыки",
+      "intent": null
+    },
+    {
+      "id": "ru-test-reject-12",
+      "locale": "ru",
+      "split": "test",
+      "label": "reject",
+      "text": "Включи ничего",
+      "intent": null
+    },
+    {
+      "id": "ru-test-reject-13",
+      "locale": "ru",
+      "split": "test",
+      "label": "reject",
+      "text": "Сделай громче",
+      "intent": null
+    },
+    {
+      "id": "ru-test-reject-14",
+      "locale": "ru",
+      "split": "test",
+      "label": "reject",
+      "text": "Переключи язык на клингонский",
+      "intent": null
+    },
+    {
+      "id": "ru-test-reject-15",
+      "locale": "ru",
+      "split": "test",
+      "label": "reject",
+      "text": "А можно",
+      "intent": null
+    },
+    {
+      "id": "ru-test-reject-16",
+      "locale": "ru",
+      "split": "test",
+      "label": "reject",
+      "text": "Проблема с воспроизведением",
+      "intent": null
+    }
+  ]
+}

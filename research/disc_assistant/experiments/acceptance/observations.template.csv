@@ -1,0 +1,1 @@
+run_id,case_id,locale,input_kind,attempt,submitted,request_id,command,precondition_met,response_status,mutation_attempted,interpretation_outcome,physical_outcome,actual_track,unexpected_physical_mutation,case_outcome,total_ms,observation_evidence,notes

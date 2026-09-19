@@ -1,0 +1,97 @@
+#!/usr/bin/env bash
+# Independent research launcher; never calls the root emulator run.sh.
+set -euo pipefail
+prototype_dir="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
+repo_dir="$(cd -- "$prototype_dir/../.." && pwd)"
+venv_python="$prototype_dir/assistant/.venv/bin/python"
+
+if [[ ${1:-help} == help || ${1:-} == --help || ${1:-} == -h ]]; then
+    cat <<'HELP'
+Usage: research/disc_assistant/run.sh [--config PATH] [--source cli|scheduled] [--language CODE] [--debug] COMMAND [ARGS]
+
+  setup [--all] [--whisper-model base|small]  Install Python; --all also installs speech services/models
+  speech-up      Start installed Whisper Server and Piper; no device connection
+  speech-down    Stop speech services, preserving installed models
+  speech-benchmark --samples DIR --output DIR [--threads 2 4] [--repeats 3]
+                 Compare isolated Whisper decoders/threads; or use --audio WAV --locale ru
+                 --server http://127.0.0.1:8080/inference uses an existing server, without Docker
+  up             Start local Typesense and wait for readiness
+  down           Stop local Typesense, preserving its volume
+  start          Start Typesense, connect, sync/index, then keep an interactive console
+  web [--bootstrap] [--port 8090]  Local browser UI with text and microphone input
+  listen         Persistent console using existing catalog/index; no Docker startup
+  language [CODE|reset]   Show/set one saved interaction locale
+  response [ARGS] Show/set speech mode none|errors|all, or reset
+  locales        Validate installed command and response locales
+  shadow-report --history PATH --output DIR [--reviewed PATH] [--review-scope all]
+                 Offline comparison and pending review queue; no config/device needed
+  history [ARGS] View recent requests; show ID, export PATH, prune, clear --yes
+  sync           Read the selected DISC catalog into SQLite
+  status         Show local catalog/index status
+  queue          Read actual device queue and play mode; no search/index needed
+  index          Rebuild Typesense from SQLite
+  search QUERY   Return candidates (optional --limit N); no playback
+  explain TEXT Preview intent/arguments and rejection reasons; never executes
+  commands [rebuild|import FILE]  Inspect/publish command snapshots for preview
+  rank TEXT      Explain the best matches for Включи … / Play …, without playback
+  ask TEXT       Play the best match, or Pause / Resume / Stop / Next / Previous
+  transcribe WAV Recognize a PCM WAV file without interpreting or executing it
+  rank --audio WAV / ask --audio WAV  Use recognized speech instead of typed TEXT
+  synthesize TEXT --output WAV       Save synthetic audio and its metadata; no playback
+  speech-samples DIR [--corpus JSON]  Generate the active locale's test corpus
+  speech-check DIR                   Check sample interpretations; no device access
+  test           Run firmware-free prototype unit tests
+  check          Run disposable Typesense acceptance (requires Docker image)
+
+Default config: ~/disc-assistant.toml (or DISC_ASSISTANT_CONFIG).
+No virtualenv activation required. setup never overwrites an existing config/key.
+Set DISC_ASSISTANT_PYTHON to a Python 3.11+ executable if automatic selection fails.
+HELP
+    exit 0
+fi
+
+if [[ ${1:-} == --config && $# -lt 3 ]]; then
+    echo 'Expected --config PATH COMMAND; see run.sh help' >&2
+    exit 2
+fi
+command_name=""
+launcher_args=("$@")
+argument_index=0
+while (( argument_index < ${#launcher_args[@]} )); do
+    case "${launcher_args[$argument_index]}" in
+        --debug) argument_index=$((argument_index + 1)) ;;
+        --config|--source|--language) argument_index=$((argument_index + 2)) ;;
+        --config=*|--source=*|--language=*) argument_index=$((argument_index + 1)) ;;
+        *) command_name="${launcher_args[$argument_index]}"; break ;;
+    esac
+done
+if [[ "$command_name" == setup && ! -x "$venv_python" ]]; then
+    bootstrap_python=""
+    if [[ -n ${DISC_ASSISTANT_PYTHON:-} ]]; then
+        candidates=("$DISC_ASSISTANT_PYTHON")
+    else
+        candidates=(python3 python3.14 python3.13 python3.12 python3.11 /opt/homebrew/bin/python3 /usr/local/bin/python3)
+    fi
+    for candidate in "${candidates[@]}"; do
+        if "$candidate" -c 'import sys; sys.exit(0 if sys.version_info >= (3, 11) else 1)' >/dev/null 2>&1; then
+            bootstrap_python="$candidate"
+            break
+        fi
+    done
+    if [[ -z "$bootstrap_python" ]]; then
+        echo 'Python 3.11+ required. Set DISC_ASSISTANT_PYTHON to its executable.' >&2
+        exit 1
+    fi
+    "$bootstrap_python" -m venv "$prototype_dir/assistant/.venv"
+fi
+if [[ ! -x "$venv_python" ]]; then
+    echo 'Environment missing. Run this launcher with setup first.' >&2
+    exit 1
+fi
+if ! "$venv_python" -c 'import sys; sys.exit(0 if sys.version_info >= (3, 11) and sys.prefix != sys.base_prefix else 1)'; then
+    echo 'Existing .venv is invalid or older than Python 3.11; move it aside and run setup again.' >&2
+    exit 1
+fi
+export DISC_ASSISTANT_CALLER_DIR="$PWD"
+cd -- "$repo_dir"
+exec "$venv_python" -m research.disc_assistant.launcher "$@"

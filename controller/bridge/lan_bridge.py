@@ -143,9 +143,9 @@ async def run(interface, allowed, seconds):
             await asyncio.gather(announcement_task, return_exceptions=True)
         for server in servers:
             server.close()
+        await proxy.close()
         for server in servers:
             await server.wait_closed()
-        await proxy.close()
 
 
 def main():

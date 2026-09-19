@@ -1,0 +1,330 @@
+{
+  "version": 1,
+  "scope": "Authored after initial grammar design, before first evaluation. Implementation acceptance, not independent model quality. Prior commands-v2 test is now regression.",
+  "cases": [
+    {
+      "id": "ru-positive-0",
+      "locale": "ru",
+      "text": "Можно послушать исполнителя ДДТ",
+      "intent": {
+        "query": "ДДТ",
+        "kind": "artist",
+        "artist": null,
+        "title": null
+      }
+    },
+    {
+      "id": "ru-positive-1",
+      "locale": "ru",
+      "text": "Хочется услышать Muse — Uprising",
+      "intent": {
+        "query": "Muse — Uprising",
+        "kind": "track",
+        "artist": "Muse",
+        "title": "Uprising"
+      }
+    },
+    {
+      "id": "ru-positive-2",
+      "locale": "ru",
+      "text": "Проиграй трек «Не говори прощай»",
+      "intent": {
+        "query": "Не говори прощай",
+        "kind": "track",
+        "artist": null,
+        "title": null
+      }
+    },
+    {
+      "id": "ru-positive-3",
+      "locale": "ru",
+      "text": "Найди и включи песню Облака",
+      "intent": {
+        "query": "Облака",
+        "kind": "track",
+        "artist": null,
+        "title": null
+      }
+    },
+    {
+      "id": "ru-positive-4",
+      "locale": "ru",
+      "text": "Поставь исполнителя Земфира",
+      "intent": {
+        "query": "Земфира",
+        "kind": "artist",
+        "artist": null,
+        "title": null
+      }
+    },
+    {
+      "id": "ru-positive-5",
+      "locale": "ru",
+      "text": "Включи песню «Стоп и включи»",
+      "intent": {
+        "query": "Стоп и включи",
+        "kind": "track",
+        "artist": null,
+        "title": null
+      }
+    },
+    {
+      "id": "ru-positive-6",
+      "locale": "ru",
+      "text": "Переведи общение на английский",
+      "intent": {
+        "locale": "en"
+      }
+    },
+    {
+      "id": "ru-positive-7",
+      "locale": "ru",
+      "text": "Давай общаться на русском",
+      "intent": {
+        "locale": "ru"
+      }
+    },
+    {
+      "id": "ru-positive-8",
+      "locale": "ru",
+      "text": "Отвечай мне теперь по-английски",
+      "intent": {
+        "locale": "en"
+      }
+    },
+    {
+      "id": "ru-positive-9",
+      "locale": "ru",
+      "text": "Вернемся к русскому языку",
+      "intent": {
+        "locale": "ru"
+      }
+    },
+    {
+      "id": "ru-positive-10",
+      "locale": "ru",
+      "text": "пауза",
+      "intent": {
+        "action": "pause"
+      }
+    },
+    {
+      "id": "ru-positive-11",
+      "locale": "ru",
+      "text": "продолжи",
+      "intent": {
+        "action": "resume"
+      }
+    },
+    {
+      "id": "ru-negative-0",
+      "locale": "ru",
+      "text": "Включи Blur и затем останови музыку",
+      "intent": null
+    },
+    {
+      "id": "ru-negative-1",
+      "locale": "ru",
+      "text": "Включи ДДТ или продолжи",
+      "intent": null
+    },
+    {
+      "id": "ru-negative-2",
+      "locale": "ru",
+      "text": "Пауза; следующий трек",
+      "intent": null
+    },
+    {
+      "id": "ru-negative-3",
+      "locale": "ru",
+      "text": "Включи свет в комнате",
+      "intent": null
+    },
+    {
+      "id": "ru-negative-4",
+      "locale": "ru",
+      "text": "Он сказал включи Muse",
+      "intent": null
+    },
+    {
+      "id": "ru-negative-5",
+      "locale": "ru",
+      "text": "Не включай Muse",
+      "intent": null
+    },
+    {
+      "id": "ru-negative-6",
+      "locale": "ru",
+      "text": "Что означает пауза",
+      "intent": null
+    },
+    {
+      "id": "ru-negative-7",
+      "locale": "ru",
+      "text": "«пауза»",
+      "intent": null
+    },
+    {
+      "id": "en-positive-0",
+      "locale": "en",
+      "text": "Could we listen to artist Blur",
+      "intent": {
+        "query": "Blur",
+        "kind": "artist",
+        "artist": null,
+        "title": null
+      }
+    },
+    {
+      "id": "en-positive-1",
+      "locale": "en",
+      "text": "I would like to hear Muse — Uprising",
+      "intent": {
+        "query": "Muse — Uprising",
+        "kind": "track",
+        "artist": "Muse",
+        "title": "Uprising"
+      }
+    },
+    {
+      "id": "en-positive-2",
+      "locale": "en",
+      "text": "Start track \"Do Not Say Goodbye\"",
+      "intent": {
+        "query": "Do Not Say Goodbye",
+        "kind": "track",
+        "artist": null,
+        "title": null
+      }
+    },
+    {
+      "id": "en-positive-3",
+      "locale": "en",
+      "text": "Find and play song Clouds",
+      "intent": {
+        "query": "Clouds",
+        "kind": "track",
+        "artist": null,
+        "title": null
+      }
+    },
+    {
+      "id": "en-positive-4",
+      "locale": "en",
+      "text": "Put on artist Pulp",
+      "intent": {
+        "query": "Pulp",
+        "kind": "artist",
+        "artist": null,
+        "title": null
+      }
+    },
+    {
+      "id": "en-positive-5",
+      "locale": "en",
+      "text": "Play song \"Stop and Play\"",
+      "intent": {
+        "query": "Stop and Play",
+        "kind": "track",
+        "artist": null,
+        "title": null
+      }
+    },
+    {
+      "id": "en-positive-6",
+      "locale": "en",
+      "text": "Make English our conversation language",
+      "intent": {
+        "locale": "en"
+      }
+    },
+    {
+      "id": "en-positive-7",
+      "locale": "en",
+      "text": "Let us talk in Russian",
+      "intent": {
+        "locale": "ru"
+      }
+    },
+    {
+      "id": "en-positive-8",
+      "locale": "en",
+      "text": "Answer in English",
+      "intent": {
+        "locale": "en"
+      }
+    },
+    {
+      "id": "en-positive-9",
+      "locale": "en",
+      "text": "Let us return to using Russian",
+      "intent": {
+        "locale": "ru"
+      }
+    },
+    {
+      "id": "en-positive-10",
+      "locale": "en",
+      "text": "Pause",
+      "intent": {
+        "action": "pause"
+      }
+    },
+    {
+      "id": "en-positive-11",
+      "locale": "en",
+      "text": "Resume",
+      "intent": {
+        "action": "resume"
+      }
+    },
+    {
+      "id": "en-negative-0",
+      "locale": "en",
+      "text": "Play Blur and then stop music",
+      "intent": null
+    },
+    {
+      "id": "en-negative-1",
+      "locale": "en",
+      "text": "Play Pulp or resume",
+      "intent": null
+    },
+    {
+      "id": "en-negative-2",
+      "locale": "en",
+      "text": "Pause; next track",
+      "intent": null
+    },
+    {
+      "id": "en-negative-3",
+      "locale": "en",
+      "text": "Play the room lights",
+      "intent": null
+    },
+    {
+      "id": "en-negative-4",
+      "locale": "en",
+      "text": "He said play Muse",
+      "intent": null
+    },
+    {
+      "id": "en-negative-5",
+      "locale": "en",
+      "text": "Do not play Muse",
+      "intent": null
+    },
+    {
+      "id": "en-negative-6",
+      "locale": "en",
+      "text": "What does pause mean",
+      "intent": null
+    },
+    {
+      "id": "en-negative-7",
+      "locale": "en",
+      "text": "\"pause\"",
+      "intent": null
+    }
+  ]
+}

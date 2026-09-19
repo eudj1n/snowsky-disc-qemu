@@ -4,7 +4,7 @@ import socket
 import unittest
 from unittest.mock import AsyncMock, Mock, patch
 
-from controller.bridge.lan_bridge import Proxy, http_ready, sender, announce
+from controller.bridge.lan_bridge import Proxy, http_ready, sender, announce, run
 from controller.fiio_discovery import PAYLOAD, GROUP, PORT
 
 
@@ -17,12 +17,15 @@ class LanBridgeTests(unittest.IsolatedAsyncioTestCase):
     async def asyncTearDown(self):
         for server in self.servers:
             server.close()
-            await server.wait_closed()
         if self.proxy:
             await self.proxy.close()
         for writer in self.writers:
             writer.close()
             await writer.wait_closed()
+        # Recent asyncio versions wait for accepted connections too. Close the
+        # owned clients/proxy before awaiting listener shutdown, not afterward.
+        for server in self.servers:
+            await server.wait_closed()
 
     async def server(self, handler):
         server = await asyncio.start_server(handler, '127.0.0.1', 0)
@@ -154,6 +157,26 @@ class LanBridgeTests(unittest.IsolatedAsyncioTestCase):
             with self.assertRaises(asyncio.CancelledError):
                 await announce(Mock(), proxy)
         loop.sock_sendto.assert_not_called()
+
+    async def test_run_shutdown_closes_proxy_before_waiting_for_accepted_connections(self):
+        connections_closed = asyncio.Event()
+        proxy = Mock()
+        proxy.close = AsyncMock(side_effect=connections_closed.set)
+        servers = [Mock(), Mock()]
+        for server in servers:
+            server.wait_closed = AsyncMock(side_effect=connections_closed.wait)
+        # Model asyncio's listener shutdown contract without publishing LAN ports
+        # or announcements. An accepted connection survives until proxy.close().
+        with patch('controller.bridge.lan_bridge.Proxy', return_value=proxy), \
+             patch('controller.bridge.lan_bridge.asyncio.start_server', AsyncMock(side_effect=servers)), \
+             patch('controller.bridge.lan_bridge.sender'), \
+             patch('controller.bridge.lan_bridge.announce', AsyncMock()):
+            async with asyncio.timeout(1):
+                await run('127.0.0.1', '127.0.0.1', .01)
+        proxy.close.assert_awaited_once()
+        for server in servers:
+            server.close.assert_called_once()
+            server.wait_closed.assert_awaited_once()
 
     async def test_announcement_gates_and_payload(self):
         for count, ready, expected in ((0, True, True), (1, True, False), (0, False, False)):

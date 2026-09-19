@@ -6,7 +6,7 @@ import asyncio
 import contextlib
 import json
 from controller.fiio_library import (genre_command, verify_genre, folder_command, verify_folder,
-                          artist_command, verify_artist)
+                          artist_command, verify_artist, album_command, verify_album)
 from aiohttp import ClientSession, ClientTimeout, WSMsgType
 from controller.fiio_link import (Frames, frame, hex_value, list_payload, index_payload,
                        library_request, library_page, playback_snapshot, play_mode_value)
@@ -195,6 +195,14 @@ class WSClient:
         version = (await self.settings()).get('soc_version')
         require(version, 'artist_playback')
         await asyncio.to_thread(verify_artist, http, artist, index, album)
+        await self.send(*command)
+
+    async def play_album(self, album, index=None, *, http):
+        """Play a complete named album after fresh source bounds verification."""
+        command = album_command(album, index)
+        version = (await self.settings()).get('soc_version')
+        require(version, 'album_playback')
+        await asyncio.to_thread(verify_album, http, album, index)
         await self.send(*command)
 
     async def play_folder(self, path, index=None, *, http, expected_name=None):
