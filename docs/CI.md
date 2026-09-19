@@ -70,6 +70,14 @@ requires an owner-approved `CI_SACD_ISO=/absolute/path/to/sample.iso`; it uses a
 temporary copy and is never selected by `full` or hosted CI. Its logs/PCM must
 remain local because the input may be private. See [PEQ](PEQ.md) and [SACD](SACD.md).
 
+The research Assistant has a separate, opt-in end-to-end runner:
+`bash ci/assistant.sh OTA_DIR NEW_REPORT_DIR`. It provisions generated media,
+Typesense and a disposable V2.57 guest without published ports or personal settings.
+See [Assistant emulator scenarios](ASSISTANT_EMULATOR_ACCEPTANCE.md) for selected
+cases, JSON/Markdown reports and framebuffer evidence. This regression cohort is
+not part of `full`, hosted CI or physical-player MVP acceptance; known mismatches
+produce a nonzero exit status. Its oracle unit tests run in firmware-free CI.
+
 ### Branch policy after public publication
 
 - `2.x`: changes through pull requests, mandatory **Firmware-free checks** from

@@ -1,6 +1,10 @@
 # Status
 
-_Current overview updated 2026-09-17. Dated experiments below retain their original findings._
+_Current overview updated 2026-09-19. Dated experiments below retain their original findings._
+
+Owner accepted the current PEQ/SACD checkpoint for PR #20 integration into `2.x`.
+Remaining #8/#9 research is optional backlog, not a blocker for this checkpoint.
+No firmware tag, stable release or new hardware validation is implied.
 
 Issue #8 audit: the limited stereo SACD metadata/identity checkpoint is committed
 in PR #20, including title replacement at the same path and exact restoration.

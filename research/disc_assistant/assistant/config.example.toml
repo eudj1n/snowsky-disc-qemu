@@ -1,0 +1,116 @@
+# Run from the repository root. One device per config; key is a user-assigned
+# persistent namespace, not a discovered serial number. Do not reuse for another device.
+[device]
+key = "local-disc-emulator"
+host = "127.0.0.1"
+tcp_port = 12100
+http_port = 12113 # Direct emulator HTTP. Physical DISC normally uses 12103.
+
+[storage]
+# Default: OS application-data location / disc-hub / prototype.
+# Explicit overrides must be absolute, outside this checkout. ~ is expanded.
+# data_dir = "~/Library/Application Support/disc-hub/prototype"
+
+[typesense]
+host = "127.0.0.1"
+port = 8108
+protocol = "http"
+api_key_env = "TYPESENSE_API_KEY"
+# Opt-in wrapper for kernels without /proc/self/io; see docs/ASSISTANT_TYPESENSE.md.
+io_accounting_compat = false
+
+[language]
+# One language for command interpretation, responses and future speech adapters.
+# Saved locale overrides this default; --language CODE selects and persists it.
+# /language reset restores this configured default. Music names remain unrestricted.
+locale = "ru"
+
+[response]
+# Speech eligibility only. Response language always follows [language].locale.
+mode = "errors" # none: no speech; errors: problems only; all: every nonempty reply.
+
+[dialogue]
+# Reserved for future conversational flows. True is currently rejected.
+enabled = false
+
+[sync]
+page_size = 200
+max_tracks = 100000
+max_requests = 10000
+# Per network operation; a complete import can take much longer.
+timeout = 8
+
+[terminal]
+# Font family/size are configured in your terminal application.
+# ANSI colors follow its palette. Hex colors and bold/italic/underline also work.
+# NO_COLOR=1 disables colors; pipes and TERM=dumb always use plain output.
+color = true
+prompt = "ansicyan bold"
+input = "ansiyellow"
+result = "ansigreen"
+error = "ansired bold"
+warning = "ansiyellow bold"
+debug = "ansibrightblack"
+suggestion = "ansibrightblack italic"
+
+# Speech input. Web always uses Whisper Server; CLI can still use backend="cli".
+# Optional file-based speech. Install engines/models explicitly; no automatic download.
+# See docs/ASSISTANT_VOICE.md. Use setup --all for managed Whisper Server and Piper (RU/EN).
+[speech]
+backend = "cli" # opt-in: "server" (model remains loaded in whisper-server)
+catalog_hints = false # bounded names from the active snapshot, never expected transcripts
+# server_url = "http://127.0.0.1:18119/inference"
+# model = "~/disc-speech/ggml-small.bin"
+whisper_executable = "whisper-cli"
+timeout = 120
+max_seconds = 30
+rate = 175
+
+[speech.voices]
+ru = "Milena"
+en = "Samantha"
+
+# setup --all fills these sections and preserves the previous config in a backup.
+[tts]
+backend = "none" # setup --all selects "piper"
+# server_url = "http://127.0.0.1:18121/synthesize"
+timeout = 30
+# [tts.models]
+# ru = "/absolute/path/ru_RU-denis-medium.onnx"
+# en = "/absolute/path/en_GB-alba-medium.onnx"
+
+[services]
+speech = false # true: web --bootstrap starts the installed Compose speech stack
+
+[playback]
+# Opt in to setting repeat-list (3) before music selection. This persists on DISC.
+# False preserves the player's existing mode. Controls never change it.
+continuous_context = false
+
+[journal]
+# Local text/decision evidence in assistant.sqlite3; never a playback replay queue.
+enabled = true
+retention_days = 90
+max_requests = 10000 # Completed requests; recent in-flight requests are retained separately.
+
+# Optional explicit search aliases; these do not rewrite device metadata.
+[aliases.artists]
+"Linkin Park" = ["линкин парк"]
+[aliases.titles]
+"Numb" = ["намб"]
+
+[interpretation]
+# Diagnostic sources only. Live requests still use the primary interpreter.
+shadow = false
+# Cooperative async deadline; local CPU/filesystem work is not preempted.
+shadow_timeout_ms = 100
+
+# Optional local model evidence; primary rules retain exclusive execution.
+[structured]
+enabled = false
+# endpoint = "http://127.0.0.1:18120/v1/chat/completions"
+# model = "disc-commands" # match the explicitly started server alias
+# model_path = "/absolute/path/model.gguf" # operator-declared fingerprint
+timeout = 10
+# For /explain, explicitly raise [interpretation].shadow_timeout_ms if needed.
+# /shadow on records this source too, waiting up to that shared deadline.

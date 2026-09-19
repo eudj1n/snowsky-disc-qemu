@@ -161,3 +161,13 @@ node --test viewer/tests/test_keys.js viewer/tests/test_audio_browser.js
 
 Without aiohttp installed on the host, its bridge tests are explicitly skipped there;
 a host-only run is not the complete test result.
+
+### Cancelled cleanup regression (2026-09-19)
+
+A peer receiving close code 1007 could disconnect while the bridge awaited
+cleanup. Handler cancellation then skipped upstream TCP close and left the
+single-client reservation active. TCP is now closed before awaited cleanup;
+the reservation and WebSocket registry are released in a nested `finally`,
+including cancellation. The invalid/oversized-message regression also verifies
+upstream EOF, an empty registry and a successful new handshake. No timeout was
+extended and no malformed record is forwarded.

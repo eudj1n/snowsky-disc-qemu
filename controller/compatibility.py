@@ -7,7 +7,7 @@ This registry describes existing guarded operations, not every raw protocol call
 CONTRACTS = {
     240: frozenset({'network_check'}),
     257: frozenset({'favorite_positions', 'playlist_playback', 'genre_playback',
-                    'artist_playback', 'folder_playback', 'network_check'}),
+                    'artist_playback', 'album_playback', 'folder_playback', 'network_check'}),
 }
 
 

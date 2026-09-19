@@ -1,0 +1,9 @@
+# Recording metadata conventions, independent of the interaction language.
+live = ["live", "concert", "концерт", "концертная"]
+remix = ["remix", "ремикс"]
+acoustic = ["acoustic", "акустика"]
+instrumental = ["instrumental", "инструментальная", "инструментал"]
+demo = ["demo", "демо"]
+karaoke = ["karaoke", "караоке"]
+cover = ["cover", "кавер"]
+remaster = ["remaster", "remastered", "ремастер", "ремастеринг"]

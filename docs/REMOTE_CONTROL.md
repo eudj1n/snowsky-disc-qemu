@@ -94,6 +94,10 @@ track/list completion or characterize random selection.
   Tests wait 2.1 seconds between track selections/navigation. A dropped command
   has no success acknowledgement. Do not immediately retry it or infer success
   from the TCP/WS write completing.
+- The high-level Controller clients share a remaining-interval pacer. After an
+  idle interval there is no fixed command sleep; rapid mutations still wait and
+  new connections have a conservative initial interval. This does not change the
+  raw `Client` timing contract or relax outcome verification.
 - Seek truncates milliseconds down to whole seconds for local playback. A paused
   seek keeps the player paused; the next position tick after resume confirms it.
   There is no proven immediate seek acknowledgement or paused-position query.

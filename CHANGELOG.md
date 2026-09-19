@@ -50,6 +50,11 @@ Active firmware: **V2.57**. Local protocol research is finalized in
 
 ### Changed
 
+- PEQ coverage now includes physical FiiO Control preset, Save/Reset and local
+  preset workflows. The client retains validated JSON writes because the app's
+  bulk Local Apply format is incompatible with V2.57. Auto EQ and broader SACD
+  checks remain explicit follow-ups. [PEQ](docs/PEQ.md), [SACD](docs/SACD.md).
+
 - Viewer now draws a responsive CSS device with visible physical buttons and
   audio/USB/microSD connectors, removing the photo skin and manual alignment.
   The browser experiment shares its layout and adds a combined Power control;
@@ -71,6 +76,9 @@ Active firmware: **V2.57**. Local protocol research is finalized in
   `main` branch and automatically delete merged PR branches.
 
 ### Fixed
+
+- WebSocket bridge releases its connection slot even when an invalid peer disconnects
+  during cleanup, allowing the next client to connect. [Details](docs/WEBSOCKET.md).
 
 - LAN bridge timeout cleanup now releases the control connection even during
   continuous upstream notifications.

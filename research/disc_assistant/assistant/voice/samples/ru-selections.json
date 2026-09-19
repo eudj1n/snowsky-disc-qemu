@@ -1,0 +1,16 @@
+{
+  "version": 1,
+  "locale": "ru",
+  "selections": {
+    "artist": {
+      "kind": "artist",
+      "artist": "Linkin Park"
+    },
+    "track": {
+      "kind": "track",
+      "artist": "Linkin Park",
+      "title": "Numb",
+      "album": "Meteora"
+    }
+  }
+}

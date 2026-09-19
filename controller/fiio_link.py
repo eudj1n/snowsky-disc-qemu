@@ -9,7 +9,7 @@ import time
 from controller.fiio_settings import setting_query, setting_command, setting_value, peq_payload, peq_value
 from controller.fiio_playlist import playlist_command, verify_playlist
 from controller.fiio_library import (genre_command, verify_genre, folder_command, verify_folder,
-                          artist_command, verify_artist)
+                          artist_command, verify_artist, album_command, verify_album)
 
 
 def frame(tag, payload=b''):
@@ -256,14 +256,18 @@ class Client:
             require(version, 'favorite_positions')
         self.socket.sendall(frame('0100', payload))
 
-    def play_queue_index(self, index):
+    def play_queue_index(self, index, *, http=None):
         """Select a zero-based position in the current queue, with a fresh bounds check.
 
         The queue can still change between query and selection; Link has no revision
         token. Never replay this command after reconnecting or reuse a cached count.
         """
         position = hex_value(index)
-        if index >= self.library('queue')['total']:
+        # HTTP permits a caller to guard the exact row immediately before send.
+        # The original TCP-only API retains its fresh queue-count query.
+        page = (http.catalog('curlist/song', offset=index, limit=1) if http is not None
+                else self.library('queue'))
+        if index >= page['total'] or (http is not None and len(page['items']) != 1):
             raise ValueError('position outside the current queue')
         self.socket.sendall(frame('0100', position + '0000'))
 
@@ -303,6 +307,14 @@ class Client:
         version = self.settings().get('soc_version')
         require(version, 'artist_playback')
         verify_artist(http, artist, index, album)
+        self.socket.sendall(frame(*command))
+
+    def play_album(self, album, index=None, *, http):
+        """Play a complete named album after fresh source bounds verification."""
+        command = album_command(album, index)
+        version = self.settings().get('soc_version')
+        require(version, 'album_playback')
+        verify_album(http, album, index)
         self.socket.sendall(frame(*command))
 
     def play_folder(self, path, index=None, *, http, expected_name=None):

@@ -1,12 +1,38 @@
 # DISC protocol research: continuation plan
 
-Updated 2026-09-17. This is the handoff checklist for continuing the research in
+Updated 2026-09-19. This is the handoff checklist for continuing the research in
 another session. Keep its status current when finishing a work item; detailed
 contracts and evidence remain in the linked documents.
 
 Umbrella tracker: [issue #10 — DISC protocol and FiiO Control coverage](https://github.com/eudj1n/snowsky-disc-qemu/issues/10).
 Keep the issue's high-level checklist current alongside this detailed handoff;
 keep release-facing summaries in `CHANGELOG.md` short rather than duplicating research logs.
+
+## Accepted scope for PR #20 (2026-09-19)
+
+Owner accepts the implemented PEQ/SACD checkpoint for integration into `2.x`.
+Remaining research is optional follow-up in the existing issues #8/#9, not a
+merge or release blocker. Keep those issues as the backlog, without claiming
+unverified behavior or starting new device/media checks. This is integration of
+the current work, not a new firmware version/tag or stable-release acceptance.
+
+- #8: stereo metadata/identity and same-path title replacement are complete.
+  Different track-layout replacement, seek/EOF, DST/multichannel and a playable
+  redistributable fixture remain optional; hardware DSD/DoP stays unvalidated.
+- #9: supported presets, device edits/Save/Reset, Local Save/Apply evidence and
+  the safe JSON path are complete. Auto EQ save-time behavior, interrupted-Save
+  recovery/readback and remaining editor/personal-storage details are optional.
+  The last physical Custom 10 state is still unknown; if resumed, read before
+  Reset and never repeat the uncertain Save. Share/login remains deferred to #11.
+
+The dated investigations below preserve their original validation scope and
+limitations. Closed umbrella #10 is unchanged.
+
+Integration with `2.x` at `a13dfba` required only combining the independent
+PEQ/SACD and Assistant paragraphs in `docs/CI.md`; code merged without conflicts.
+The combined branch passed **378 Python / 37 JavaScript** tests, shell syntax
+and four shim builds, plus diff/local-link checks. No new firmware/media or
+physical-player acceptance was run; earlier focused evidence retains its scope.
 
 ## Paused by owner — PEQ checkpoint (2026-09-17, after capture 225312)
 

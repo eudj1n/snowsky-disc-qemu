@@ -1,0 +1,10 @@
+{
+  "version": 1,
+  "name": "commands-v2.1",
+  "sha256": "26c2b6fcfa52bc5f46e91d87c43cc190c455588adbe0249605d0bbeafc9a37e2",
+  "description": "Assistant-authored text, not independent human annotations. Train/development/test frozen before supervised v2 evaluation; prior examined material and native STT of synthetic audio are regression only. Multiaction/unsupported/capability questions reject. No execution promotion.",
+  "authored_by": "assistant",
+  "selection": "development only; never tune on test/regression",
+  "previous_sha256": "654d85b2ac9a37242e0acb7c1a3a7a914d423d8e292aa23f90ab507070bd4310",
+  "revision_note": "Only the previously omitted ru-test-language-3 regression row was restored after the initial run. Training, development and test remain byte-for-byte as frozen in cad202b. No model selection change."
+}

@@ -5,6 +5,10 @@
 never the interactive library. No source audio, titles, private paths or firmware
 data belong in Git or hosted artifacts.
 
+Owner accepted this limited checkpoint for PR #20 / `2.x` on 2026-09-19.
+Remaining cases below are optional follow-ups retained in #8, not blockers for
+integrating the current work. No new media run or hardware-support claim follows.
+
 ## Status audit (2026-09-17)
 
 The implementation is already published in commit `f5c08b7`, with the shared

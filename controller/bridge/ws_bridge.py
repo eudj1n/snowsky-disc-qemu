@@ -101,15 +101,20 @@ class Bridge:
         finally:
             for task in pumps:
                 task.cancel()
-            await asyncio.gather(*pumps, return_exceptions=True)
             if writer:
                 writer.close()
-                with contextlib.suppress(OSError):
-                    await writer.wait_closed()
-            if ws.prepared:
-                await ws.close()
-            self.websockets.discard(ws)
-            self.active = False
+            try:
+                await asyncio.gather(*pumps, return_exceptions=True)
+                if writer:
+                    with contextlib.suppress(OSError):
+                        await writer.wait_closed()
+                if ws.prepared:
+                    await ws.close()
+            finally:
+                # Peer disconnect can cancel this handler during an awaited
+                # cleanup. The TCP close and channel release must still happen.
+                self.websockets.discard(ws)
+                self.active = False
         return ws
 
     async def from_ws(self, ws, writer):

@@ -1,0 +1,5 @@
+# Installation/config editing and explicit synthetic-sample resampling only.
+# Piper runs in its own pinned container, not this Python environment.
+tomlkit==0.13.3
+soxr==1.1.0
+certifi==2026.7.22

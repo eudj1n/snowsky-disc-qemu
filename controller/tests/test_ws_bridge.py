@@ -106,6 +106,13 @@ class BridgeTests(unittest.IsolatedAsyncioTestCase):
                 self.assertEqual(reply.data, code)
             await self.wait_released()
         self.assertEqual(self.received, [])
+        self.assertFalse(self.bridge.websockets)
+        # Invalid peers must not strand the single-client slot or upstream TCP.
+        async with asyncio.timeout(3):
+            while self.writers:
+                await asyncio.sleep(.01)
+        async with WSClient(self.url) as client:
+            self.assertEqual(await client.handshake(), '0306')
 
     async def wait_released(self):
         async with asyncio.timeout(3):

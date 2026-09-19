@@ -1,0 +1,3 @@
+# Local Python environment; personal application data belongs outside the repo.
+/.venv/
+/.env.setup-*

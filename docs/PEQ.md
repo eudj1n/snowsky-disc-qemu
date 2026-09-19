@@ -8,6 +8,10 @@ Physical captures resumed later on 2026-09-17 with the preset/BYPASS sequence
 below. The later device-edit/Save/Reset capture is also analyzed here; local
 Save and Auto EQ remain separate checks in this workstream.
 
+**Current scope accepted for PR #20 / `2.x` on 2026-09-19.** Remaining Auto EQ,
+editor and storage investigations stay as optional backlog in #9, not merge
+blockers. No new device action is requested; the recovery limit below remains.
+
 **Paused by owner after capture `225312` on 2026-09-17; continue later.**
 Preset/device/local workflows are analyzed below, including the reproduced
 Local Apply format mismatch. Auto EQ Save screenshot 6851 shows nonzero bands
