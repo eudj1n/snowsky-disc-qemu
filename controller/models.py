@@ -156,6 +156,7 @@ class CommandResult:
     reason: str | None = None
     requested_mode: PlayMode | None = None
     previous_mode: PlayMode | None = None
+    confirmation: dict | None = None
 
     def to_dict(self):
         return asdict(self)
@@ -167,4 +168,5 @@ class CommandResult:
                    QueueSnapshot.from_wire(result['queue']) if 'queue' in result else None,
                    result.get('outcome'), result.get('reason'),
                    MODES[result['requested']] if 'requested' in result else None,
-                   MODES[result['previous']] if 'previous' in result else None)
+                   MODES[result['previous']] if 'previous' in result else None,
+                   result.get('confirmation'))

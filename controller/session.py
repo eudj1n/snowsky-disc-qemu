@@ -299,6 +299,9 @@ class DiscSession:
             attempted = bool(client and client.mutation_attempted)
             result = {'operation_id': operation_id, 'status': 'uncertain' if attempted else 'not_sent',
                       'mutation_attempted': attempted, 'reason': str(exc)}
+            from controller.catalog import CatalogChanged
+            if isinstance(exc, CatalogChanged) and exc.diagnostics is not None:
+                result['confirmation'] = {'queue': exc.diagnostics}
         return CommandResult.from_result(result, action)
 
     def control(self, action):

@@ -58,6 +58,11 @@ queue verification despite matching artist playback. See current status for
 timings and next diagnostic work. Do not infer quantified MVP acceptance or
 Docker performance overhead; fallback process I/O metrics are zeros.
 
+Queue guard failures now carry `confirmation.queue` with the actual failing read
+and failed fields; see `../../docs/ASSISTANT_QUEUE_DIAGNOSTICS.md`. This is evidence
+only, without relaxed guards or retry. Keep initial `last_observed` separate from
+the subsequent queue read when diagnosing uncertain playback.
+
 Start with `../../docs/ASSISTANT_STATUS.md`: current review follow-up and evidence.
 The owner authorized five sequential increments, each committed and pushed.
 

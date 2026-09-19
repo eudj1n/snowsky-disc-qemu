@@ -4,6 +4,23 @@ This is the short continuation index. [The roadmap](ASSISTANT.md) preserves
 historical decisions; [MVP acceptance](ASSISTANT_MVP.md) defines completion.
 Conversation and local experiments do not replace device evidence.
 
+## Queue mismatch evidence, 2026-09-19
+
+The Controller now attaches bounded queue-guard diagnostics to `CatalogChanged`;
+Assistant results/history/traces and typed `CommandResult.confirmation` preserve
+them. `confirmation.queue` distinguishes stale mark/position/title, missing fresh
+state, membership differences and mode/observation races. The initial successful
+`last_observed` and subsequent failing queue state remain separate. See
+[field meanings and example](ASSISTANT_QUEUE_DIAGNOSTICS.md). No guard is relaxed,
+no timing changed and no mutation is retried.
+
+All 29 focused queue/navigation/Assistant playback tests passed. Controller suite:
+183 of 184 passed; `test_invalid_and_oversized_messages_close_without_forwarding`
+timed out locally. The same timeout reproduced when that test ran alone from an
+untouched archive of the committed baseline, so it remains an unrelated validation
+limitation, not a claimed green Controller suite. Fresh physical queue evidence
+is still needed to diagnose the owner's uncertain artist command.
+
 ## Typesense on vendor kernels, 2026-09-19
 
 **Owner follow-up:** the updated flow now works on the Orange Pi, and the supplied

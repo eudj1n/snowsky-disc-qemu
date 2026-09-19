@@ -6,6 +6,19 @@ from controller.playback import album_matches
 MODES = ('list_once', 'random', 'repeat_one', 'repeat_list', 'single_once')
 
 
+def queue_failure(code, message, **evidence):
+    """Small structured proof of a failed guard; no full queue or device paths."""
+    raise CatalogChanged(message, diagnostics={'stage': 'queue_verification', 'code': code, **evidence})
+
+
+def brief_song(state):
+    song = state.get('song') or {}
+    return {'state': state.get('state'), 'playerflag': state.get('playerflag'),
+            'pos_id': song.get('pos_id'), 'title': str(song.get('song_name', ''))[:200],
+            'artist': str(song.get('song_artist_name', ''))[:200],
+            'album': str(song.get('song_album_name', ''))[:200]}
+
+
 def read_queue(config, http):
     marks = []
 
@@ -16,15 +29,20 @@ def read_queue(config, http):
             total = page.get('total')
             if (type(total) is not int or total < 0 or type(mark) is not int
                     or not -1 <= mark < total or (total == 0 and mark != -1)):
-                raise CatalogChanged('missing or invalid queue mark')
+                queue_failure('invalid_mark', 'missing or invalid queue mark',
+                              mark=mark if type(mark) is int else None,
+                              total=total if type(total) is int else None)
             marks.append(mark)
             return page
 
     reader = CatalogReader(Pages(), page_size=config.page_size, max_tracks=config.max_tracks,
                            max_requests=config.max_requests)
     rows = reader.rows('curlist/song')
-    if rows != reader.rows('curlist/song') or len(set(marks)) != 1:
-        raise CatalogChanged('queue changed during observation')
+    second = reader.rows('curlist/song')
+    if rows != second or len(set(marks)) != 1:
+        queue_failure('unstable_queue', 'queue changed during observation',
+                      first_total=len(rows), second_total=len(second), rows_equal=rows == second,
+                      marks=marks[:8], mark_observations=len(marks))
     return {'items': rows, 'total': len(rows), 'mark': marks[0]}
 
 
@@ -48,32 +66,51 @@ def snapshot(config, client, http, *, expected=None, selected=None, selected_pos
     except TimeoutError:
         state = {}
     client.scan_guard()
-    if client.play_mode() != mode:
-        raise CatalogChanged('play mode changed during queue observation')
+    after_mode = client.play_mode()
+    if after_mode != mode:
+        queue_failure('mode_changed', 'play mode changed during queue observation',
+                      before_mode=mode, after_mode=after_mode)
     if expected is not None:
         keys = lambda rows: Counter((r['name'], r['author']) for r in rows)
-        if keys(result['items']) != keys(expected):
-            raise CatalogChanged('actual queue differs from the requested source')
+        actual_keys, expected_keys = keys(result['items']), keys(expected)
+        if actual_keys != expected_keys:
+            queue_failure('membership_mismatch', 'actual queue differs from the requested source',
+                          expected_total=len(expected), observed_total=result['total'],
+                          missing_count=sum((expected_keys - actual_keys).values()),
+                          unexpected_count=sum((actual_keys - expected_keys).values()))
         song = state.get('song', {})
         mark = result['mark']
         source = 3 if selected and selected['kind'] == 'album' and selected.get('artist') is None else 7
-        if (state.get('state') != 0 or state.get('playerflag') != source or not 0 <= mark < result['total']
-                or song.get('pos_id') != mark + 1
-                or song.get('song_name') != result['items'][mark]['name']
-                or song.get('song_artist_name') != result['items'][mark]['author']):
-            raise CatalogChanged('queue selection is not confirmed by fresh playback state')
+        row = result['items'][mark] if 0 <= mark < result['total'] else None
+        checks = {'playing': state.get('state') == 0, 'source': state.get('playerflag') == source,
+                  'mark_in_bounds': row is not None, 'position': song.get('pos_id') == mark + 1,
+                  'title': row is not None and song.get('song_name') == row['name'],
+                  'artist': row is not None and song.get('song_artist_name') == row['author']}
+        if not all(checks.values()):
+            queue_failure('state_mismatch', 'queue selection is not confirmed by fresh playback state',
+                          failed_checks=[key for key, passed in checks.items() if not passed],
+                          observed=brief_song(state), mark=mark, total=result['total'],
+                          expected={'state': 0, 'playerflag': source, 'pos_id': mark + 1,
+                                    'title': row['name'][:200] if row else None,
+                                    'artist': row['author'][:200] if row else None})
         if selected is not None and ((selected.get('artist') is not None and song.get('song_artist_name') != selected['artist']) or
                 (selected['kind'] == 'track' and song.get('song_name') != selected['title'])):
-            raise CatalogChanged('playback changed during queue observation')
+            queue_failure('selection_mismatch', 'playback changed during queue observation',
+                          observed=brief_song(state),
+                          expected_artist=(selected.get('artist') or '')[:200],
+                          expected_title=(selected.get('title') or '')[:200])
         if selected_position is not None and mark != selected_position:
-            raise CatalogChanged('queue position differs from the requested selection')
+            queue_failure('position_mismatch', 'queue position differs from the requested selection',
+                          expected_position=selected_position, observed_position=mark)
         if selected is not None and not album_matches(state, selected, config=config, http=http):
-            raise CatalogChanged('playback album differs from the requested selection')
+            queue_failure('album_mismatch', 'playback album differs from the requested selection',
+                          expected_album=(selected.get('album') or '')[:200], observed=brief_song(state))
         if (selected is not None and selected.get('album') is not None
                 and song.get('song_album_name') != selected['album']):
             fresh = client.now_playing()
             if any(fresh.get(key) != state.get(key) for key in ('state', 'playerflag', 'song')):
-                raise CatalogChanged('playback changed while resolving the shortened album')
+                queue_failure('album_resolution_race', 'playback changed while resolving the shortened album',
+                              before=brief_song(state), after=brief_song(fresh))
         # The extra HTTP reads for a shortened album can receive scan events too.
         client.scan_guard()
     result.update(mode=mode, mode_name=MODES[mode], state=state,
@@ -149,4 +186,6 @@ def previous_in_queue(config, client, http):
         attempted = result['mutation_attempted'] or bool(client.mutation_attempted)
         result.update(status='uncertain' if attempted else 'not_sent', mutation_attempted=attempted,
                       reason=str(exc), error_type=type(exc).__name__)
+        if isinstance(exc, CatalogChanged) and exc.diagnostics is not None:
+            result['confirmation'] = {'queue': exc.diagnostics}
     return result

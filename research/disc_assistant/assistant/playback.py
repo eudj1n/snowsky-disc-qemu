@@ -105,4 +105,6 @@ def execute(config, store, ranking, *, shared=None):
             attempted = bool(client and client.mutation_attempted) or result.get('mode_change', {}).get('mutation_attempted', False)
             result.update(status='uncertain' if attempted else 'not_sent', mutation_attempted=attempted,
                           reason=str(exc), error_type=type(exc).__name__, retry='never automatic')
+            if isinstance(exc, CatalogChanged) and exc.diagnostics is not None:
+                result.setdefault('confirmation', {})['queue'] = exc.diagnostics
     return result

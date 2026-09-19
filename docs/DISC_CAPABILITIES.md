@@ -7,6 +7,10 @@ now provides persistent state and a bounded playback facade for application adap
 and WebSocket adapter exist; a complete multi-browser web remote is subsequent
 product work. M21/FiiO Music is a different implementation, not a DISC profile.
 
+Playback failures can expose bounded [queue confirmation diagnostics](ASSISTANT_QUEUE_DIAGNOSTICS.md)
+through `CommandResult.confirmation`. This adds evidence without relaxing guards
+or retrying a mutation.
+
 ## Transports and ownership
 
 - Stock **TCP 12100**: FiiO Link, handshake first, UTF-8 byte-counted frames.

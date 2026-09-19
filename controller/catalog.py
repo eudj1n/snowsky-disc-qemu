@@ -1,6 +1,8 @@
 """Bounded stock HTTP pagination; no local catalog or snapshot storage."""
 class CatalogChanged(ValueError):
-    pass
+    def __init__(self, message, *, diagnostics=None):
+        super().__init__(message)
+        self.diagnostics = diagnostics
 
 
 class CatalogReader:

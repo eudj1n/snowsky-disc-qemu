@@ -129,6 +129,20 @@ class PlaybackTests(unittest.TestCase):
             self.assertEqual(self.execute()['status'], 'uncertain')
         self.assertEqual(self.client.calls, 1)
 
+    def test_queue_failure_keeps_fresh_evidence_and_does_not_replay(self):
+        from research.disc_assistant.assistant.journal import outcome
+        playing = self.client.snapshot
+        self.client.now_playing = Mock(side_effect=[playing, {}])
+        result = self.execute()
+        self.assertEqual(result['status'], 'uncertain')
+        self.assertEqual(self.client.calls, 1)
+        self.assertEqual(result['confirmation']['last_observed']['title'], 'Numb')
+        queue = result['confirmation']['queue']
+        self.assertEqual(queue['code'], 'state_mismatch')
+        self.assertIsNone(queue['observed']['state'])
+        self.assertEqual(queue['expected']['pos_id'], 2)
+        self.assertEqual(outcome(result)['confirmation']['queue'], queue)
+
     def test_shortened_album_is_confirmed_with_fresh_catalog_and_queue(self):
         original = self.http.catalog
         def catalog(category, **kwargs):

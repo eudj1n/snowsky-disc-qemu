@@ -108,7 +108,9 @@ stay separate. A retained queue after EOF does not establish active playback.
 
 `CommandResult` provides an operation ID, action, `OperationStatus`, mutation-attempt
 flag, playback observation, optional queue/outcome/reason, and requested/previous
-mode for mode changes. Statuses are `not_sent`, `uncertain`, `confirmed`,
+mode for mode changes. Optional `confirmation.queue` preserves bounded evidence
+of a failed queue guard (observed/expected fields and mismatch codes); see
+[queue diagnostics](ASSISTANT_QUEUE_DIAGNOSTICS.md). Statuses are `not_sent`, `uncertain`, `confirmed`,
 `already_satisfied`, `playing`, and read-only `observed`. `playing` verifies device
 metadata/state, not audible output. An error after a possible write is uncertain;
 never automatically repeat it. Operation results can have fewer fields than the
