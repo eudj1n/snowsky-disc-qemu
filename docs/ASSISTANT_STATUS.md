@@ -4,6 +4,30 @@ This is the short continuation index. [The roadmap](ASSISTANT.md) preserves
 historical decisions; [MVP acceptance](ASSISTANT_MVP.md) defines completion.
 Conversation and local experiments do not replace device evidence.
 
+## Owner's first Orange Pi latency comparison, 2026-09-19
+
+The owner supplied console timings for two RU recordings using base, threads 2/4,
+beam5/greedy, one warmup per decoder and three measured repetitions. All 32
+responses (24 measured, 8 warmup) completed without a reported provider error.
+Median measured STT seconds, excluding warmup:
+
+| Recording | 2 threads / beam5 | 2 threads / greedy | 4 threads / beam5 | 4 threads / greedy |
+| --- | ---: | ---: | ---: | ---: |
+| A | 12.440 | 11.249 | 10.196 | 9.232 |
+| B | 13.261 | 11.507 | 11.173 | 10.205 |
+
+Four threads were faster in both runs. Greedy reduced the four-thread median by
+9.45% / 8.67%; this is not an order-of-magnitude improvement. Several timings rose
+over a run, but temperature, frequency, competing load and memory pressure were
+not supplied: throttling is a hypothesis, not a diagnosis. The fixed thread-group
+order also limits causal comparisons. Console `ok` is successful transcription
+transport/validation, not recognition accuracy. Full reports/transcripts, input
+durations and hashes have not been reviewed; no RTF or quality claim is made.
+Next: inspect transcripts, repeat under recorded thermal/load conditions, then
+compare an existing quantized base model on the same frozen input. Defaults stay
+unchanged; no faster profile has been accepted. Private audio/reports remain with
+the owner; the failed alternate input filename was corrected before the second run.
+
 ## Fixed-audio STT comparison, 2026-09-19
 
 `run.sh speech-benchmark` compares beam5/best-of5 against greedy/best-of1 across
