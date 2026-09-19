@@ -123,7 +123,7 @@ def main(argv=None):
     parser.add_argument('--language', help='select and persist one interaction locale')
     parser.add_argument('--debug', action='store_true', help='stream application request traces')
     parser.add_argument('--source', choices=('cli', 'scheduled'))
-    parser.add_argument('command', choices=('setup', 'speech-up', 'speech-down', 'up', 'down', 'start', 'listen', 'web', 'language', 'response', 'locales', 'explain', 'commands', 'history', 'sync', 'status', 'queue', 'index', 'search', 'rank', 'ask', 'transcribe', 'synthesize', 'speech-samples', 'speech-check', 'shadow-report', 'test', 'check'))
+    parser.add_argument('command', choices=('setup', 'speech-up', 'speech-down', 'speech-benchmark', 'up', 'down', 'start', 'listen', 'web', 'language', 'response', 'locales', 'explain', 'commands', 'history', 'sync', 'status', 'queue', 'index', 'search', 'rank', 'ask', 'transcribe', 'synthesize', 'speech-samples', 'speech-check', 'shadow-report', 'test', 'check'))
     parser.add_argument('arguments', nargs=argparse.REMAINDER)
     args = parser.parse_args(argv)
     config_path = Path(args.config).expanduser()
@@ -139,7 +139,7 @@ def main(argv=None):
             if args.command in ('setup', 'up', 'down', 'test', 'check', 'shadow-report'):
                 raise ValueError('--language applies to application commands, such as start/listen/ask')
         if args.command not in ('setup', 'web', 'search', 'rank', 'ask', 'explain', 'commands', 'language', 'response', 'history',
-                                'transcribe', 'synthesize', 'speech-samples', 'speech-check', 'shadow-report') and args.arguments:
+                                'transcribe', 'synthesize', 'speech-samples', 'speech-check', 'speech-benchmark', 'shadow-report') and args.arguments:
             raise ValueError('unexpected arguments; see run.sh help')
         if args.command == 'shadow-report':
             if args.source:
@@ -184,6 +184,11 @@ def main(argv=None):
         if not config_path.is_file():
             raise ValueError(f'config missing: {config_path}; run setup or pass --config PATH')
         config = load(config_path)
+        if args.command == 'speech-benchmark':
+            if args.debug or args.language or args.source:
+                raise ValueError('speech-benchmark uses its own --locale; --debug/--source/--language do not apply')
+            from research.disc_assistant.experiments.speech_benchmark import main as benchmark_main
+            return benchmark_main(args.arguments, config)
         if args.command in ('speech-up', 'speech-down'):
             from research.disc_assistant.speech_setup import manage
             return manage(config, 'up' if args.command == 'speech-up' else 'down')

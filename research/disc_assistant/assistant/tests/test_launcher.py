@@ -187,6 +187,15 @@ class LauncherTests(unittest.TestCase):
         self.assertEqual(args[-1], 'down')
         self.assertNotIn('--volumes', args)
 
+    def test_benchmark_bypasses_application_search_and_device(self):
+        self.initialize()
+        with patch('research.disc_assistant.experiments.speech_benchmark.main', return_value=0) as benchmark, \
+                patch.object(launcher, 'environment', side_effect=AssertionError('no search credentials')), \
+                patch.object(launcher.subprocess, 'run', side_effect=AssertionError('no app or compose startup')):
+            self.assertEqual(launcher.main(['--config', str(self.config), 'speech-benchmark',
+                                           '--audio', 'sample.wav', '--output', 'report']), 0)
+        self.assertEqual(benchmark.call_args.args[0], ['--audio', 'sample.wav', '--output', 'report'])
+
     def test_shell_help_works_from_outside_repository(self):
         script = launcher.PACKAGE / 'run.sh'
         result = subprocess.run(['bash', str(script), '--help'], cwd=self.directory, text=True, capture_output=True)

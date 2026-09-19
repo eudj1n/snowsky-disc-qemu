@@ -40,6 +40,11 @@ activation or exported secret is needed. From the repository root:
 For Typesense exit 139 on vendor kernels without `/proc/self/io`, use the explicit
 [I/O accounting compatibility option](../../docs/ASSISTANT_TYPESENSE.md).
 
+To compare Whisper decoder/thread/model choices on fixed recordings without
+controlling a player, use [speech-benchmark](../../docs/ASSISTANT_SPEECH_BENCHMARK.md).
+Uncertain playback results now include [queue mismatch evidence](../../docs/ASSISTANT_QUEUE_DIAGNOSTICS.md)
+when a queue guard fails.
+
 `setup` creates `assistant/.venv` if missing, installs the pinned requirements,
 creates `~/disc-assistant.toml` if missing and generates a private search key in
 `assistant/.env` if missing/empty. Existing config and keys are preserved. The key

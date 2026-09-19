@@ -63,6 +63,14 @@ and failed fields; see `../../docs/ASSISTANT_QUEUE_DIAGNOSTICS.md`. This is evid
 only, without relaxed guards or retry. Keep initial `last_observed` separate from
 the subsequent queue read when diagnosing uncertain playback.
 
+`run.sh speech-benchmark` now compares frozen WAVs in sequential disposable Whisper
+servers (beam5/greedy, thread counts, optional existing models). No device or search
+access; private output contains reusable samples, hashes and labelled-only scores.
+See `../../docs/ASSISTANT_SPEECH_BENCHMARK.md`. Production decoder/wait/journal
+behavior is unchanged. 352 prototype tests and native Docker plumbing passed;
+Orange Pi comparative measurements remain pending. One Controller WebSocket
+timeout reproduces on the untouched baseline (details in current status).
+
 Start with `../../docs/ASSISTANT_STATUS.md`: current review follow-up and evidence.
 The owner authorized five sequential increments, each committed and pushed.
 

@@ -12,6 +12,8 @@ Usage: research/disc_assistant/run.sh [--config PATH] [--source cli|scheduled] [
   setup [--all] [--whisper-model base|small]  Install Python; --all also installs speech services/models
   speech-up      Start installed Whisper Server and Piper; no device connection
   speech-down    Stop speech services, preserving installed models
+  speech-benchmark --samples DIR --output DIR [--threads 2 4] [--repeats 3]
+                 Compare isolated Whisper decoders/threads; or use --audio WAV --locale ru
   up             Start local Typesense and wait for readiness
   down           Stop local Typesense, preserving its volume
   start          Start Typesense, connect, sync/index, then keep an interactive console

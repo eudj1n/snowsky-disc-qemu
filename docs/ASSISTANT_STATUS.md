@@ -4,6 +4,25 @@ This is the short continuation index. [The roadmap](ASSISTANT.md) preserves
 historical decisions; [MVP acceptance](ASSISTANT_MVP.md) defines completion.
 Conversation and local experiments do not replace device evidence.
 
+## Fixed-audio STT comparison, 2026-09-19
+
+`run.sh speech-benchmark` compares beam5/best-of5 against greedy/best-of1 across
+thread counts and optional existing model files. It uses one disposable Whisper
+container at a time, read-only model mounts and random loopback ports; no DISC,
+catalog/search, production restart, journal or TTS. It freezes audio bytes and
+fingerprints models/image/grammar, records first requests and warmups separately,
+and reports per-locale median/p95/RTF with errors retained. Only labelled samples
+receive transcript/intent scores. Production defaults and the fixed playback
+delay remain unchanged; journal/delay optimization is still future measured work.
+See [commands, report semantics and limitations](ASSISTANT_SPEECH_BENCHMARK.md).
+
+**352 prototype tests passed**. Native arm64 Docker smoke check completed eight
+transcriptions across threads 2/4 and both decoders using one saved synthetic RU
+WAV; both temporary containers were removed. This verifies tooling, not Orange Pi
+performance or accuracy. The next measurement belongs on the board with fixed
+microphone recordings and stable load/cooling. The Controller baseline WebSocket
+timeout below remains explicitly unresolved.
+
 ## Queue mismatch evidence, 2026-09-19
 
 The Controller now attaches bounded queue-guard diagnostics to `CatalogChanged`;

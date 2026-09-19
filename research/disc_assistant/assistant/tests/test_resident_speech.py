@@ -49,6 +49,17 @@ class ResidentTests(unittest.IsolatedAsyncioTestCase):
         with self.assertRaises(SpeechUnavailable):
             await self.provider.transcribe(self.audio,SpeechContext('en','id'))
 
+    async def test_comparison_decoder_is_explicit_and_runtime_default_stays_five(self):
+        fast = WhisperServer(self.provider.settings, beam_size=1, best_of=1)
+        await fast.transcribe(self.audio, SpeechContext('en', 'fast'))
+        self.assertEqual((self.form['beam_size'], self.form['best_of']), ('1', '1'))
+        self.assertEqual(fast.evidence()['decoder']['beam_size'], 1)
+        await self.provider.transcribe(self.audio, SpeechContext('en', 'default'))
+        self.assertEqual((self.form['beam_size'], self.form['best_of']), ('5', '5'))
+        for value in (True, 0, 17, '1'):
+            with self.assertRaises(ValueError):
+                WhisperServer(self.provider.settings, beam_size=value)
+
     def test_only_explicit_loopback_service_urls(self):
         for value in ('http://localhost:1/inference','http://example.com:1/inference',
                       'http://127.0.0.1:1/load','http://user:pass@127.0.0.1:1/inference',

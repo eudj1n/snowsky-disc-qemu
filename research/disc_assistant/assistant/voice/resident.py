@@ -12,8 +12,16 @@ from research.disc_assistant.assistant.voice.vocabulary import prompt
 class WhisperServer(WhisperCpp):
     info = ProviderInfo('whisper_server', 'adapter-1', 'local')
 
+    def __init__(self, settings, *, beam_size=5, best_of=5):
+        super().__init__(settings)
+        if any(type(n) is not int or not 1 <= n <= 16 for n in (beam_size, best_of)):
+            raise ValueError('decoder beam_size and best_of must be integers in 1..16')
+        self.beam_size, self.best_of = beam_size, best_of
+
     def evidence(self):
-        return {**super().evidence(), 'model_binding': 'operator_configured_not_server_attested'}
+        return {**super().evidence(), 'model_binding': 'operator_configured_not_server_attested',
+                'decoder': {'beam_size': self.beam_size, 'best_of': self.best_of,
+                            'temperature': 0, 'temperature_inc': 0}}
 
     async def transcribe(self, audio, context):
         self.evidence()
@@ -22,7 +30,8 @@ class WhisperServer(WhisperCpp):
         form.add_field('file', audio.data, filename='input.wav', content_type='audio/wav')
         parameters = {'language': self.settings.get('stt_languages', {}).get(context.locale, context.locale),
                       'response_format': 'verbose_json', 'translate': 'false', 'detect_language': 'false',
-                      'temperature': '0', 'temperature_inc': '0', 'beam_size': '5', 'best_of': '5',
+                      'temperature': '0', 'temperature_inc': '0',
+                      'beam_size': str(self.beam_size), 'best_of': str(self.best_of),
                       'token_timestamps': 'false', 'no_language_probabilities': 'true', 'prompt': prompt(context.vocabulary),
                       'carry_initial_prompt': 'false'}
         for name, value in parameters.items():
