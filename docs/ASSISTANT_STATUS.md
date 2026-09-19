@@ -10,9 +10,11 @@ The previously reported invalid/oversized WebSocket test now passes: peer
 cancellation during awaited cleanup could skip TCP close and leave the channel
 reserved. Cleanup now guarantees both. The regression checks upstream closure,
 registry release and a fresh handshake, without increasing its timeout.
-All 29 WebSocket/LAN bridge tests passed locally. The LAN fixture also now closes
+All 28 WebSocket/LAN bridge tests passed locally. The LAN fixture also now closes
 owned connections before awaiting listener shutdown, avoiding a teardown stall
 on current asyncio. No LAN listener was exposed; tests use synthetic loopback peers.
+The same shutdown ordering is now applied to the opt-in LAN adapter itself;
+a new lifecycle regression raises the combined bridge count to 29 passing tests.
 See [bridge details](WEBSOCKET.md#cancelled-cleanup-regression-2026-09-19).
 
 ## Benchmark existing native Whisper, 2026-09-19
