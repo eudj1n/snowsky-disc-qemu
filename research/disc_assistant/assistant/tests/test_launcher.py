@@ -1,4 +1,4 @@
-from contextlib import redirect_stdout
+from contextlib import redirect_stdout, redirect_stderr
 import io
 import os
 from pathlib import Path
@@ -124,6 +124,45 @@ class LauncherTests(unittest.TestCase):
         with patch.object(launcher.subprocess, 'run', side_effect=[OSError('docker unavailable'), Mock(returncode=0)]) as run:
             self.assertEqual(launcher.main(['--config', str(self.config), 'start']), 0)
             self.assertEqual(run.call_args.args[0][-1], 'start')
+
+    def test_io_compat_selects_wrapper_only_when_explicit_and_preserves_project(self):
+        self.initialize()
+        config = load(self.config)
+        stock = launcher.compose_command('up', '-d', config=config)
+        self.assertNotIn(str(launcher.PACKAGE / 'assistant/compose.io-compat.yaml'), stock)
+        self.config.write_text(self.config.read_text().replace('io_accounting_compat = false',
+                                                              'io_accounting_compat = true'))
+        with patch.object(launcher.subprocess, 'run', return_value=Mock(returncode=0)) as run, \
+                patch.object(launcher, 'wait_ready'):
+            self.assertEqual(launcher.main(['--config', str(self.config), 'web', '--bootstrap']), 0)
+            command = run.call_args_list[0].args[0]
+            self.assertIn(str(launcher.PACKAGE / 'assistant/compose.io-compat.yaml'), command)
+            self.assertEqual(command[command.index('-p') + 1], 'disc-assistant')
+            self.assertEqual(run.call_count, 2)
+        for value in ('"yes"', '1'):
+            self.config.write_text(self.config.read_text().replace('io_accounting_compat = true',
+                                                                  f'io_accounting_compat = {value}'))
+            with self.assertRaisesRegex(ValueError, 'must be a boolean'):
+                load(self.config)
+            self.config.write_text(self.config.read_text().replace(f'io_accounting_compat = {value}',
+                                                                  'io_accounting_compat = true'))
+        self.config.write_text(self.config.read_text().replace('protocol = "http"', 'protocol = "https"'))
+        with self.assertRaisesRegex(ValueError, 'managed local'):
+            load(self.config)
+
+    def test_search_timeout_explains_compatibility_without_preventing_controls(self):
+        self.initialize()
+        with patch.object(launcher.urllib.request, 'urlopen', side_effect=OSError('unavailable')):
+            with self.assertRaises(launcher.SearchReadinessError) as failure:
+                launcher.wait_ready(load(self.config), timeout=0)
+        self.assertIn('/proc/self/io', str(failure.exception))
+        output = io.StringIO()
+        with patch.object(launcher.subprocess, 'run', return_value=Mock(returncode=0)) as run, \
+                patch.object(launcher, 'wait_ready', side_effect=failure.exception), redirect_stderr(output):
+            self.assertEqual(launcher.main(['--config', str(self.config), 'web', '--bootstrap']), 0)
+        self.assertIn('typesense.io_accounting_compat', output.getvalue())
+        self.assertEqual(run.call_count, 2)
+        self.assertNotIn('TYPESENSE_API_KEY', run.call_args.kwargs['env'])
 
     def test_console_interrupt_exits_without_launcher_traceback(self):
         self.initialize()

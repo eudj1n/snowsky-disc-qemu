@@ -111,7 +111,8 @@ def install(config_path, *, model=None):
     env = {**os.environ, 'DISC_WHISPER_MODEL': str(whisper_path), 'DISC_PIPER_DIR': str(root / 'piper')}
     subprocess.run(compose('build'), check=True, env=env)
     from research.disc_assistant.launcher import compose_command, environment as search_environment
-    subprocess.run(compose_command('pull', 'typesense'), check=True, env=search_environment(config))
+    subprocess.run(compose_command('build' if config.typesense_io_compat else 'pull', 'typesense', config=config),
+                   check=True, env=search_environment(config))
     original = config_path.read_text()
     document = tomlkit.parse(original)
     for section in ('speech', 'tts', 'services'):

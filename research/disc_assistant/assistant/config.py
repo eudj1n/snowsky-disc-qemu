@@ -39,6 +39,7 @@ class Config:
     structured: dict = field(default_factory=dict)
     tts: dict = field(default_factory=dict)
     services: dict = field(default_factory=dict)
+    typesense_io_compat: bool = False
 
 
 def default_data_dir():
@@ -67,7 +68,7 @@ def load(path):
     allowed = {'services': {'speech'}, 'tts': {'backend', 'server_url', 'models', 'timeout'}, 'interpretation': {'shadow', 'shadow_timeout_ms'}, 'device': {'key', 'host', 'tcp_port', 'http_port'},
                'storage': {'data_dir'},
                'structured': {'enabled', 'endpoint', 'model', 'model_path', 'timeout'},
-               'typesense': {'host', 'port', 'protocol', 'api_key_env'},
+               'typesense': {'host', 'port', 'protocol', 'api_key_env', 'io_accounting_compat'},
                'sync': {'page_size', 'timeout', 'max_tracks', 'max_requests'},
                'aliases': {'artists', 'titles'},
                'language': {'locale', 'enabled'},
@@ -181,6 +182,11 @@ def load(path):
     protocol = search.get('protocol', 'http')
     if protocol not in ('http', 'https'):
         raise ValueError('typesense.protocol must be http or https')
+    io_compat = search.get('io_accounting_compat', False)
+    if type(io_compat) is not bool:
+        raise ValueError('typesense.io_accounting_compat must be a boolean')
+    if io_compat and (search.get('host', '127.0.0.1') not in ('localhost', '127.0.0.1') or protocol != 'http'):
+        raise ValueError('typesense.io_accounting_compat applies only to managed local HTTP search')
     return Config(
         text(device.get('key'), 'device.key'), text(device.get('host'), 'device.host'),
         number(device.get('tcp_port', 12100), 'tcp_port', 1, 65535),
@@ -194,4 +200,4 @@ def load(path):
         number(sync.get('max_requests', 10000), 'max_requests', 2, 100000), locale, continuous,
         journal_enabled, number(journal.get('retention_days', 90), 'journal.retention_days', 1, 3650),
         number(journal.get('max_requests', 10000), 'journal.max_requests', 1, 1000000), terminal,
-        response['mode'], dialogue, speech, shadow, shadow_timeout, structured, tts, services)
+        response['mode'], dialogue, speech, shadow, shadow_timeout, structured, tts, services, io_compat)

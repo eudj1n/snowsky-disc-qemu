@@ -37,6 +37,9 @@ activation or exported secret is needed. From the repository root:
 ./research/disc_assistant/run.sh setup --all
 ```
 
+For Typesense exit 139 on vendor kernels without `/proc/self/io`, use the explicit
+[I/O accounting compatibility option](../../docs/ASSISTANT_TYPESENSE.md).
+
 `setup` creates `assistant/.venv` if missing, installs the pinned requirements,
 creates `~/disc-assistant.toml` if missing and generates a private search key in
 `assistant/.env` if missing/empty. Existing config and keys are preserved. The key

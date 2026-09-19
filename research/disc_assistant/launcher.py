@@ -86,9 +86,16 @@ def environment(config):
     return result
 
 
-def compose_command(*args):
-    return ['docker', 'compose', '--env-file', '/dev/null', '-p', 'disc-assistant',
-            '-f', str(PACKAGE / 'assistant/compose.yaml'), *args]
+def compose_command(*args, config=None):
+    command = ['docker', 'compose', '--env-file', '/dev/null', '-p', 'disc-assistant',
+               '-f', str(PACKAGE / 'assistant/compose.yaml')]
+    if config is not None and config.typesense_io_compat:
+        command += ['-f', str(PACKAGE / 'assistant/compose.io-compat.yaml')]
+    return [*command, *args]
+
+
+class SearchReadinessError(RuntimeError):
+    """Safe diagnostic text, without credentials or provider response bodies."""
 
 
 def wait_ready(config, timeout=45):
@@ -103,7 +110,10 @@ def wait_ready(config, timeout=45):
         except (OSError, ValueError, urllib.error.URLError):
             pass
         if time.monotonic() >= deadline:
-            raise RuntimeError('Typesense readiness timed out; inspect the disc-assistant container logs')
+            raise SearchReadinessError(
+                'Typesense readiness timed out; inspect the disc-assistant container logs. '
+                'For exit 139 with missing /proc/self/io, see docs/ASSISTANT_TYPESENSE.md '
+                '(typesense.io_accounting_compat).')
         time.sleep(0.5)
 
 
@@ -200,16 +210,19 @@ def main(argv=None):
                 env = environment(config)
                 if args.command == 'start' or (args.command == 'web' and '--bootstrap' in args.arguments):
                     if config.search_host in ('localhost', '127.0.0.1') and config.search_protocol == 'http':
-                        subprocess.run(compose_command('up', '-d'), check=True, env=env, cwd=ROOT, timeout=60)
+                        subprocess.run(compose_command('up', '-d', config=config), check=True, env=env, cwd=ROOT,
+                                       timeout=600 if config.typesense_io_compat else 60)
                     wait_ready(config)
             except (OSError, ValueError, RuntimeError, subprocess.SubprocessError) as exc:
                 env.pop(config.api_key_env, None)
                 print(f'Search startup unavailable ({type(exc).__name__}); entering the interface with playback controls.',
                       file=sys.stderr)
+                if isinstance(exc, SearchReadinessError):
+                    print(str(exc), file=sys.stderr)
         if args.command == 'up':
             if config.search_host not in ('localhost', '127.0.0.1') or config.search_protocol != 'http':
                 raise ValueError('up/down manage local HTTP Typesense only; remote search is externally managed')
-            subprocess.run(compose_command('up', '-d'), check=True, env=env, cwd=ROOT)
+            subprocess.run(compose_command('up', '-d', config=config), check=True, env=env, cwd=ROOT)
             wait_ready(config)
             return 0
         return subprocess.run([sys.executable, '-m', 'research.disc_assistant.assistant',

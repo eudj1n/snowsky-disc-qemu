@@ -106,6 +106,23 @@ class SpeechSetupTests(unittest.TestCase):
         self.assertFalse(any('up' in call.args[0] for call in run.call_args_list))
         self.assertFalse(any(call.args[0]['file'] == 'ggml-small.bin' for call in download.call_args_list))
 
+    def test_install_builds_opt_in_search_wrapper_without_starting_services(self):
+        try:
+            import tomlkit
+        except ImportError:
+            self.skipTest('optional setup --all config editor')
+        with self.path.open('a') as stream:
+            stream.write('[typesense]\nio_accounting_compat=true\n')
+        (self.root / 'data/speech/piper').mkdir(parents=True)
+        with patch.object(speech_setup, 'download'), patch.object(speech_setup.subprocess, 'run') as run, \
+                patch.object(launcher, 'environment', return_value={}), redirect_stdout(io.StringIO()):
+            speech_setup.install(self.path)
+        search = run.call_args_list[-1].args[0]
+        self.assertEqual(search[-2:], ['build', 'typesense'])
+        self.assertIn(str(launcher.PACKAGE / 'assistant/compose.io-compat.yaml'), search)
+        self.assertTrue(load(self.path).typesense_io_compat)
+        self.assertFalse(any('up' in call.args[0] for call in run.call_args_list))
+
     def test_voice_upgrade_preserves_installed_whisper_and_recreates_only_changed_mapping(self):
         try:
             import tomlkit

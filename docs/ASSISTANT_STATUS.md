@@ -4,6 +4,25 @@ This is the short continuation index. [The roadmap](ASSISTANT.md) preserves
 historical decisions; [MVP acceptance](ASSISTANT_MVP.md) defines completion.
 Conversation and local experiments do not replace device evidence.
 
+## Typesense on vendor kernels, 2026-09-19
+
+The owner confirmed missing `/proc/self/io` on the current Orange Pi / Armbian,
+matching the trigger in their upstream Typesense issue #2998. The explicit
+`[typesense].io_accounting_compat = true` option now builds a Typesense 30.2
+wrapper with a narrow fopen shim. It supplies zero process I/O counters only for
+ENOENT on that exact read-only path; real data and permission errors pass through.
+The default image, project/data volume and loopback bindings are preserved.
+Search startup timeouts now include an actionable diagnostic. See
+[setup, limits and reproducible checks](ASSISTANT_TYPESENSE.md).
+
+Native arm64 Docker validation reproduced stock exit 139 with fault injection;
+the shim allowed the same binary to reach normal startup. Disposable HTTP checks
+passed health, indexing and search with ordinary and missing proc I/O. C probes
+cover pre-main use, fopen/fopen64, missing/present/denied reads and scope boundaries.
+The full 341-test prototype suite passed, followed by all 11 installer tests
+including the additional wrapper-build regression. Orange Pi runtime acceptance
+is still pending; no physical-player command was sent.
+
 ## Russian voice and previous-track alias, 2026-09-19
 
 The managed RU voice is now **Piper Irina medium**, at the owner's request; EN Alba
