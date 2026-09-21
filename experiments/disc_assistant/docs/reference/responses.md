@@ -1,6 +1,6 @@
 # Assistant user responses
 
-Implemented in the research prototype. The Assistant adds localized user feedback
+Implemented in the experimental Assistant. The Assistant adds localized user feedback
 to existing operation results; Controller remains responsible for device state and
 verified operations. File STT and explicit sample TTS now run through
 [speech adapters](../guides/voice.md). Optional [Piper browser delivery](../guides/tts.md)

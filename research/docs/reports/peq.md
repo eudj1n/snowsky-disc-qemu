@@ -1,5 +1,8 @@
 # DISC PEQ investigation (V2.57)
 
+Current authority: [research status and pause conditions](../status.md#peq-remains-paused).
+The dated narrative below preserves the resumed work and its subsequent pause.
+
 [Issue #9](https://github.com/eudj1n/snowsky-disc-qemu/issues/9) resumed by the
 owner on 2026-09-17. The existing [settings contract](../../../docs/protocol/remote-settings.md#peq-bands)
 remains valid. This work separates device controls from FiiO Control's local
@@ -19,7 +22,7 @@ and master −4.6, but its write/readback and final cleanup were not captured.
 Current physical Custom 10 state remains unknown. On resumption, read it after
 reconnect **before Reset**, without replaying Save; then reset/readback/Off.
 Share/login is explicitly deferred. No action or scheduled follow-up now.
-See the [pause handoff](../status.md#paused-by-owner--peq-checkpoint-2026-09-17-after-capture-225312).
+See the [pause handoff](2026-09-19-protocol-checkpoints.md#paused-by-owner--peq-checkpoint-2026-09-17-after-capture-225312).
 
 ## Static device contract
 

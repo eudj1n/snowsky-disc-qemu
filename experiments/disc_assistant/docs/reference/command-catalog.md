@@ -1,6 +1,6 @@
 # Command catalog and explanation preview
 
-Implemented **2026-09-18** in the research prototype. `explain` compares the live
+Implemented **2026-09-18** in the experimental Assistant. `explain` compares the live
 literal grammar with a separate diagnostic candidate. It never dispatches a
 command, searches the music library or changes language from the supplied text.
 The normal `ask`, `rank` and voice execution paths still use the existing

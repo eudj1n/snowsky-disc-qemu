@@ -9,5 +9,9 @@ Stock firmware execution, hardware stubs and operator controls.
 - [Media-library auto-update investigation](media-library.md)
 - [Local network emulation](network.md)
 - [Settings reference](settings.md)
-- [Status](status.md)
+- [Emulator status](status.md)
 - [Touch injection](touch.md)
+
+## Reports
+
+- [Development checkpoints through 2026-09-19](reports/2026-09-19-development-checkpoints.md)

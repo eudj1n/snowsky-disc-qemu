@@ -2,7 +2,8 @@
 
 Scripts used to decompile the MIPS UI binaries (`mq_ui`, `mq_player`) from the rootfs.
 
-See [../docs/RE.md](../docs/methods.md) for the deep-analysis playbook (method + findings per
+See the [analysis workflow](../docs/methods.md) and
+[preserved V2.40 findings](../docs/reports/2026-09-21-v240-analysis-notes.md) for methods and evidence per
 direction: keys, audio, network, touch) and how to re-analyse a new firmware version.
 
 ## Reusing the built decompiler + project
@@ -117,7 +118,7 @@ Decompile arbitrary functions by address (pass addresses as script args):
   runs the UI refresh loop.
 - `FUN_0055da20` opens `/dev/input/event%d` (`O_RDWR|O_NONBLOCK`).
 - `FUN_0055db8c` is the touch read-cb — event grammar + coordinate scaling documented in
-  [../docs/TOUCH.md](../../emulator/docs/touch.md).
+  [touch injection](../../emulator/docs/touch.md).
 - Language switch (first-boot wizard) is in `mq_ui` `FUN_004776e4` — the `LANGUAGE` column is a
   0-based index (`0 zh · 1 tw · 2 en · …`); see `AGENTS.md`.
 
@@ -138,11 +139,11 @@ static xrefs don't link them — these were read from the decompiled bodies:
 - `FUN_004d9974` = `get_input_event` — opens `/dev/input/event%d` and matches names via
   `EVIOCGNAME`; under emulation this is the loop that hangs `mq_player` until `x2000_key` (event0)
   **and** the touch device (event1) both resolve. The FiiO Link / library dispatch and full
-  conclusion are in [../docs/PROTOCOL.md](../../docs/protocol/protocol.md).
+  conclusion are in [protocol reference](../../docs/protocol/protocol.md).
 
 ### Physical-key handler (event0) — `echo_sys_control.c`
 
-Traced with `RefsTo`/`DecAt` (full write-up + code table in [../docs/RE.md](../docs/methods.md)):
+Traced with `RefsTo`/`DecAt` (full write-up + code table in [V2.40 analysis notes](../docs/reports/2026-09-21-v240-analysis-notes.md)):
 
 - `FUN_004d9974` `echo_start_key_server` — opens `/dev/input/event%d`, spawns the reader.
 - `FUN_004d9840` `echo_loop_key` — reads 16-byte `input_event`; on `type==EV_KEY` calls
@@ -152,10 +153,10 @@ Traced with `RefsTo`/`DecAt` (full write-up + code table in [../docs/RE.md](../d
   play/pause, `0xfb/0xfc`=single volume +/−, `0x10a/0x10b`=double volume +/−,
   `0x107/0x106`=held volume +/− (GPIO-gated), `0x103/0x109`=screen sleep/wake,
   `0x108`=standby/shutdown. `0x10c/0x10d` only log. Volume gestures honor app assignments;
-  see [../docs/KEYS.md](../../emulator/docs/keys.md) for corrected semantics and runtime evidence.
+  see [physical controls](../../emulator/docs/keys.md) for corrected semantics and runtime evidence.
   Gated by `DAT_0082e9c1`
   (key-enable, 0 under emulation) — the guard `lbu v0,65(s2)` at `0x004de70c` is patched to
-  `li v0,1` by `emulator/scripts/patch_keys.sh` so keys dispatch (see [../docs/RE.md](../docs/methods.md)).
+  `li v0,1` by `emulator/scripts/patch_keys.sh` so keys dispatch (see [V2.40 analysis notes](../docs/reports/2026-09-21-v240-analysis-notes.md)).
 
 ## Tooling on this machine
 

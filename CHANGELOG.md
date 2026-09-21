@@ -61,6 +61,9 @@ Active firmware: **V2.57**. Local protocol research is finalized in
 
 ### Changed
 
+- Separate current status and setup guidance from historical reports, preserving
+  acceptance evidence and paused research conditions. [Documentation](docs/README.md).
+
 - Organize manuals beside their components, with a shared [documentation index](docs/README.md)
   and automatic checks for local links.
 

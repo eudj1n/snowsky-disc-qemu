@@ -15,6 +15,7 @@ shared protocol, architecture and development documentation.
 | Firmware research | [Current checkpoint and pause conditions](../research/docs/status.md) | [Methods, diagnostics and investigation reports](../research/docs/README.md) |
 | DISC protocol | [Capabilities](protocol/disc-capabilities.md) | [Wire contracts and library behavior](protocol/README.md) |
 | Architecture | [Component boundaries](architecture/repository.md) | [Repository architecture](architecture/README.md) |
+| Decisions | [Ownership policy](decisions/0001-component-and-documentation-ownership.md) | [Accepted architecture decisions](decisions/README.md) |
 | Development | [CI and test selection](development/ci.md) | [Quality checks and releases](development/README.md) |
 
 [Curated screenshots](images/README.md) remain shared assets under `docs/images/`.

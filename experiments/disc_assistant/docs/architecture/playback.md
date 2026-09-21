@@ -290,7 +290,8 @@ Physical sleep, Wi-Fi recovery, button transitions and competition with FiiO
 Control require separate acceptance; emulator success does not establish them.
 The [shared Controller API](../../../../controller/docs/api.md) now owns this session/state core
 and verified device operations. Assistant retains its policy and request journal.
-Physical playback/session validation and M3 microphone input follow separately.
+Quantified physical playback/session validation remains separate. Browser microphone
+input is implemented through the [web adapter](../guides/web.md).
 Arbitrary recommendation-plan execution remains a later increment.
 
 

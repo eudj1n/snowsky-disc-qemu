@@ -23,7 +23,7 @@ without a physical device.
 
 *Actual V2.57 emulator captures ([capture details](docs/images/README.md)). The browser viewer adds the CSS device and interactive controls shown below.*
 
-Three core components share one repository, alongside the research experiments below:
+Three core components share one repository, alongside the independent experiments below:
 
 - **Emulator** — runs the original MIPS firmware in Docker, provides the device interfaces
   it needs, and makes its UI, storage, audio and local protocol available for testing.

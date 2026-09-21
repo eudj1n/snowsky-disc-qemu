@@ -3,7 +3,7 @@
 For everyday use, see the [quick guide with RU/EN examples](quick-guide.md).
 
 
-Implementation status: **2026-09-18**. The prototype lives in
+Current command reference, updated **2026-09-21**. The application lives in
 [`experiments/disc_assistant/`](../../README.md).
 Run [`run.sh`](../../run.sh) from the repository root; virtualenv
 activation is unnecessary. `ask` starts the best match without a choice dialogue.
@@ -413,8 +413,10 @@ back. Controls never change mode. Empty sources cannot launch; one-track context
 repeat. No host process is needed for native continuation after CLI exit.
 See [the queue contract](../architecture/playback.md). Search alternatives are not a playlist.
 
-Volume, standalone genre/playlist requests, arbitrary recommendation queues,
-history/likes/lyrics requests, microphone input and choice dialogues remain deferred.
+Volume, current-track likes/now-playing and browser microphone input are implemented;
+see the [quick guide](quick-guide.md) and [web guide](web.md). Standalone genre/playlist
+requests, recommendation queues, listening-history queries, lyrics and choice
+dialogues remain deferred.
 A Controller method does not by itself establish an Assistant text command.
 
 ## Album selection

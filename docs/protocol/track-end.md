@@ -30,7 +30,7 @@ Each selected/repeated track starts with full `a202` metadata reporting
 Ticks arrive as `a103` hexadecimal milliseconds: 1000, 2000, …, 6000 in this
 fixture. At EOF the player often briefly sends `{"state":1}`; a later full-run
 trace omitted it between two automatically selected tracks. The final-stop
-sequence below remained intact. See [the discovery-checkpoint failure analysis](../../research/docs/status.md#lan-discovery-investigation-2026-09-16).
+sequence below remained intact. See [the discovery-checkpoint failure analysis](../../research/docs/reports/2026-09-19-protocol-checkpoints.md#lan-discovery-investigation-2026-09-16).
 
 - For automatic continuation, a new full snapshot follows, including for
   repeat-one with the **same** filename. Progress starts again at 1000 ms.
@@ -121,4 +121,4 @@ Scope is ordinary local WAV/FLAC in a three-track custom queue, gapless/folder
 jump off. Empty/single-entry queues, folder-jump enabled, gapless enabled,
 CUE/SACD/DSD, stopped-state resume/reconnect and actual hardware timing/audio
 remain separate work. Validation history is in
-[the research checkpoint](../../research/docs/status.md#natural-eof-investigation-2026-09-16).
+[the research checkpoint](../../research/docs/reports/2026-09-19-protocol-checkpoints.md#natural-eof-investigation-2026-09-16).
