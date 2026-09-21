@@ -39,8 +39,8 @@ See [power/reconnect validation and limits](idle-power.md).
 After installing these changes, restart the guest and viewer once:
 
 ```sh
-./run.sh boot
-./run.sh view
+./emulator/run.sh boot
+./emulator/run.sh view
 ```
 
 Then reload the page. `boot` installs the shim through setup; a browser reload alone

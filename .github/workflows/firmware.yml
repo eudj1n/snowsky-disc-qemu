@@ -27,7 +27,7 @@ jobs:
           cache-binary: false
       - name: Build pinned toolchain and run firmware-free checks
         run: |
-          docker build --tag snowsky-disc-qemu-ci docker
+          docker build --tag snowsky-disc-qemu-ci emulator/docker
           docker run --rm --network none --volume "$PWD:/repo:ro" snowsky-disc-qemu-ci bash /repo/ci/test.sh
       - name: Select reviewed active firmware
         id: firmware

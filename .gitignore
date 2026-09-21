@@ -38,7 +38,7 @@ __pycache__/
 /controller/build/
 /controller/dist/
 
-# Local compose env (machine-specific OTA path)
+# Local service env files (emulator/.env and independent experiment settings)
 .env
 
 # SD card drop folder: keep the folder + docs, ignore the media the user drops in
@@ -49,3 +49,7 @@ __pycache__/
 # JetBrains IDE
 .idea/
 *.iml
+
+# Interrupted atomic emulator config writes
+/emulator/.env.*
+!/emulator/.env.example

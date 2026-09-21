@@ -16,7 +16,7 @@ their code; shared protocol and development contracts have repository-wide owner
 
 | Component | Owns | Depends on |
 | --- | --- | --- |
-| `emulator/scripts/`, `emulator/shims/`, `emulator/runtime/` | Guest setup, boot/stop, SD/network stubs, physical input, framebuffer and PCM | Shared `firmware.profile`; native tools from `docker/` |
+| `emulator/scripts/`, `emulator/shims/`, `emulator/runtime/` | Guest setup, boot/stop, SD/network stubs, physical input, framebuffer and PCM | Shared `firmware.profile`; native tools from `emulator/docker/` |
 | `viewer/server.py`, `viewer/static/` | HTTP/SSE presentation, browser input/audio, shared device CSS | Emulator runtime adapter; no controller transport |
 | `controller/` | Physical-device TCP/HTTP/WS clients, shared session/state/control API, discovery, optional bridges and network diagnostics | Python standard library; `aiohttp` for WS client/bridge; no emulator, firmware, research or experiments imports |
 | `firmware/profile.py`, `firmware/v*.json`, `firmware/tools/` | Reviewed profiles/fingerprints, acquisition, extraction, OTA and inventory tools | Native extraction tools where needed |
@@ -28,9 +28,11 @@ their code; shared protocol and development contracts have repository-wide owner
 | `ci/` | Test discovery, disposable Compose orchestration and cleanup | Test implementations under `tests/` |
 
 `firmware/` remains at the root because runtime and research share its reviewed
-profiles. `docker/` describes the shared development/test environment. Neither is
-just build output. The current entry points `run.sh` and `compose.yaml` remain at
-the root. Launcher/Docker ownership is the separate [follow-up #29](https://github.com/eudj1n/snowsky-disc-qemu/issues/29).
+profiles. `emulator/docker/` owns the pinned QEMU/build environment, reused by CI
+and browser preparation. The launcher, base Compose stack and local configuration
+live in `emulator/`; CI owns disposable overlays and acceptance orchestration.
+See [running the emulator](../../emulator/docs/running.md) and
+[ADR 0002](../decisions/0002-emulator-infrastructure.md).
 
 The [shared Controller API](../../controller/docs/api.md) owns persistent device state and
 verified playback operations. Assistant owns its language/search/history policy;
@@ -56,7 +58,7 @@ sourced emulator scripts also support an explicit `REPO` override.
 
 | Previous location | Current entry point / resource |
 | --- | --- |
-| `scripts/` setup/boot/tap/capture/stop | `emulator/scripts/`; existing `./run.sh` commands |
+| `scripts/` setup/boot/tap/capture/stop | `emulator/scripts/`; existing `./emulator/run.sh` commands |
 | `scripts/40_stream.sh`, `tools/stream.py` | `viewer/scripts/40_stream.sh`, `python3 -m viewer.server` |
 | Inline stream page and `tools/*.js` | `viewer/static/index.html` and browser JavaScript; same HTTP URLs |
 | `assets/` photo skin | Removed after the CSS device replaced it; historical captures remain in `docs/images/` |
@@ -65,7 +67,7 @@ sourced emulator scripts also support an explicit `REPO` override.
 | Stream framebuffer/touch internals | `emulator.runtime.framebuffer`, `emulator.runtime.touch` |
 | `tools/fiio_*.py` | `controller.fiio_*`; e.g. `python3 -m controller.fiio_http --help` |
 | `tools/ws_bridge.py`, `tools/ws_console.html`, `tools/lan_bridge.py` | `controller/bridge/`; bridge isolation and opt-in LAN rules are unchanged |
-| Network/WS checks | `controller/diagnostics/`; `./run.sh wscheck` remains available |
+| Network/WS checks | `controller/diagnostics/`; `./emulator/run.sh wscheck` remains available |
 | Firmware acquisition/inventory utilities | `firmware/tools/`; `python3 -m firmware.tools.check_ota` |
 | `tools/firmware_profile.py` | Shared `firmware/profile.py` |
 | `ghidra/`, memory/key/network probes, ELF inspection, `uisniff.c`, GDB/tap diagnostic scripts | `research/ghidra/`, `research/diagnostics/` |

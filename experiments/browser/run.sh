@@ -7,7 +7,7 @@ case "${1:-help}" in
         OTA="${2:?usage: bash experiments/browser/run.sh build /path/to/main_os/ota_v257}"
         mkdir -p work/browser-disc
         python3 -m experiments.browser.fetch
-        docker build -t snowsky-disc-qemu-ci docker
+        docker build -t snowsky-disc-qemu-ci emulator/docker
         docker build -t snowsky-disc-browser-build experiments/browser
         bash experiments/browser/prepare-firmware.sh "$OTA"
         docker run --rm --network none -v "$PWD:/repo" snowsky-disc-browser-build \

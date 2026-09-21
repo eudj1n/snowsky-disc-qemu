@@ -1,7 +1,7 @@
 # Standalone experiment: does not read the regular .env or use snowsky-disc-work.
 # From the repository root, supply OTA_DIR and FW_VERSION explicitly; see DISKOS_PREVIEW.md.
 services:
-  emu:
+  emulator:
     image: snowsky-disc-qemu-ci
     container_name: diskos-preview
     privileged: true

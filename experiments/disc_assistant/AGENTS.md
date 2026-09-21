@@ -73,7 +73,7 @@ unknowns and observation/readback distinctions rather than claiming confirmation
 
 ## Validation and handoff
 
-Use `./experiments/disc_assistant/run.sh test`, not root emulator `run.sh`.
+Use `./experiments/disc_assistant/run.sh test`, not `emulator/run.sh`.
 Synthetic loopback tests may need sandbox socket permission; they require no
 physical device. Browser audio/reply checks live under `assistant/web/test_*.mjs`.
 `run.sh check` uses disposable Typesense/synthetic peers; `ci/assistant.sh` owns

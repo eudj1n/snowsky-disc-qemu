@@ -25,7 +25,7 @@ head -c $((SCR_W*SCR_VY*4)) /dev/zero > "$ROOTFS/dev/fb0"
 : > "$ROOTFS/dev/input/event1"; : > "$ROOTFS/dev/input/event0"
 
 # Guest lifetime is decoupled from the capture wait so the guests stay alive for the
-# interactive viewer (./run.sh view), not just long enough for one screenshot. Override
+# interactive viewer (./emulator/run.sh view), not just long enough for one screenshot. Override
 # with GUEST_TTL (seconds); the timeout only bounds leaked qemu processes.
 GUEST_TTL="${GUEST_TTL:-1800}"
 log "Starting mq_ui (creates 'ui' queue)"

@@ -17,11 +17,11 @@ SD needs a re-mount after the guest's boot-time umount (`sd_mount()` in `lib.sh`
 
 ## How to run
 
-Host: `./run.sh up <…/main_os/ota_v257>` (once) → `./run.sh boot` → `./run.sh tap <x> <y>`.
-Screenshots are copied to `./shots/`. For an **interactive** session use `./run.sh view` →
+Host: `./emulator/run.sh up <…/main_os/ota_v257>` (once) → `./emulator/run.sh boot` → `./emulator/run.sh tap <x> <y>`.
+Screenshots are copied to `./shots/`. For an **interactive** session use `./emulator/run.sh view` →
 open `http://localhost:8080` (live screen, click=tap, drag=swipe; responsive CSS device
 with physical buttons and audio/USB/microSD controls) — see `viewer/docs/usage.md`; the daemon is `viewer/server.py` /
-`viewer/scripts/40_stream.sh`. `boot` now keeps the guests alive ~30 min (`GUEST_TTL`) for this. `./run.sh shell` gives a container shell where the
+`viewer/scripts/40_stream.sh`. `boot` now keeps the guests alive ~30 min (`GUEST_TTL`) for this. `./emulator/run.sh shell` gives a container shell where the
 `/repo/emulator/scripts/*.sh` pipeline lives. Everything qemu-side runs **inside** the container
 (named `snowsky-disc-qemu`, `--privileged`); `/work` is a Docker volume holding the extracted
 rootfs and runtime state.
@@ -119,7 +119,7 @@ This is known regression acceptance, not a human-speech accuracy estimate.
 Physical acceptance (#23) and speech quality/native-Docker/Orange Pi performance
 (#24) are separate follow-ups, not reasons to reopen this accepted boundary.
 
-- Use `./experiments/disc_assistant/run.sh`, not the root emulator launcher.
+- Use `./experiments/disc_assistant/run.sh`, not the emulator launcher.
   `setup --all` installs the optional speech runtime; `web --bootstrap` starts
   search/speech and the browser adapter on loopback 8090; `start` opens the text
   console. Config defaults to `~/disc-assistant.toml`, targeting emulator TCP
@@ -158,7 +158,7 @@ Physical acceptance (#23) and speech quality/native-Docker/Orange Pi performance
   V2.40 runtime/diagnostic profiles remain temporarily, but hosted CI runs only V2.57;
   their removal is a separate implementation task, not part of this policy change.
 - Read `firmware/docs/firmware-profiles.md` before adding firmware. The single active default
-  is `firmware/active-version`; `.env` may pin a reviewed override. Keep runtime
+  is `firmware/active-version`; `emulator/.env` may pin a reviewed override. Keep runtime
   capabilities, diagnostic addresses and acceptance selection in the runtime profile.
   Controller compatibility is independent and selected from device `soc_version`,
   never local `FW_VERSION`. Unknown versions do not inherit reviewed capabilities.
@@ -177,7 +177,7 @@ Physical acceptance (#23) and speech quality/native-Docker/Orange Pi performance
   Existing `v2.57` is an immutable pre-release snapshot; keep it and use a new name
   (next available: `v2.57-r1`) for the eventual stable V2.57 release.
 - Full firmware-free suite: `docker run --rm --network none -v "$PWD:/repo:ro"
-  snowsky-disc-qemu-ci bash /repo/ci/test.sh` after `docker build -t snowsky-disc-qemu-ci docker`.
+  snowsky-disc-qemu-ci bash /repo/ci/test.sh` after `docker build -t snowsky-disc-qemu-ci emulator/docker`.
   `ci/integration.sh` uses a fresh disposable Compose stack, never the interactive volume.
   V2.57 CI alone presets `LIGTH_ON_TIME=7` (never) while stopped and verifies UI
   index/timeout readback, avoiding screen-timeout interference in long network tests.
@@ -233,14 +233,17 @@ read `docs/protocol/remote-modes-themes.md` before new work.
 Component documentation belongs beside code; root `docs/README.md` is the index.
 Follow `docs/decisions/0001-component-and-documentation-ownership.md`: current
 status is concise, dated evidence is preserved, and issues own actionable backlog.
-Moving root `run.sh` and clarifying `docker/` ownership is tracked separately in
-issue #29; this refactoring does not silently change their entry points.
+Issue #29 places launch/build infrastructure in `emulator/` and names the Compose
+service `emulator`. Use `emulator/run.sh` and `emulator/.env`; there is no root
+launcher or automatic config migration. Keep guest-internal `/emu` markers and
+existing Docker project/image/container/volume identities unchanged. See
+`emulator/docs/running.md` and ADR 0002.
 
 ## Emulator and protocol implementation notes
 
 Local audio works: `tinyshim` redirects `/proc/asound/cards` discovery to `/etc/asound.cards`
 (x2000), so stock firmware selects I2S3_OUT (6), hw:0,3. No audio binary patches.
-Capture: `/audio.pcm` + `/audio.fmt`; `./run.sh audio` exports a WAV, and the viewer offers
+Capture: `/audio.pcm` + `/audio.fmt`; `./emulator/run.sh audio` exports a WAV, and the viewer offers
 Enable sound / Replay capture. See `emulator/docs/audio.md` for runtime evidence and corrected route
 interpretation (`0x10000000` is INPUT). USB/BT and DSD remain unvalidated.
 
@@ -279,18 +282,18 @@ the stock netlink detector subscribes. No Wi-Fi DB overrides or network binary p
 Guest `ip` read queries use stock BusyBox (the standalone ip address dump fails in qemu).
 `guest_run()` drops dangerous capabilities; wrappers block automatic OTA/NTP/hwclock
 and network reconfiguration. All ports publish only on localhost. Recreate the container
-with `docker compose up -d --build`, then boot/view. See `emulator/docs/network.md` for repeatable
+with `./emulator/run.sh compose up -d --build`, then boot/view. See `emulator/docs/network.md` for repeatable
 probes, `controller/fiio_link.py` for host control. V2.40's active HTTP callback `004b9d38`
 has no WebSocket route in table `006c7a50`; unknown URLs return empty 200 via `0048f8f8`.
 The bundled mg_dash code is not the active router; the earlier password-gate explanation
 was wrong. Reproduce with `research/diagnostics/inspect_http_routes.py` and `controller/diagnostics/probe_websocket.py`.
 An explicit native WS→TCP bridge now serves host `12103/api/websocket`, forwarding
-FiiO Link to `emu:12100`; other HTTP paths proxy to unchanged guest `12103`. Host
+FiiO Link to `emulator:12100`; other HTTP paths proxy to unchanged guest `12103`. Host
 `12113` bypasses it for stock HTTP diagnosis. The opt-in `wsbridge` Compose profile starts the bridge unprivileged,
 read-only, without guest volumes; Dockerfile supplies python3-aiohttp. No firmware patch.
-Enable with `docker compose --profile wsbridge up -d wsbridge`; ordinary up/start/boot
+Enable with `./emulator/run.sh compose --profile wsbridge up -d wsbridge`; ordinary up/start/boot
 do not launch it. CI enables the profile explicitly.
-`./run.sh wscheck --control` compares TCP/WS and checks volume/playback (leaves paused).
+`./emulator/run.sh wscheck --control` compares TCP/WS and checks volume/playback (leaves paused).
 `http://localhost:12103/bridge/` is a read-only protocol inspector; disconnect it before
 another client (stock TCP is single-client). See `controller/docs/websocket.md`. LAN discovery
 and FiiO Control app compatibility are tracked in `controller/docs/discovery.md`.

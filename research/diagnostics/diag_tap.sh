@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Diagnostic: boot under QEMU_STRACE, tap the language-screen Confirm button, report
 # whether mq_ui actually consumed the injected touch events, and capture before/after PNGs.
-# Run via: ./run.sh diag   (see run.sh)
+# Run via: ./emulator/run.sh diag   (see emulator/run.sh)
 set -uo pipefail
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"; source "$HERE/../../emulator/scripts/lib.sh"
 apply_ulimits; kill_guest
@@ -30,4 +30,4 @@ echo "   >0  => events reach mq_ui (coordinate/logic issue)"
 echo "   ==0 => events NOT read (mechanism issue)"
 echo "=========================================="
 cp "$ROOTFS/dev/fb0" "$WORK/d1.snap"; python3 -m emulator.runtime.fb2png "$WORK/d1.snap" "$SHOTS" d1
-log "guests left running — you can now ./run.sh tap <x> <y> or ./run.sh capture"
+log "guests left running — you can now ./emulator/run.sh tap <x> <y> or ./emulator/run.sh capture"

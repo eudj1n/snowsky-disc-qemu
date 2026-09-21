@@ -8,7 +8,7 @@ the frozen physical baseline.
 ## Run
 
 Requires Docker Compose >=2.36, the reviewed V2.57 OTA directory and the existing
-`snowsky-disc-qemu-ci` image (`docker build -t snowsky-disc-qemu-ci docker`).
+`snowsky-disc-qemu-ci` image (`docker build -t snowsky-disc-qemu-ci emulator/docker`).
 The first run builds a separate Python 3.12 Assistant image using the prototype's
 requirements. Typesense 30.2 runs with a fresh data volume and random test key.
 
@@ -39,7 +39,7 @@ bash ci/assistant.sh /absolute/path/to/main_os/ota_v257 /tmp/assistant-voice-01 
 Exit status is zero only when every selected case passes; known failures are not
 silently excluded. The fresh guest, search service, network and volumes are removed
 on exit. No host ports are published, no personal configuration is loaded, and the
-runner's device endpoint is fixed to the disposable `emu` service.
+runner's device endpoint is fixed to the disposable `emulator` service.
 
 `results/report.md` and `results/report.json` summarize the run. Individual JSON
 files retain setup, measured response, fresh before/after observations, TCP send

@@ -46,7 +46,7 @@ reviewed write path; the malformed captured Local Apply payload must not be copi
 | [Account/cloud #11](https://github.com/eudj1n/snowsky-disc-qemu/issues/11) | Local theme metadata and separately captured app behavior. | Login, Share, official wallpaper/account sync remain deferred; no new login/capture. |
 | Library edges | Reviewed artist/album/genre/folder selection, bulk addition and scoped deletion have separate emulator/physical evidence. | Root-tab Play all wire semantics and current-track/CUE deletion remain unverified; do not invent empty selectors or repeat ineffective captures. [Contracts](../../docs/protocol/README.md). |
 | Phone lifecycle and hardware | Bounded LAN discovery/bridge and emulator idle/USB behavior have their own acceptance. | Physical iOS background/reconnect remains deferred unless an error appears; emulator results do not establish hardware audio fidelity. |
-| Repository infrastructure | Experiments and documentation now follow component ownership. | [Launcher/Docker ownership #29](https://github.com/eudj1n/snowsky-disc-qemu/issues/29). |
+| Repository infrastructure | Experiments, documentation and [emulator launch/build infrastructure](../../emulator/docs/running.md) follow their component owners. | Controller extraction remains a separate decision. |
 
 Keep issue checklists as the actionable backlog. Android M21/FiiO Music is a
 separate implementation and reference only. New mutable investigations use

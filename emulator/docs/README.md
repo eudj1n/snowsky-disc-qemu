@@ -2,6 +2,8 @@
 
 Stock firmware execution, hardware stubs and operator controls.
 
+Start with the [launcher and configuration guide](running.md).
+
 - [Audio capture and browser playback](audio.md)
 - [Emulation deep-dive](emulation.md)
 - [Remote connections, idle power and reconnect (V2.57)](idle-power.md)

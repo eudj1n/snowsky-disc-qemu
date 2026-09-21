@@ -109,7 +109,7 @@ The sequence above was exercised on a disposable V2.57 volume: the restarted UI
 displayed Russian, SQLite retained `LANGUAGE=9`, and `probe_keys.py` reported the
 requested `1/0/1` assignments from guest memory. The interactive volume was not edited.
 
-`./run.sh boot` runs **setup first**. Setup overwrites `LANGUAGE` with `LANG_CODE`
+`./emulator/run.sh boot` runs **setup first**. Setup overwrites `LANGUAGE` with `LANG_CODE`
 (default `2`), `BATTERY=100`, and `LOCAL_IMG_ANIM=0`. Therefore use `20_boot.sh`
 directly after an offline language edit, or explicitly pass the setup override:
 

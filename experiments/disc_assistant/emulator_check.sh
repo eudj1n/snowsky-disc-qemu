@@ -13,14 +13,14 @@ export EMU_CONTAINER_NAME="$assistant_project-emu"
 export WORK_VOLUME="$assistant_project-work"
 export SD_DIR="$assistant_tmp/sdcard"
 mkdir "$SD_DIR"
-compose() { docker compose --env-file /dev/null -p "$assistant_project" -f compose.yaml -f ci/compose.yml "$@"; }
+compose() { docker compose --project-directory "$PWD" --env-file /dev/null -p "$assistant_project" -f emulator/compose.yaml -f ci/compose.yml "$@"; }
 cleanup() {
   if [[ -n ${ASSISTANT_LOGS:-} ]]; then
     mkdir -p "$ASSISTANT_LOGS"
-    compose cp emu:/work/mq_player.log "$ASSISTANT_LOGS/mq_player.log" || true
-    compose cp emu:/work/mq_ui.log "$ASSISTANT_LOGS/mq_ui.log" || true
+    compose cp emulator:/work/mq_player.log "$ASSISTANT_LOGS/mq_player.log" || true
+    compose cp emulator:/work/mq_ui.log "$ASSISTANT_LOGS/mq_ui.log" || true
   fi
-  compose exec -T emu bash /repo/ci/cleanup.sh || true
+  compose exec -T emulator bash /repo/ci/cleanup.sh || true
   compose down --volumes --timeout 5
   docker run --rm --network none -v "$assistant_tmp:/cleanup" "$EMU_IMAGE" \
     python3 -c 'import shutil; shutil.rmtree("/cleanup/sdcard")'
@@ -30,14 +30,14 @@ trap cleanup EXIT
 compose config --quiet
 docker run --rm --network none -v "$PWD:/repo:ro" -v "$SD_DIR:/fixtures" "$EMU_IMAGE" \
   bash -c 'cd /repo && python3 -B -m experiments.disc_assistant.emulator_check --fixtures /fixtures'
-compose up -d --no-build --wait --wait-timeout 60 emu
-compose exec -T emu bash /repo/emulator/scripts/00_extract_rootfs.sh /ota
-compose exec -T emu bash /repo/emulator/scripts/10_setup_env.sh
-compose exec -T emu python3 -B -m tests.integration.awake_check --configure
-compose exec -T emu bash /repo/emulator/scripts/20_boot.sh
-compose exec -T emu python3 -B -m tests.integration.awake_check
+compose up -d --no-build --wait --wait-timeout 60 emulator
+compose exec -T emulator bash /repo/emulator/scripts/00_extract_rootfs.sh /ota
+compose exec -T emulator bash /repo/emulator/scripts/10_setup_env.sh
+compose exec -T emulator python3 -B -m tests.integration.awake_check --configure
+compose exec -T emulator bash /repo/emulator/scripts/20_boot.sh
+compose exec -T emulator python3 -B -m tests.integration.awake_check
 if [[ "$assistant_scenario" == persistent ]]; then
-  compose exec -T emu python3 -B -m experiments.disc_assistant.emulator_check --persistent-only
+  compose exec -T emulator python3 -B -m experiments.disc_assistant.emulator_check --persistent-only
 else
-  compose exec -T emu python3 -B -m experiments.disc_assistant.emulator_check
+  compose exec -T emulator python3 -B -m experiments.disc_assistant.emulator_check
 fi

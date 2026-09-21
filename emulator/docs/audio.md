@@ -4,10 +4,10 @@ Local playback works through the stock firmware decoder → tinyalsa → `emulat
 No audio patches to `mq_player` are needed; the key-enable patch is unrelated.
 
 ```sh
-./run.sh boot
-./run.sh view                 # http://localhost:8080 → click the lower-left headphone jack
+./emulator/run.sh boot
+./emulator/run.sh view                 # http://localhost:8080 → click the lower-left headphone jack
 # Browse files → select a track in the device UI.
-./run.sh audio                # snapshot → shots/audio.wav
+./emulator/run.sh audio                # snapshot → shots/audio.wav
 ```
 
 The lower-left headphone jack (**Enable sound**) joins the current captured PCM

@@ -78,7 +78,7 @@ digest. Keep the direct URL in a per-version secret; no ZIP/rootfs in Git or CI 
 `firmware/tools/firmware_inventory.py` supports differing version numbers and chunk counts:
 
 ```sh
-docker build -t snowsky-disc-qemu-ci docker
+docker build -t snowsky-disc-qemu-ci emulator/docker
 FW_PACKAGE_DIR=/absolute/path/to/SNOWSKY_DISC_update_20260909_v257
 FW_ARCHIVE=/absolute/path/to/SNOWSKY_DISC_update_20260909_v257.zip
 docker run --rm --network none \

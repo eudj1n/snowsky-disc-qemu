@@ -87,7 +87,7 @@ historical reference if runtime interfaces change.
 From the repository root (Docker and Compose ≥2.36 required):
 
 ```sh
-docker build -t snowsky-disc-qemu-ci docker
+docker build -t snowsky-disc-qemu-ci emulator/docker
 
 # Use matching, already downloaded official firmware chunks.
 export FW_VERSION=2.40
@@ -102,11 +102,11 @@ docker run --rm --network none -v "$PWD:/repo:ro" \
   -v "$PWD/work/diskos-preview/sdcard:/fixtures" snowsky-disc-qemu-ci \
   python3 -B -m tests.fixtures.fixture /fixtures
 preview up -d
-preview exec -T emu bash /repo/emulator/scripts/00_extract_rootfs.sh /ota  # new volume only
-preview exec -T emu bash /repo/emulator/scripts/10_setup_env.sh
+preview exec -T emulator bash /repo/emulator/scripts/00_extract_rootfs.sh /ota  # new volume only
+preview exec -T emulator bash /repo/emulator/scripts/10_setup_env.sh
 bash experiments/diskos/build.sh /absolute/path/to/diskos
-preview exec -T emu bash /repo/experiments/diskos/boot.sh
-preview exec -d emu bash /repo/viewer/scripts/40_stream.sh
+preview exec -T emulator bash /repo/experiments/diskos/boot.sh
+preview exec -d emulator bash /repo/viewer/scripts/40_stream.sh
 ```
 
 Open <http://localhost:8081>. The usual viewer on 8080 and its `snowsky-disc-work` volume
@@ -122,7 +122,7 @@ source and adapter with any emulation binary you share; it is not a flash payloa
 To stop, release this stack's SD mounts first:
 
 ```sh
-preview exec -T emu bash /repo/ci/cleanup.sh
+preview exec -T emulator bash /repo/ci/cleanup.sh
 preview down
 ```
 

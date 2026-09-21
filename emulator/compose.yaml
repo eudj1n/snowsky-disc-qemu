@@ -1,23 +1,24 @@
+# Always use the launcher, or explicit --project-directory <repo-root> and --env-file.
 # Container for the Snowsky Disc qemu emulator.
 #
 # 1. Point it at the firmware OTA chunk dir (…/main_os/ota_v257 of the unzipped firmware):
-#      cp .env.example .env   &&   edit OTA_DIR   (or: OTA_DIR=/path ./run.sh up)
+#      cp emulator/.env.example emulator/.env   &&   edit OTA_DIR   (or: OTA_DIR=/path ./emulator/run.sh up)
 # 2. Start it:
-#      docker compose up -d --build        (or ./run.sh up "$OTA_DIR", which also extracts+sets up)
-# 3. Drive the pipeline (extract / setup / boot / tap …) with ./run.sh — see README.md.
+#      ./emulator/run.sh compose up -d --build        (or ./emulator/run.sh up "$OTA_DIR", which also extracts+sets up)
+# 3. Drive the pipeline (extract / setup / boot / tap …) with ./emulator/run.sh — see README.md.
 #
-# emu idles (`sleep infinity`); ./run.sh execs its /repo/emulator/scripts/* pipeline.
-# Optional wsbridge profile: docker compose --profile wsbridge up -d
+# emulator idles (`sleep infinity`); ./emulator/run.sh execs its /repo/emulator/scripts/* pipeline.
+# Optional wsbridge profile: ./emulator/run.sh compose --profile wsbridge up -d
 # Separate unprivileged native service; no MIPS rootfs changes.
 # Opt-in phone LAN testing uses controller/bridge/lan_bridge.py on the host (controller/docs/discovery.md).
 # Keep these Docker publications loopback-only; no automatic LAN exposure.
 name: snowsky-disc-qemu
 
 services:
-  emu:
-    build: ./docker
+  emulator:
+    build: ./emulator/docker
     image: ${EMU_IMAGE:-snowsky-disc-qemu}
-    container_name: ${EMU_CONTAINER_NAME:-snowsky-disc-qemu} # default expected by ./run.sh
+    container_name: ${EMU_CONTAINER_NAME:-snowsky-disc-qemu}
     privileged: true                     # qemu-user needs binfmt_misc, POSIX mqueue, a large VA reservation
     command: sleep infinity
     environment:
@@ -31,7 +32,7 @@ services:
       default:
         interface_name: eth1             # stock wired path; requires Compose >= 2.36
     volumes:
-      - ${OTA_DIR:?set OTA_DIR in .env (path to the firmware main_os/ota_v257 dir)}:/ota:ro
+      - ${OTA_DIR:?set OTA_DIR in emulator/.env (path to the firmware main_os/ota_v257 dir)}:/ota:ro
       - ./:/repo                         # this repository (all components)
       - ${SD_DIR:-./emulator/sdcard}:/sdcard       # CI supplies an isolated generated library
       - work:/work                       # extracted rootfs + runtime state (persists across restarts)
@@ -47,10 +48,10 @@ services:
   wsbridge:
     profiles: [wsbridge]
     image: ${EMU_IMAGE:-snowsky-disc-qemu}
-    pull_policy: never                   # reuse the image built by emu, not a registry image
+    pull_policy: never                   # reuse the image built by emulator, not a registry image
     depends_on:
-      - emu
-    command: ["python3", "-B", "-m", "controller.bridge.ws_bridge", "--listen", "0.0.0.0", "--upstream", "emu", "--http-port", "12103"]
+      - emulator
+    command: ["python3", "-B", "-m", "controller.bridge.ws_bridge", "--listen", "0.0.0.0", "--upstream", "emulator", "--http-port", "12103"]
     user: "65534:65534"
     read_only: true
     cap_drop: [ALL]

@@ -29,13 +29,13 @@ jobs:
           version: v2.39.4
           cache-binary: false
       - name: Validate Compose
-        run: OTA_DIR=/tmp/unused docker compose config --quiet
+        run: OTA_DIR=/tmp/unused docker compose --project-directory . --env-file /dev/null -f emulator/compose.yaml config --quiet
       - name: Python types, lint and installed Controller wheel
         run: |
           python3 -m venv /tmp/disc-quality
           /tmp/disc-quality/bin/pip install -r ci/requirements-quality.txt
           PATH="/tmp/disc-quality/bin:$PATH" bash ci/python-quality.sh
       - name: Build pinned toolchain
-        run: docker build --tag snowsky-disc-qemu-ci docker
+        run: docker build --tag snowsky-disc-qemu-ci emulator/docker
       - name: Python, JavaScript, shell syntax and MIPS shims
         run: docker run --rm --network none --volume "$PWD:/repo:ro" snowsky-disc-qemu-ci bash /repo/ci/test.sh

@@ -10,9 +10,9 @@ emulator/sdcard/
       01 track.flac
 ```
 
-Root `compose.yaml` bind-mounts this folder into the container as `/sdcard`, and
+`emulator/compose.yaml` bind-mounts this folder into the container as `/sdcard`, and
 `emulator/scripts/10_setup_env.sh` builds a FAT image from it and mounts that image at the guest's `/tmp/sdcard`.
-Run `./run.sh boot` from the repository root after changing files. This rebuilds
+Run `./emulator/run.sh boot` from the repository root after changing files. This rebuilds
 the SD image; use Update media lib separately to index new music.
 
 Media files here are git-ignored (only this README and `.gitkeep` are tracked).

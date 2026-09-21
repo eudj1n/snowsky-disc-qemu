@@ -18,13 +18,13 @@ export SD_DIR="$task_tmp/media" GUEST_TTL=3600 LANG_CODE=2 DEVICE_BOOT_SCRIPT=""
 export ASSISTANT_TEST_KEY="$(openssl rand -hex 24)"
 export ASSISTANT_SOURCE_REVISION="$(git rev-parse HEAD)"
 mkdir "$SD_DIR"
-compose() { docker compose --env-file /dev/null -p "$task_id" -f compose.yaml -f ci/compose.yml -f ci/assistant.compose.yml "$@"; }
+compose() { docker compose --project-directory "$PWD" --env-file /dev/null -p "$task_id" -f emulator/compose.yaml -f ci/compose.yml -f ci/assistant.compose.yml "$@"; }
 cleanup() {
   result=$?
   trap - EXIT
-  compose cp emu:/work/mq_player.log "$ASSISTANT_REPORT_DIR/mq_player.log" >/dev/null 2>&1 || true
-  compose cp emu:/work/mq_ui.log "$ASSISTANT_REPORT_DIR/mq_ui.log" >/dev/null 2>&1 || true
-  compose exec -T emu bash /repo/ci/cleanup.sh >/dev/null 2>&1 || true
+  compose cp emulator:/work/mq_player.log "$ASSISTANT_REPORT_DIR/mq_player.log" >/dev/null 2>&1 || true
+  compose cp emulator:/work/mq_ui.log "$ASSISTANT_REPORT_DIR/mq_ui.log" >/dev/null 2>&1 || true
+  compose exec -T emulator bash /repo/ci/cleanup.sh >/dev/null 2>&1 || true
   compose down --volumes --timeout 5 || true
   # Remove only this run's mktemp directory and generated media.
   rm -rf -- "$task_tmp"
@@ -38,16 +38,16 @@ compose config --quiet
 compose build assistant
 docker run --rm --network none -v "$PWD:/repo:ro" -v "$SD_DIR:/fixtures" "$EMU_IMAGE" \
   python3 -B -m tests.fixtures.assistant_fixture /fixtures
-compose up -d --no-build emu typesense
+compose up -d --no-build emulator typesense
 docker image inspect --format '{{.Id}} {{json .RepoDigests}}' "$EMU_IMAGE" \
   disc-assistant-acceptance:local typesense/typesense:30.2 > "$ASSISTANT_REPORT_DIR/images.txt"
-compose exec -T emu bash /repo/emulator/scripts/00_extract_rootfs.sh /ota
-compose exec -T emu bash /repo/emulator/scripts/10_setup_env.sh
-compose exec -T emu python3 -B -m tests.integration.awake_check --configure
-compose exec -T emu bash /repo/emulator/scripts/20_boot.sh
-compose exec -T emu python3 -B -m tests.integration.awake_check
-compose exec -T emu python3 -B -m tests.integration.assistant_prepare
+compose exec -T emulator bash /repo/emulator/scripts/00_extract_rootfs.sh /ota
+compose exec -T emulator bash /repo/emulator/scripts/10_setup_env.sh
+compose exec -T emulator python3 -B -m tests.integration.awake_check --configure
+compose exec -T emulator bash /repo/emulator/scripts/20_boot.sh
+compose exec -T emulator python3 -B -m tests.integration.awake_check
+compose exec -T emulator python3 -B -m tests.integration.assistant_prepare
 # Dismiss the scanner UI using the same lifecycle as existing integration tests.
-compose exec -T emu bash /repo/emulator/scripts/20_boot.sh
-compose exec -T emu python3 -B -m tests.integration.assistant_prepare --show-player
+compose exec -T emulator bash /repo/emulator/scripts/20_boot.sh
+compose exec -T emulator python3 -B -m tests.integration.assistant_prepare --show-player
 compose run --rm --no-deps assistant python -m tests.integration.assistant_check "$@"

@@ -62,41 +62,42 @@ cd snowsky-disc-qemu
 
 # Put your music in ./emulator/sdcard before setup.
 # Point to the unpacked main-OS chunk directory, not the ZIP or its parent.
-./run.sh up /path/to/SNOWSKY_DISC_update_.../main_os/ota_v257
-./run.sh boot
+./emulator/run.sh up /path/to/SNOWSKY_DISC_update_.../main_os/ota_v257
+./emulator/run.sh boot
 
 # Open the interactive viewer at http://localhost:8080.
-./run.sh view
+./emulator/run.sh view
 ```
 
 The reviewed default is selected by `firmware/active-version` (currently V2.57);
-`FW_VERSION` in `.env` can pin an installation to a reviewed version. See
+`FW_VERSION` in `emulator/.env` can pin an installation to a reviewed version. See
 [firmware profiles](firmware/docs/firmware-profiles.md). Setup verifies and extracts the firmware, builds the shims,
-prepares the emulated SD card, and saves the OTA path in `.env`. Boot starts the
+prepares the emulated SD card, and saves the OTA path in `emulator/.env`. Boot starts the
 firmware processes and writes screen captures to `shots/`.
 
 Inside the stock UI, open **Browse files** to select your music. Use
 **Settings → Update media lib → Update now** to populate the indexed library.
 Normal boot remounts the card; it does not generate an SD-insertion auto-scan event.
-After changing files in `./emulator/sdcard`, run `./run.sh boot` again to rebuild the emulated
+After changing files in `./emulator/sdcard`, run `./emulator/run.sh boot` again to rebuild the emulated
 card from that folder. Guest-only card changes are replaced during this setup.
 
 <details>
 <summary><b>Command-line controls and container lifecycle</b></summary>
 
 ```sh
-./run.sh capture          # Save framebuffer captures in ./shots/.
-./run.sh tap 180 180      # Tap using visible screen coordinates.
-./run.sh audio            # Export the current recording to ./shots/audio.wav.
-./run.sh shell            # Open a shell inside the emulator container.
-./run.sh stop             # Stop guest processes and the viewer.
-./run.sh down             # Remove containers; keep the extracted-rootfs volume.
+./emulator/run.sh capture          # Save framebuffer captures in ./shots/.
+./emulator/run.sh tap 180 180      # Tap using visible screen coordinates.
+./emulator/run.sh audio            # Export the current recording to ./shots/audio.wav.
+./emulator/run.sh shell            # Open a shell inside the emulator container.
+./emulator/run.sh stop             # Stop guest processes and the viewer.
+./emulator/run.sh down             # Remove containers; keep the extracted-rootfs volume.
 ```
 
-The pipeline lives in `emulator/scripts/`; `run.sh` is its host entry point.
-`compose.yaml` defines the container and localhost port mappings.
-For direct Compose setup, copy `.env.example` to `.env`, set `OTA_DIR`, then run
-`./run.sh up` and `./run.sh boot`.
+The pipeline lives in `emulator/scripts/`; `emulator/run.sh` is its host entry point.
+`emulator/compose.yaml` defines the container and localhost port mappings.
+See [launcher, configuration and path rules](emulator/docs/running.md).
+For direct Compose setup, copy `emulator/.env.example` to `emulator/.env`, set `OTA_DIR`, then run
+`./emulator/run.sh up` and `./emulator/run.sh boot`.
 
 </details>
 
@@ -116,7 +117,7 @@ back to the stock applications. The **QEMU** badge identifies this host-backed m
   <img src="docs/images/readme-viewer-qemu.png" width="960" alt="Current browser viewer with a CSS device, live screen, physical buttons and audio, USB and SD controls">
 </p>
 
-Start it with `./run.sh view` after boot, then open **http://localhost:8080**.
+Start it with `./emulator/run.sh view` after boot, then open **http://localhost:8080**.
 
 | Control | Interaction |
 | --- | --- |
@@ -184,7 +185,7 @@ For the text console instead, run `./experiments/disc_assistant/run.sh start`.
 The generated config initially targets the local emulator (TCP 12100, direct
 HTTP 12113); a physical DISC normally uses HTTP 12103. Close other control clients
 before connecting. The Assistant has its own launcher and optional services;
-the root emulator launcher does not start it. See the
+the emulator launcher does not start it. See the
 [setup and console guide](experiments/disc_assistant/README.md),
 [web guide](experiments/disc_assistant/docs/guides/web.md) and [speech setup](experiments/disc_assistant/docs/guides/tts.md).
 
@@ -253,10 +254,10 @@ An optional WebSocket-to-TCP adapter provides **localhost:12103** and a read-onl
 protocol inspector for the emulator:
 
 ```sh
-docker compose --profile wsbridge up -d wsbridge
-./run.sh wscheck --control  # Verify TCP/WS control; leaves playback paused.
+./emulator/run.sh compose --profile wsbridge up -d wsbridge
+./emulator/run.sh wscheck --control  # Verify TCP/WS control; leaves playback paused.
 # Inspector: http://localhost:12103/bridge/
-docker compose --profile wsbridge stop wsbridge
+./emulator/run.sh compose --profile wsbridge stop wsbridge
 ```
 
 The bridge is an explicit adapter to the stock service. It runs as a separate,
@@ -305,12 +306,12 @@ closure remain manual. See the [porting process](firmware/docs/porting.md).
 <details>
 <summary><b>Existing installations and switching firmware</b></summary>
 
-Keep `FW_VERSION=2.40` in `.env` for an existing V2.40 rootfs. Switching the version
+Keep `FW_VERSION=2.40` in `emulator/.env` for an existing V2.40 rootfs. Switching the version
 setting does not migrate an extracted rootfs; mismatches are rejected.
 
 To use V2.57 separately, set `FW_VERSION=2.57` and a distinct `WORK_VOLUME`, such as
-`snowsky-disc-work-v257`, in `.env`. Run `./run.sh up` with the V2.57 OTA directory, then
-`./run.sh boot`. This preserves the previous work volume.
+`snowsky-disc-work-v257`, in `emulator/.env`. Run `./emulator/run.sh up` with the V2.57 OTA directory, then
+`./emulator/run.sh boot`. This preserves the previous work volume.
 
 </details>
 
@@ -329,7 +330,7 @@ source layout, dependency boundaries and test locations.
 
 | Area | Start here | Source |
 | --- | --- | --- |
-| **Emulator** | [How it works](emulator/docs/emulation.md) · [Current results](emulator/docs/status.md) | `run.sh`, `emulator/scripts/`, `emulator/shims/`, `docker/` |
+| **Emulator** | [How it works](emulator/docs/emulation.md) · [Current results](emulator/docs/status.md) | `emulator/run.sh`, `emulator/scripts/`, `emulator/shims/`, `emulator/docker/` |
 | **Viewer** | [Viewer guide](viewer/docs/usage.md) · [Touch](emulator/docs/touch.md) · [Buttons](emulator/docs/keys.md) | `viewer/server.py`, `viewer/static/` |
 | **Media** | [Audio](emulator/docs/audio.md) · [Library](emulator/docs/media-library.md) · [Settings](emulator/docs/settings.md) | `emulator/sdcard/`, `emulator/runtime/audio.py` |
 | **Controller** | [Capabilities](docs/protocol/disc-capabilities.md) · [Network](emulator/docs/network.md) · [Protocol](docs/protocol/protocol.md) · [WebSocket](controller/docs/websocket.md) · [Opt-in phone LAN bridge](controller/docs/discovery.md) | `controller/fiio_link.py`, `controller/bridge/ws_bridge.py`, `controller/bridge/lan_bridge.py` |
