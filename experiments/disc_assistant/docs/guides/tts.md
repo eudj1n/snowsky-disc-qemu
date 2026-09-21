@@ -1,7 +1,8 @@
-# Local speech services and Piper replies
+# Local speech services and synthesized replies
 
-The desktop web path is **microphone → Whisper Server → Assistant → Controller →
-localized response → Piper → browser audio**. Web always uses Whisper Server;
+The desktop web path is **microphone → Whisper Server or Sherpa → Assistant → Controller →
+localized response → normalizer → configured TTS → browser audio**. Web defaults to Whisper Server;
+the [optional Sherpa RU selection](web.md#choose-the-speech-engine) uses its own local worker.
 one-shot CLI/file workflows may still explicitly select the CLI STT backend.
 Piper is an optional `SpeechSynthesizer`, independent of interpretation and player
 control. Audio plays on the computer running the browser, not through DISC.
@@ -158,15 +159,164 @@ support was added.
 
 ## Pronunciation boundary
 
-`voice/text.py` is the TTS-only text preparation point, currently `identity-v1`.
-No automatic transliteration is enabled. Future locale pronunciation dictionaries
-may turn a mixed-script music name into an appropriate spoken form, after paired
-listening checks. Keep `response.text`, search input, catalog tags and command
-history unchanged. Bump preparation provenance when rules change; evaluate artist
-names, abbreviations and titles separately. TTS corrections are not search aliases
-and must not alter frozen speech evaluation inputs silently.
+`voice/text.py` defines the asynchronous `TextNormalizer` boundary and composes
+it with every registered TTS adapter, including custom factories. Input is the
+spoken copy only: `response.text`, search input, catalog tags and command history
+remain unchanged. The default is `identity`; opt in per TTS provider:
+
+```toml
+[voice.providers.my_voice.settings.normalization]
+mode = "ru_numbers"
+```
+
+Legacy Piper configuration also accepts `[tts.normalization] mode = "ru_numbers"`.
+Modes:
+
+- `identity`: preserve text exactly, for compatibility and paired comparisons.
+- `ru_numbers`: dependency-free Russian nominative cardinal numbers 0..999999 and
+  integer percentages (`25%` → `двадцать пять процентов`). Other locales pass
+  through. Embedded names such as `U2`/`blink-182`, leading-zero identifiers,
+  signed values, decimal numbers, dates, times and fractions remain unchanged.
+  This is deliberately not general grammatical inflection or transliteration.
+- `runorm`: opt-in RUNorm 1.1 small pipeline, resident in its own Python process.
+  Russian only; other locales pass through. Upstream also normalizes abbreviations
+  and transliterates Latin names; this can change pronunciation incorrectly.
+
+Normalization errors stop audio delivery without fallback or command replay.
+Normalized output is bounded to 4000 characters (providers may impose lower limits).
+The response cache includes normalization mode/revision and model digest. Result
+metadata includes normalization time, changed flag and text digest, not an extra
+copy of private response text. Original response policy and browser opt-in still apply.
+
+## Optional Silero RU
+
+The `silero` factory hosts the reviewed `v5_5_ru` model in a separate, reusable
+CPU worker. It supports `aidar`, `baya`, `kseniya`, `xenia`, `eugene`, native mono
+PCM at 8/24/48 kHz, and configurable `put_accent`/`put_yo`. The supplied profile
+selects Xenia, 24 kHz, two CPU threads and `ru_numbers`. Locale `en` is rejected;
+select Piper explicitly for English replies. There is no implicit TTS fallback.
+
+From the repository root, install explicitly using Python 3.12:
+
+```sh
+python3.12 -m experiments.disc_assistant.assistant.voice.silero_setup
+```
+
+The installer creates `~/disc-speech/silero/.venv`, downloads the 138 MiB model,
+checks the pinned SHA-256 and preserves existing matching files. A mismatched
+existing model is rejected rather than overwritten. No downloads occur on replies.
+Torch/NumPy do not become application dependencies. Select this profile in your
+existing configuration (use the absolute path to your checkout):
+
+```toml
+[voice]
+profile = "/absolute/checkout/experiments/disc_assistant/assistant/voice/profiles/silero-ru-cpu.toml"
+```
+
+Restart the existing web owner once. In the browser choose Russian, enable spoken
+replies, and choose **All available replies** when testing successful responses.
+First synthesis includes model loading; later calls reuse the process. Timeout
+or cancellation kills/reaps the owned worker; no text is replayed automatically.
+
+## Optional Vosk TTS
+
+The `vosk_tts` factory supports the pinned `vosk-model-tts-ru-0.9-multi`, separately
+from Vosk STT and the Sherpa recognizer. Its five speaker IDs are `0`, `1`, `2`
+(female) and `3`, `4` (male), as declared by the model's `speaker_id_map`. Names
+from older Vosk releases are not assumed to identify the 0.9 voices.
+
+```sh
+python3.12 -m experiments.disc_assistant.assistant.voice.vosk_setup
+```
+
+Installation uses a separate `~/disc-speech/vosk-tts/.venv`, vosk-tts 0.3.61,
+ONNX Runtime 1.23.2 and the reviewed 746.5 MiB archive. The installer verifies its
+SHA-256, safely extracts it, and checks every model/dictionary/config/tokenizer and
+model-card hash. Existing mismatched files are rejected, not overwritten.
+`--archive /absolute/path/model.zip` reuses an already downloaded matching archive.
+Models and environments remain outside Git; requests never download anything.
+
+Select the [Vosk CPU profile](../../assistant/voice/profiles/vosk-ru-cpu.toml) with
+`voice.profile`, then restart the existing web owner. It selects speaker 2 and
+`ru_numbers`; change `speaker_id` to an integer from 0 to 4. The adapter accepts
+an explicit `SynthesisRequest.voice` override as the corresponding string ID.
+It supports Russian replies only and never switches language or engine implicitly.
+For first-load headroom, set `timeout = 120` in the existing `[tts]` table too;
+the browser response deadline also caps the entire call.
+The mixed phrase `Играет Linkin Park — Numb.` failed in the upstream phoneme map
+(`KeyError: u`). The adapter reports an explicit synthesis failure; it does not
+silently delete names or switch to another model.
+
+Both ONNX networks explicitly use CPU execution, two intra-op threads by default,
+one inter-op thread and sequential execution. The worker loads local reviewed
+files directly into the pinned Vosk `Synth` interface rather than using upstream
+model discovery/download. Output is native mono 16-bit PCM at 22,050 Hz. Model,
+voice, file hashes, ONNX version, normalization and runtime timings are recorded.
+Cancellation and timeout reuse the shared owned-worker cleanup contract.
+
+To compare every voice, add the
+[all-voices profile](../../assistant/voice/profiles/vosk-voices-ru.toml) to the
+listening command below and append
+`--provider vosk_0 --provider vosk_1 --provider vosk_2 --provider vosk_3 --provider vosk_4`.
+The comparison finishes all phrases for one provider and closes its runtime
+before loading the next; five voices do not keep five model copies in memory.
+The existing live web TTS choice is not changed by the comparison tool.
+
+Vosk TTS code, the 0.9 model README and its bundled BERT card declare Apache 2.0.
+Keep both model cards with distributions; the adapter code remains MIT. No board
+performance or music-name pronunciation acceptance is inferred from this integration.
+See [the integration report](../reports/2026-09-21-vosk-tts.md).
+
+## Optional RUNorm
+
+Install the heavier normalizer separately; it is not needed for `ru_numbers`:
+
+```sh
+python3.12 -m experiments.disc_assistant.assistant.voice.runorm_setup
+```
+
+This installs three pinned upstream snapshots (small normalizer, tagger,
+kirillizator) under `~/disc-speech/runorm/models`, plus a separate `.venv`. The
+installer records a digest over weights/tokenizers/configuration in `models.json`;
+the worker verifies it before loading and sets Hugging Face/Transformers offline
+mode. The optional [RUNorm profile](../../assistant/voice/profiles/silero-runorm-ru.toml)
+selects Silero with RUNorm instead of rule normalization. For a custom installation,
+set normalization `python`, `models`, `model_sha256`, `threads`, and `timeout`.
+The outer TTS/response timeout still caps the entire normalization-plus-synthesis call.
+
+The real integration probe produced `двадцать пятьпроцента` for `25%` and
+`эн йю эм би` for `Numb`. These are preserved observations, not corrected reference
+labels. RUNorm remains opt-in; see [the dated report](../reports/2026-09-21-silero-normalization.md).
+
+## Device-free listening comparison
+
+Generate six synthetic replies using existing Piper and the two optional profiles:
+
+```sh
+experiments/disc_assistant/assistant/.venv/bin/python \
+  -m experiments.disc_assistant.evaluation.tts_compare \
+  --profile experiments/disc_assistant/assistant/voice/profiles/silero-ru-cpu.toml \
+  --profile experiments/disc_assistant/assistant/voice/profiles/silero-runorm-ru.toml \
+  --provider piper --provider silero_ru --provider silero_runorm \
+  --output /tmp/disc-tts-listening-new
+python3 -m http.server 8092 --bind 127.0.0.1 --directory /tmp/disc-tts-listening-new
+```
+
+Open `http://127.0.0.1:8092`. Output includes WAVs, a listening page and `results.json`
+with fingerprints, normalization policy and timings. `--text` accepts explicit
+synthetic/custom text; keep private outputs outside Git. The tool never creates an
+Application, opens Controller, or changes a player. Differences in preprocessing,
+transport and runtime mean these timings are not an isolated model benchmark.
 
 ## Dependencies and model notices
+
+Project/adapters remain MIT. Downloaded models and optional dependencies retain
+separate licenses: Silero `v5_5_ru` uses
+[CC BY-NC-SA 4.0](https://github.com/snakers4/silero-models/blob/master/LICENSE).
+MIT licensing of this repository does not relicense those weights or remove their
+noncommercial condition. They are external optional downloads, not tracked assets.
+RUNorm's code and the three selected model cards declare Apache-2.0; preserve the
+upstream cards downloaded alongside its models. See [RUNorm](https://github.com/Den4ikAI/runorm).
 
 [Piper](https://github.com/OHF-Voice/piper1-gpl) is GPL-3.0; its dependency license
 is distinct from the repository's MIT code. The pinned model cards identify

@@ -274,7 +274,7 @@ class VoiceProcessTests(unittest.IsolatedAsyncioTestCase):
                 self.assertNotIn('--prompt', args)
                 Path(args[args.index('-of') + 1] + '.json').write_text(json.dumps({
                     'result': {'language': language[0]}, 'transcription': [{'text': ' Pause.'}]}))
-            with patch.object(backends, 'run_process', side_effect=process):
+            with patch('experiments.disc_assistant.assistant.voice.adapters.stt.whisper_cpp.run_process', side_effect=process):
                 result = await backend.transcribe(wav_audio(wav()), backends.SpeechContext('en', 'fixture'))
                 self.assertEqual(result.text, 'Pause.')
                 language[0] = 'ru'

@@ -26,11 +26,12 @@ Browser microphone ------^
                                    |
                           localized response
                                    |
-                         speak? -> Synthesizer -> AudioOutput
+                         speak? -> TextNormalizer -> Synthesizer -> AudioOutput
 ```
 
-Text, WAV and browser microphone input use the same command pipeline. Web always
-uses resident Whisper Server; CLI can select CLI or server STT explicitly. Piper
+Text, WAV and browser microphone input use the same command pipeline. Web selects
+resident Whisper Server or the optional Sherpa RU worker per audio request; CLI
+can select CLI or server STT explicitly. Configured TTS (Piper or optional Silero/Vosk)
 synthesizes eligible replies for browser playback; macOS `say` remains a file-sample
 adapter. [Speech services](../guides/tts.md) are optional and independent of the
 Controller. Dialogue remains disabled.
@@ -179,7 +180,12 @@ Corrupt locale/mode values can be repaired with `language reset`/`response reset
 
 ## Speech provider contracts
 
-[`speech.py`](../../assistant/speech.py) defines independent
+The [adapter and profile guide](../guides/voice-adapters.md) owns registration,
+capabilities, lifecycle, extension examples and the device-free model matrix.
+Application-owned speech instances use one stable event loop; Web and CLI do not
+select concrete engine classes. Legacy `speech.py` and adapter imports remain compatible.
+
+[`voice/contracts.py`](../../assistant/voice/contracts.py) defines version-1 independent
 asynchronous protocols:
 
 | Contract | Input | Output |
@@ -201,11 +207,20 @@ and records synthesis and browser-reported playback separately. It cancels obsol
 audio and never changes an execution outcome or retries a command after a delivery
 failure. Browser sound requires explicit user opt-in. Native TTS PCM rate is retained;
 explicit STT samples use recorded SoXR conversion to 16 kHz. The bounded cache keys
-include voice/config hashes and the TTS-only text preparation revision (currently
-identity). Search aliases and original response text are unaffected. See
-[Piper delivery](../guides/tts.md) and [file evaluation](../guides/voice.md).
+include voice/config hashes and the TTS-only text preparation revision/model digest (identity by default; explicit rule or RUNorm profiles). Search aliases and original response text are unaffected. See
+[TTS delivery](../guides/tts.md) and [file evaluation](../guides/voice.md).
 Streaming, automatic voice discovery, dialogue and representative human speech
 quality/latency evaluation remain future work.
+
+`voice/sherpa.py` owns a lazily loaded subprocess using the separately installed
+Sherpa environment. The native recognizer and reviewed hashes live in
+`voice/sherpa_model.py`, with no evaluation imports in the runtime. One worker is
+reused across the application's per-request event loops. Timeout/cancellation
+kills and reaps that worker before releasing the request; no input is replayed.
+A later explicit request can start a fresh worker. The web service closes it on
+shutdown. Russian is the only supported command locale; catalog hints are explicitly
+disabled and journalled as unsupported, without reading the catalog vocabulary.
+The common result validation and connection-generation checks remain authoritative.
 
 Dialogue stays disabled: `interactive` is false and `dialogue.enabled=true` is
 rejected. These interfaces do not add questions, pending confirmations or choices.

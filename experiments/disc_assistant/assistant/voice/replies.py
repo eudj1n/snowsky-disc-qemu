@@ -8,9 +8,9 @@ import json
 import time
 
 from experiments.disc_assistant.assistant.journal import Journal, utcnow, durable_write
-from experiments.disc_assistant.assistant.speech import SynthesisRequest, SpeechContext, SpeechUnavailable, InvalidSpeech
+from experiments.disc_assistant.assistant.speech import Audio, SynthesisRequest, SpeechContext, SpeechUnavailable, InvalidSpeech
 from experiments.disc_assistant.assistant.voice.files import pcm_wav, audio_details
-from experiments.disc_assistant.assistant.voice.piper import PiperSynthesizer
+from experiments.disc_assistant.assistant.voice.runtime import SpeechRuntime, Handle
 
 
 def delivery_event(config, request_id, phase, payload):
@@ -28,20 +28,26 @@ def delivery_event(config, request_id, phase, payload):
 
 
 class ReplySynthesizer:
-    def __init__(self, provider_factory=PiperSynthesizer):
+    def __init__(self, provider_factory=None):
         self.provider_factory = provider_factory
         self.cache = OrderedDict()
+        self.runtime = None
 
     async def synthesize(self, config, result):
         response = result.get('response', {})
         if not response.get('speak') or not response.get('text'):
             raise InvalidSpeech('this response is silent')
-        if config.tts.get('backend') != 'piper':
-            raise SpeechUnavailable('Piper is not configured; run setup --all')
         text, locale = response['text'], response['language']
         if not isinstance(text, str) or not 1 <= len(text) <= 1000:
             raise InvalidSpeech('invalid response text')
-        provider = self.provider_factory(config.tts)
+        if self.provider_factory is not None:
+            provider = self.provider_factory(config.tts)
+        else:
+            if self.runtime is None:
+                self.runtime = SpeechRuntime(config)
+            if self.runtime.selected['tts'] == 'none':
+                raise SpeechUnavailable('configure a speech synthesis provider')
+            provider = self.runtime.get(self.runtime.selected['tts'])
         evidence = await asyncio.to_thread(provider.evidence, locale)
         key = hashlib.sha256(json.dumps([text, locale, asdict(provider.info), evidence], sort_keys=True).encode()).hexdigest()
         started = time.monotonic()
@@ -49,16 +55,25 @@ class ReplySynthesizer:
         if cached:
             audio = self.cache.pop(key)
         else:
-            audio = await provider.synthesize(SynthesisRequest(text, SpeechContext(locale, result['request_id'])))
+            audio = await asyncio.wait_for(provider.synthesize(SynthesisRequest(text, SpeechContext(locale, result['request_id']))),
+                                           config.tts.get('timeout', 30))
+            if type(audio) is not Audio:
+                raise InvalidSpeech('invalid synthesized audio')
             checked = pcm_wav(audio.data, max_seconds=60)
             if (audio.media_type, audio.sample_rate, audio.channels) != ('audio/wav', checked.sample_rate, 1):
                 raise InvalidSpeech('invalid synthesized audio metadata')
             if audio_details(audio)['digital_silence']:
-                raise InvalidSpeech('Piper returned digital silence')
+                raise InvalidSpeech('synthesizer returned digital silence')
         self.cache[key] = audio
         while len(self.cache) > 8 or sum(len(a.data) for a in self.cache.values()) > 16 * 1024 * 1024:
             self.cache.popitem(last=False)
         metadata = {'provider': asdict(provider.info), 'locale': locale, **evidence,
+                    'runtime': provider.last_call if isinstance(provider, Handle) and not cached else {},
                     'cache_hit': cached, 'synthesis_ms': round((time.monotonic() - started) * 1000, 3),
                     **audio_details(audio)}
         return audio, metadata
+
+    async def aclose(self):
+        if self.runtime is not None:
+            await self.runtime.aclose()
+        self.cache.clear()

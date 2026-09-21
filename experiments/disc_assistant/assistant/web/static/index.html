@@ -27,6 +27,8 @@
 <p id="mode-hint" class="hint">Preview does not change playback or language.</p>
 <form id="command-form"><label for="text">Type a command</label><textarea id="text" maxlength="1000" rows="3" placeholder="Включи Linkin Park — Numb"></textarea><div class="bar right"><button id="send" class="primary" type="submit">Send command</button></div></form>
 <div class="divider"><span>or use your microphone</span></div>
+<label for="speech-engine">Speech recognition</label><select id="speech-engine"><option>Loading…</option></select>
+<p id="engine-hint" class="hint">Choose a speech engine for this recording.</p>
 <div class="mic-row"><select id="microphone" aria-label="Microphone"><option value="">Default microphone</option></select><button id="refresh-mics" title="Grant permission and list microphones">Choose microphone</button></div>
 <div class="recording"><button id="record" class="record-button" aria-label="Start recording"><span aria-hidden="true">●</span> Record command</button><button id="cancel" hidden>Cancel recording</button></div>
 <meter id="level" min="0" max="1" value="0" aria-label="Microphone level"></meter><p id="record-status" class="hint centered" role="status">Microphone off · click Record to begin</p>
@@ -35,10 +37,10 @@
 <section class="panel result" aria-labelledby="result-title"><div class="section-heading"><h2 id="result-title">Last result</h2><span id="result-status" class="badge">No requests yet</span></div>
 <div class="speech-controls"><label><input type="checkbox" id="enable-replies"> Enable spoken replies on this browser</label>
 <div class="bar"><label for="response-mode">Speak</label><select id="response-mode"><option value="none">Nothing</option><option value="errors" selected>Errors only</option><option value="all">All available replies</option></select><button id="stop-reply">Stop voice</button></div>
-<p id="speech-status" class="hint" role="status">Spoken replies off · Piper plays through this computer</p></div>
+<p id="speech-status" class="hint" role="status">Spoken replies off · Replies play through this computer</p></div>
 <p id="reply" aria-live="polite">Type or record a command to begin.</p>
-<dl><div><dt>Recognized speech</dt><dd id="transcript">—</dd></div><div><dt>Selection / action</dt><dd id="selection">—</dd></div><div><dt>Processing time</dt><dd id="timing">—</dd></div></dl>
+<dl><div><dt>Actual speech provider / model</dt><dd id="actual-provider">—</dd></div><div><dt>Speech runtime</dt><dd id="provider-timing">—</dd></div><div><dt>Recognized speech</dt><dd id="transcript">—</dd></div><div><dt>Selection / action</dt><dd id="selection">—</dd></div><div><dt>Processing time</dt><dd id="timing">—</dd></div></dl>
 <details><summary>Response JSON</summary><pre id="json">{}</pre></details>
 <details><summary>Request trace</summary><pre id="trace">No events yet.</pre></details>
-</section><footer class="hint">Disc Assistant Web · closing this page does not stop music or disconnect the service.<br>Whisper Server input · Piper spoken replies · no wake word.</footer>
+</section><footer class="hint">Disc Assistant Web · closing this page does not stop music or disconnect the service.<br>Configured STT input · configured TTS replies · no wake word.</footer>
 </main></body></html>

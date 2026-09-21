@@ -1,0 +1,7 @@
+# Optional separate environment. Models are installed explicitly, never on a reply.
+torch==2.8.0
+numpy==2.2.6
+runorm==1.1
+transformers==4.44.2
+sentencepiece==0.2.1
+razdel==0.5.0

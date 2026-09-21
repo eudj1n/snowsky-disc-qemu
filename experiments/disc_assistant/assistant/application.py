@@ -26,6 +26,7 @@ from experiments.disc_assistant.assistant.voice.backends import transcribe_file
 from experiments.disc_assistant.assistant.console_help import HELP
 from experiments.disc_assistant.assistant.voice.backends import transcribe_audio
 from experiments.disc_assistant.assistant.voice.files import wav_audio
+from experiments.disc_assistant.assistant.voice.runtime import SpeechRuntime
 
 
 class Application:
@@ -35,6 +36,7 @@ class Application:
         self.config = effective_config(config, language=language)
         self.interpreter = interpreter
         self.transcriber = transcriber
+        self.voice = SpeechRuntime(self.config)
         self.debug, self.debug_output = debug, debug_output
         self.rules = load_languages((self.config.locale,))
         self.session_id, self.source = uuid4().hex, source
@@ -51,8 +53,11 @@ class Application:
         return self
 
     def __exit__(self, *args):
-        self.session.__exit__(*args)
-        self.store.close()
+        try:
+            self.voice.close()
+        finally:
+            self.session.__exit__(*args)
+            self.store.close()
 
     def device_call(self, callback):
         client = None
@@ -141,7 +146,7 @@ class Application:
                 if command not in ('transcribe', 'ask', 'rank') or len(args) != expected_count:
                     raise ValueError('use /transcribe FILE, /rank --audio FILE or /ask --audio FILE')
                 generation = self.session.status()['generation'] if hasattr(self, 'session') else None
-                transcription = asyncio.run(transcribe_file(self.config, args[-1], trace, provider=self.transcriber))
+                transcription = asyncio.run(transcribe_file(self.config, args[-1], trace, provider=self.speech_provider()))
                 result = ({'status': 'transcribed'} if command == 'transcribe' else
                           self.natural_request(transcription['command_text'], trace,
                                                generation=generation, preview=command == 'rank'))
@@ -149,7 +154,10 @@ class Application:
                 return trace.finish(result)
             return trace.finish(self._request(line, trace, reuse_index=reuse_index))
 
-    def input_request(self, *, text=None, audio=None, mode='execute'):
+    def speech_provider(self):
+        return self.transcriber if self.transcriber is not None else self.voice.get(self.voice.selected['stt'])
+
+    def input_request(self, *, text=None, audio=None, mode='execute', transcriber=None):
         """Transport-neutral natural input; never accepts administrative slash commands."""
         if mode not in ('execute', 'preview', 'transcribe'):
             raise ValueError('invalid input mode')
@@ -170,7 +178,8 @@ class Application:
             if audio is not None:
                 trace.event('audio_input', {'format': 'pcm_wav'})
                 value = wav_audio(audio, max_seconds=self.config.speech.get('max_seconds', 30))
-                transcription = asyncio.run(transcribe_audio(self.config, value, trace, provider=self.transcriber))
+                transcription = asyncio.run(transcribe_audio(
+                    self.config, value, trace, provider=self.speech_provider() if transcriber is None else transcriber))
                 text = transcription['command_text']
             result = ({'status': 'transcribed'} if mode == 'transcribe' else
                       self.natural_request(text, trace, generation=generation, preview=mode == 'preview'))

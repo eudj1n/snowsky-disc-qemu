@@ -15,7 +15,7 @@ The measurements below preserve the earlier macOS sample/model cohorts.
 | Area | Implemented | Still pending |
 | --- | --- | --- |
 | Input | Bounded files/browser microphone WAV, explicit locale, raw transcript and normalized command text | Compressed uploads, streaming, wake word, voice activity detection |
-| STT | Local `whisper.cpp` CLI and resident server; web always uses server; explicit model and bounded processing | GPU tuning, remote provider, human microphone acceptance |
+| STT | Local `whisper.cpp` CLI/server; web also supports optional resident Sherpa RU; explicit model and bounded processing | GPU tuning, remote provider, human microphone acceptance |
 | TTS | Local Piper service/browser replies and macOS `say` file adapter, configured voices and provenance | Hardware/Pi performance and human voice-quality acceptance |
 | Integration | `transcribe`, `rank --audio`, `ask --audio`, equivalent console commands | Questions, confirmations and dialogue |
 | Evaluation | RU/EN synthetic corpora, separate interpretation and catalog-selection checks | Quantified human/noisy recordings and physical-player speech acceptance |
@@ -87,7 +87,7 @@ For the current web runtime, use [common speech setup](tts.md):
 ```
 
 This installs the ordinary runtime, model assets and CPU Docker services. Web
-uses Whisper Server only. Optional `--whisper-model small` selects the larger
+uses Whisper Server by default, with [optional Sherpa selection](web.md#choose-the-speech-engine). Optional `--whisper-model small` selects the larger
 model explicitly; otherwise setup preserves an installed model and uses base only
 for a fresh configuration. Piper supplies RU/EN replies and
 sample generation; its native audio is explicitly converted to 16 kHz for saved

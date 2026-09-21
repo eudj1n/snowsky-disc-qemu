@@ -1,0 +1,15 @@
+[voice]
+tts = "vosk_ru"
+
+[voice.providers.vosk_ru]
+kind = "tts"
+adapter = "vosk_tts"
+label = "Vosk RU · speaker 2"
+[voice.providers.vosk_ru.settings]
+python = "~/disc-speech/vosk-tts/.venv/bin/python"
+model = "~/disc-speech/vosk-tts/vosk-model-tts-ru-0.9-multi"
+speaker_id = 2
+threads = 2
+timeout = 120
+[voice.providers.vosk_ru.settings.normalization]
+mode = "ru_numbers"

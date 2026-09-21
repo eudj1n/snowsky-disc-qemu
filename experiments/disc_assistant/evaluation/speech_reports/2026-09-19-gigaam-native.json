@@ -1,0 +1,2495 @@
+{
+  "version": 1,
+  "date": "2026-09-19",
+  "status": "synthetic_pilot_not_model_acceptance",
+  "host": {
+    "cpu": "Apple M2 Max",
+    "ram_bytes": 34359738368,
+    "os": "26.6",
+    "machine": "arm64"
+  },
+  "scope": "STT/interpreter and separate synthetic catalog preview; no device execution",
+  "corpus": {
+    "source": "Seven macOS say Milena recordings plus two-second digital silence; six recordings retained from earlier examined regression",
+    "manifest_sha256": "65a2a29a3c252952d056c9ba71ab9e978fa659a435f357ae9ab3f98d038ebccd",
+    "cases": [
+      {
+        "id": "pause",
+        "text": "Пауза",
+        "expected": {
+          "status": "recognized",
+          "intent": {
+            "action": "pause"
+          }
+        },
+        "file": "pause.wav",
+        "sha256": "5ebc7df7c59c76ebe094401c61c634f481b3677b143d5a3d8f5c2e5d34899412"
+      },
+      {
+        "id": "next",
+        "text": "Следующий трек",
+        "expected": {
+          "status": "recognized",
+          "intent": {
+            "action": "next"
+          }
+        },
+        "file": "next.wav",
+        "sha256": "326f037cae4516b66bcaad4be7efa918afd8616c8c12e53bb475f6594a241e05"
+      },
+      {
+        "id": "artist",
+        "text": "Включи Linkin Park",
+        "expected": {
+          "status": "recognized",
+          "intent": {
+            "query": "Linkin Park",
+            "kind": "auto",
+            "artist": null,
+            "title": null
+          }
+        },
+        "file": "artist.wav",
+        "sha256": "8b0cd0cc5b92f58637a97f88d5de94e32ee87f7ca8e40575137811651d553ef9"
+      },
+      {
+        "id": "track",
+        "text": "Включи Linkin Park Numb",
+        "expected": {
+          "status": "recognized",
+          "intent": {
+            "query": "Linkin Park Numb",
+            "kind": "auto",
+            "artist": null,
+            "title": null
+          }
+        },
+        "file": "track.wav",
+        "sha256": "a7aa7a2e6121ae3ac275ea61dc350cb2c55b6f101f3ac79f381b81aa663894d8"
+      },
+      {
+        "id": "language",
+        "text": "Переключи язык на английский",
+        "expected": {
+          "status": "recognized",
+          "intent": {
+            "locale": "en"
+          }
+        },
+        "file": "language.wav",
+        "sha256": "4aa685909e9f215c655bc49f3c4deeee47dc87f3b91c8c7671250d068b3b48cf"
+      },
+      {
+        "id": "other",
+        "text": "Сегодня хорошая погода",
+        "expected": {
+          "status": "unrecognized"
+        },
+        "file": "other.wav",
+        "sha256": "29596a04789b7be2c3641aa09959664830b645f9f9525b475bf844a42d2614a3"
+      },
+      {
+        "id": "dorn",
+        "text": "Включи Иван Дорн",
+        "expected": {
+          "status": "recognized",
+          "intent": {
+            "query": "Иван Дорн",
+            "kind": "auto",
+            "artist": null,
+            "title": null
+          }
+        },
+        "file": "dorn.wav",
+        "sha256": "7f8ffb516a4408c0e83fd60e11419585f68897ec15ea20f9affd01ce472c58be"
+      },
+      {
+        "id": "silence",
+        "text": "",
+        "expected": {
+          "status": "unrecognized"
+        },
+        "file": "silence.wav",
+        "sha256": "20eaebffe1816e0ffa6f7f854f5ef4ea80d5349faaf0ce1fec1b713e7fde58fa"
+      }
+    ]
+  },
+  "models": [
+    {
+      "label": "gigaam-v3-ctc",
+      "files": [
+        {
+          "model": "v3_ctc.ckpt",
+          "sha256": "a20a9b5b8ed929c4a60141753cd3dd1284138879a46fb4a1cef6430ec019a02f"
+        }
+      ],
+      "profiles": [
+        {
+          "id": "external-default",
+          "threads": 4,
+          "model_sha256": "a20a9b5b8ed929c4a60141753cd3dd1284138879a46fb4a1cef6430ec019a02f",
+          "threads_binding": "operator_declared_not_server_attested",
+          "decoder": "upstream_default_greedy",
+          "startup_ms": null
+        }
+      ],
+      "grammar_sha256": {
+        "ru": "8e970491a4a491f7d74a5a00e37d2a9d4bad2a5b8c878c5763f6fd977cf2d31d"
+      },
+      "threads": 4,
+      "execution": "native-pytorch-2.8.0-cpu",
+      "binding": "reference checksum checked against GigaAM worker on each response"
+    },
+    {
+      "label": "whisper-base",
+      "files": [
+        {
+          "model": "ggml-base.bin",
+          "sha256": "60ed5bc3dd14eea856493d334349b405782ddcaf0028d4b5df4088345fba2efe"
+        }
+      ],
+      "profiles": [
+        {
+          "id": "external-beam5",
+          "threads": 4,
+          "model_sha256": "60ed5bc3dd14eea856493d334349b405782ddcaf0028d4b5df4088345fba2efe",
+          "threads_binding": "operator_declared_not_server_attested",
+          "decoder": {
+            "beam_size": 5,
+            "best_of": 5,
+            "temperature": 0,
+            "temperature_inc": 0
+          },
+          "startup_ms": null
+        },
+        {
+          "id": "external-greedy",
+          "threads": 4,
+          "model_sha256": "60ed5bc3dd14eea856493d334349b405782ddcaf0028d4b5df4088345fba2efe",
+          "threads_binding": "operator_declared_not_server_attested",
+          "decoder": {
+            "beam_size": 1,
+            "best_of": 1,
+            "temperature": 0,
+            "temperature_inc": 0
+          },
+          "startup_ms": null
+        }
+      ],
+      "grammar_sha256": {
+        "ru": "8e970491a4a491f7d74a5a00e37d2a9d4bad2a5b8c878c5763f6fd977cf2d31d"
+      },
+      "threads": 4,
+      "execution": "native-whisper-1.9.4-cpu-blas",
+      "binding": "checksum of operator reference file only; server model is not attested or loaded by benchmark"
+    }
+  ],
+  "summaries": [
+    {
+      "model": "gigaam-v3-ctc",
+      "profile": "external-default",
+      "speech_attempts": 21,
+      "errors": 0,
+      "warm_speech_median_ms": 278.825,
+      "warm_speech_p95_ms": 291.381,
+      "strict_interpretation_matches": 12,
+      "exact_transcript_matches": 12
+    },
+    {
+      "model": "whisper-base",
+      "profile": "external-beam5",
+      "speech_attempts": 21,
+      "errors": 0,
+      "warm_speech_median_ms": 242.384,
+      "warm_speech_p95_ms": 260.555,
+      "strict_interpretation_matches": 12,
+      "exact_transcript_matches": 12
+    },
+    {
+      "model": "whisper-base",
+      "profile": "external-greedy",
+      "speech_attempts": 21,
+      "errors": 0,
+      "warm_speech_median_ms": 210.215,
+      "warm_speech_p95_ms": 219.349,
+      "strict_interpretation_matches": 9,
+      "exact_transcript_matches": 9
+    }
+  ],
+  "rows": [
+    {
+      "model": "gigaam-v3-ctc",
+      "profile": "external-default",
+      "warmup": true,
+      "repeat": 0,
+      "first_request": true,
+      "case": "pause",
+      "locale": "ru",
+      "audio_sha256": "5ebc7df7c59c76ebe094401c61c634f481b3677b143d5a3d8f5c2e5d34899412",
+      "duration_ms": 500.438,
+      "status": "ok",
+      "text": "пауза",
+      "no_speech": false,
+      "actual": {
+        "status": "recognized",
+        "intent": {
+          "action": "pause"
+        }
+      },
+      "text_correct": true,
+      "interpretation_correct": true,
+      "server_evidence": {
+        "model": "v3_ctc",
+        "model_sha256": "a20a9b5b8ed929c4a60141753cd3dd1284138879a46fb4a1cef6430ec019a02f",
+        "upstream_revision": "7447938d791c4f3e643386ee22c33777004293a5",
+        "torch_version": "2.8.0",
+        "device": "cpu",
+        "threads": 4,
+        "peak_rss_bytes": 1953021952
+      },
+      "stt_ms": 329.831,
+      "rtf": 0.6591
+    },
+    {
+      "model": "gigaam-v3-ctc",
+      "profile": "external-default",
+      "warmup": false,
+      "repeat": 0,
+      "first_request": false,
+      "case": "pause",
+      "locale": "ru",
+      "audio_sha256": "5ebc7df7c59c76ebe094401c61c634f481b3677b143d5a3d8f5c2e5d34899412",
+      "duration_ms": 500.438,
+      "status": "ok",
+      "text": "пауза",
+      "no_speech": false,
+      "actual": {
+        "status": "recognized",
+        "intent": {
+          "action": "pause"
+        }
+      },
+      "text_correct": true,
+      "interpretation_correct": true,
+      "server_evidence": {
+        "model": "v3_ctc",
+        "model_sha256": "a20a9b5b8ed929c4a60141753cd3dd1284138879a46fb4a1cef6430ec019a02f",
+        "upstream_revision": "7447938d791c4f3e643386ee22c33777004293a5",
+        "torch_version": "2.8.0",
+        "device": "cpu",
+        "threads": 4,
+        "peak_rss_bytes": 1953169408
+      },
+      "stt_ms": 274.463,
+      "rtf": 0.5484
+    },
+    {
+      "model": "gigaam-v3-ctc",
+      "profile": "external-default",
+      "warmup": false,
+      "repeat": 0,
+      "first_request": false,
+      "case": "next",
+      "locale": "ru",
+      "audio_sha256": "326f037cae4516b66bcaad4be7efa918afd8616c8c12e53bb475f6594a241e05",
+      "duration_ms": 1088.375,
+      "status": "ok",
+      "text": "следующий трек",
+      "no_speech": false,
+      "actual": {
+        "status": "recognized",
+        "intent": {
+          "action": "next"
+        }
+      },
+      "text_correct": true,
+      "interpretation_correct": true,
+      "server_evidence": {
+        "model": "v3_ctc",
+        "model_sha256": "a20a9b5b8ed929c4a60141753cd3dd1284138879a46fb4a1cef6430ec019a02f",
+        "upstream_revision": "7447938d791c4f3e643386ee22c33777004293a5",
+        "torch_version": "2.8.0",
+        "device": "cpu",
+        "threads": 4,
+        "peak_rss_bytes": 1958035456
+      },
+      "stt_ms": 285.154,
+      "rtf": 0.262
+    },
+    {
+      "model": "gigaam-v3-ctc",
+      "profile": "external-default",
+      "warmup": false,
+      "repeat": 0,
+      "first_request": false,
+      "case": "artist",
+      "locale": "ru",
+      "audio_sha256": "8b0cd0cc5b92f58637a97f88d5de94e32ee87f7ca8e40575137811651d553ef9",
+      "duration_ms": 1370.688,
+      "status": "ok",
+      "text": "включи линкин парк",
+      "no_speech": false,
+      "actual": {
+        "status": "recognized",
+        "intent": {
+          "query": "линкин парк",
+          "kind": "auto",
+          "artist": null,
+          "title": null
+        }
+      },
+      "text_correct": false,
+      "interpretation_correct": false,
+      "server_evidence": {
+        "model": "v3_ctc",
+        "model_sha256": "a20a9b5b8ed929c4a60141753cd3dd1284138879a46fb4a1cef6430ec019a02f",
+        "upstream_revision": "7447938d791c4f3e643386ee22c33777004293a5",
+        "torch_version": "2.8.0",
+        "device": "cpu",
+        "threads": 4,
+        "peak_rss_bytes": 1959444480
+      },
+      "stt_ms": 291.381,
+      "rtf": 0.2126
+    },
+    {
+      "model": "gigaam-v3-ctc",
+      "profile": "external-default",
+      "warmup": false,
+      "repeat": 0,
+      "first_request": false,
+      "case": "track",
+      "locale": "ru",
+      "audio_sha256": "a7aa7a2e6121ae3ac275ea61dc350cb2c55b6f101f3ac79f381b81aa663894d8",
+      "duration_ms": 1684.188,
+      "status": "ok",
+      "text": "включи",
+      "no_speech": false,
+      "actual": {
+        "status": "unrecognized"
+      },
+      "text_correct": false,
+      "interpretation_correct": false,
+      "server_evidence": {
+        "model": "v3_ctc",
+        "model_sha256": "a20a9b5b8ed929c4a60141753cd3dd1284138879a46fb4a1cef6430ec019a02f",
+        "upstream_revision": "7447938d791c4f3e643386ee22c33777004293a5",
+        "torch_version": "2.8.0",
+        "device": "cpu",
+        "threads": 4,
+        "peak_rss_bytes": 1959854080
+      },
+      "stt_ms": 275.578,
+      "rtf": 0.1636
+    },
+    {
+      "model": "gigaam-v3-ctc",
+      "profile": "external-default",
+      "warmup": false,
+      "repeat": 0,
+      "first_request": false,
+      "case": "language",
+      "locale": "ru",
+      "audio_sha256": "4aa685909e9f215c655bc49f3c4deeee47dc87f3b91c8c7671250d068b3b48cf",
+      "duration_ms": 1691.5,
+      "status": "ok",
+      "text": "переключи язык на английский",
+      "no_speech": false,
+      "actual": {
+        "status": "recognized",
+        "intent": {
+          "locale": "en"
+        }
+      },
+      "text_correct": true,
+      "interpretation_correct": true,
+      "server_evidence": {
+        "model": "v3_ctc",
+        "model_sha256": "a20a9b5b8ed929c4a60141753cd3dd1284138879a46fb4a1cef6430ec019a02f",
+        "upstream_revision": "7447938d791c4f3e643386ee22c33777004293a5",
+        "torch_version": "2.8.0",
+        "device": "cpu",
+        "threads": 4,
+        "peak_rss_bytes": 1960034304
+      },
+      "stt_ms": 276.132,
+      "rtf": 0.1632
+    },
+    {
+      "model": "gigaam-v3-ctc",
+      "profile": "external-default",
+      "warmup": false,
+      "repeat": 0,
+      "first_request": false,
+      "case": "other",
+      "locale": "ru",
+      "audio_sha256": "29596a04789b7be2c3641aa09959664830b645f9f9525b475bf844a42d2614a3",
+      "duration_ms": 1563.812,
+      "status": "ok",
+      "text": "сегодня хорошая погода",
+      "no_speech": false,
+      "actual": {
+        "status": "unrecognized"
+      },
+      "text_correct": true,
+      "interpretation_correct": true,
+      "server_evidence": {
+        "model": "v3_ctc",
+        "model_sha256": "a20a9b5b8ed929c4a60141753cd3dd1284138879a46fb4a1cef6430ec019a02f",
+        "upstream_revision": "7447938d791c4f3e643386ee22c33777004293a5",
+        "torch_version": "2.8.0",
+        "device": "cpu",
+        "threads": 4,
+        "peak_rss_bytes": 1960329216
+      },
+      "stt_ms": 275.662,
+      "rtf": 0.1763
+    },
+    {
+      "model": "gigaam-v3-ctc",
+      "profile": "external-default",
+      "warmup": false,
+      "repeat": 0,
+      "first_request": false,
+      "case": "dorn",
+      "locale": "ru",
+      "audio_sha256": "7f8ffb516a4408c0e83fd60e11419585f68897ec15ea20f9affd01ce472c58be",
+      "duration_ms": 1150.125,
+      "status": "ok",
+      "text": "включи  о",
+      "no_speech": false,
+      "actual": {
+        "status": "recognized",
+        "intent": {
+          "query": "о",
+          "kind": "auto",
+          "artist": null,
+          "title": null
+        }
+      },
+      "text_correct": false,
+      "interpretation_correct": false,
+      "server_evidence": {
+        "model": "v3_ctc",
+        "model_sha256": "a20a9b5b8ed929c4a60141753cd3dd1284138879a46fb4a1cef6430ec019a02f",
+        "upstream_revision": "7447938d791c4f3e643386ee22c33777004293a5",
+        "torch_version": "2.8.0",
+        "device": "cpu",
+        "threads": 4,
+        "peak_rss_bytes": 1960345600
+      },
+      "stt_ms": 287.117,
+      "rtf": 0.2496
+    },
+    {
+      "model": "gigaam-v3-ctc",
+      "profile": "external-default",
+      "warmup": false,
+      "repeat": 0,
+      "first_request": false,
+      "case": "silence",
+      "locale": "ru",
+      "audio_sha256": "20eaebffe1816e0ffa6f7f854f5ef4ea80d5349faaf0ce1fec1b713e7fde58fa",
+      "duration_ms": 2000.0,
+      "status": "ok",
+      "text": "",
+      "no_speech": true,
+      "actual": {
+        "status": "unrecognized"
+      },
+      "text_correct": true,
+      "interpretation_correct": true,
+      "server_evidence": {
+        "model": "v3_ctc",
+        "model_sha256": "a20a9b5b8ed929c4a60141753cd3dd1284138879a46fb4a1cef6430ec019a02f",
+        "upstream_revision": "7447938d791c4f3e643386ee22c33777004293a5",
+        "torch_version": "2.8.0",
+        "device": "cpu",
+        "threads": 4,
+        "peak_rss_bytes": 1960345600
+      },
+      "stt_ms": 1.379,
+      "rtf": 0.0007
+    },
+    {
+      "model": "gigaam-v3-ctc",
+      "profile": "external-default",
+      "warmup": false,
+      "repeat": 1,
+      "first_request": false,
+      "case": "pause",
+      "locale": "ru",
+      "audio_sha256": "5ebc7df7c59c76ebe094401c61c634f481b3677b143d5a3d8f5c2e5d34899412",
+      "duration_ms": 500.438,
+      "status": "ok",
+      "text": "пауза",
+      "no_speech": false,
+      "actual": {
+        "status": "recognized",
+        "intent": {
+          "action": "pause"
+        }
+      },
+      "text_correct": true,
+      "interpretation_correct": true,
+      "server_evidence": {
+        "model": "v3_ctc",
+        "model_sha256": "a20a9b5b8ed929c4a60141753cd3dd1284138879a46fb4a1cef6430ec019a02f",
+        "upstream_revision": "7447938d791c4f3e643386ee22c33777004293a5",
+        "torch_version": "2.8.0",
+        "device": "cpu",
+        "threads": 4,
+        "peak_rss_bytes": 1960394752
+      },
+      "stt_ms": 272.29,
+      "rtf": 0.5441
+    },
+    {
+      "model": "gigaam-v3-ctc",
+      "profile": "external-default",
+      "warmup": false,
+      "repeat": 1,
+      "first_request": false,
+      "case": "next",
+      "locale": "ru",
+      "audio_sha256": "326f037cae4516b66bcaad4be7efa918afd8616c8c12e53bb475f6594a241e05",
+      "duration_ms": 1088.375,
+      "status": "ok",
+      "text": "следующий трек",
+      "no_speech": false,
+      "actual": {
+        "status": "recognized",
+        "intent": {
+          "action": "next"
+        }
+      },
+      "text_correct": true,
+      "interpretation_correct": true,
+      "server_evidence": {
+        "model": "v3_ctc",
+        "model_sha256": "a20a9b5b8ed929c4a60141753cd3dd1284138879a46fb4a1cef6430ec019a02f",
+        "upstream_revision": "7447938d791c4f3e643386ee22c33777004293a5",
+        "torch_version": "2.8.0",
+        "device": "cpu",
+        "threads": 4,
+        "peak_rss_bytes": 1960460288
+      },
+      "stt_ms": 278.193,
+      "rtf": 0.2556
+    },
+    {
+      "model": "gigaam-v3-ctc",
+      "profile": "external-default",
+      "warmup": false,
+      "repeat": 1,
+      "first_request": false,
+      "case": "artist",
+      "locale": "ru",
+      "audio_sha256": "8b0cd0cc5b92f58637a97f88d5de94e32ee87f7ca8e40575137811651d553ef9",
+      "duration_ms": 1370.688,
+      "status": "ok",
+      "text": "включи линкин парк",
+      "no_speech": false,
+      "actual": {
+        "status": "recognized",
+        "intent": {
+          "query": "линкин парк",
+          "kind": "auto",
+          "artist": null,
+          "title": null
+        }
+      },
+      "text_correct": false,
+      "interpretation_correct": false,
+      "server_evidence": {
+        "model": "v3_ctc",
+        "model_sha256": "a20a9b5b8ed929c4a60141753cd3dd1284138879a46fb4a1cef6430ec019a02f",
+        "upstream_revision": "7447938d791c4f3e643386ee22c33777004293a5",
+        "torch_version": "2.8.0",
+        "device": "cpu",
+        "threads": 4,
+        "peak_rss_bytes": 1960525824
+      },
+      "stt_ms": 294.627,
+      "rtf": 0.2149
+    },
+    {
+      "model": "gigaam-v3-ctc",
+      "profile": "external-default",
+      "warmup": false,
+      "repeat": 1,
+      "first_request": false,
+      "case": "track",
+      "locale": "ru",
+      "audio_sha256": "a7aa7a2e6121ae3ac275ea61dc350cb2c55b6f101f3ac79f381b81aa663894d8",
+      "duration_ms": 1684.188,
+      "status": "ok",
+      "text": "включи",
+      "no_speech": false,
+      "actual": {
+        "status": "unrecognized"
+      },
+      "text_correct": false,
+      "interpretation_correct": false,
+      "server_evidence": {
+        "model": "v3_ctc",
+        "model_sha256": "a20a9b5b8ed929c4a60141753cd3dd1284138879a46fb4a1cef6430ec019a02f",
+        "upstream_revision": "7447938d791c4f3e643386ee22c33777004293a5",
+        "torch_version": "2.8.0",
+        "device": "cpu",
+        "threads": 4,
+        "peak_rss_bytes": 1960591360
+      },
+      "stt_ms": 276.092,
+      "rtf": 0.1639
+    },
+    {
+      "model": "gigaam-v3-ctc",
+      "profile": "external-default",
+      "warmup": false,
+      "repeat": 1,
+      "first_request": false,
+      "case": "language",
+      "locale": "ru",
+      "audio_sha256": "4aa685909e9f215c655bc49f3c4deeee47dc87f3b91c8c7671250d068b3b48cf",
+      "duration_ms": 1691.5,
+      "status": "ok",
+      "text": "переключи язык на английский",
+      "no_speech": false,
+      "actual": {
+        "status": "recognized",
+        "intent": {
+          "locale": "en"
+        }
+      },
+      "text_correct": true,
+      "interpretation_correct": true,
+      "server_evidence": {
+        "model": "v3_ctc",
+        "model_sha256": "a20a9b5b8ed929c4a60141753cd3dd1284138879a46fb4a1cef6430ec019a02f",
+        "upstream_revision": "7447938d791c4f3e643386ee22c33777004293a5",
+        "torch_version": "2.8.0",
+        "device": "cpu",
+        "threads": 4,
+        "peak_rss_bytes": 1961279488
+      },
+      "stt_ms": 278.825,
+      "rtf": 0.1648
+    },
+    {
+      "model": "gigaam-v3-ctc",
+      "profile": "external-default",
+      "warmup": false,
+      "repeat": 1,
+      "first_request": false,
+      "case": "other",
+      "locale": "ru",
+      "audio_sha256": "29596a04789b7be2c3641aa09959664830b645f9f9525b475bf844a42d2614a3",
+      "duration_ms": 1563.812,
+      "status": "ok",
+      "text": "сегодня хорошая погода",
+      "no_speech": false,
+      "actual": {
+        "status": "unrecognized"
+      },
+      "text_correct": true,
+      "interpretation_correct": true,
+      "server_evidence": {
+        "model": "v3_ctc",
+        "model_sha256": "a20a9b5b8ed929c4a60141753cd3dd1284138879a46fb4a1cef6430ec019a02f",
+        "upstream_revision": "7447938d791c4f3e643386ee22c33777004293a5",
+        "torch_version": "2.8.0",
+        "device": "cpu",
+        "threads": 4,
+        "peak_rss_bytes": 1961295872
+      },
+      "stt_ms": 279.408,
+      "rtf": 0.1787
+    },
+    {
+      "model": "gigaam-v3-ctc",
+      "profile": "external-default",
+      "warmup": false,
+      "repeat": 1,
+      "first_request": false,
+      "case": "dorn",
+      "locale": "ru",
+      "audio_sha256": "7f8ffb516a4408c0e83fd60e11419585f68897ec15ea20f9affd01ce472c58be",
+      "duration_ms": 1150.125,
+      "status": "ok",
+      "text": "включи  о",
+      "no_speech": false,
+      "actual": {
+        "status": "recognized",
+        "intent": {
+          "query": "о",
+          "kind": "auto",
+          "artist": null,
+          "title": null
+        }
+      },
+      "text_correct": false,
+      "interpretation_correct": false,
+      "server_evidence": {
+        "model": "v3_ctc",
+        "model_sha256": "a20a9b5b8ed929c4a60141753cd3dd1284138879a46fb4a1cef6430ec019a02f",
+        "upstream_revision": "7447938d791c4f3e643386ee22c33777004293a5",
+        "torch_version": "2.8.0",
+        "device": "cpu",
+        "threads": 4,
+        "peak_rss_bytes": 1963589632
+      },
+      "stt_ms": 285.26,
+      "rtf": 0.248
+    },
+    {
+      "model": "gigaam-v3-ctc",
+      "profile": "external-default",
+      "warmup": false,
+      "repeat": 1,
+      "first_request": false,
+      "case": "silence",
+      "locale": "ru",
+      "audio_sha256": "20eaebffe1816e0ffa6f7f854f5ef4ea80d5349faaf0ce1fec1b713e7fde58fa",
+      "duration_ms": 2000.0,
+      "status": "ok",
+      "text": "",
+      "no_speech": true,
+      "actual": {
+        "status": "unrecognized"
+      },
+      "text_correct": true,
+      "interpretation_correct": true,
+      "server_evidence": {
+        "model": "v3_ctc",
+        "model_sha256": "a20a9b5b8ed929c4a60141753cd3dd1284138879a46fb4a1cef6430ec019a02f",
+        "upstream_revision": "7447938d791c4f3e643386ee22c33777004293a5",
+        "torch_version": "2.8.0",
+        "device": "cpu",
+        "threads": 4,
+        "peak_rss_bytes": 1963589632
+      },
+      "stt_ms": 1.351,
+      "rtf": 0.0007
+    },
+    {
+      "model": "gigaam-v3-ctc",
+      "profile": "external-default",
+      "warmup": false,
+      "repeat": 2,
+      "first_request": false,
+      "case": "pause",
+      "locale": "ru",
+      "audio_sha256": "5ebc7df7c59c76ebe094401c61c634f481b3677b143d5a3d8f5c2e5d34899412",
+      "duration_ms": 500.438,
+      "status": "ok",
+      "text": "пауза",
+      "no_speech": false,
+      "actual": {
+        "status": "recognized",
+        "intent": {
+          "action": "pause"
+        }
+      },
+      "text_correct": true,
+      "interpretation_correct": true,
+      "server_evidence": {
+        "model": "v3_ctc",
+        "model_sha256": "a20a9b5b8ed929c4a60141753cd3dd1284138879a46fb4a1cef6430ec019a02f",
+        "upstream_revision": "7447938d791c4f3e643386ee22c33777004293a5",
+        "torch_version": "2.8.0",
+        "device": "cpu",
+        "threads": 4,
+        "peak_rss_bytes": 1963622400
+      },
+      "stt_ms": 279.028,
+      "rtf": 0.5576
+    },
+    {
+      "model": "gigaam-v3-ctc",
+      "profile": "external-default",
+      "warmup": false,
+      "repeat": 2,
+      "first_request": false,
+      "case": "next",
+      "locale": "ru",
+      "audio_sha256": "326f037cae4516b66bcaad4be7efa918afd8616c8c12e53bb475f6594a241e05",
+      "duration_ms": 1088.375,
+      "status": "ok",
+      "text": "следующий трек",
+      "no_speech": false,
+      "actual": {
+        "status": "recognized",
+        "intent": {
+          "action": "next"
+        }
+      },
+      "text_correct": true,
+      "interpretation_correct": true,
+      "server_evidence": {
+        "model": "v3_ctc",
+        "model_sha256": "a20a9b5b8ed929c4a60141753cd3dd1284138879a46fb4a1cef6430ec019a02f",
+        "upstream_revision": "7447938d791c4f3e643386ee22c33777004293a5",
+        "torch_version": "2.8.0",
+        "device": "cpu",
+        "threads": 4,
+        "peak_rss_bytes": 1963622400
+      },
+      "stt_ms": 280.696,
+      "rtf": 0.2579
+    },
+    {
+      "model": "gigaam-v3-ctc",
+      "profile": "external-default",
+      "warmup": false,
+      "repeat": 2,
+      "first_request": false,
+      "case": "artist",
+      "locale": "ru",
+      "audio_sha256": "8b0cd0cc5b92f58637a97f88d5de94e32ee87f7ca8e40575137811651d553ef9",
+      "duration_ms": 1370.688,
+      "status": "ok",
+      "text": "включи линкин парк",
+      "no_speech": false,
+      "actual": {
+        "status": "recognized",
+        "intent": {
+          "query": "линкин парк",
+          "kind": "auto",
+          "artist": null,
+          "title": null
+        }
+      },
+      "text_correct": false,
+      "interpretation_correct": false,
+      "server_evidence": {
+        "model": "v3_ctc",
+        "model_sha256": "a20a9b5b8ed929c4a60141753cd3dd1284138879a46fb4a1cef6430ec019a02f",
+        "upstream_revision": "7447938d791c4f3e643386ee22c33777004293a5",
+        "torch_version": "2.8.0",
+        "device": "cpu",
+        "threads": 4,
+        "peak_rss_bytes": 1963622400
+      },
+      "stt_ms": 289.416,
+      "rtf": 0.2111
+    },
+    {
+      "model": "gigaam-v3-ctc",
+      "profile": "external-default",
+      "warmup": false,
+      "repeat": 2,
+      "first_request": false,
+      "case": "track",
+      "locale": "ru",
+      "audio_sha256": "a7aa7a2e6121ae3ac275ea61dc350cb2c55b6f101f3ac79f381b81aa663894d8",
+      "duration_ms": 1684.188,
+      "status": "ok",
+      "text": "включи",
+      "no_speech": false,
+      "actual": {
+        "status": "unrecognized"
+      },
+      "text_correct": false,
+      "interpretation_correct": false,
+      "server_evidence": {
+        "model": "v3_ctc",
+        "model_sha256": "a20a9b5b8ed929c4a60141753cd3dd1284138879a46fb4a1cef6430ec019a02f",
+        "upstream_revision": "7447938d791c4f3e643386ee22c33777004293a5",
+        "torch_version": "2.8.0",
+        "device": "cpu",
+        "threads": 4,
+        "peak_rss_bytes": 1963622400
+      },
+      "stt_ms": 275.323,
+      "rtf": 0.1635
+    },
+    {
+      "model": "gigaam-v3-ctc",
+      "profile": "external-default",
+      "warmup": false,
+      "repeat": 2,
+      "first_request": false,
+      "case": "language",
+      "locale": "ru",
+      "audio_sha256": "4aa685909e9f215c655bc49f3c4deeee47dc87f3b91c8c7671250d068b3b48cf",
+      "duration_ms": 1691.5,
+      "status": "ok",
+      "text": "переключи язык на английский",
+      "no_speech": false,
+      "actual": {
+        "status": "recognized",
+        "intent": {
+          "locale": "en"
+        }
+      },
+      "text_correct": true,
+      "interpretation_correct": true,
+      "server_evidence": {
+        "model": "v3_ctc",
+        "model_sha256": "a20a9b5b8ed929c4a60141753cd3dd1284138879a46fb4a1cef6430ec019a02f",
+        "upstream_revision": "7447938d791c4f3e643386ee22c33777004293a5",
+        "torch_version": "2.8.0",
+        "device": "cpu",
+        "threads": 4,
+        "peak_rss_bytes": 1963655168
+      },
+      "stt_ms": 275.064,
+      "rtf": 0.1626
+    },
+    {
+      "model": "gigaam-v3-ctc",
+      "profile": "external-default",
+      "warmup": false,
+      "repeat": 2,
+      "first_request": false,
+      "case": "other",
+      "locale": "ru",
+      "audio_sha256": "29596a04789b7be2c3641aa09959664830b645f9f9525b475bf844a42d2614a3",
+      "duration_ms": 1563.812,
+      "status": "ok",
+      "text": "сегодня хорошая погода",
+      "no_speech": false,
+      "actual": {
+        "status": "unrecognized"
+      },
+      "text_correct": true,
+      "interpretation_correct": true,
+      "server_evidence": {
+        "model": "v3_ctc",
+        "model_sha256": "a20a9b5b8ed929c4a60141753cd3dd1284138879a46fb4a1cef6430ec019a02f",
+        "upstream_revision": "7447938d791c4f3e643386ee22c33777004293a5",
+        "torch_version": "2.8.0",
+        "device": "cpu",
+        "threads": 4,
+        "peak_rss_bytes": 1963655168
+      },
+      "stt_ms": 280.789,
+      "rtf": 0.1796
+    },
+    {
+      "model": "gigaam-v3-ctc",
+      "profile": "external-default",
+      "warmup": false,
+      "repeat": 2,
+      "first_request": false,
+      "case": "dorn",
+      "locale": "ru",
+      "audio_sha256": "7f8ffb516a4408c0e83fd60e11419585f68897ec15ea20f9affd01ce472c58be",
+      "duration_ms": 1150.125,
+      "status": "ok",
+      "text": "включи  о",
+      "no_speech": false,
+      "actual": {
+        "status": "recognized",
+        "intent": {
+          "query": "о",
+          "kind": "auto",
+          "artist": null,
+          "title": null
+        }
+      },
+      "text_correct": false,
+      "interpretation_correct": false,
+      "server_evidence": {
+        "model": "v3_ctc",
+        "model_sha256": "a20a9b5b8ed929c4a60141753cd3dd1284138879a46fb4a1cef6430ec019a02f",
+        "upstream_revision": "7447938d791c4f3e643386ee22c33777004293a5",
+        "torch_version": "2.8.0",
+        "device": "cpu",
+        "threads": 4,
+        "peak_rss_bytes": 1963655168
+      },
+      "stt_ms": 278.354,
+      "rtf": 0.242
+    },
+    {
+      "model": "gigaam-v3-ctc",
+      "profile": "external-default",
+      "warmup": false,
+      "repeat": 2,
+      "first_request": false,
+      "case": "silence",
+      "locale": "ru",
+      "audio_sha256": "20eaebffe1816e0ffa6f7f854f5ef4ea80d5349faaf0ce1fec1b713e7fde58fa",
+      "duration_ms": 2000.0,
+      "status": "ok",
+      "text": "",
+      "no_speech": true,
+      "actual": {
+        "status": "unrecognized"
+      },
+      "text_correct": true,
+      "interpretation_correct": true,
+      "server_evidence": {
+        "model": "v3_ctc",
+        "model_sha256": "a20a9b5b8ed929c4a60141753cd3dd1284138879a46fb4a1cef6430ec019a02f",
+        "upstream_revision": "7447938d791c4f3e643386ee22c33777004293a5",
+        "torch_version": "2.8.0",
+        "device": "cpu",
+        "threads": 4,
+        "peak_rss_bytes": 1963655168
+      },
+      "stt_ms": 1.391,
+      "rtf": 0.0007
+    },
+    {
+      "model": "whisper-base",
+      "profile": "external-beam5",
+      "warmup": true,
+      "repeat": 0,
+      "first_request": true,
+      "case": "pause",
+      "locale": "ru",
+      "audio_sha256": "5ebc7df7c59c76ebe094401c61c634f481b3677b143d5a3d8f5c2e5d34899412",
+      "duration_ms": 500.438,
+      "status": "ok",
+      "text": "Пауза.",
+      "no_speech": false,
+      "actual": {
+        "status": "recognized",
+        "intent": {
+          "action": "pause"
+        }
+      },
+      "text_correct": true,
+      "interpretation_correct": true,
+      "stt_ms": 236.613,
+      "rtf": 0.4728
+    },
+    {
+      "model": "whisper-base",
+      "profile": "external-greedy",
+      "warmup": true,
+      "repeat": 0,
+      "first_request": false,
+      "case": "pause",
+      "locale": "ru",
+      "audio_sha256": "5ebc7df7c59c76ebe094401c61c634f481b3677b143d5a3d8f5c2e5d34899412",
+      "duration_ms": 500.438,
+      "status": "ok",
+      "text": "Пауза.",
+      "no_speech": false,
+      "actual": {
+        "status": "recognized",
+        "intent": {
+          "action": "pause"
+        }
+      },
+      "text_correct": true,
+      "interpretation_correct": true,
+      "stt_ms": 201.163,
+      "rtf": 0.402
+    },
+    {
+      "model": "whisper-base",
+      "profile": "external-beam5",
+      "warmup": false,
+      "repeat": 0,
+      "first_request": false,
+      "case": "pause",
+      "locale": "ru",
+      "audio_sha256": "5ebc7df7c59c76ebe094401c61c634f481b3677b143d5a3d8f5c2e5d34899412",
+      "duration_ms": 500.438,
+      "status": "ok",
+      "text": "Пауза.",
+      "no_speech": false,
+      "actual": {
+        "status": "recognized",
+        "intent": {
+          "action": "pause"
+        }
+      },
+      "text_correct": true,
+      "interpretation_correct": true,
+      "stt_ms": 216.192,
+      "rtf": 0.432
+    },
+    {
+      "model": "whisper-base",
+      "profile": "external-greedy",
+      "warmup": false,
+      "repeat": 0,
+      "first_request": false,
+      "case": "pause",
+      "locale": "ru",
+      "audio_sha256": "5ebc7df7c59c76ebe094401c61c634f481b3677b143d5a3d8f5c2e5d34899412",
+      "duration_ms": 500.438,
+      "status": "ok",
+      "text": "Пауза.",
+      "no_speech": false,
+      "actual": {
+        "status": "recognized",
+        "intent": {
+          "action": "pause"
+        }
+      },
+      "text_correct": true,
+      "interpretation_correct": true,
+      "stt_ms": 199.867,
+      "rtf": 0.3994
+    },
+    {
+      "model": "whisper-base",
+      "profile": "external-greedy",
+      "warmup": false,
+      "repeat": 0,
+      "first_request": false,
+      "case": "next",
+      "locale": "ru",
+      "audio_sha256": "326f037cae4516b66bcaad4be7efa918afd8616c8c12e53bb475f6594a241e05",
+      "duration_ms": 1088.375,
+      "status": "ok",
+      "text": "Следующий трек.",
+      "no_speech": false,
+      "actual": {
+        "status": "recognized",
+        "intent": {
+          "action": "next"
+        }
+      },
+      "text_correct": true,
+      "interpretation_correct": true,
+      "stt_ms": 204.667,
+      "rtf": 0.188
+    },
+    {
+      "model": "whisper-base",
+      "profile": "external-beam5",
+      "warmup": false,
+      "repeat": 0,
+      "first_request": false,
+      "case": "next",
+      "locale": "ru",
+      "audio_sha256": "326f037cae4516b66bcaad4be7efa918afd8616c8c12e53bb475f6594a241e05",
+      "duration_ms": 1088.375,
+      "status": "ok",
+      "text": "Следующий трек.",
+      "no_speech": false,
+      "actual": {
+        "status": "recognized",
+        "intent": {
+          "action": "next"
+        }
+      },
+      "text_correct": true,
+      "interpretation_correct": true,
+      "stt_ms": 224.687,
+      "rtf": 0.2064
+    },
+    {
+      "model": "whisper-base",
+      "profile": "external-beam5",
+      "warmup": false,
+      "repeat": 0,
+      "first_request": false,
+      "case": "artist",
+      "locale": "ru",
+      "audio_sha256": "8b0cd0cc5b92f58637a97f88d5de94e32ee87f7ca8e40575137811651d553ef9",
+      "duration_ms": 1370.688,
+      "status": "ok",
+      "text": "включи лингин парк",
+      "no_speech": false,
+      "actual": {
+        "status": "recognized",
+        "intent": {
+          "query": "лингин парк",
+          "kind": "auto",
+          "artist": null,
+          "title": null
+        }
+      },
+      "text_correct": false,
+      "interpretation_correct": false,
+      "stt_ms": 242.384,
+      "rtf": 0.1768
+    },
+    {
+      "model": "whisper-base",
+      "profile": "external-greedy",
+      "warmup": false,
+      "repeat": 0,
+      "first_request": false,
+      "case": "artist",
+      "locale": "ru",
+      "audio_sha256": "8b0cd0cc5b92f58637a97f88d5de94e32ee87f7ca8e40575137811651d553ef9",
+      "duration_ms": 1370.688,
+      "status": "ok",
+      "text": "включи лингин парк.",
+      "no_speech": false,
+      "actual": {
+        "status": "recognized",
+        "intent": {
+          "query": "лингин парк",
+          "kind": "auto",
+          "artist": null,
+          "title": null
+        }
+      },
+      "text_correct": false,
+      "interpretation_correct": false,
+      "stt_ms": 217.634,
+      "rtf": 0.1588
+    },
+    {
+      "model": "whisper-base",
+      "profile": "external-greedy",
+      "warmup": false,
+      "repeat": 0,
+      "first_request": false,
+      "case": "track",
+      "locale": "ru",
+      "audio_sha256": "a7aa7a2e6121ae3ac275ea61dc350cb2c55b6f101f3ac79f381b81aa663894d8",
+      "duration_ms": 1684.188,
+      "status": "ok",
+      "text": "включи линтин парбнамп.",
+      "no_speech": false,
+      "actual": {
+        "status": "recognized",
+        "intent": {
+          "query": "линтин парбнамп",
+          "kind": "auto",
+          "artist": null,
+          "title": null
+        }
+      },
+      "text_correct": false,
+      "interpretation_correct": false,
+      "stt_ms": 216.311,
+      "rtf": 0.1284
+    },
+    {
+      "model": "whisper-base",
+      "profile": "external-beam5",
+      "warmup": false,
+      "repeat": 0,
+      "first_request": false,
+      "case": "track",
+      "locale": "ru",
+      "audio_sha256": "a7aa7a2e6121ae3ac275ea61dc350cb2c55b6f101f3ac79f381b81aa663894d8",
+      "duration_ms": 1684.188,
+      "status": "ok",
+      "text": "включи лингин парбнамп",
+      "no_speech": false,
+      "actual": {
+        "status": "recognized",
+        "intent": {
+          "query": "лингин парбнамп",
+          "kind": "auto",
+          "artist": null,
+          "title": null
+        }
+      },
+      "text_correct": false,
+      "interpretation_correct": false,
+      "stt_ms": 260.272,
+      "rtf": 0.1545
+    },
+    {
+      "model": "whisper-base",
+      "profile": "external-beam5",
+      "warmup": false,
+      "repeat": 0,
+      "first_request": false,
+      "case": "language",
+      "locale": "ru",
+      "audio_sha256": "4aa685909e9f215c655bc49f3c4deeee47dc87f3b91c8c7671250d068b3b48cf",
+      "duration_ms": 1691.5,
+      "status": "ok",
+      "text": "переключи из Зыкна английский.",
+      "no_speech": false,
+      "actual": {
+        "status": "unrecognized"
+      },
+      "text_correct": false,
+      "interpretation_correct": false,
+      "stt_ms": 254.545,
+      "rtf": 0.1505
+    },
+    {
+      "model": "whisper-base",
+      "profile": "external-greedy",
+      "warmup": false,
+      "repeat": 0,
+      "first_request": false,
+      "case": "language",
+      "locale": "ru",
+      "audio_sha256": "4aa685909e9f215c655bc49f3c4deeee47dc87f3b91c8c7671250d068b3b48cf",
+      "duration_ms": 1691.5,
+      "status": "ok",
+      "text": "переключи из-за кнанглизки.",
+      "no_speech": false,
+      "actual": {
+        "status": "unrecognized"
+      },
+      "text_correct": false,
+      "interpretation_correct": false,
+      "stt_ms": 219.349,
+      "rtf": 0.1297
+    },
+    {
+      "model": "whisper-base",
+      "profile": "external-greedy",
+      "warmup": false,
+      "repeat": 0,
+      "first_request": false,
+      "case": "other",
+      "locale": "ru",
+      "audio_sha256": "29596a04789b7be2c3641aa09959664830b645f9f9525b475bf844a42d2614a3",
+      "duration_ms": 1563.812,
+      "status": "ok",
+      "text": "Сегодня хорошая погода.",
+      "no_speech": false,
+      "actual": {
+        "status": "unrecognized"
+      },
+      "text_correct": true,
+      "interpretation_correct": true,
+      "stt_ms": 200.549,
+      "rtf": 0.1282
+    },
+    {
+      "model": "whisper-base",
+      "profile": "external-beam5",
+      "warmup": false,
+      "repeat": 0,
+      "first_request": false,
+      "case": "other",
+      "locale": "ru",
+      "audio_sha256": "29596a04789b7be2c3641aa09959664830b645f9f9525b475bf844a42d2614a3",
+      "duration_ms": 1563.812,
+      "status": "ok",
+      "text": "Сегодня хорошая погода.",
+      "no_speech": false,
+      "actual": {
+        "status": "unrecognized"
+      },
+      "text_correct": true,
+      "interpretation_correct": true,
+      "stt_ms": 226.091,
+      "rtf": 0.1446
+    },
+    {
+      "model": "whisper-base",
+      "profile": "external-beam5",
+      "warmup": false,
+      "repeat": 0,
+      "first_request": false,
+      "case": "dorn",
+      "locale": "ru",
+      "audio_sha256": "7f8ffb516a4408c0e83fd60e11419585f68897ec15ea20f9affd01ce472c58be",
+      "duration_ms": 1150.125,
+      "status": "ok",
+      "text": "Включи Иван Дорн!",
+      "no_speech": false,
+      "actual": {
+        "status": "recognized",
+        "intent": {
+          "query": "Иван Дорн",
+          "kind": "auto",
+          "artist": null,
+          "title": null
+        }
+      },
+      "text_correct": true,
+      "interpretation_correct": true,
+      "stt_ms": 244.417,
+      "rtf": 0.2125
+    },
+    {
+      "model": "whisper-base",
+      "profile": "external-greedy",
+      "warmup": false,
+      "repeat": 0,
+      "first_request": false,
+      "case": "dorn",
+      "locale": "ru",
+      "audio_sha256": "7f8ffb516a4408c0e83fd60e11419585f68897ec15ea20f9affd01ce472c58be",
+      "duration_ms": 1150.125,
+      "status": "ok",
+      "text": "включи и вон дурн.",
+      "no_speech": false,
+      "actual": {
+        "status": "recognized",
+        "intent": {
+          "query": "и вон дурн",
+          "kind": "auto",
+          "artist": null,
+          "title": null
+        }
+      },
+      "text_correct": false,
+      "interpretation_correct": false,
+      "stt_ms": 210.215,
+      "rtf": 0.1828
+    },
+    {
+      "model": "whisper-base",
+      "profile": "external-greedy",
+      "warmup": false,
+      "repeat": 0,
+      "first_request": false,
+      "case": "silence",
+      "locale": "ru",
+      "audio_sha256": "20eaebffe1816e0ffa6f7f854f5ef4ea80d5349faaf0ce1fec1b713e7fde58fa",
+      "duration_ms": 2000.0,
+      "status": "ok",
+      "text": "[музыка]",
+      "no_speech": false,
+      "actual": {
+        "status": "unrecognized"
+      },
+      "text_correct": false,
+      "interpretation_correct": true,
+      "stt_ms": 198.652,
+      "rtf": 0.0993
+    },
+    {
+      "model": "whisper-base",
+      "profile": "external-beam5",
+      "warmup": false,
+      "repeat": 0,
+      "first_request": false,
+      "case": "silence",
+      "locale": "ru",
+      "audio_sha256": "20eaebffe1816e0ffa6f7f854f5ef4ea80d5349faaf0ce1fec1b713e7fde58fa",
+      "duration_ms": 2000.0,
+      "status": "ok",
+      "text": "[Музыка]",
+      "no_speech": false,
+      "actual": {
+        "status": "unrecognized"
+      },
+      "text_correct": false,
+      "interpretation_correct": true,
+      "stt_ms": 222.667,
+      "rtf": 0.1113
+    },
+    {
+      "model": "whisper-base",
+      "profile": "external-greedy",
+      "warmup": false,
+      "repeat": 1,
+      "first_request": false,
+      "case": "pause",
+      "locale": "ru",
+      "audio_sha256": "5ebc7df7c59c76ebe094401c61c634f481b3677b143d5a3d8f5c2e5d34899412",
+      "duration_ms": 500.438,
+      "status": "ok",
+      "text": "Пауза.",
+      "no_speech": false,
+      "actual": {
+        "status": "recognized",
+        "intent": {
+          "action": "pause"
+        }
+      },
+      "text_correct": true,
+      "interpretation_correct": true,
+      "stt_ms": 198.855,
+      "rtf": 0.3974
+    },
+    {
+      "model": "whisper-base",
+      "profile": "external-beam5",
+      "warmup": false,
+      "repeat": 1,
+      "first_request": false,
+      "case": "pause",
+      "locale": "ru",
+      "audio_sha256": "5ebc7df7c59c76ebe094401c61c634f481b3677b143d5a3d8f5c2e5d34899412",
+      "duration_ms": 500.438,
+      "status": "ok",
+      "text": "Пауза.",
+      "no_speech": false,
+      "actual": {
+        "status": "recognized",
+        "intent": {
+          "action": "pause"
+        }
+      },
+      "text_correct": true,
+      "interpretation_correct": true,
+      "stt_ms": 213.425,
+      "rtf": 0.4265
+    },
+    {
+      "model": "whisper-base",
+      "profile": "external-beam5",
+      "warmup": false,
+      "repeat": 1,
+      "first_request": false,
+      "case": "next",
+      "locale": "ru",
+      "audio_sha256": "326f037cae4516b66bcaad4be7efa918afd8616c8c12e53bb475f6594a241e05",
+      "duration_ms": 1088.375,
+      "status": "ok",
+      "text": "Следующий трек.",
+      "no_speech": false,
+      "actual": {
+        "status": "recognized",
+        "intent": {
+          "action": "next"
+        }
+      },
+      "text_correct": true,
+      "interpretation_correct": true,
+      "stt_ms": 223.094,
+      "rtf": 0.205
+    },
+    {
+      "model": "whisper-base",
+      "profile": "external-greedy",
+      "warmup": false,
+      "repeat": 1,
+      "first_request": false,
+      "case": "next",
+      "locale": "ru",
+      "audio_sha256": "326f037cae4516b66bcaad4be7efa918afd8616c8c12e53bb475f6594a241e05",
+      "duration_ms": 1088.375,
+      "status": "ok",
+      "text": "Следующий трек.",
+      "no_speech": false,
+      "actual": {
+        "status": "recognized",
+        "intent": {
+          "action": "next"
+        }
+      },
+      "text_correct": true,
+      "interpretation_correct": true,
+      "stt_ms": 200.904,
+      "rtf": 0.1846
+    },
+    {
+      "model": "whisper-base",
+      "profile": "external-greedy",
+      "warmup": false,
+      "repeat": 1,
+      "first_request": false,
+      "case": "artist",
+      "locale": "ru",
+      "audio_sha256": "8b0cd0cc5b92f58637a97f88d5de94e32ee87f7ca8e40575137811651d553ef9",
+      "duration_ms": 1370.688,
+      "status": "ok",
+      "text": "включи лингин парк.",
+      "no_speech": false,
+      "actual": {
+        "status": "recognized",
+        "intent": {
+          "query": "лингин парк",
+          "kind": "auto",
+          "artist": null,
+          "title": null
+        }
+      },
+      "text_correct": false,
+      "interpretation_correct": false,
+      "stt_ms": 208.447,
+      "rtf": 0.1521
+    },
+    {
+      "model": "whisper-base",
+      "profile": "external-beam5",
+      "warmup": false,
+      "repeat": 1,
+      "first_request": false,
+      "case": "artist",
+      "locale": "ru",
+      "audio_sha256": "8b0cd0cc5b92f58637a97f88d5de94e32ee87f7ca8e40575137811651d553ef9",
+      "duration_ms": 1370.688,
+      "status": "ok",
+      "text": "включи лингин парк",
+      "no_speech": false,
+      "actual": {
+        "status": "recognized",
+        "intent": {
+          "query": "лингин парк",
+          "kind": "auto",
+          "artist": null,
+          "title": null
+        }
+      },
+      "text_correct": false,
+      "interpretation_correct": false,
+      "stt_ms": 241.695,
+      "rtf": 0.1763
+    },
+    {
+      "model": "whisper-base",
+      "profile": "external-beam5",
+      "warmup": false,
+      "repeat": 1,
+      "first_request": false,
+      "case": "track",
+      "locale": "ru",
+      "audio_sha256": "a7aa7a2e6121ae3ac275ea61dc350cb2c55b6f101f3ac79f381b81aa663894d8",
+      "duration_ms": 1684.188,
+      "status": "ok",
+      "text": "включи лингин парбнамп",
+      "no_speech": false,
+      "actual": {
+        "status": "recognized",
+        "intent": {
+          "query": "лингин парбнамп",
+          "kind": "auto",
+          "artist": null,
+          "title": null
+        }
+      },
+      "text_correct": false,
+      "interpretation_correct": false,
+      "stt_ms": 260.555,
+      "rtf": 0.1547
+    },
+    {
+      "model": "whisper-base",
+      "profile": "external-greedy",
+      "warmup": false,
+      "repeat": 1,
+      "first_request": false,
+      "case": "track",
+      "locale": "ru",
+      "audio_sha256": "a7aa7a2e6121ae3ac275ea61dc350cb2c55b6f101f3ac79f381b81aa663894d8",
+      "duration_ms": 1684.188,
+      "status": "ok",
+      "text": "включи линтин парбнамп.",
+      "no_speech": false,
+      "actual": {
+        "status": "recognized",
+        "intent": {
+          "query": "линтин парбнамп",
+          "kind": "auto",
+          "artist": null,
+          "title": null
+        }
+      },
+      "text_correct": false,
+      "interpretation_correct": false,
+      "stt_ms": 215.502,
+      "rtf": 0.128
+    },
+    {
+      "model": "whisper-base",
+      "profile": "external-greedy",
+      "warmup": false,
+      "repeat": 1,
+      "first_request": false,
+      "case": "language",
+      "locale": "ru",
+      "audio_sha256": "4aa685909e9f215c655bc49f3c4deeee47dc87f3b91c8c7671250d068b3b48cf",
+      "duration_ms": 1691.5,
+      "status": "ok",
+      "text": "переключи из-за кнанглизки.",
+      "no_speech": false,
+      "actual": {
+        "status": "unrecognized"
+      },
+      "text_correct": false,
+      "interpretation_correct": false,
+      "stt_ms": 216.741,
+      "rtf": 0.1281
+    },
+    {
+      "model": "whisper-base",
+      "profile": "external-beam5",
+      "warmup": false,
+      "repeat": 1,
+      "first_request": false,
+      "case": "language",
+      "locale": "ru",
+      "audio_sha256": "4aa685909e9f215c655bc49f3c4deeee47dc87f3b91c8c7671250d068b3b48cf",
+      "duration_ms": 1691.5,
+      "status": "ok",
+      "text": "переключи из Зыкна английский.",
+      "no_speech": false,
+      "actual": {
+        "status": "unrecognized"
+      },
+      "text_correct": false,
+      "interpretation_correct": false,
+      "stt_ms": 256.298,
+      "rtf": 0.1515
+    },
+    {
+      "model": "whisper-base",
+      "profile": "external-beam5",
+      "warmup": false,
+      "repeat": 1,
+      "first_request": false,
+      "case": "other",
+      "locale": "ru",
+      "audio_sha256": "29596a04789b7be2c3641aa09959664830b645f9f9525b475bf844a42d2614a3",
+      "duration_ms": 1563.812,
+      "status": "ok",
+      "text": "Сегодня хорошая погода.",
+      "no_speech": false,
+      "actual": {
+        "status": "unrecognized"
+      },
+      "text_correct": true,
+      "interpretation_correct": true,
+      "stt_ms": 228.884,
+      "rtf": 0.1464
+    },
+    {
+      "model": "whisper-base",
+      "profile": "external-greedy",
+      "warmup": false,
+      "repeat": 1,
+      "first_request": false,
+      "case": "other",
+      "locale": "ru",
+      "audio_sha256": "29596a04789b7be2c3641aa09959664830b645f9f9525b475bf844a42d2614a3",
+      "duration_ms": 1563.812,
+      "status": "ok",
+      "text": "Сегодня хорошая погода.",
+      "no_speech": false,
+      "actual": {
+        "status": "unrecognized"
+      },
+      "text_correct": true,
+      "interpretation_correct": true,
+      "stt_ms": 202.051,
+      "rtf": 0.1292
+    },
+    {
+      "model": "whisper-base",
+      "profile": "external-greedy",
+      "warmup": false,
+      "repeat": 1,
+      "first_request": false,
+      "case": "dorn",
+      "locale": "ru",
+      "audio_sha256": "7f8ffb516a4408c0e83fd60e11419585f68897ec15ea20f9affd01ce472c58be",
+      "duration_ms": 1150.125,
+      "status": "ok",
+      "text": "включи и вон дурн.",
+      "no_speech": false,
+      "actual": {
+        "status": "recognized",
+        "intent": {
+          "query": "и вон дурн",
+          "kind": "auto",
+          "artist": null,
+          "title": null
+        }
+      },
+      "text_correct": false,
+      "interpretation_correct": false,
+      "stt_ms": 238.088,
+      "rtf": 0.207
+    },
+    {
+      "model": "whisper-base",
+      "profile": "external-beam5",
+      "warmup": false,
+      "repeat": 1,
+      "first_request": false,
+      "case": "dorn",
+      "locale": "ru",
+      "audio_sha256": "7f8ffb516a4408c0e83fd60e11419585f68897ec15ea20f9affd01ce472c58be",
+      "duration_ms": 1150.125,
+      "status": "ok",
+      "text": "Включи Иван Дорн!",
+      "no_speech": false,
+      "actual": {
+        "status": "recognized",
+        "intent": {
+          "query": "Иван Дорн",
+          "kind": "auto",
+          "artist": null,
+          "title": null
+        }
+      },
+      "text_correct": true,
+      "interpretation_correct": true,
+      "stt_ms": 246.939,
+      "rtf": 0.2147
+    },
+    {
+      "model": "whisper-base",
+      "profile": "external-beam5",
+      "warmup": false,
+      "repeat": 1,
+      "first_request": false,
+      "case": "silence",
+      "locale": "ru",
+      "audio_sha256": "20eaebffe1816e0ffa6f7f854f5ef4ea80d5349faaf0ce1fec1b713e7fde58fa",
+      "duration_ms": 2000.0,
+      "status": "ok",
+      "text": "[Музыка]",
+      "no_speech": false,
+      "actual": {
+        "status": "unrecognized"
+      },
+      "text_correct": false,
+      "interpretation_correct": true,
+      "stt_ms": 222.591,
+      "rtf": 0.1113
+    },
+    {
+      "model": "whisper-base",
+      "profile": "external-greedy",
+      "warmup": false,
+      "repeat": 1,
+      "first_request": false,
+      "case": "silence",
+      "locale": "ru",
+      "audio_sha256": "20eaebffe1816e0ffa6f7f854f5ef4ea80d5349faaf0ce1fec1b713e7fde58fa",
+      "duration_ms": 2000.0,
+      "status": "ok",
+      "text": "[музыка]",
+      "no_speech": false,
+      "actual": {
+        "status": "unrecognized"
+      },
+      "text_correct": false,
+      "interpretation_correct": true,
+      "stt_ms": 203.711,
+      "rtf": 0.1019
+    },
+    {
+      "model": "whisper-base",
+      "profile": "external-beam5",
+      "warmup": false,
+      "repeat": 2,
+      "first_request": false,
+      "case": "pause",
+      "locale": "ru",
+      "audio_sha256": "5ebc7df7c59c76ebe094401c61c634f481b3677b143d5a3d8f5c2e5d34899412",
+      "duration_ms": 500.438,
+      "status": "ok",
+      "text": "Пауза.",
+      "no_speech": false,
+      "actual": {
+        "status": "recognized",
+        "intent": {
+          "action": "pause"
+        }
+      },
+      "text_correct": true,
+      "interpretation_correct": true,
+      "stt_ms": 213.704,
+      "rtf": 0.427
+    },
+    {
+      "model": "whisper-base",
+      "profile": "external-greedy",
+      "warmup": false,
+      "repeat": 2,
+      "first_request": false,
+      "case": "pause",
+      "locale": "ru",
+      "audio_sha256": "5ebc7df7c59c76ebe094401c61c634f481b3677b143d5a3d8f5c2e5d34899412",
+      "duration_ms": 500.438,
+      "status": "ok",
+      "text": "Пауза.",
+      "no_speech": false,
+      "actual": {
+        "status": "recognized",
+        "intent": {
+          "action": "pause"
+        }
+      },
+      "text_correct": true,
+      "interpretation_correct": true,
+      "stt_ms": 198.657,
+      "rtf": 0.397
+    },
+    {
+      "model": "whisper-base",
+      "profile": "external-greedy",
+      "warmup": false,
+      "repeat": 2,
+      "first_request": false,
+      "case": "next",
+      "locale": "ru",
+      "audio_sha256": "326f037cae4516b66bcaad4be7efa918afd8616c8c12e53bb475f6594a241e05",
+      "duration_ms": 1088.375,
+      "status": "ok",
+      "text": "Следующий трек.",
+      "no_speech": false,
+      "actual": {
+        "status": "recognized",
+        "intent": {
+          "action": "next"
+        }
+      },
+      "text_correct": true,
+      "interpretation_correct": true,
+      "stt_ms": 201.276,
+      "rtf": 0.1849
+    },
+    {
+      "model": "whisper-base",
+      "profile": "external-beam5",
+      "warmup": false,
+      "repeat": 2,
+      "first_request": false,
+      "case": "next",
+      "locale": "ru",
+      "audio_sha256": "326f037cae4516b66bcaad4be7efa918afd8616c8c12e53bb475f6594a241e05",
+      "duration_ms": 1088.375,
+      "status": "ok",
+      "text": "Следующий трек.",
+      "no_speech": false,
+      "actual": {
+        "status": "recognized",
+        "intent": {
+          "action": "next"
+        }
+      },
+      "text_correct": true,
+      "interpretation_correct": true,
+      "stt_ms": 222.748,
+      "rtf": 0.2047
+    },
+    {
+      "model": "whisper-base",
+      "profile": "external-beam5",
+      "warmup": false,
+      "repeat": 2,
+      "first_request": false,
+      "case": "artist",
+      "locale": "ru",
+      "audio_sha256": "8b0cd0cc5b92f58637a97f88d5de94e32ee87f7ca8e40575137811651d553ef9",
+      "duration_ms": 1370.688,
+      "status": "ok",
+      "text": "включи лингин парк",
+      "no_speech": false,
+      "actual": {
+        "status": "recognized",
+        "intent": {
+          "query": "лингин парк",
+          "kind": "auto",
+          "artist": null,
+          "title": null
+        }
+      },
+      "text_correct": false,
+      "interpretation_correct": false,
+      "stt_ms": 242.535,
+      "rtf": 0.1769
+    },
+    {
+      "model": "whisper-base",
+      "profile": "external-greedy",
+      "warmup": false,
+      "repeat": 2,
+      "first_request": false,
+      "case": "artist",
+      "locale": "ru",
+      "audio_sha256": "8b0cd0cc5b92f58637a97f88d5de94e32ee87f7ca8e40575137811651d553ef9",
+      "duration_ms": 1370.688,
+      "status": "ok",
+      "text": "включи лингин парк.",
+      "no_speech": false,
+      "actual": {
+        "status": "recognized",
+        "intent": {
+          "query": "лингин парк",
+          "kind": "auto",
+          "artist": null,
+          "title": null
+        }
+      },
+      "text_correct": false,
+      "interpretation_correct": false,
+      "stt_ms": 215.323,
+      "rtf": 0.1571
+    },
+    {
+      "model": "whisper-base",
+      "profile": "external-greedy",
+      "warmup": false,
+      "repeat": 2,
+      "first_request": false,
+      "case": "track",
+      "locale": "ru",
+      "audio_sha256": "a7aa7a2e6121ae3ac275ea61dc350cb2c55b6f101f3ac79f381b81aa663894d8",
+      "duration_ms": 1684.188,
+      "status": "ok",
+      "text": "включи линтин парбнамп.",
+      "no_speech": false,
+      "actual": {
+        "status": "recognized",
+        "intent": {
+          "query": "линтин парбнамп",
+          "kind": "auto",
+          "artist": null,
+          "title": null
+        }
+      },
+      "text_correct": false,
+      "interpretation_correct": false,
+      "stt_ms": 218.449,
+      "rtf": 0.1297
+    },
+    {
+      "model": "whisper-base",
+      "profile": "external-beam5",
+      "warmup": false,
+      "repeat": 2,
+      "first_request": false,
+      "case": "track",
+      "locale": "ru",
+      "audio_sha256": "a7aa7a2e6121ae3ac275ea61dc350cb2c55b6f101f3ac79f381b81aa663894d8",
+      "duration_ms": 1684.188,
+      "status": "ok",
+      "text": "включи лингин парбнамп",
+      "no_speech": false,
+      "actual": {
+        "status": "recognized",
+        "intent": {
+          "query": "лингин парбнамп",
+          "kind": "auto",
+          "artist": null,
+          "title": null
+        }
+      },
+      "text_correct": false,
+      "interpretation_correct": false,
+      "stt_ms": 261.357,
+      "rtf": 0.1552
+    },
+    {
+      "model": "whisper-base",
+      "profile": "external-beam5",
+      "warmup": false,
+      "repeat": 2,
+      "first_request": false,
+      "case": "language",
+      "locale": "ru",
+      "audio_sha256": "4aa685909e9f215c655bc49f3c4deeee47dc87f3b91c8c7671250d068b3b48cf",
+      "duration_ms": 1691.5,
+      "status": "ok",
+      "text": "переключи из Зыкна английский.",
+      "no_speech": false,
+      "actual": {
+        "status": "unrecognized"
+      },
+      "text_correct": false,
+      "interpretation_correct": false,
+      "stt_ms": 258.686,
+      "rtf": 0.1529
+    },
+    {
+      "model": "whisper-base",
+      "profile": "external-greedy",
+      "warmup": false,
+      "repeat": 2,
+      "first_request": false,
+      "case": "language",
+      "locale": "ru",
+      "audio_sha256": "4aa685909e9f215c655bc49f3c4deeee47dc87f3b91c8c7671250d068b3b48cf",
+      "duration_ms": 1691.5,
+      "status": "ok",
+      "text": "переключи из-за кнанглизки.",
+      "no_speech": false,
+      "actual": {
+        "status": "unrecognized"
+      },
+      "text_correct": false,
+      "interpretation_correct": false,
+      "stt_ms": 218.705,
+      "rtf": 0.1293
+    },
+    {
+      "model": "whisper-base",
+      "profile": "external-greedy",
+      "warmup": false,
+      "repeat": 2,
+      "first_request": false,
+      "case": "other",
+      "locale": "ru",
+      "audio_sha256": "29596a04789b7be2c3641aa09959664830b645f9f9525b475bf844a42d2614a3",
+      "duration_ms": 1563.812,
+      "status": "ok",
+      "text": "Сегодня хорошая погода.",
+      "no_speech": false,
+      "actual": {
+        "status": "unrecognized"
+      },
+      "text_correct": true,
+      "interpretation_correct": true,
+      "stt_ms": 201.428,
+      "rtf": 0.1288
+    },
+    {
+      "model": "whisper-base",
+      "profile": "external-beam5",
+      "warmup": false,
+      "repeat": 2,
+      "first_request": false,
+      "case": "other",
+      "locale": "ru",
+      "audio_sha256": "29596a04789b7be2c3641aa09959664830b645f9f9525b475bf844a42d2614a3",
+      "duration_ms": 1563.812,
+      "status": "ok",
+      "text": "Сегодня хорошая погода.",
+      "no_speech": false,
+      "actual": {
+        "status": "unrecognized"
+      },
+      "text_correct": true,
+      "interpretation_correct": true,
+      "stt_ms": 227.781,
+      "rtf": 0.1457
+    },
+    {
+      "model": "whisper-base",
+      "profile": "external-beam5",
+      "warmup": false,
+      "repeat": 2,
+      "first_request": false,
+      "case": "dorn",
+      "locale": "ru",
+      "audio_sha256": "7f8ffb516a4408c0e83fd60e11419585f68897ec15ea20f9affd01ce472c58be",
+      "duration_ms": 1150.125,
+      "status": "ok",
+      "text": "Включи Иван Дорн!",
+      "no_speech": false,
+      "actual": {
+        "status": "recognized",
+        "intent": {
+          "query": "Иван Дорн",
+          "kind": "auto",
+          "artist": null,
+          "title": null
+        }
+      },
+      "text_correct": true,
+      "interpretation_correct": true,
+      "stt_ms": 246.091,
+      "rtf": 0.214
+    },
+    {
+      "model": "whisper-base",
+      "profile": "external-greedy",
+      "warmup": false,
+      "repeat": 2,
+      "first_request": false,
+      "case": "dorn",
+      "locale": "ru",
+      "audio_sha256": "7f8ffb516a4408c0e83fd60e11419585f68897ec15ea20f9affd01ce472c58be",
+      "duration_ms": 1150.125,
+      "status": "ok",
+      "text": "включи и вон дурн.",
+      "no_speech": false,
+      "actual": {
+        "status": "recognized",
+        "intent": {
+          "query": "и вон дурн",
+          "kind": "auto",
+          "artist": null,
+          "title": null
+        }
+      },
+      "text_correct": false,
+      "interpretation_correct": false,
+      "stt_ms": 212.126,
+      "rtf": 0.1844
+    },
+    {
+      "model": "whisper-base",
+      "profile": "external-greedy",
+      "warmup": false,
+      "repeat": 2,
+      "first_request": false,
+      "case": "silence",
+      "locale": "ru",
+      "audio_sha256": "20eaebffe1816e0ffa6f7f854f5ef4ea80d5349faaf0ce1fec1b713e7fde58fa",
+      "duration_ms": 2000.0,
+      "status": "ok",
+      "text": "[музыка]",
+      "no_speech": false,
+      "actual": {
+        "status": "unrecognized"
+      },
+      "text_correct": false,
+      "interpretation_correct": true,
+      "stt_ms": 198.281,
+      "rtf": 0.0991
+    },
+    {
+      "model": "whisper-base",
+      "profile": "external-beam5",
+      "warmup": false,
+      "repeat": 2,
+      "first_request": false,
+      "case": "silence",
+      "locale": "ru",
+      "audio_sha256": "20eaebffe1816e0ffa6f7f854f5ef4ea80d5349faaf0ce1fec1b713e7fde58fa",
+      "duration_ms": 2000.0,
+      "status": "ok",
+      "text": "[Музыка]",
+      "no_speech": false,
+      "actual": {
+        "status": "unrecognized"
+      },
+      "text_correct": false,
+      "interpretation_correct": true,
+      "stt_ms": 223.05,
+      "rtf": 0.1115
+    }
+  ],
+  "raw_report_sha256": {
+    "gigaam-v3-ctc": "e59e95eef94227cfe4fc7344fa6465ac6a2d1ee3cd339c4049552c0a27d24c60",
+    "whisper-base": "5caff5b36af0bf5a0211bdc6a7735e97508473001f8cbf50ad62caa7b609850d"
+  },
+  "runtime_dependencies": [
+    "antlr4-python3-runtime==4.9.3",
+    "cffi==2.1.1",
+    "coloredlogs==15.0.1",
+    "filelock==4.0.1",
+    "flatbuffers==25.12.19",
+    "fsspec==2026.9.0",
+    "gigaam @ git+https://github.com/salute-developers/GigaAM.git@7447938d791c4f3e643386ee22c33777004293a5",
+    "humanfriendly==10.0",
+    "hydra-core==1.3.7",
+    "Jinja2==3.1.6",
+    "MarkupSafe==3.0.3",
+    "ml_dtypes==0.6.0",
+    "mpmath==1.3.0",
+    "networkx==3.6.1",
+    "numpy==2.5.3",
+    "omegaconf==2.3.1",
+    "onnx==1.19.1",
+    "onnxruntime==1.23.2",
+    "packaging==26.3",
+    "protobuf==7.36.2",
+    "pycparser==3.0",
+    "PyYAML==6.0.3",
+    "sentencepiece==0.2.2",
+    "setuptools==84.0.0",
+    "soundfile==0.14.0",
+    "sympy==1.14.0",
+    "torch==2.8.0",
+    "torchaudio==2.8.0",
+    "tqdm==4.70.1",
+    "typing_extensions==4.16.0"
+  ],
+  "catalog_preview": {
+    "scope": "Synthetic snapshot + real disposable Typesense; existing transcripts; no player or execution",
+    "aliases": {
+      "artists": {
+        "Linkin Park": [
+          "линкин парк"
+        ]
+      },
+      "titles": {
+        "Numb": [
+          "намб"
+        ]
+      }
+    },
+    "rows": [
+      {
+        "provider": "gigaam",
+        "profile": "external-default",
+        "case": "artist",
+        "text": "включи линкин парк",
+        "selected": {
+          "kind": "artist",
+          "artist": "Linkin Park",
+          "score": 99.0,
+          "evidence": {
+            "artist_similarity": 0.99,
+            "artist_match": "alias"
+          }
+        },
+        "expected": {
+          "kind": "artist",
+          "artist": "Linkin Park"
+        },
+        "passed": true,
+        "retrieval": {
+          "source": "sqlite",
+          "truncated": false
+        }
+      },
+      {
+        "provider": "gigaam",
+        "profile": "external-default",
+        "case": "track",
+        "text": "включи",
+        "selected": null,
+        "expected": {
+          "kind": "track",
+          "artist": "Linkin Park",
+          "title": "Numb",
+          "album": "Meteora"
+        },
+        "passed": false,
+        "retrieval": null
+      },
+      {
+        "provider": "gigaam",
+        "profile": "external-default",
+        "case": "dorn",
+        "text": "включи  о",
+        "selected": null,
+        "expected": {
+          "kind": "artist",
+          "artist": "Иван Дорн"
+        },
+        "passed": false,
+        "retrieval": {
+          "source": "typesense",
+          "found": 1,
+          "truncated": false
+        }
+      },
+      {
+        "provider": "whisper",
+        "profile": "external-beam5",
+        "case": "artist",
+        "text": "включи лингин парк",
+        "selected": {
+          "kind": "artist",
+          "artist": "Linkin Park",
+          "score": 90.0,
+          "evidence": {
+            "artist_similarity": 0.9,
+            "artist_match": "fuzzy_alias"
+          }
+        },
+        "expected": {
+          "kind": "artist",
+          "artist": "Linkin Park"
+        },
+        "passed": true,
+        "retrieval": {
+          "source": "typesense",
+          "found": 3,
+          "truncated": false
+        }
+      },
+      {
+        "provider": "whisper",
+        "profile": "external-greedy",
+        "case": "artist",
+        "text": "включи лингин парк.",
+        "selected": {
+          "kind": "artist",
+          "artist": "Linkin Park",
+          "score": 90.0,
+          "evidence": {
+            "artist_similarity": 0.9,
+            "artist_match": "fuzzy_alias"
+          }
+        },
+        "expected": {
+          "kind": "artist",
+          "artist": "Linkin Park"
+        },
+        "passed": true,
+        "retrieval": {
+          "source": "typesense",
+          "found": 3,
+          "truncated": false
+        }
+      },
+      {
+        "provider": "whisper",
+        "profile": "external-greedy",
+        "case": "track",
+        "text": "включи линтин парбнамп.",
+        "selected": null,
+        "expected": {
+          "kind": "track",
+          "artist": "Linkin Park",
+          "title": "Numb",
+          "album": "Meteora"
+        },
+        "passed": false,
+        "retrieval": {
+          "source": "typesense",
+          "found": 0,
+          "truncated": false
+        }
+      },
+      {
+        "provider": "whisper",
+        "profile": "external-beam5",
+        "case": "track",
+        "text": "включи лингин парбнамп",
+        "selected": null,
+        "expected": {
+          "kind": "track",
+          "artist": "Linkin Park",
+          "title": "Numb",
+          "album": "Meteora"
+        },
+        "passed": false,
+        "retrieval": {
+          "source": "typesense",
+          "found": 0,
+          "truncated": false
+        }
+      },
+      {
+        "provider": "whisper",
+        "profile": "external-beam5",
+        "case": "dorn",
+        "text": "Включи Иван Дорн!",
+        "selected": {
+          "kind": "artist",
+          "artist": "Иван Дорн",
+          "score": 100.0,
+          "evidence": {
+            "artist_similarity": 1.0,
+            "artist_match": "literal"
+          }
+        },
+        "expected": {
+          "kind": "artist",
+          "artist": "Иван Дорн"
+        },
+        "passed": true,
+        "retrieval": {
+          "source": "sqlite",
+          "truncated": false
+        }
+      },
+      {
+        "provider": "whisper",
+        "profile": "external-greedy",
+        "case": "dorn",
+        "text": "включи и вон дурн.",
+        "selected": null,
+        "expected": {
+          "kind": "artist",
+          "artist": "Иван Дорн"
+        },
+        "passed": false,
+        "retrieval": {
+          "source": "typesense",
+          "found": 0,
+          "truncated": false
+        }
+      }
+    ]
+  },
+  "limits": [
+    "Examined synthetic speech, no human microphone accuracy estimate",
+    "Provider groups ran sequentially, not randomized paired hardware trials",
+    "Silence excluded from latency summary: GigaAM worker bypasses inference, common live pipeline bypasses both",
+    "Strict argument string agreement differs from music identity; see separate catalog preview",
+    "Process peak RSS includes loading; Whisper peak RSS not measured",
+    "Benchmark timing excludes initial reference-file hashing; ordinary first CLI call includes it",
+    "No MPS, ONNX, RNNT, multilingual, Raspberry Pi or Orange Pi measurement"
+  ],
+  "source": {
+    "base_commit": "7c4e9b042dd71cdbfbcc3aaf86daa61910b7bd75",
+    "files_sha256": {
+      "assistant/voice/gigaam.py": "9a15bf9df316d2d594d8904d959eb9d308f189655edaac1c9b56fed0bc4a7ba3",
+      "assistant/voice/gigaam_contract.py": "1ad2e73e6e91e2ef052e26af8270b7eaaf882f649856ff5aa38ae67c5c494470",
+      "assistant/voice/factory.py": "ee1e150aa5b0e4d166e7aaa901fd2347dea17d7d1bb1546dabdcbb1a8b06c197",
+      "assistant/voice/backends.py": "da71249db8b2af0135cb739b19bb9e09c2c4d8fc6a5954a5e2456da4c7c4b63d",
+      "experiments/gigaam_server.py": "b20c610a85154563d4745a917f72ef67e198b8e8d26f860ba2b5deb9b4958d74",
+      "experiments/speech_benchmark.py": "b96a83ab9812e3889110f151e99a8e02b1d405fc490f27ea774ae91b5d73e5e5"
+    }
+  }
+}

@@ -1,0 +1,5 @@
+# Isolated optional Python 3.12 CPU worker; not application dependencies.
+vosk-tts==0.3.61
+onnxruntime==1.23.2
+numpy==2.2.6
+tokenizers==0.21.4

@@ -20,6 +20,12 @@ Active firmware: **V2.57**. Local protocol research is finalized in
 - Disc Assistant Web with text and microphone input, local Whisper speech
   recognition and optional spoken replies through Piper.
   [Browser interface](experiments/disc_assistant/docs/guides/web.md), [speech setup](experiments/disc_assistant/docs/guides/tts.md).
+- Pluggable speech adapters and explicit model profiles for Disc Assistant, with
+  optional Sherpa/GigaAM recognition, Silero/Vosk synthesis and TTS text normalization.
+  Existing Whisper/Piper defaults remain unchanged. Includes browser recognition
+  comparison and a device-free voice listening tool.
+  [Adapter contract](experiments/disc_assistant/docs/guides/voice-adapters.md),
+  [models and listening comparisons](experiments/disc_assistant/docs/guides/tts.md).
 - Assistant current-track likes, now-playing questions, configurable volume steps
   and album/artist search priority, with a concise [command guide](experiments/disc_assistant/docs/guides/quick-guide.md).
 - Installable Controller library with typed current-track/favorite/volume results,

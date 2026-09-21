@@ -1,0 +1,30 @@
+# Example only: provide your own loopback service implementing examples/http_speech.py.
+[voice]
+web_choices = ["custom_ru"]
+stt = "custom_ru"
+web_stt = "custom_ru"
+tts = "custom_voice"
+
+[voice.plugins]
+my_stt = "experiments.disc_assistant.assistant.voice.examples.http_speech:JSONTranscriber"
+my_tts = "experiments.disc_assistant.assistant.voice.examples.http_speech:JSONSynthesizer"
+
+[voice.providers.custom_ru]
+kind = "stt"
+adapter = "my_stt"
+label = "My Russian model"
+[voice.providers.custom_ru.settings]
+server_url = "http://127.0.0.1:18200/transcribe"
+model = "replace-with-model-and-version"
+locales = ["ru"]
+timeout = 30
+
+[voice.providers.custom_voice]
+kind = "tts"
+adapter = "my_tts"
+label = "My Russian voice"
+[voice.providers.custom_voice.settings]
+server_url = "http://127.0.0.1:18200/synthesize"
+model = "replace-with-voice-and-version"
+locales = ["ru"]
+timeout = 30

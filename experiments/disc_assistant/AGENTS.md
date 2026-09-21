@@ -43,10 +43,17 @@ owner decisions. NLU already is an ordinary Assistant subsystem.
 - One foreground application owns the local data-directory lock and stock TCP
   connection. Do not steal a console/FiiO Control connection. Explicit disconnect
   disables reconnect; unexpected loss permits observation recovery only.
-- Web stays loopback-only and uses Whisper Server. Piper replies require saved
+- Speech adapters implement `voice/contracts.py` v1 and register through `voice/registry.py`.
+  Model/profile settings remain separate from core dispatch. Runtime owns one stable
+  event loop and closes owned resources; external model services are operator-owned.
+  Keep optional engine dependencies isolated. See `docs/guides/voice-adapters.md`.
+- Web stays loopback-only; requests explicitly select Whisper Server or optional
+  resident Sherpa RU. Preserve Preview on engine changes and never fall back between
+  engines or map unsupported locales silently. Piper replies require saved
   speech policy and explicit browser sound opt-in. Delivery failure is not a
-  reason to change or replay a device command. Keep TTS text preparation an
-  identity hook unless a separately evaluated pronunciation change is agreed.
+  reason to change or replay a device command. Keep TTS normalization limited to the spoken copy. Identity is the compatibility
+  default; explicit Silero profiles select ru_numbers or optional RUNorm. Preserve
+  original response/catalog text and normalization provenance; no engine fallback.
 - Setup preserves config, keys and installed models unless explicitly replaced.
   Keep private state outside Git and preserve independent device/data namespaces.
 
