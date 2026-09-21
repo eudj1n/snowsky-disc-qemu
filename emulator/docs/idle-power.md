@@ -136,8 +136,8 @@ guest/viewer restarts. Connecting and removing power were both observed to wake
 the stock display and reset UI inactivity; the display may later time out
 normally while the player stays powered.
 
-To use the updated shim in an existing interactive setup, run `./run.sh boot`
-and `./run.sh view`, then reload the page and click the USB connector at the
+To use the updated shim in an existing interactive setup, run `./emulator/run.sh boot`
+and `./emulator/run.sh view`, then reload the page and click the USB connector at the
 bottom of the skin. As with any normal boot/setup, use the intended `emulator/sdcard/`
 contents. A page reload alone cannot update the shim in an already running
 guest. Clicking USB while the guest is stopped records cable state for the next

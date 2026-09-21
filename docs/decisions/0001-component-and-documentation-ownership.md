@@ -62,3 +62,5 @@ The three PRs do not change firmware/protocol behavior, service bindings, Docker
 identities, private data locations or acceptance policy. Root launcher and Docker
 ownership are explicitly deferred to [issue #29](https://github.com/eudj1n/snowsky-disc-qemu/issues/29).
 See [validation](../development/reports/2026-09-21-repository-refactor.md).
+
+The deferred launcher/Docker work is now defined by [ADR 0002](0002-emulator-infrastructure.md).

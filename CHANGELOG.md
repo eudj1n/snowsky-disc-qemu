@@ -61,6 +61,10 @@ Active firmware: **V2.57**. Local protocol research is finalized in
 
 ### Changed
 
+- Move emulator launch/configuration/build files into `emulator/` and rename its
+  Compose service to `emulator`. Container-name overrides work throughout the launcher.
+  [Setup and existing checkouts](emulator/docs/running.md).
+
 - Separate current status and setup guidance from historical reports, preserving
   acceptance evidence and paused research conditions. [Documentation](docs/README.md).
 

@@ -179,7 +179,7 @@ Do not chase supposed `/fs` credentials based on the earlier incorrect route map
 ## Emulating the network side
 
 Under user-mode qemu the two processes bind their TCP/UDP sockets on the container's network
-namespace, so a host client can reach them once the ports are published. `compose.yaml`
+namespace, so a host client can reach them once the ports are published. `emulator/compose.yaml`
 **publishes 12100 (TCP), 12103 (TCP), 12101 (UDP)** to the host for exactly this.
 Host 12103 now goes through the explicit [WebSocket bridge](../../controller/docs/websocket.md);
 host 12113 exposes the original guest HTTP listener directly.

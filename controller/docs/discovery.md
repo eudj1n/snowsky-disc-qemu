@@ -117,7 +117,7 @@ No firmware URL, password, binary or private media is committed with this tool.
 An allowed phone can access the guest's actual SD contents while the bridge runs.
 
 ```sh
-./run.sh boot
+./emulator/run.sh boot
 # Run on the HOST; no extra Python package or Docker image change is needed.
 python3 -B -m controller.bridge.lan_bridge \
   --interface <MAC_LAN_IPV4> --allow-client <PHONE_IPV4> --seconds 900 \

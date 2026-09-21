@@ -1,6 +1,6 @@
 # Overlay the regular Compose stack; no test ports exposed on the host.
 services:
-  emu:
+  emulator:
     ports: !reset []
     environment:
       CI_DISPOSABLE: "1"

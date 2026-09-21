@@ -10,8 +10,8 @@ The legacy `research/ghidra/probe_out_device.gdb` is V2.40-specific and is not p
 ## Environment and commands
 
 The repository Dockerfile supplies Python, MIPS binutils and gdb-multiarch. Build it
-on a new computer with `docker build -t snowsky-disc-qemu-ci docker`; normal runtime setup
-uses `./run.sh up ...`. These probes need no additional Python packages or Ghidra.
+on a new computer with `docker build -t snowsky-disc-qemu-ci emulator/docker`; normal runtime setup
+uses `./emulator/run.sh up ...`. These probes need no additional Python packages or Ghidra.
 Memory probes run inside the emulator container and require one running player:
 
 ```sh

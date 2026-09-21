@@ -1,8 +1,8 @@
 # Reproducible environment for emulating the FiiO Snowsky Disc firmware
 # (Ingenic X2000, MIPS32 LE) under qemu-user on any host via Docker.
 #
-# Build:  docker build -t snowsky-disc-qemu docker/
-# Run:    see ../README.md  (needs --privileged for binfmt_misc + POSIX mqueue + qemu VA reservation)
+# Build:  docker build -t snowsky-disc-qemu emulator/docker/
+# Run:    see emulator/docs/running.md  (needs --privileged for binfmt_misc + POSIX mqueue + qemu VA reservation)
 #
 # Works on both amd64 and arm64 Docker hosts (Debian is multi-arch; qemu-user-static
 # runs the MIPS guest regardless of host arch).

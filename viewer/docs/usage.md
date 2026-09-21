@@ -1,6 +1,6 @@
 # Live viewer + touch bridge
 
-`./run.sh view` turns the emulator into an **interactive** stand: it streams the guest
+`./emulator/run.sh view` turns the emulator into an **interactive** stand: it streams the guest
 framebuffer to a browser and turns pointer events on that page into synthetic touches, so
 you drive the real stock UI from the host with no hardware. A responsive CSS device
 contains the live round screen, physical buttons and audio/USB/microSD connectors.
@@ -14,19 +14,19 @@ physical, audio, USB and SD controls. Debug is collapsed; stock brightness is at
 maximum for comparison with the WASM screenshot. [Capture details](../../docs/images/README.md).*
 
 ```sh
-./run.sh boot          # start the guests (they now stay alive ~30 min, see GUEST_TTL)
-./run.sh view          # -> http://localhost:8080   (add a port arg to change it)
+./emulator/run.sh boot          # start the guests (they now stay alive ~30 min, see GUEST_TTL)
+./emulator/run.sh view          # -> http://localhost:8080   (add a port arg to change it)
 ```
 
 Then, in the browser: **click = tap**, **drag = swipe**, **long-press = hold**, and the
 gesture shortcuts are available in the collapsed **Debug** section.
 They duplicate touch swipes and are not needed for normal use.
 
-`DEVICE_BOOT_SCRIPT` in `.env` optionally selects the script invoked by viewer
+`DEVICE_BOOT_SCRIPT` in `emulator/.env` optionally selects the script invoked by viewer
 Power when the guest is off. Leave it empty for the usual `/repo/emulator/scripts/20_boot.sh`.
 An override is an absolute path inside the container, executed by Bash with the
 selected `ROOTFS` and the existing 90-second startup timeout. Recreate the container
-and restart the viewer after changing it. This does not change `./run.sh boot`.
+and restart the viewer after changing it. This does not change `./emulator/run.sh boot`.
 
 The audio sockets at the lower left share the **Enable sound** control. Enabling browser audio
 shows a plug in the 3.5 mm socket; clicking again mutes sound and removes the plug.
@@ -65,16 +65,16 @@ mount before preparing the helper mount. Cyrillic filenames and media hashes are
 checked across repeated cycles in disposable integration tests. Insertion follows the
 stock auto-scan gates described in [MEDIA_LIBRARY.md](../../emulator/docs/media-library.md).
 An ejected card stays out across viewer/guest restarts; a full setup rebuilds it from
-`./emulator/sdcard`. Host `./run.sh boot` includes that setup, so it also refreshes the card
+`./emulator/sdcard`. Host `./emulator/run.sh boot` includes that setup, so it also refreshes the card
 from the host folder and replaces guest-only card changes. Viewer Power-on alone
 does not rebuild it. The host media directory itself is never ejected or modified.
-Each PCM session replaces the recording; `./run.sh audio` saves a WAV to `shots/audio.wav`.
+Each PCM session replaces the recording; `./emulator/run.sh audio` saves a WAV to `shots/audio.wav`.
 See [AUDIO.md](../../emulator/docs/audio.md) for limits and verification.
 
 ## How it works
 
 `viewer/server.py` runs inside the container (wrapped by `viewer/scripts/40_stream.sh`, launched
-detached by `./run.sh view`) and serves:
+detached by `./emulator/run.sh view`) and serves:
 
 | route | purpose |
 |---|---|
@@ -108,7 +108,7 @@ BGRX sub-buffers. `mq_ui` alternates buf0/buf1 without panning. `fbshim` observe
 copies and records the last-written buffer in `emu/fb-live`; the background reader uses
 that marker, converts BGRX→RGB + 180° rotation, and PNG-encodes it. Older shims fall back
 to diffing frames, which can select a stale buffer if both changed between reads.
-Brightness 0 or a stopped guest produces a black frame. Port published in `compose.yaml` (8080).
+Brightness 0 or a stopped guest produces a black frame. Port published in `emulator/compose.yaml` (8080).
 
 The grabber still samples at `STREAM_FPS` (default 12), preserving the existing
 animation cadence. It reads only the two used buffers, checks the active marker
@@ -178,14 +178,14 @@ accessible name and state. Space/Enter, pressed feedback, cancellation on pointe
 loss and the existing single/double/hold gestures are preserved. Reduced-motion
 preferences disable transitions. Debug contains gesture shortcuts and audio replay.
 
-For these HTML/CSS and server changes, run `./run.sh view` and reload the browser;
+For these HTML/CSS and server changes, run `./emulator/run.sh view` and reload the browser;
 a guest reboot or image rebuild is unnecessary. The unused photo skin has been
 removed; dated screenshots of the earlier viewer remain in [STATUS.md](../../emulator/docs/status.md).
 
 ## Notes / limits
 
-- Needs `./run.sh boot` first; until then the page is black (boot in another shell and watch
-  it come up). `./run.sh stop` also stops the viewer.
+- Needs `./emulator/run.sh boot` first; until then the page is black (boot in another shell and watch
+  it come up). `./emulator/run.sh stop` also stops the viewer.
 - FPS is qemu-bound (~5–15). This is a userspace emulator — good for UI/navigation/logic, not
   hardware-accurate timing.
 - **Physical controls**: Volume −/+ support single/double/hold, with assignments in the
@@ -198,12 +198,12 @@ removed; dated screenshots of the earlier viewer remain in [STATUS.md](../../emu
   framebuffer flush, then remounts the SD card. The viewer enables controls when that
   script completes; this is an emulator readiness check, not a firmware "ready" message.
   Input/frame readiness has a 60-second timeout with an error instead of false success.
-  An explicit `./run.sh boot <seconds>` adds a diagnostic delay before capture.
+  An explicit `./emulator/run.sh boot <seconds>` adds a diagnostic delay before capture.
 - The screen uses a pointing-hand cursor for taps and a grabbing hand while pressed;
   cancelling a drag releases the touch and restores the cursor.
 - Viewer power-off is host-managed, not the stock standby/shutdown sequence. It leaves the
   container and viewer alive. The dangerous raw firmware power event `0x108` is rejected.
   Stock automatic poweroff is also confined by a libc reboot interposer and guest-only
   shutdown requests. This is not a general sandbox for arbitrary firmware syscalls.
-- Update both guest shim and server after installing changes: `./run.sh boot`,
-  `./run.sh view`, then reload the page. Reloading alone cannot update a loaded shim.
+- Update both guest shim and server after installing changes: `./emulator/run.sh boot`,
+  `./emulator/run.sh view`, then reload the page. Reloading alone cannot update a loaded shim.

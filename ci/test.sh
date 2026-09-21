@@ -2,7 +2,6 @@
 # Firmware-free checks, run inside the same image as the emulator.
 set -euo pipefail
 cd /repo
-bash -n run.sh
 while IFS= read -r -d '' script; do bash -n "$script"; done < <(
   find emulator viewer controller firmware research experiments tests ci -type d \
     \( -name sdcard -o -name rootfs -o -name work -o -name .venv -o -name __pycache__ \) -prune -o \

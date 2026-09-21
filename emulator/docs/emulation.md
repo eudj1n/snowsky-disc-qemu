@@ -223,7 +223,7 @@ Start `mq_ui` first (creates `ui`), then `mq_player` (retries `mq_open("ui")`).
 Current `20_boot.sh` waits for network listeners, both input devices and a new
 framebuffer flush, then remounts the SD before capturing. Input/frame readiness
 has a 60-second timeout. The historical ~20–24 s boot measurement is not a fixed
-startup delay; `./run.sh boot <seconds>` adds only an optional diagnostic wait.
+startup delay; `./emulator/run.sh boot <seconds>` adds only an optional diagnostic wait.
 
 ## Known hardware errors
 
@@ -256,6 +256,6 @@ Those other sensors are not needed for boot and are not emulated.
 - **`docker run`/`docker start`/`docker exec` hangs and a new container is stuck in
   `Created`** — the Docker Desktop VM got wedged (often after an earlier OOM or a killed
   `docker` operation left a zombie containerd-shim). Existing containers keep working, but new
-  ones won't start. Fix: **restart Docker Desktop**, then `./run.sh up …` again. Give the VM
+  ones won't start. Fix: **restart Docker Desktop**, then `./emulator/run.sh up …` again. Give the VM
   ≥8 GB (two qemu-user MIPS processes plus the popen/`cmd_watchdog` children are memory-hungry;
   running out is what wedges it).

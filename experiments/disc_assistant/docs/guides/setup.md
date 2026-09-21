@@ -1,7 +1,7 @@
 # Assistant setup and lifecycle
 
 Run commands from the repository root. The Assistant has its own launcher;
-root `run.sh` starts the emulator. Requirements are Python 3.11+ and Docker for
+`emulator/run.sh` starts the emulator. Requirements are Python 3.11+ and Docker for
 managed Typesense and optional speech services.
 
 ## Install and select the device

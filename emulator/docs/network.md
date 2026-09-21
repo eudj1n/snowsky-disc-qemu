@@ -18,21 +18,21 @@ browser inspector and live control results. Guest port numbers remain unchanged.
 Use Docker Engine **28.1+** and Compose **2.36+**. CI pins are in [CI.md](../../docs/development/ci.md).
 
 ```sh
-docker compose up -d --build
-./run.sh boot
-./run.sh view
+./emulator/run.sh compose up -d --build
+./emulator/run.sh boot
+./emulator/run.sh view
 python3 -m controller.fiio_link
 python3 -m controller.diagnostics.verify_network
-docker compose --profile wsbridge up -d wsbridge  # optional WS diagnostics
-./run.sh wscheck --control
+./emulator/run.sh compose --profile wsbridge up -d wsbridge  # optional WS diagnostics
+./emulator/run.sh wscheck --control
 ```
 
-For a new work volume, first use `./run.sh up /path/to/main_os/ota_v257` as in the README.
+For a new work volume, first use `./emulator/run.sh up /path/to/main_os/ota_v257` as in the README.
 Do not delete an existing volume to upgrade. Setup stops the guest before updating
 mapped shims or rebuilding its SD. Power-on from the viewer reruns network preparation
 and announcement too. The viewer itself must be started again after container recreation.
 
-The Compose configuration is `compose.yaml`.
+The Compose configuration is `emulator/compose.yaml`.
 Its [`interface_name`](https://docs.docker.com/reference/compose-file/services/#interface_name)
 setting gives Docker's normal bridged interface the firmware-supported name **eth1**.
 Docker assigns the address and default route. Published ports bind **127.0.0.1**:
@@ -106,10 +106,10 @@ Temporary Auto update fixture, generated with the Dockerfile's SoX dependency:
 
 ```sh
 docker exec snowsky-disc-qemu bash /repo/tests/fixtures/media_fixture.sh add
-./run.sh boot
+./emulator/run.sh boot
 # Inspect the app and run controller/fiio_link.py; do not press Update now for the auto test.
 docker exec snowsky-disc-qemu bash /repo/tests/fixtures/media_fixture.sh remove
-./run.sh boot
+./emulator/run.sh boot
 ```
 
 The fixture generator refuses to overwrite existing media; removal verifies its

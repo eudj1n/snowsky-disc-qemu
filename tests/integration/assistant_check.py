@@ -265,7 +265,7 @@ def run(args):
                'dependencies': {name: version(name) for name in ('typesense', 'aiohttp', 'prompt_toolkit')},
                'files': sources, 'firmware': '2.57', 'selected_cases': [c['id'] for c in selected],
                'cohort': 'emulator-regression', 'manifest_sha256': hashlib.sha256(json.dumps(suite, sort_keys=True).encode()).hexdigest()})
-    config = Config('disposable-assistant', 'emu', 12100, 12103, Path('/reports/runtime'),
+    config = Config('disposable-assistant', 'emulator', 12100, 12103, Path('/reports/runtime'),
                     'typesense', 8108, 'http', 'ASSISTANT_TEST_KEY', {}, timeout=8)
     deadline = time.monotonic() + 60
     while True:

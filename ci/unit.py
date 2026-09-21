@@ -32,7 +32,7 @@ def main():
         return 1
     result = unittest.TextTestRunner(verbosity=2).run(suite)
     if result.skipped:
-        print('CI forbids skipped tests; install dependencies from docker/Dockerfile.', file=sys.stderr)
+        print('CI forbids skipped tests; install dependencies from emulator/docker/Dockerfile.', file=sys.stderr)
     return int(not result.wasSuccessful() or bool(result.skipped) or result.testsRun == 0)
 
 

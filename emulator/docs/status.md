@@ -15,9 +15,9 @@ See the [support policy](../../firmware/docs/porting.md#support-policy--one-acti
 | USB power and idle | Stock V2.57 sink/ADC detection, independent display timeout, idle shutdown and explicit local Power/reconnect recovery. | [Power](idle-power.md) |
 | Device protocol | Stock TCP/HTTP operations with an optional native WS bridge; explicit per-operation evidence and limits. | [Capabilities](../../docs/protocol/disc-capabilities.md), [Controller](../../controller/docs/README.md) |
 
-The root [quick start](../../README.md#run-the-emulator) remains the launcher guide.
-Moving `run.sh` and clarifying Docker ownership is tracked in
-[issue #29](https://github.com/eudj1n/snowsky-disc-qemu/issues/29).
+Use `./emulator/run.sh` and `emulator/.env`; the base Compose service is
+`emulator`. See the [launcher guide](running.md) for explicit path/configuration
+rules and existing-installation setup.
 
 ## Validation and visual evidence
 

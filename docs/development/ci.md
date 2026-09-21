@@ -125,7 +125,7 @@ shell checks across every component. Cross-component scenarios live in
 No secrets, firmware, privileged containers, cache upload or image publishing.
 
 - Validate the regular Compose definition.
-- Build `docker/Dockerfile`: multi-architecture Debian image pinned by index digest,
+- Build `emulator/docker/Dockerfile`: multi-architecture Debian image pinned by index digest,
   Debian and security packages pinned via the 2026-09-10 snapshot.
 - Run all Python tests (including synthetic WebSocket integration tests), JavaScript
   tests, shell syntax checks and cross-compile all four MIPS shims. **Any Python skip fails CI.**
@@ -134,9 +134,9 @@ No secrets, firmware, privileged containers, cache upload or image publishing.
 Local equivalent:
 
 ```sh
-docker build -t snowsky-disc-qemu-ci docker
+docker build -t snowsky-disc-qemu-ci emulator/docker
 docker run --rm --network none -v "$PWD:/repo:ro" snowsky-disc-qemu-ci bash /repo/ci/test.sh
-OTA_DIR=/tmp/unused docker compose config --quiet
+OTA_DIR=/tmp/unused ./emulator/run.sh compose config --quiet
 ```
 
 Checkout is pinned to a full action commit SHA and does not persist credentials.

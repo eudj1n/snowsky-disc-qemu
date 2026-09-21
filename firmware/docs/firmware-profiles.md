@@ -8,12 +8,12 @@ version number. New firmware needs reviewed inputs and validation before promoti
 
 `firmware/active-version` is the single tracked default. Compose passes the optional
 `FW_VERSION` override into the container; the shared shell library and Python
-selection helper resolve an empty value through that file. `.env.example` leaves
-`FW_VERSION` empty. Existing `.env` files with `FW_VERSION=2.57` remain explicitly
+selection helper resolve an empty value through that file. `emulator/.env.example` leaves
+`FW_VERSION` empty. Existing `emulator/.env` files with `FW_VERSION=2.57` remain explicitly
 pinned and are not rewritten when the active version changes.
 
-The shell environment takes precedence over `.env` in Compose. CI uses its own
-explicit selection and disposable volumes, ignoring the interactive `.env`.
+The shell environment takes precedence over `emulator/.env` in Compose. CI uses its own
+explicit selection and disposable volumes, ignoring the interactive `emulator/.env`.
 `FW_VERSION` is a runtime profile selector, not a Docker build argument: the image
 contains a shared toolchain. Changing the selection requires recreating the
 container and using a matching extracted rootfs in a separate work volume.
@@ -27,7 +27,7 @@ python3 -m firmware.profile get capabilities --version 2.57
 python3 -m firmware.profile require-scenario idle --version 2.57
 ```
 
-The CLI honors `FW_VERSION` from the process environment; it does not parse `.env`.
+The CLI honors `FW_VERSION` from the process environment; it does not parse `emulator/.env`.
 An explicit `--version` takes precedence. Python `load_profile(version)` reads the
 requested profile; `selected_profile()` resolves the environment/default selector.
 
@@ -100,7 +100,7 @@ remaining V2.40 profile is a separate task.
   without script edits, inventory isolation, secret cleanup, and rejection of
   unreviewed device operations and scenarios without runners.
 - Compose preserves both an empty default selector and an explicit version pin.
-  The existing interactive `.env` remains pinned to V2.57.
+  At that checkpoint, the interactive `.env` remained pinned to V2.57.
 - All pre-existing metadata, fingerprints, patch bytes and diagnostic fields are
   unchanged. Relocated UI/storage, power and preference tables retain their values.
 - Fresh disposable V2.57 `full`, `idle` and `idle-usb` scenarios passed. This includes

@@ -14,35 +14,35 @@ clients, the protocol inspector or bridge verification.
 
 | Host endpoint (localhost only) | Destination |
 |---|---|
-| `12103/api/websocket` | Native `wsbridge` service → stock FiiO Link TCP `emu:12100` |
-| Other HTTP paths on `12103` | `wsbridge` HTTP proxy → stock HTTP `emu:12103` |
+| `12103/api/websocket` | Native `wsbridge` service → stock FiiO Link TCP `emulator:12100` |
+| Other HTTP paths on `12103` | `wsbridge` HTTP proxy → stock HTTP `emulator:12103` |
 | `12103/bridge/` | Read-only browser protocol inspector; connects only after clicking Connect |
 | `12103/bridge/health` | Bridge identity and active-client flag; **not** proof the guest is ready |
-| `12113` | Direct stock HTTP `emu:12103`, bypassing the bridge; `/api/websocket` still returns 200 |
+| `12113` | Direct stock HTTP `emulator:12103`, bypassing the bridge; `/api/websocket` still returns 200 |
 | `12100` / `8080` | Existing direct TCP client / device viewer, unchanged |
 
 ```sh
-docker compose up -d --build    # recreate emu's port mapping; retain snowsky-disc-work
-./run.sh boot
-./run.sh view                  # restart the viewer after container recreation
-docker compose --profile wsbridge up -d wsbridge  # explicit opt-in
-./run.sh wscheck               # compare settings/library with independent direct TCP
-./run.sh wscheck --control     # volume test + start indexed library + leave paused
+./emulator/run.sh compose up -d --build    # recreate emulator's port mapping; retain snowsky-disc-work
+./emulator/run.sh boot
+./emulator/run.sh view                  # restart the viewer after container recreation
+./emulator/run.sh compose --profile wsbridge up -d wsbridge  # explicit opt-in
+./emulator/run.sh wscheck               # compare settings/library with independent direct TCP
+./emulator/run.sh wscheck --control     # volume test + start indexed library + leave paused
 python3 -m controller.diagnostics.probe_websocket --require-upgrade  # host 12103: valid 101
 python3 -m controller.diagnostics.probe_websocket --port 12113       # direct stock: 200, websocket=false
 ```
 
-For a fresh workspace, first obtain/extract the OTA with `./run.sh up …` as in README.
-`docker/Dockerfile` installs Debian's `python3-aiohttp` at image build time (tested
+For a fresh workspace, first obtain/extract the OTA with `./emulator/run.sh up …` as in README.
+`emulator/docker/Dockerfile` installs Debian's `python3-aiohttp` at image build time (tested
 3.8.4-1+deb12u1). No `pip install` or guest-image modifications are needed. Compose
 runs a separate unprivileged service from that image: UID/GID 65534, read-only root
 and repository mount, all capabilities dropped, no-new-privileges, no rootfs/SD volume.
 Default Compose startup and `run.sh up/start/boot/view` do not start it. Once enabled,
 it survives guest restarts and returns an availability error while the guest is off.
-`run.sh down` removes both containers and retains the work volume. `wscheck` expects
+`./emulator/run.sh down` removes both containers and retains the work volume. `wscheck` expects
 the bridge already running. Integration CI explicitly enables the profile.
 
-Stop it with `docker compose --profile wsbridge stop wsbridge`. Adding a profile does
+Stop it with `./emulator/run.sh compose --profile wsbridge stop wsbridge`. Adding a profile does
 not stop an already running bridge from an older checkout; run this stop command once
 when migrating. Port 12103 is unavailable while stopped; direct stock HTTP stays on
 12113. An explicit `COMPOSE_PROFILES=wsbridge` also opts in.
@@ -50,8 +50,8 @@ when migrating. Port 12103 is unavailable while stopped; direct stock HTTP stays
 Standalone async client, using the dependency already installed in the container:
 
 ```sh
-docker compose --profile wsbridge exec -T wsbridge python3 -B -m controller.fiio_ws
-docker compose --profile wsbridge logs --tail 30 wsbridge
+./emulator/run.sh compose --profile wsbridge exec -T wsbridge python3 -B -m controller.fiio_ws
+./emulator/run.sh compose --profile wsbridge logs --tail 30 wsbridge
 docker exec snowsky-disc-qemu python3 -m research.diagnostics.probe_keys
 ```
 
@@ -140,7 +140,7 @@ Native browser connected, received `a599000C0306`, matching settings, four track
 and the selected Tone A WAV with wire state 1. [Protocol screenshot](../../docs/images/16-websocket-protocol.jpg).
 The inspector was disconnected after capture so it does not reserve the only channel.
 
-Live `./run.sh wscheck --control`: TCP/WS settings and catalog matched; volume
+Live `./emulator/run.sh wscheck --control`: TCP/WS settings and catalog matched; volume
 **115 → 114 → 115**; selected Tone A went **playing → paused** with the same track ID.
 Independent `/proc/PID/mem` probe: logical volume **115**, internal state **2** (paused).
 Second WS got 409; reconnect handshake returned 0306. Host 12103 upgrades to 101;

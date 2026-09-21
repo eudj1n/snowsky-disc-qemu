@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Independent experiment launcher; never calls the root emulator run.sh.
+# Independent experiment launcher; never calls emulator/run.sh.
 set -euo pipefail
 prototype_dir="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
 repo_dir="$(cd -- "$prototype_dir/../.." && pwd)"
