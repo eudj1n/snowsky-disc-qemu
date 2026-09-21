@@ -5,6 +5,10 @@ The version-1 contracts live in `assistant/voice/contracts.py`; the historical
 speech output. Neither receives a Controller, catalog store or executable command.
 The existing application interprets and guards recognized text exactly once.
 
+Proposed multi-STT scheduling and candidate selection belong above these adapters;
+see [coordination groundwork](../architecture/recognition-coordination.md).
+No sequential/parallel mode is currently enabled or accepted in configuration.
+
 ## Adapter, model, profile
 
 An **adapter** calls an engine or service. A **model** supplies compatible weights,

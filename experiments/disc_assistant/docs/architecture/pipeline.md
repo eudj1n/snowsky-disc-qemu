@@ -6,6 +6,10 @@ interpreters and speech engines have independent provider contracts.
 
 ## Pipeline
 
+[Recognition coordination](recognition-coordination.md) defines proposed
+multi-STT assessment/selection boundaries and speculative search constraints.
+Those interfaces are not connected to this live, single-STT pipeline.
+
 ```text
 Typed text ------------------------+
                                    v

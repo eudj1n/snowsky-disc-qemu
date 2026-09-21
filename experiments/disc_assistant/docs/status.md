@@ -49,6 +49,9 @@ rate. The [MVP contract](reference/mvp.md) defines the accepted scope.
 
 ## Follow-up boundaries
 
+- [Multi-STT coordination and speculative retrieval](architecture/recognition-coordination.md)
+  have proposed typed contracts and architectural boundaries only. Runtime remains
+  single-STT; no automatic arbitration, search prefetch or phonetic index is enabled.
 - [Physical acceptance #23](https://github.com/eudj1n/snowsky-disc-qemu/issues/23)
   remains unpassed. Preserve the original 19-RU observations and disputed gold;
   use the [physical baseline](evaluation/physical-baseline.md) when resumed.

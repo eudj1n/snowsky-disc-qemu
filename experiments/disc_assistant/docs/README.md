@@ -6,6 +6,7 @@ deferred work; reports below preserve earlier evidence, not current instructions
 
 ## Architecture
 
+- [Multi-STT coordination and speculative retrieval groundwork](architecture/recognition-coordination.md)
 - [Independent interpretation sources and shadow comparison](architecture/interpretation-sources.md)
 - [Assistant interpretation, language and speech boundaries](architecture/pipeline.md)
 - [Assistant playback controls and queue](architecture/playback.md)
