@@ -6,11 +6,11 @@ import tempfile
 import unittest
 from unittest.mock import patch
 
-from research.disc_assistant.experiments.nlu import dataset
-from research.disc_assistant.experiments.nlu.study_commands import calibrate, measurements, pipeline_score
-from research.disc_assistant.assistant.command_catalog import source
+from research.disc_assistant.assistant.nlu.evaluation import dataset
+from research.disc_assistant.assistant.nlu.evaluation.study_commands import calibrate, measurements, pipeline_score
+from research.disc_assistant.assistant.nlu.command_catalog import source
 
-CORPUS = Path(__file__).parents[2] / 'experiments/nlu/datasets/commands-v2'
+CORPUS = Path(__file__).parents[2] / 'assistant/nlu/data/datasets/commands-v2'
 
 
 def pending(text='pause', identity='sample'):

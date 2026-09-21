@@ -10,14 +10,14 @@ import unittest
 from unittest.mock import Mock, patch
 
 from research.disc_assistant.assistant import __main__ as cli
-from research.disc_assistant.assistant.command_catalog import CommandCatalog, LABELS, digest, source, command
-from research.disc_assistant.assistant.command_features import VERSION, classify, counts
+from research.disc_assistant.assistant.nlu.command_catalog import CommandCatalog, LABELS, digest, source, command
+from research.disc_assistant.assistant.nlu.command_features import VERSION, classify, counts
 from research.disc_assistant.assistant.config import load
 from research.disc_assistant.assistant.console import Application
-from research.disc_assistant.assistant.explain import decide
+from research.disc_assistant.assistant.nlu.explain import decide
 from research.disc_assistant.assistant.journal import Trace, history_command
 from research.disc_assistant.assistant.preferences import language_command
-from research.disc_assistant.experiments.nlu.train_commands import validate_splits
+from research.disc_assistant.assistant.nlu.evaluation.train_commands import validate_splits
 
 
 def model(label='pause'):
@@ -92,7 +92,7 @@ class CommandTests(unittest.TestCase):
             authored=deepcopy(source('en'))
             if key=='examples': authored['examples'][0]['text']='New phrase'
             else: authored['rules']['fixture']='changed grammar'
-            with patch('research.disc_assistant.assistant.command_catalog.source',return_value=authored):
+            with patch('research.disc_assistant.assistant.nlu.command_catalog.source',return_value=authored):
                 with self.assertRaisesRegex(ValueError,'stale'): self.catalog.current('en')
                 with self.assertRaisesRegex(ValueError,'retrain'): self.catalog.publish('en',bundle())
                 self.catalog.publish('en')
@@ -188,7 +188,7 @@ class CommandTests(unittest.TestCase):
         with self.assertRaises(ValueError): command(self.config,['unexpected'])
 
     def test_training_splits_do_not_overlap(self):
-        root=Path(__file__).parents[2]/'experiments'/'nlu'
+        root=Path(__file__).parents[1]/'nlu'/'data'
         corpus=json.loads((root/'intents.json').read_text())
         challenge=json.loads((root/'command_challenge.json').read_text())
         for locale in ('ru','en'):

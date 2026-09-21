@@ -1,0 +1,558 @@
+{
+  "version": 1,
+  "cohort": "voice-extension-regression",
+  "cases": [
+    {
+      "id": "ru-voice-favorite-0",
+      "command": "Лайк",
+      "locale": "ru",
+      "setup": {
+        "track": "alpha",
+        "state": "paused",
+        "progress_seconds": 1,
+        "love": false
+      },
+      "expected": {
+        "effect": "favorite",
+        "status": [
+          "confirmed"
+        ],
+        "mutation": "required",
+        "love": true
+      }
+    },
+    {
+      "id": "ru-voice-favorite-1",
+      "command": "Нравится",
+      "locale": "ru",
+      "setup": {
+        "track": "alpha",
+        "state": "paused",
+        "progress_seconds": 1,
+        "love": true
+      },
+      "expected": {
+        "effect": "favorite",
+        "status": [
+          "already_satisfied"
+        ],
+        "mutation": "none",
+        "love": true
+      }
+    },
+    {
+      "id": "ru-voice-favorite-2",
+      "command": "Дизлайк",
+      "locale": "ru",
+      "setup": {
+        "track": "alpha",
+        "state": "paused",
+        "progress_seconds": 1,
+        "love": true
+      },
+      "expected": {
+        "effect": "favorite",
+        "status": [
+          "confirmed"
+        ],
+        "mutation": "required",
+        "love": false
+      }
+    },
+    {
+      "id": "ru-voice-favorite-3",
+      "command": "Не нравится",
+      "locale": "ru",
+      "setup": {
+        "track": "alpha",
+        "state": "paused",
+        "progress_seconds": 1,
+        "love": false
+      },
+      "expected": {
+        "effect": "favorite",
+        "status": [
+          "already_satisfied"
+        ],
+        "mutation": "none",
+        "love": false
+      }
+    },
+    {
+      "id": "ru-voice-current",
+      "command": "Что сейчас играет",
+      "locale": "ru",
+      "setup": {
+        "track": "alpha",
+        "state": "paused",
+        "progress_seconds": 1
+      },
+      "expected": {
+        "effect": "now_playing",
+        "status": [
+          "observed"
+        ],
+        "mutation": "none"
+      }
+    },
+    {
+      "id": "ru-voice-volume-5",
+      "command": "Громкость сорок",
+      "locale": "ru",
+      "setup": {
+        "track": "alpha",
+        "state": "paused",
+        "progress_seconds": 1,
+        "volume": 30
+      },
+      "expected": {
+        "effect": "volume",
+        "status": [
+          "confirmed"
+        ],
+        "mutation": "required",
+        "volume": 40
+      }
+    },
+    {
+      "id": "ru-voice-volume-6",
+      "command": "Тише",
+      "locale": "ru",
+      "setup": {
+        "track": "alpha",
+        "state": "paused",
+        "progress_seconds": 1,
+        "volume": 30
+      },
+      "expected": {
+        "effect": "volume",
+        "status": [
+          "confirmed"
+        ],
+        "mutation": "required",
+        "volume": 10
+      }
+    },
+    {
+      "id": "ru-voice-volume-7",
+      "command": "Сделай громче",
+      "locale": "ru",
+      "setup": {
+        "track": "alpha",
+        "state": "paused",
+        "progress_seconds": 1,
+        "volume": 30
+      },
+      "expected": {
+        "effect": "volume",
+        "status": [
+          "confirmed"
+        ],
+        "mutation": "required",
+        "volume": 50
+      }
+    },
+    {
+      "id": "en-voice-favorite-0",
+      "command": "Like",
+      "locale": "en",
+      "setup": {
+        "track": "alpha",
+        "state": "paused",
+        "progress_seconds": 1,
+        "love": false
+      },
+      "expected": {
+        "effect": "favorite",
+        "status": [
+          "confirmed"
+        ],
+        "mutation": "required",
+        "love": true
+      }
+    },
+    {
+      "id": "en-voice-favorite-1",
+      "command": "Like this song",
+      "locale": "en",
+      "setup": {
+        "track": "alpha",
+        "state": "paused",
+        "progress_seconds": 1,
+        "love": true
+      },
+      "expected": {
+        "effect": "favorite",
+        "status": [
+          "already_satisfied"
+        ],
+        "mutation": "none",
+        "love": true
+      }
+    },
+    {
+      "id": "en-voice-favorite-2",
+      "command": "Dislike",
+      "locale": "en",
+      "setup": {
+        "track": "alpha",
+        "state": "paused",
+        "progress_seconds": 1,
+        "love": true
+      },
+      "expected": {
+        "effect": "favorite",
+        "status": [
+          "confirmed"
+        ],
+        "mutation": "required",
+        "love": false
+      }
+    },
+    {
+      "id": "en-voice-favorite-3",
+      "command": "Unlike",
+      "locale": "en",
+      "setup": {
+        "track": "alpha",
+        "state": "paused",
+        "progress_seconds": 1,
+        "love": false
+      },
+      "expected": {
+        "effect": "favorite",
+        "status": [
+          "already_satisfied"
+        ],
+        "mutation": "none",
+        "love": false
+      }
+    },
+    {
+      "id": "en-voice-current",
+      "command": "What is playing",
+      "locale": "en",
+      "setup": {
+        "track": "alpha",
+        "state": "paused",
+        "progress_seconds": 1
+      },
+      "expected": {
+        "effect": "now_playing",
+        "status": [
+          "observed"
+        ],
+        "mutation": "none"
+      }
+    },
+    {
+      "id": "en-voice-volume-5",
+      "command": "Volume forty",
+      "locale": "en",
+      "setup": {
+        "track": "alpha",
+        "state": "paused",
+        "progress_seconds": 1,
+        "volume": 30
+      },
+      "expected": {
+        "effect": "volume",
+        "status": [
+          "confirmed"
+        ],
+        "mutation": "required",
+        "volume": 40
+      }
+    },
+    {
+      "id": "en-voice-volume-6",
+      "command": "Quieter",
+      "locale": "en",
+      "setup": {
+        "track": "alpha",
+        "state": "paused",
+        "progress_seconds": 1,
+        "volume": 30
+      },
+      "expected": {
+        "effect": "volume",
+        "status": [
+          "confirmed"
+        ],
+        "mutation": "required",
+        "volume": 10
+      }
+    },
+    {
+      "id": "en-voice-volume-7",
+      "command": "Make it louder",
+      "locale": "en",
+      "setup": {
+        "track": "alpha",
+        "state": "paused",
+        "progress_seconds": 1,
+        "volume": 30
+      },
+      "expected": {
+        "effect": "volume",
+        "status": [
+          "confirmed"
+        ],
+        "mutation": "required",
+        "volume": 50
+      }
+    },
+    {
+      "id": "ru-voice-clamp-lower",
+      "command": "Тише",
+      "locale": "ru",
+      "setup": {
+        "track": "alpha",
+        "state": "paused",
+        "progress_seconds": 1,
+        "volume": 5
+      },
+      "expected": {
+        "effect": "volume",
+        "status": [
+          "confirmed"
+        ],
+        "mutation": "required",
+        "volume": 0
+      }
+    },
+    {
+      "id": "ru-voice-clamp-upper",
+      "command": "Громче",
+      "locale": "ru",
+      "setup": {
+        "track": "alpha",
+        "state": "paused",
+        "progress_seconds": 1,
+        "volume": 115
+      },
+      "expected": {
+        "effect": "volume",
+        "status": [
+          "confirmed"
+        ],
+        "mutation": "required",
+        "volume": 120
+      }
+    },
+    {
+      "id": "ru-voice-clamp-maximum",
+      "command": "Громче",
+      "locale": "ru",
+      "setup": {
+        "track": "alpha",
+        "state": "paused",
+        "progress_seconds": 1,
+        "volume": 120
+      },
+      "expected": {
+        "effect": "volume",
+        "status": [
+          "already_satisfied"
+        ],
+        "mutation": "none",
+        "volume": 120
+      }
+    },
+    {
+      "id": "ru-voice-album",
+      "command": "Включи Signal Alpha",
+      "locale": "ru",
+      "setup": {
+        "track": "alpha",
+        "state": "paused",
+        "progress_seconds": 1
+      },
+      "expected": {
+        "effect": "track",
+        "status": [
+          "playing"
+        ],
+        "mutation": "required",
+        "target": "alpha"
+      }
+    },
+    {
+      "id": "ru-voice-artist-fallback",
+      "command": "Включи Signal Beta",
+      "locale": "ru",
+      "setup": {
+        "track": "edition",
+        "state": "paused",
+        "progress_seconds": 1
+      },
+      "expected": {
+        "effect": "track",
+        "status": [
+          "playing"
+        ],
+        "mutation": "required",
+        "target": "beta"
+      }
+    },
+    {
+      "id": "ru-voice-global-fallback",
+      "command": "Включи Тихий берег",
+      "locale": "ru",
+      "setup": {
+        "track": "alpha",
+        "state": "paused",
+        "progress_seconds": 1
+      },
+      "expected": {
+        "effect": "track",
+        "status": [
+          "playing"
+        ],
+        "mutation": "required",
+        "target": "ru"
+      }
+    },
+    {
+      "id": "ru-voice-explicit-artist",
+      "command": "Включи Test Atlas — Signal Alpha",
+      "locale": "ru",
+      "setup": {
+        "track": "alpha",
+        "state": "paused",
+        "progress_seconds": 1
+      },
+      "expected": {
+        "effect": "track",
+        "status": [
+          "playing"
+        ],
+        "mutation": "required",
+        "target": "edition"
+      }
+    },
+    {
+      "id": "en-voice-album",
+      "command": "Play Signal Alpha",
+      "locale": "en",
+      "setup": {
+        "track": "alpha",
+        "state": "paused",
+        "progress_seconds": 1
+      },
+      "expected": {
+        "effect": "track",
+        "status": [
+          "playing"
+        ],
+        "mutation": "required",
+        "target": "alpha"
+      }
+    },
+    {
+      "id": "en-voice-artist-fallback",
+      "command": "Play Signal Beta",
+      "locale": "en",
+      "setup": {
+        "track": "edition",
+        "state": "paused",
+        "progress_seconds": 1
+      },
+      "expected": {
+        "effect": "track",
+        "status": [
+          "playing"
+        ],
+        "mutation": "required",
+        "target": "beta"
+      }
+    },
+    {
+      "id": "en-voice-global-fallback",
+      "command": "Play Тихий берег",
+      "locale": "en",
+      "setup": {
+        "track": "alpha",
+        "state": "paused",
+        "progress_seconds": 1
+      },
+      "expected": {
+        "effect": "track",
+        "status": [
+          "playing"
+        ],
+        "mutation": "required",
+        "target": "ru"
+      }
+    },
+    {
+      "id": "en-voice-explicit-artist",
+      "command": "Play Test Atlas — Signal Alpha",
+      "locale": "en",
+      "setup": {
+        "track": "alpha",
+        "state": "paused",
+        "progress_seconds": 1
+      },
+      "expected": {
+        "effect": "track",
+        "status": [
+          "playing"
+        ],
+        "mutation": "required",
+        "target": "edition"
+      }
+    },
+    {
+      "id": "ru-voice-reject-compound",
+      "command": "Лайк и следующий",
+      "locale": "ru",
+      "setup": {
+        "track": "alpha",
+        "state": "paused",
+        "progress_seconds": 1
+      },
+      "expected": {
+        "effect": "unchanged",
+        "status": [
+          "error"
+        ],
+        "mutation": "none"
+      }
+    },
+    {
+      "id": "ru-voice-reject-negative",
+      "command": "Не делай громче",
+      "locale": "ru",
+      "setup": {
+        "track": "alpha",
+        "state": "paused",
+        "progress_seconds": 1
+      },
+      "expected": {
+        "effect": "unchanged",
+        "status": [
+          "error"
+        ],
+        "mutation": "none"
+      }
+    },
+    {
+      "id": "ru-voice-reject-invalid-volume",
+      "command": "Громкость 121",
+      "locale": "ru",
+      "setup": {
+        "track": "alpha",
+        "state": "paused",
+        "progress_seconds": 1
+      },
+      "expected": {
+        "effect": "unchanged",
+        "status": [
+          "error"
+        ],
+        "mutation": "none"
+      }
+    }
+  ]
+}

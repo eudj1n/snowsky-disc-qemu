@@ -4,6 +4,80 @@ This is the short continuation index. [The roadmap](ASSISTANT.md) preserves
 historical decisions; [MVP acceptance](ASSISTANT_MVP.md) defines completion.
 Conversation and local experiments do not replace device evidence.
 
+## Python/Controller review follow-up, 2026-09-21
+
+The [six Python review findings](PYTHON_QUALITY_REVIEW.md) are addressed locally
+on `codex/assistant-contextual-voice`: shared strict playback/settings decoding,
+typed public current-track/favorite/volume operations, a narrow persistent-client
+surface, named core states/sources, keyword configuration construction, pinned
+lint/type checks and standalone Controller packaging. The package remains in this
+repository; no release, registry publication or repository split was performed.
+
+The Assistant serializes typed control results at its adapter boundary. The first
+two firmware extension runs each passed 28/30: both now-playing cases exposed a
+lost recording path during serialization. The first diagnosis added the missing
+queue source but did not yet restore the path. `Track.path` and
+`PlaybackSnapshot.source` now preserve both, with adapter regressions and the
+original firmware oracle unchanged. Both reports are retained at
+`/tmp/disc-quality-voice-20260921/results/report.json` and
+`/tmp/disc-quality-voice-final-20260921/results/report.json`.
+
+Completed checks: 212 Controller tests, 370 Assistant tests, 393 shared Python / 37
+JavaScript tests and shim builds; Ruff across Controller, strict mypy over nine
+core/public modules, the Assistant result adapter and a consumer contract; sdist-to-wheel build and clean core
+installation with synthetic operations, followed by optional WebSocket/bridge
+extra installation/imports. Three checked modules still permit calls into legacy
+untyped helpers; this does not claim complete static coverage of all Python.
+
+The corrected extension suite passed **30/30**, including **10 no-write cases**,
+at `/tmp/disc-quality-voice-complete-20260921/results/report.json`. Its disposable
+stack was removed. The original oracle, prior failures and accepted MVP report
+are preserved. No physical player or human-speech accuracy run was involved.
+
+The shared V2.57 `ci/integration.sh` **full** scenario also passed (exit 0),
+including TCP/WS, catalog/queue/settings, formats, EOF, scan/reset/storage,
+preferences and viewer checks. Its disposable containers, network and volume
+were removed. Local log: `/tmp/disc-quality-full-integration.log`.
+
+## Voice extensions and NLU organization, 2026-09-21
+
+[Issue #27](https://github.com/eudj1n/snowsky-disc-qemu/issues/27) implements
+current-track likes/unlikes, read-only now-playing questions, absolute volume and
+independent relative steps (default ±20, bounded 0..120). Text and transcribed
+input use the same typed intent flow. Album/artist context ranking requires a
+fresh complete queue match and rechecks it before selection. Explicit artist and
+album requests keep their scope. See the [user quick guide](ASSISTANT_QUICK_GUIDE.md).
+
+Controller now owns the guarded current-state operations and named capability
+checks. `PlaybackSource` and `WirePlaybackState` replace new magic-value tests;
+unknown firmware does not inherit support. The temporary 260 registry test is
+synthetic and does not enable V2.60. No physical player was connected.
+
+Working NLU lives in `assistant/nlu`; offline tools/reports are under
+`nlu/evaluation`, with corpora and optional labelled references in `nlu/data`.
+Locale command files now contain templates only. Existing example IDs/text/labels
+and ten frozen corpus/report files were checked unchanged. Learned models remain
+shadow-only. Updated module entry points and resource links were checked.
+The [Python quality review](PYTHON_QUALITY_REVIEW.md) records remaining typed API,
+wire-validation, tooling and packaging work before a possible Controller split.
+
+Validation: **370 prototype tests**, **386 shared Python / 37 JavaScript tests**,
+and **30/30 new disposable V2.57 scenarios**, including **10 no-write cases**.
+The complete shared V2.57 `ci/integration.sh` **full** scenario also passed
+(exit 0); its disposable containers, network and work volume were removed.
+Local integration log: `/tmp/disc-voice-full-integration.log`.
+A separate focused 15-test run covers contextual ranking, current-state commands,
+optional training references and one-shot connection ownership. No human-speech
+accuracy or new physical acceptance is claimed. The accepted 64-case MVP report
+is preserved and was not relabelled as a rerun of this extension.
+
+The first new 30-case run passed 24 and failed 6 because a missing context import
+rejected unqualified searches before any write. That evidence is retained at
+`/tmp/disc-voice-acceptance-20260921`; the corrected run passed all 30 at
+`/tmp/disc-voice-acceptance-final-20260921/results/report.json`. Disposable resources
+were cleaned up. Screenshots are not claimed visually reviewed. These are local
+working-tree observations; source hashes accompany each report.
+
 ## Software MVP accepted, 2026-09-19
 
 The owner explicitly accepted **emulator-based software MVP** closure and confirmed

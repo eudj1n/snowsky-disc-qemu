@@ -1,7 +1,7 @@
 """Exercise the complete live interpretation boundary, including its shared gate."""
 import unittest
-from research.disc_assistant.assistant.interpreter import interpret_request, InterpretationContext, UnsupportedCommand
-from research.disc_assistant.assistant.intents import Intent, ControlIntent
+from research.disc_assistant.assistant.nlu.interpreter import interpret_request, InterpretationContext, UnsupportedCommand
+from research.disc_assistant.assistant.nlu.intents import Intent, ControlIntent
 
 
 class MusicGrammarTests(unittest.IsolatedAsyncioTestCase):

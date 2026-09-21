@@ -88,7 +88,7 @@ The desktop run used Metal, context 2048, one parallel slot, four CPU threads,
 192 output tokens, temperature/seed zero. This is **not a Pi benchmark**.
 The adapter uses the server's [schema-constrained chat API](https://github.com/ggml-org/llama.cpp/blob/b11039/tools/server/README.md).
 
-`python -m research.disc_assistant.experiments.structured_compare --model-path
+`python -m research.disc_assistant.assistant.nlu.evaluation.structured_compare --model-path
 MODEL_GGUF --output NEW_DIR` compares live rules (including the shared gate),
 slots and structured evidence. It never connects to a player. The 40 existing
 slot examples remain unchanged; 12 explicit album/credit/title/injection/sequence

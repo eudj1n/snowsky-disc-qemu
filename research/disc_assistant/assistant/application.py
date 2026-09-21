@@ -1,6 +1,6 @@
 """Shared synchronous application service for CLI and web adapters."""
 import asyncio
-from dataclasses import replace
+from dataclasses import asdict, replace
 import os
 import shlex
 import sys
@@ -8,9 +8,9 @@ from uuid import uuid4
 
 from research.disc_assistant.assistant.config import Config
 from research.disc_assistant.assistant.controls import execute as control
-from research.disc_assistant.assistant.intents import ControlIntent, LanguageIntent
-from research.disc_assistant.assistant.languages import load_languages
-from research.disc_assistant.assistant.interpreter import InterpretationContext, interpret_request
+from research.disc_assistant.assistant.nlu.intents import ControlIntent, LanguageIntent, VolumeIntent
+from research.disc_assistant.assistant.nlu.languages import load_languages
+from research.disc_assistant.assistant.nlu.interpreter import InterpretationContext, interpret_request
 from research.disc_assistant.assistant.live import DeviceSession
 from research.disc_assistant.assistant.preferences import effective_config, language_command, response_command
 from research.disc_assistant.assistant.journal import Trace, history_command, debug_stderr
@@ -69,7 +69,7 @@ class Application:
             return {'operation_id': operation_id, 'status': 'uncertain' if attempted else 'not_sent',
                     'mutation_attempted': attempted, 'reason': str(exc), 'error_type': type(exc).__name__}
 
-    async def search(self, command, text='', *, intent=None, reuse=False, trace=None):
+    async def search(self, command, text='', *, intent=None, reuse=False, trace=None, context=None):
         if trace:
             trace.catalog(self.store)
             trace.event('search', {'command': command, 'query': text})
@@ -93,7 +93,7 @@ class Application:
                         pass
                 return await search.build(self.store, self.config.device_key)
             if command == 'rank':
-                result = await rank(self.config, self.store, search, intent, trace=trace)
+                result = await rank(self.config, self.store, search, intent, trace=trace, context=context)
             else:
                 result = await search.search(self.store, self.config.device_key, text)
             if trace:
@@ -183,7 +183,7 @@ class Application:
             self.debug_output(event)
 
     def shadow_sources(self):
-        from research.disc_assistant.assistant.interpretation_sources import default_sources
+        from research.disc_assistant.assistant.nlu.interpretation_sources import default_sources
         return default_sources(self.config) if self.config.shadow else None
 
     def interpret(self, text, trace):
@@ -213,10 +213,10 @@ class Application:
             command, _, text = line[1:].partition(' ')
             text = text.strip()
             if command == 'explain':
-                from research.disc_assistant.assistant.explain import preview
+                from research.disc_assistant.assistant.nlu.explain import preview
                 return preview(self.config, text, trace)
             if command == 'commands':
-                from research.disc_assistant.assistant.command_catalog import command as catalog_command
+                from research.disc_assistant.assistant.nlu.command_catalog import command as catalog_command
                 result = catalog_command(self.config, shlex.split(text))
                 trace.event('command_catalog', result)
                 return result
@@ -248,10 +248,10 @@ class Application:
                     raise ValueError(f'/{command} needs text')
                 if command == 'rank':
                     intent = self.interpret(text, trace)
-                    if isinstance(intent, (ControlIntent, LanguageIntent)):
-                        return {'status': 'planned', 'action': intent.action if isinstance(intent, ControlIntent) else 'set_language',
-                                'requires_search': False}
-                    return asyncio.run(self.search(command, text, intent=intent, trace=trace))
+                    if isinstance(intent, (ControlIntent, VolumeIntent, LanguageIntent)):
+                        return {'status': 'planned', 'action': intent.action if isinstance(intent, (ControlIntent, VolumeIntent)) else 'set_language',
+                                'requires_search': False, 'intent': asdict(intent)}
+                    return asyncio.run(self.search(command, text, intent=intent, trace=trace, context=self.playback_context))
                 return asyncio.run(self.search(command, text, trace=trace))
             if text:
                 raise ValueError(f'/{command} takes no arguments')
@@ -287,23 +287,32 @@ class Application:
         generation = self.session.status()['generation'] if hasattr(self, 'session') else None
         return self.natural_request(line, trace, generation=generation)
 
+    def playback_context(self):
+        from research.disc_assistant.assistant.context import read
+        with self.session.operation() as client:
+            return read(self.config, client)
+
     def natural_request(self, line, trace, *, generation=None, preview=False):
         # This is natural input only: recognized speech can never enter slash commands.
         intent = self.interpret(line, trace)
         if preview:
-            if isinstance(intent, (ControlIntent, LanguageIntent)):
-                return {'status': 'planned', 'action': intent.action if isinstance(intent, ControlIntent) else 'set_language',
-                        'requires_search': False}
-            return asyncio.run(self.search('rank', line, intent=intent, trace=trace))
+            if isinstance(intent, (ControlIntent, VolumeIntent, LanguageIntent)):
+                return {'status': 'planned', 'action': intent.action if isinstance(intent, (ControlIntent, VolumeIntent)) else 'set_language',
+                        'requires_search': False, 'intent': asdict(intent)}
+            return asyncio.run(self.search('rank', line, intent=intent, trace=trace, context=self.playback_context))
         if generation is not None and generation != self.session.status()['generation']:
             return {'status': 'not_sent', 'mutation_attempted': False, 'reason': 'session changed during speech/interpretation'}
         if isinstance(intent, LanguageIntent):
             return self.language([intent.locale], trace)
-        if isinstance(intent, ControlIntent):
+        if isinstance(intent, (ControlIntent, VolumeIntent)):
             trace.event('execution_started', {'action': intent.action})
-            return self.device_call(lambda client: control(self.config, intent, shared=client))
+            def execute_control(client):
+                if generation is not None and generation != self.session.status()['generation']:
+                    raise ConnectionError('session changed before control dispatch')
+                return control(self.config, intent, shared=client)
+            return self.device_call(execute_control)
         # Pin the request to the current connection BEFORE potentially slow search.
-        ranking = asyncio.run(self.search('rank', line, intent=intent, trace=trace))
+        ranking = asyncio.run(self.search('rank', line, intent=intent, trace=trace, context=self.playback_context))
         if not ranking['candidates']:
             return ranking
         trace.select(ranking)

@@ -47,7 +47,8 @@ class QueueNavigationTests(unittest.TestCase):
 
     def test_first_row_does_not_wrap_or_restart_in_any_mode(self):
         for mode in range(5):
-            first = deepcopy(self.after);first['mode'] = mode
+            first = deepcopy(self.after)
+            first['mode'] = mode
             result = self.run_navigation([first])
             self.assertEqual((result['status'], result['outcome']), ('already_satisfied', 'queue_start'))
         self.client.socket.sendall.assert_not_called()
@@ -59,7 +60,8 @@ class QueueNavigationTests(unittest.TestCase):
         self.client.socket.sendall.assert_not_called()
 
     def test_same_size_queue_replacement_before_send_is_rejected(self):
-        changed = deepcopy(self.before);changed['items'][0]['name'] = 'Replacement'
+        changed = deepcopy(self.before)
+        changed['items'][0]['name'] = 'Replacement'
         result = self.run_navigation([self.before, changed])
         self.assertEqual(result['status'], 'not_sent')
         self.client.socket.sendall.assert_not_called()
@@ -70,14 +72,16 @@ class QueueNavigationTests(unittest.TestCase):
         self.client.socket.sendall.assert_not_called()
 
     def test_wrong_track_at_target_position_is_not_confirmation(self):
-        wrong = deepcopy(self.after);wrong['state']['song']['song_name'] = 'Wrong'
+        wrong = deepcopy(self.after)
+        wrong['state']['song']['song_name'] = 'Wrong'
         with patch('controller.queue.snapshot', side_effect=[self.before, self.before] + [wrong] * 10000), patch('time.sleep'):
             result = previous_in_queue(self.config, self.client, Mock())
         self.assertEqual(result['status'], 'uncertain')
         self.client.socket.sendall.assert_called_once()
 
     def test_queue_changed_after_send_is_uncertain_without_replay(self):
-        changed = deepcopy(self.after);changed['items'].pop()
+        changed = deepcopy(self.after)
+        changed['items'].pop()
         result = self.run_navigation([self.before, self.before, changed])
         self.assertEqual(result['status'], 'uncertain')
         self.client.socket.sendall.assert_called_once()

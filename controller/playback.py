@@ -1,5 +1,6 @@
 """Fresh artist selection and verified playback observations, without ranking."""
 import time
+from controller.models import WirePlaybackState, PlaybackSource
 from controller.fiio_link import playback_snapshot
 from controller.catalog import CatalogChanged, CatalogReader
 from controller.events import merge_snapshot, validate_scan_events
@@ -52,8 +53,8 @@ def album_matches(state, selected, *, config=None, http=None):
 
 def matches(state, selected, rows, *, album_verified=False):
     song = state.get('song')
-    source = 3 if selected['kind'] == 'album' and selected.get('artist') is None else 7
-    if state.get('state') != 0 or state.get('playerflag') != source or not isinstance(song, dict):
+    source = PlaybackSource.ALBUM if selected['kind'] == 'album' and selected.get('artist') is None else PlaybackSource.ARTIST_SCOPE
+    if state.get('state') != WirePlaybackState.PLAYING or state.get('playerflag') != source or not isinstance(song, dict):
         return False
     artist, title = song.get('song_artist_name'), song.get('song_name')
     if selected.get('artist') is not None and artist != selected['artist']:

@@ -1,6 +1,7 @@
 """Catalog synchronization over a one-shot or borrowed persistent session."""
 from contextlib import nullcontext
 
+from controller.compatibility import Capability, require_client
 from controller.fiio_http import HTTPClient
 from controller.fiio_link import Client
 from research.disc_assistant.library.catalog import CatalogReader, CatalogChanged
@@ -11,11 +12,7 @@ from controller.events import check_events
 def sync(config, store, *, shared=None, reuse_unchanged=False):
     expected = store.head(config.device_key)['generation']
     with (Client(config.host, config.tcp_port, config.timeout) if shared is None else nullcontext(shared)) as client:
-        handshake = client.handshake()
-        settings = client.settings()
-        version = settings.get('soc_version')
-        if handshake != '0306' or type(version) is not int or version != 257:
-            raise ValueError('prototype catalog contract requires reviewed DISC V2.57')
+        version = require_client(client, Capability.CATALOG_SNAPSHOT)
         http = HTTPClient(config.host, config.http_port, config.timeout)
         reader = CatalogReader(http, page_size=config.page_size, max_tracks=config.max_tracks,
                                max_requests=config.max_requests)

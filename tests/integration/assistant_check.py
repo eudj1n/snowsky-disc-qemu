@@ -17,9 +17,12 @@ def write_json(path, value):
         stream.write('\n')
 
 
-def load_suite():
+def load_suite(suite_name="baseline"):
     import re
     suite = json.loads(MANIFEST.read_text())
+    if suite_name == 'voice':
+        extension = json.loads(MANIFEST.with_name('assistant_voice_scenarios.json').read_text())
+        suite = {**suite, **extension}
     tracks = {t['key']: t for t in suite['tracks']}
     if len(tracks) != len(suite['tracks']):
         raise ValueError('Duplicate fixture keys')
@@ -32,7 +35,7 @@ def load_suite():
         if (case['locale'] not in ('ru', 'en') or not case['command'].strip()
                 or setup['track'] not in tracks or setup['state'] not in ('playing', 'paused')
                 or type(setup['progress_seconds']) is not int or not 1 <= setup['progress_seconds'] <= 15
-                or expected['effect'] not in ('track', 'artist', 'album', 'paused', 'playing', 'next', 'previous', 'unchanged')
+                or expected['effect'] not in ('track', 'artist', 'album', 'paused', 'playing', 'next', 'previous', 'unchanged', 'favorite', 'volume', 'now_playing')
                 or expected['mutation'] not in ('required', 'none') or not expected['status']):
             raise ValueError('Invalid scenario: ' + case['id'])
         if expected['effect'] in ('track', 'artist', 'album'):
@@ -86,7 +89,7 @@ def judge(case, tracks, before, result, after, writes):
         checks['playing'] = a.get('state') == 0
     else:
         checks['same_recording'] = identity(b) == identity(a)
-        checks['playback_state'] = a.get('state') == (b.get('state') if effect == 'unchanged' else 1 if effect == 'paused' else 0)
+        checks['playback_state'] = a.get('state') == (b.get('state') if effect in ('unchanged', 'favorite', 'volume', 'now_playing') else 1 if effect == 'paused' else 0)
         bp, ap = before['position_ms'], after['position_ms']
         elapsed = (after['monotonic'] - before['monotonic']) * 1000
         checks['position_retained'] = (bp is not None and ap is not None and
@@ -95,6 +98,12 @@ def judge(case, tracks, before, result, after, writes):
             checks['playback_progress'] = bp is not None and ap is not None and ap > bp
     if effect not in ('track', 'artist', 'album'):
         checks['queue_preserved'] = before['queue']['items'] == after['queue']['items']
+    if effect == 'favorite':
+        checks['favorite'] = a.get('love') is expected['love']
+    if effect == 'volume':
+        checks['volume'] = after['volume'] == expected['volume']
+    if effect == 'now_playing':
+        checks['reported_track'] = identity(result.get('state') or {}) == identity(a)
     checks['queue_state_agrees'] = after['queue']['mark'] + 1 == a.get('song', {}).get('pos_id')
     return checks
 
@@ -172,7 +181,7 @@ def observe(app):
         view = client.view()
         if queue['state'] != view['state']:
             raise RuntimeError('State changed during readback')
-        return {'state': queue['state'], 'position_ms': view['position_ms'], 'queue': queue,
+        return {'state': queue['state'], 'volume': client.settings().get('currentVolume'), 'position_ms': view['position_ms'], 'queue': queue,
                 'monotonic': time.monotonic(), 'read_started': started,
                 'position_source': 'fresh_event' if client.progress_seq > seq else 'retained_event_while_paused',
                 'position_event_at': client.progress_at, 'position_event_sequence': client.progress_seq,
@@ -195,7 +204,18 @@ def prepare(app, case, tracks):
     http = HTTPClient(app.config.host, app.config.http_port, 5)
     rows = http.catalog('artist/album/song', artist=track['artist'], album=track['album'])['items']
     index = next(r['pos'] for r in rows if r['name'] == track['title'])
-    result = app.session.play_artist(track['artist'], album=track['album'], index=index).to_dict()
+    result = app.session.play_artist(track['artist'],
+        album=None if case['setup'].get('source') == 'artist' else track['album'],
+        index=None if case['setup'].get('source') == 'artist' else index).to_dict()
+    if 'love' in case['setup'] or 'volume' in case['setup']:
+        from controller.current import current
+        for field, value in case['setup'].items():
+            if field in ('love', 'volume'):
+                with app.session.operation() as client:
+                    setup_result = current(client, ('like' if value else 'dislike') if field == 'love' else 'volume',
+                                           **({'value': value} if field == 'volume' else {}))
+                    if setup_result['status'] not in ('confirmed', 'already_satisfied'):
+                        raise RuntimeError('Setup current-state change was not confirmed')
     # Check the actual effect even when the setup response could not confirm it.
     evidence = observe(app)
     if not recording(evidence['state'], track) or evidence['state'].get('state') != 0:
@@ -223,7 +243,7 @@ def run(args):
     from research.disc_assistant.assistant.console import Application
     if os.environ.get('CI_DISPOSABLE') != '1' or os.environ.get('FW_VERSION') != '2.57':
         raise RuntimeError('Run only through ci/assistant.sh on disposable V2.57')
-    suite = load_suite()
+    suite = load_suite(args.suite)
     ids = {c['id'] for c in suite['cases']}
     if set(args.case) - ids:
         raise ValueError('Unknown case IDs: ' + ', '.join(sorted(set(args.case) - ids)))
@@ -244,7 +264,7 @@ def run(args):
     write_json(output / 'provenance.json', {'revision': os.environ.get('ASSISTANT_SOURCE_REVISION'),
                'dependencies': {name: version(name) for name in ('typesense', 'aiohttp', 'prompt_toolkit')},
                'files': sources, 'firmware': '2.57', 'selected_cases': [c['id'] for c in selected],
-               'cohort': 'emulator-regression', 'manifest_sha256': hashlib.sha256(MANIFEST.read_bytes()).hexdigest()})
+               'cohort': 'emulator-regression', 'manifest_sha256': hashlib.sha256(json.dumps(suite, sort_keys=True).encode()).hexdigest()})
     config = Config('disposable-assistant', 'emu', 12100, 12103, Path('/reports/runtime'),
                     'typesense', 8108, 'http', 'ASSISTANT_TEST_KEY', {}, timeout=8)
     deadline = time.monotonic() + 60
@@ -309,12 +329,13 @@ def run(args):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument('--suite', choices=('baseline', 'voice'), default='baseline')
     parser.add_argument('--case', action='append', default=[])
     parser.add_argument('--screenshots', choices=('failures', 'all'), default='failures')
     parser.add_argument('--list', action='store_true', help='list case IDs without starting services')
     args = parser.parse_args()
     if args.list:
-        for case in load_suite()['cases']:
+        for case in load_suite(args.suite)['cases']:
             print(case['id'], case['command'])
     else:
         raise SystemExit(run(args))

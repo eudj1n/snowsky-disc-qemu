@@ -1,5 +1,8 @@
 # Disc Assistant commands
 
+For everyday use, see the [quick guide with RU/EN examples](ASSISTANT_QUICK_GUIDE.md).
+
+
 Implementation status: **2026-09-18**. The prototype lives in
 [`research/disc_assistant/`](../research/disc_assistant/README.md).
 Run [`run.sh`](../research/disc_assistant/run.sh) from the repository root; virtualenv
@@ -430,3 +433,25 @@ The fresh source is read twice and compared with the snapshot, then checked agai
 immediately before one selection. Confirmation checks album, source, observed
 track membership and the complete queue. Shortened album metadata requires a
 unique fresh compatible name. No uncertain selection is retried.
+
+
+## Current-track commands, volume and contextual search
+
+[Issue #27](https://github.com/eudj1n/snowsky-disc-qemu/issues/27) adds idempotent
+current-track favorites, read-only current-track questions and absolute/relative
+volume through the common text/transcription path. The [quick guide](ASSISTANT_QUICK_GUIDE.md)
+lists phrases and `[volume]` configuration. Defaults are up/down 20; relative
+values clamp to 0..120 while invalid absolute values are rejected.
+
+Contextual ranking checks complete fresh queue membership against the catalog.
+Reviewed album/artist/current-queue sources can establish album → artist → global
+or artist → global precedence; unknown sources and ordinary playlists cannot.
+Explicit/inferred named-artist constraints and explicit album requests bypass this
+priority. Scoped tracks require title similarity at least 0.85 under the existing
+lexical scorer, retaining requested-version constraints and edition penalties.
+This is a ranking rule, not a confidence probability. The current context is
+rechecked before dispatch; changed membership/identity blocks selection.
+
+Console/web previews read the current context without writing. One-shot `rank`
+remains offline with respect to the player and uses global catalog ranking;
+one-shot `ask` owns one connection across contextual search and execution.

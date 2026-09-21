@@ -13,9 +13,9 @@ from prompt_toolkit.document import Document
 from research.disc_assistant.assistant import __main__ as cli
 from research.disc_assistant.assistant.config import load
 from research.disc_assistant.assistant.console import Application
-from research.disc_assistant.assistant.intents import parse
+from research.disc_assistant.assistant.nlu.intents import parse
 from research.disc_assistant.assistant.journal import Trace, JournalWriteError, history_command
-from research.disc_assistant.assistant.languages import LOCALES, load_languages
+from research.disc_assistant.assistant.nlu.languages import LOCALES, load_languages
 from research.disc_assistant.assistant.preferences import effective_config, language_command, response_command, Preferences
 from research.disc_assistant.assistant.responses import (
     REPLIES, Responses, exception_result, load_reply_locale, validate_locales,

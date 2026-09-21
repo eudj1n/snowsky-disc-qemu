@@ -1,4 +1,5 @@
 """One serialized playback operation, with fresh selectors and no mutation retries."""
+from controller.compatibility import Capability, require_client
 from collections import Counter
 import time
 from contextlib import nullcontext
@@ -62,8 +63,7 @@ def execute(config, store, ranking, *, shared=None):
                 artist_command(selected['artist'], 0 if selected['kind'] == 'track' else None, selected.get('album'))
             with (PlaybackClient(config.host, config.tcp_port, config.timeout) if shared is None
                   else nullcontext(shared)) as client:
-                if client.handshake() != '0306' or client.settings().get('soc_version') != 257:
-                    raise ValueError('playback requires reviewed DISC V2.57')
+                require_client(client, 'album_playback' if generic_album else 'artist_playback')
                 if config.continuous_context:
                     client.begin_phase('mode')
                     result['mode_change'] = ensure_continuous(client)
@@ -80,6 +80,9 @@ def execute(config, store, ranking, *, shared=None):
                 client.scan_guard()
                 if store.head(config.device_key)['generation'] != ranking['generation']:
                     raise StaleSnapshot('catalog changed before playback')
+                if ranking.get('playback_context'):
+                    from research.disc_assistant.assistant.context import verify
+                    verify(config, client, ranking['playback_context'])
                 guard = GuardedHTTP(http, category, filters, rows, index, client)
                 if generic_album:
                     client.play_album(selected['album'], http=guard)

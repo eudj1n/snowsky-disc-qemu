@@ -4,6 +4,18 @@ Read the repository-root `AGENTS.md` first. This file applies to
 `research/disc_assistant/`; it supplements, not replaces, repository conventions.
 Conversation may be Russian; **tracked documentation and comments are English**.
 
+## Voice extension and NLU ownership, 2026-09-21
+
+Issue #27 / `codex/assistant-contextual-voice` adds favorites, now-playing,
+configurable volume and guarded album/artist context ranking. Read
+`../../docs/ASSISTANT_QUICK_GUIDE.md` and the latest status before continuing.
+Working NLU now lives in `assistant/nlu`; optional evaluation tools are in
+`assistant/nlu/evaluation` and data/references in `assistant/nlu/data`.
+Locale TOML stays in `assistant/locales`; command templates contain no training
+examples. Learned models remain shadow-only and frozen corpus/report bytes are
+preserved. Follow `../../docs/PYTHON_QUALITY_REVIEW.md` for the requested quality
+review and possible future Controller extraction; no extraction is performed.
+
 ## Product boundary updated 2026-09-19: software MVP accepted
 
 The owner explicitly accepted **software MVP against the stock emulator**, and
@@ -160,7 +172,7 @@ queues. Physical album-command acceptance is not claimed.
 
 - `assistant/`: application orchestration, intents, preferences, journal, providers.
 - `library/`: device catalog snapshots, retrieval/index projection, ranking support.
-- `experiments/nlu/`: offline evaluation/training/report tools; optional ML dependencies
+- `assistant/nlu/evaluation/`: offline evaluation/training/report tools; optional ML dependencies
   stay outside ordinary Assistant requirements. Runtime portable text scoring needs
   neither Torch nor an embedding encoder.
 - Controller is independent of research/emulator/viewer. Use its high-level methods;

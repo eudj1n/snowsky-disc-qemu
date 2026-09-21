@@ -12,7 +12,7 @@ from research.disc_assistant.assistant.voice.resident import WhisperServer
 from research.disc_assistant.assistant.voice.files import load_audio, command_text
 from research.disc_assistant.assistant.voice.vocabulary import prompt
 from research.disc_assistant.assistant.speech import SpeechContext
-from research.disc_assistant.assistant.interpreter import interpret_request, InterpretationContext, UnsupportedCommand
+from research.disc_assistant.assistant.nlu.interpreter import interpret_request, InterpretationContext, UnsupportedCommand
 
 # Fixed catalog names, independent of any sample's expected transcript or slots.
 VOCABULARY = ('Linkin Park', 'Numb', 'Meteora', 'In the End', 'Hybrid Theory', 'Артист Ё', 'Тишина', 'Альбом', 'Cue Artist', 'Cue entry')

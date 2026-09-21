@@ -1,0 +1,24 @@
+[build-system]
+requires = ["setuptools==80.9.0", "wheel==0.45.1"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "snowsky-disc-controller"
+version = "0.1.0"
+description = "Guarded local control of the SNOWSKY DISC player"
+readme = "README.md"
+requires-python = ">=3.11"
+license = "MIT"
+
+[project.optional-dependencies]
+websocket = ["aiohttp>=3.9,<4"]
+bridge = ["aiohttp>=3.9,<4"]
+
+[tool.setuptools]
+packages = ["controller", "controller.bridge", "controller.diagnostics"]
+package-dir = {controller = "."}
+include-package-data = false
+
+[tool.setuptools.package-data]
+controller = ["py.typed"]
+"controller.bridge" = ["ws_console.html"]

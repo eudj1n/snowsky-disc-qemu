@@ -10,8 +10,8 @@ from research.disc_assistant.library.catalog import Track
 from research.disc_assistant.library.store import Store
 from research.disc_assistant.library.search.typesense import Search, create_client
 from research.disc_assistant.library.transliteration import fold
-from research.disc_assistant.assistant.intents import Intent
-from research.disc_assistant.assistant.languages import load_languages
+from research.disc_assistant.assistant.nlu.intents import Intent
+from research.disc_assistant.assistant.nlu.languages import load_languages
 from research.disc_assistant.assistant.ranking import score_tracks, ordered
 
 

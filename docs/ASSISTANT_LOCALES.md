@@ -53,8 +53,8 @@ are required by the contributor validator:
 
 | Table | Keys |
 | --- | --- |
-| `commands` | `play`, `pause`, `resume`, `stop`, `next`, `previous`, `set_language` |
-| `targets` | `artist`, `track` |
+| `commands` | `play`, `pause`, `resume`, `stop`, `next`, `previous`, `set_language`, `like`, `dislike`, `now_playing`, `volume`, `volume_up`, `volume_down` |
+| `targets` | `artist`, `track`, `album` |
 | `versions` | `live`, `remix`, `acoustic`, `instrumental`, `demo`, `karaoke`, `cover`, `remaster` |
 
 Values are phrases, not regexes. Case and repeated whitespace are normalized;
@@ -92,9 +92,10 @@ The keys and allowed parameters are defined by `MESSAGE_FIELDS` in
 [English catalog](../research/disc_assistant/assistant/locales/replies/en.toml) is
 the copyable reference; Russian is another complete example.
 
-Only `playback.started` and `playback.track_changed` accept parameters. Both require
-`{title}` and `{artist}`. Translators may reorder them and surrounding words.
-All other templates take no parameters. Use `{{` and `}}` for literal braces.
+`playback.started`, `playback.track_changed`, `playback.current` and
+`playback.current_paused` require `{title}` and `{artist}`. `volume.changed`
+requires `{volume}`. Translators may reorder them and surrounding words.
+Other templates take no parameters. Use `{{` and `}}` for literal braces.
 
 Unknown/missing keys, missing parameters, attribute/index access, conversions,
 format specifiers, empty templates and control characters are rejected. Templates
@@ -154,19 +155,19 @@ speech eligibility and reserved dialogue semantics.
 The diagnostic `/explain` has a separate, optional
 `assistant/locales/commands/<code>.toml` source. Add this alongside the ordinary
 command/response locale pair to support explanation and future learned intents.
-Copy the structure of `commands/en.toml`, preserving version 1 and semantic labels
-`pause`, `resume`, `stop`, `next`, `previous`, `play`, `language`, `reject`.
+Copy the structure of `commands/en.toml`, preserving version 1. It contains only
+language-specific extraction patterns; ordinary rule-based commands do not require it.
 
-- Set `locale` to the new code. Give each example a stable, unique ID and a
-  nonempty original phrase. Multiple formulations per action are expected.
-- Supply literal play templates with exactly one `{query}` and language templates
-  with exactly one `{language}`. Templates are escaped literals, not regular
-  expressions. Preserve all pattern categories, including negatives and quotes.
-- Add explicit non-command examples: ordinary conversation, negation and reported
-  speech. Review labels with a fluent speaker; a request to continue playing is
-  not a negative merely because it says “without pausing”.
-- Keep development/test examples outside this reference file. Adding a failed test
-  phrase to training turns it into regression evidence, not a holdout success.
+Supply literal play templates with exactly one `{query}` and language templates
+with exactly one `{language}`. Preserve all pattern categories, including
+negation, reported speech and quotes. Templates are literals, not regexes.
+
+Optional labelled training/reference examples live separately in
+`research/disc_assistant/assistant/nlu/data/command_references/<code>.toml`.
+They are not a requirement for adding a language. Preserve stable IDs and labels;
+keep evaluation sets separate and never relabel examined examples as a holdout.
+The catalog loader combines both sources before hashing; moving unchanged
+examples alone does not change the logical payload.
 
 Select the locale, run `commands rebuild`, and inspect representative `/explain`
 results. This validates the additional source; `/locales` still validates the
@@ -202,7 +203,7 @@ are unnecessary. Refer to [source contracts and limitations](ASSISTANT_INTERPRET
 
 Test exact extracted spans, quoted titles containing command words, missing
 arguments, negation, questions, non-music targets and compound commands. Add
-locale cases to `experiments/nlu/slot_acceptance.json` and compare each source.
+locale cases to `assistant/nlu/data/slot_acceptance.json` and compare each source.
 Adding templates here extends diagnostics, not the live rule vocabulary. Missing
 optional files leave ordinary literal commands working, with slots unavailable
 and no locale-specific compound guard. New grammars need review before deployment.
@@ -216,3 +217,10 @@ the optional diagnostic understanding grammar. Check new synonyms through
 survive the same guard used by the console. Semicolons inside music credits are
 allowed; a following command verb still identifies a sequence. Balanced outer
 quotes protect literal titles, including conjunctions and command words.
+
+
+Optional `[numbers]` in the ordinary command dictionary maps numeric keys `0` to
+`120` to exact spoken forms for absolute volume, for example `40 = ["forty"]`.
+Digits work independently of this table. Translate natural forms; do not add
+training examples or fuzzy-number inference. `now_playing` also accepts a trailing
+question mark. All commands still require one action per request.

@@ -21,7 +21,7 @@ class Handler(socketserver.BaseRequestHandler):
                     if tag == '0599':
                         result, body = 'a599', b'0306'
                     elif tag == '0501':
-                        result, body = 'a501', b'{"soc_version":257}'
+                        result, body = 'a501', json.dumps({'soc_version': 257, 'currentVolume': server.volume}).encode()
                     elif tag == '0105':
                         result, body = 'a102', f'{server.mode:04X}'.encode()
                     elif tag == '0102':
@@ -32,6 +32,17 @@ class Handler(socketserver.BaseRequestHandler):
                         if server.silent_now:
                             continue
                         result, body = 'a202', json.dumps(server.state).encode()
+                    elif tag in ('0104', '0502'):
+                        server.writes += 1
+                        if server.drop_write:
+                            self.request.shutdown(socket.SHUT_RDWR)
+                            return
+                        if tag == '0104':
+                            server.state['love'] = bool(int(payload, 16))
+                            result, body = 'a202', json.dumps(server.state).encode()
+                        else:
+                            server.volume = int(payload, 16)
+                            continue
                     elif tag == '0201':
                         server.writes += 1
                         if server.drop_write:
@@ -61,8 +72,9 @@ class Server(socketserver.ThreadingTCPServer):
         self.connections = set()
         self.accepts, self.writes = 0, 0
         self.mode = 0
+        self.volume = 30
         self.tags = []
-        self.state = {'state': 0, 'playerflag': 7, 'song': {'song_name': 'Track',
+        self.state = {'love': False, 'state': 0, 'playerflag': 7, 'song': {'song_name': 'Track',
                       'song_artist_name': 'Artist', 'song_album_name': 'Album', 'pos_id': 1}}
         self.drop_write, self.silent_now, self.delay_tag = False, False, None
         self.release_reply = threading.Event()

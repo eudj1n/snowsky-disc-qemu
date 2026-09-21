@@ -10,17 +10,17 @@ import unittest
 from unittest.mock import AsyncMock, Mock, patch
 
 from research.disc_assistant.assistant import __main__ as cli
-from research.disc_assistant.assistant.command_catalog import CommandCatalog
+from research.disc_assistant.assistant.nlu.command_catalog import CommandCatalog
 from research.disc_assistant.assistant.config import load
 from research.disc_assistant.assistant.console import Application
-from research.disc_assistant.assistant.interpreter import Interpretation, InterpretationContext, interpret_request, UnsupportedCommand
-from research.disc_assistant.assistant.interpretation_sources import (
+from research.disc_assistant.assistant.nlu.interpreter import Interpretation, InterpretationContext, interpret_request, UnsupportedCommand
+from research.disc_assistant.assistant.nlu.interpretation_sources import (
     Evidence, LiteralSource, SlotSource, CommandModelSource, collect, diagnostic_choice, comparison)
-from research.disc_assistant.assistant.intents import ControlIntent
+from research.disc_assistant.assistant.nlu.intents import ControlIntent
 from research.disc_assistant.assistant.journal import Trace, history_command
 from research.disc_assistant.assistant.providers import ProviderInfo
 from research.disc_assistant.assistant.tests.test_commands import bundle
-from research.disc_assistant.assistant.understanding import extract, single_action
+from research.disc_assistant.assistant.nlu.understanding import extract, single_action
 
 
 def provider(name, result=None, error=None):
@@ -163,13 +163,13 @@ class SourceFlowTests(unittest.TestCase):
 
     def test_disabled_shadow_does_not_evaluate_sources(self):
         app=Application(self.config);app.device_call=Mock(return_value={'status':'confirmed','action':'pause'})
-        with patch('research.disc_assistant.assistant.interpretation_sources.collect',AsyncMock(side_effect=AssertionError('shadow disabled'))):
+        with patch('research.disc_assistant.assistant.nlu.interpretation_sources.collect',AsyncMock(side_effect=AssertionError('shadow disabled'))):
             self.assertEqual(app.request('Pause')['status'],'confirmed')
 
     def test_journal_disabled_shadow_never_creates_database(self):
         config=replace(self.config,journal_enabled=False,shadow=True)
         with Trace(config,'ask','Pause') as trace:
-            from research.disc_assistant.assistant.interpretation_sources import default_sources
+            from research.disc_assistant.assistant.nlu.interpretation_sources import default_sources
             intent=asyncio.run(interpret_request('Pause',InterpretationContext('en'),trace=trace,shadow=default_sources(config)))
             self.assertEqual(intent,ControlIntent('pause'))
         self.assertFalse(config.data_dir.exists())

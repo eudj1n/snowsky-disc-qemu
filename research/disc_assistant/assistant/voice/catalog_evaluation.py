@@ -1,12 +1,12 @@
 """Read-only selection evaluation over one pinned catalog/index generation."""
-from research.disc_assistant.assistant.intents import AlbumIntent, music_from_dict
+from research.disc_assistant.assistant.nlu.intents import AlbumIntent, music_from_dict
 
 import os
 import time
 
-from research.disc_assistant.assistant.intents import Intent
+from research.disc_assistant.assistant.nlu.intents import Intent
 from research.disc_assistant.assistant.ranking import rank
-from research.disc_assistant.assistant.languages import normalized
+from research.disc_assistant.assistant.nlu.languages import normalized
 from research.disc_assistant.library.search.typesense import Search, create_client
 from research.disc_assistant.library.store import Store, StaleSnapshot
 

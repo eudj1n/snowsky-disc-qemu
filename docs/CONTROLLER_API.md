@@ -29,11 +29,11 @@ its existing data-directory lock and thin configuration adapter in research.
 
 ## Use
 
-Run from the repository root; no search server or Assistant database is needed:
+Run from the repository root or install the standalone Controller wheel;
+no search server or Assistant database is needed:
 
 ```python
-from controller.models import DeviceConfig, OperationStatus, PlayMode
-from controller.session import DiscSession
+from controller import DeviceConfig, DiscSession, OperationStatus, PlayMode
 
 config = DeviceConfig("192.168.1.50")  # Select the actual player explicitly.
 with DiscSession(config) as device:
@@ -63,6 +63,9 @@ Exit closes the link without stopping playback or restoring settings.
 | `disconnect()` | Close TCP, discard connection observations and disable recovery; application ownership remains until context exit |
 | `wait_ready(timeout)` | Return whether initial acquisition reached ready before the deadline |
 | `snapshot()` | Cached immutable `DeviceSnapshot`; no network read or mutation |
+| `current_track()` | Fresh read-only observation; returns `observed` or `unavailable` when current playback cannot be established |
+| `set_favorite(bool)` | Fresh identity/favorite checks, one write if needed, verified readback |
+| `set_volume(value)` / `adjust_volume(delta)` | Absolute 0..120 or nonzero relative adjustment; fresh readback, clamp relative requests, no-op at the limit |
 | `pause()` / `resume()` | Read fresh state, toggle only when necessary and verify the same recording context |
 | `next_track()` / `previous_track()` | Send once, verify observed track change or progress rollback; previous after >10 seconds can restart |
 | `control(action)` | Equivalent named pause/resume/next/previous dispatch; unsupported actions raise `ValueError` |
@@ -95,9 +98,10 @@ latest `PlaybackSnapshot` and any connection error. Connection states are
 completion evidence; a missing reply or a loading snapshot alone cannot prove it.
 
 `Track` exposes `title`, `artist`, `album`, and optional zero-based
-`queue_position`. It is observed metadata, not a permanent recording identity.
+`queue_position` and optional device media `path`. These are observed metadata,
+not a permanent recording identity; CUE entries can share a media path.
 `PlaybackSnapshot` additionally holds optional position in milliseconds, named
-play mode, scan activity and observation time. Missing fields remain unknown.
+play mode, scan activity, observation time, favorite flag and named playback source. Missing fields remain unknown.
 Snapshots are detached immutable dataclasses; receiving another push cannot
 mutate a previously returned snapshot. `to_dict()` on the top-level snapshot or
 result is JSON-serializable, with string enum values through `json.dumps`.
@@ -108,10 +112,11 @@ stay separate. A retained queue after EOF does not establish active playback.
 
 `CommandResult` provides an operation ID, action, `OperationStatus`, mutation-attempt
 flag, playback observation, optional queue/outcome/reason, and requested/previous
-mode for mode changes. Optional `confirmation.queue` preserves bounded evidence
+mode for mode changes. Volume operations retain `volume` and `previous_volume`;
+failures may carry `error_type`. Optional `confirmation.queue` preserves bounded evidence
 of a failed queue guard (observed/expected fields and mismatch codes); see
 [queue diagnostics](ASSISTANT_QUEUE_DIAGNOSTICS.md). Statuses are `not_sent`, `uncertain`, `confirmed`,
-`already_satisfied`, `playing`, and read-only `observed`. `playing` verifies device
+`already_satisfied`, `playing`, read-only `observed` and `unavailable`. `playing` verifies device
 metadata/state, not audible output. An error after a possible write is uncertain;
 never automatically repeat it. Operation results can have fewer fields than the
 cached session snapshot; unknown state is not fabricated from earlier success.
@@ -151,10 +156,11 @@ settings requires its own tests and declared outcome semantics.
 existing output and fresh catalog-selection workflow. The operation lease pins a
 client/generation and serializes work; callers must not retain the client beyond
 the lease, nest operations, read its socket or construct an unreviewed mutation.
-Its outbound persistent surface admits the four current read commands and four
-reviewed playback/mode mutation tags only. Other inherited diagnostic methods,
-such as volume or library reset, are rejected on this persistent client until
-explicitly integrated. Use facade methods for new application features; do not
+Its outbound persistent surface admits the reviewed reads and playback/mode,
+favorite and volume mutation tags only. `LiveClient` inherits a narrow shared
+command implementation, not the raw `Client`; reset/scan/settings writes are
+absent. `PlaybackReader`, `ControlClient` and `SelectionClient` describe the
+capabilities required by guarded operations. Use facade methods for new application features; do not
 expose arbitrary tag forwarding through a web endpoint.
 
 There is no native `stop()` in this API. Assistant maps its Stop intent to pause
@@ -202,3 +208,46 @@ TCP/WS `play_album(album, index=None, http=...)` helpers use reviewed V2.57 type
 with fresh source bounds, reject empty/reserved names and never retry mutations.
 The session helper adds two equal source reads and final row identity protection.
 The stock catalog has no release identifier or atomic revision token.
+
+
+## Current-state operations
+
+The session facade exposes current-track reads, favorites and volume directly.
+Within an existing serialized `session.operation()`, advanced adapters can use
+`controller.operations.current_track(client, action, value=None, delta=None,
+timeout=8)` or `playback_control(...)`, both returning `CommandResult`.
+They use named reviewed capabilities, fresh preflight,
+one mutation phase and explicit readback. Favorite operations verify track
+identity before and after the write; stock supplies no atomic identity-conditioned
+setter. Repeated favorite/volume requests are no-ops. Relative volume uses fresh
+settings and clamps to 0..120. Connection failures never trigger mutation replay.
+Legacy dictionary envelopes remain internal implementation details. Assistant
+serializes the typed control result at its response/journal adapter boundary.
+
+`PlaybackSource` and `WirePlaybackState` name reviewed wire enums. The latter is
+separate from the normalized `PlaybackState`: a stock stopped value alone may mean
+loading and is not proof of completed playback. Unknown wire values remain unknown.
+TCP and WS share strict decoding: malformed scalar types (including booleans in
+integer fields), malformed song objects and invalid volume are rejected. Absent
+fields remain absent; unknown integer states are retained without promoting them
+to a known playback state.
+
+## Packaging and static checks
+
+[`controller/pyproject.toml`](../controller/pyproject.toml) builds the
+`snowsky-disc-controller` 0.1.0 distribution with the existing `controller` import
+name. Core TCP/HTTP needs only Python 3.11+; `[websocket]` and `[bridge]` install
+aiohttp. `controller.__all__` defines public exports. See the
+[standalone README](../controller/README.md) for the 0.x compatibility policy.
+
+[`ci/python-quality.sh`](../ci/python-quality.sh) runs pinned Ruff across Controller,
+incremental strict mypy over models/decoders/contracts/guarded commands/session,
+the Assistant result serializer, and a static consumer contract. The legacy catalog/transport call sites in three
+modules temporarily permit untyped calls; their own bodies/signatures are checked.
+This is not a claim that every legacy module is fully typed.
+
+The gate builds an sdist, builds a wheel from it, installs into a clean environment
+outside the checkout, and runs real synthetic-peer operations. It checks the type
+marker and bridge HTML, core operation without aiohttp, and optional-extra imports
+after installation. Building/testing neither publishes the package nor creates a
+new repository.

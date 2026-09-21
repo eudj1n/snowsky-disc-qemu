@@ -77,6 +77,16 @@ class VoiceFileTests(unittest.TestCase):
         self.provider.transcribe.assert_awaited_once()
         self.assertEqual(result['response']['code'], 'playback.paused')
 
+    def test_new_voice_controls_use_one_shared_typed_dispatch(self):
+        for text, action in [('Like.', 'like'), ('What is playing?', 'now_playing'), ('Volume forty.', 'volume')]:
+            self.provider.transcribe.return_value = Transcription(text, 'en')
+            with patch.object(cli, 'control', return_value={'status': 'confirmed'}) as control:
+                code, result = self.invoke('ask', '--audio', self.audio)
+            self.assertEqual(code, 0)
+            control.assert_called_once()
+            self.assertEqual(control.call_args.args[1].action, action)
+            self.assertEqual(result['transcription']['text'], text)
+
     def test_observed_russian_next_variant_dispatches_once_and_preserves_transcript(self):
         self.provider.transcribe.return_value = Transcription('Следующий трак.', 'ru')
         with patch.object(cli, 'control', return_value={'status': 'confirmed', 'action': 'next'}) as control:

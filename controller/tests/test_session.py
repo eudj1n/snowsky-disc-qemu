@@ -115,8 +115,8 @@ class SessionTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             session.control('stop')
         with session.operation() as client:
-            with self.assertRaisesRegex(ValueError, 'outside the reviewed'):
-                client.set_volume(10)
+            with self.assertRaises(AttributeError):
+                client.scan_library()
         for fields in ({'tcp_port': 0}, {'timeout': True}, {'host': ' '}, {'page_size': 201}):
             with self.subTest(fields=fields), self.assertRaises(ValueError):
                 replace(self.config, **fields)

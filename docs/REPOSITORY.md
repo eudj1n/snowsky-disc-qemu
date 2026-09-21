@@ -29,6 +29,8 @@ the root.
 The [shared Controller API](CONTROLLER_API.md) owns persistent device state and
 verified playback operations. Assistant owns its language/search/history policy;
 the Controller does not import research or select application storage paths.
+Its own `pyproject.toml` builds a standalone wheel; the root `pyproject.toml`
+configures quality checks only. See [the package README](../controller/README.md).
 
 The viewer's adapter creates a `Device`, `Buttons`, `Peripherals`, `Touch` and
 `Framebuffer` for one rootfs. Emulator runtime owns event bytes, coordinate
@@ -40,8 +42,9 @@ or capture the guest.
 ## Entry points and resource inventory
 
 Run Python commands **from the repository root** with `python3 -m package.module`.
-Empty `__init__.py` files declare ordinary packages and enable recursive unittest
-discovery; they execute no startup logic. There are no per-directory `sys.path`
+`__init__.py` files declare ordinary packages and enable recursive unittest
+discovery. Controller additionally exports its versioned library models and lazily
+loads the session facade; imports perform no network or filesystem writes. There are no per-directory `sys.path`
 searches. The Docker image provides the single package root `PYTHONPATH=/repo`;
 sourced emulator scripts also support an explicit `REPO` override.
 
@@ -142,3 +145,15 @@ Local validation on 2026-09-17:
   generated media, firmware and captures are absent from the source diff.
 
 These are local results, not a hosted CI run or a firmware release.
+
+
+## Assistant NLU ownership
+
+The Assistant's working language-understanding component is now
+[`assistant/nlu`](../research/disc_assistant/assistant/nlu/README.md). Executing
+rules and typed intent validation live there; optional shadow models remain
+non-executing. Offline evaluation/training tools are in `nlu/evaluation`, while
+frozen corpora and labelled references are in `nlu/data`. Translator-facing TOML
+remains in `assistant/locales`, with no training examples in `locales/commands`.
+This internal organization does not promote the research prototype out of
+`research/disc_assistant` or change the Controller dependency direction.

@@ -13,7 +13,7 @@ from prompt_toolkit.output import DummyOutput
 
 from research.disc_assistant.assistant.config import Config
 from research.disc_assistant.assistant.journal import Trace, Journal, console_history, history_command
-from research.disc_assistant.assistant.languages import load_languages
+from research.disc_assistant.assistant.nlu.languages import load_languages
 from research.disc_assistant.assistant.terminal import Terminal, CommandCompleter
 from research.disc_assistant.assistant import console
 

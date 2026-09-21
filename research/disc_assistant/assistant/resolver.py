@@ -1,5 +1,5 @@
 """Resolve interpreted music references against catalog metadata; no input parsing."""
-from research.disc_assistant.assistant.intents import Intent, names, normalized
+from research.disc_assistant.assistant.nlu.intents import Intent, names, normalized
 from research.disc_assistant.assistant.matching import similarity, exact_name
 from research.disc_assistant.library.transliteration import fold
 from research.disc_assistant.library.artists import artist_names

@@ -2,8 +2,8 @@
 import re
 from dataclasses import asdict
 
-from research.disc_assistant.assistant.intents import Intent, AlbumIntent, normalized, names
-from research.disc_assistant.assistant.languages import load_languages
+from research.disc_assistant.assistant.nlu.intents import Intent, AlbumIntent, normalized, names
+from research.disc_assistant.assistant.nlu.languages import load_languages
 from research.disc_assistant.library.store import StaleSnapshot
 from research.disc_assistant.library.versions import with_query_markers
 from research.disc_assistant.assistant.resolver import infer
@@ -90,7 +90,7 @@ def ordered(candidates):
         int(c['track_id'].rsplit(':', 1)[1]) if c['kind'] == 'track' else -1))
 
 
-async def rank(config, store, search, intent, *, trace=None):
+async def rank(config, store, search, intent, *, trace=None, context=None):
     if type(intent) not in (Intent, AlbumIntent):
         raise TypeError('rank requires an interpreted music Intent')
     rules = load_languages((config.locale,))
@@ -111,6 +111,24 @@ async def rank(config, store, search, intent, *, trace=None):
     intent = infer(intent, documents, config.aliases)
     if trace:
         trace.event('intent_resolved', asdict(intent))
+    if intent.kind != 'artist' and intent.artist is None:
+        from research.disc_assistant.assistant.context import scopes
+        if callable(context):
+            context = context()
+        for scope, pool in scopes(context, documents):
+            candidates = ordered(c for c in score_tracks(intent, pool, config.aliases, rules)
+                                 if c['evidence']['title_similarity'] >= .85)
+            if candidates:
+                if store.verify_index(config.device_key, search.signature) != head:
+                    raise StaleSnapshot('catalog changed during contextual ranking')
+                if trace:
+                    trace.event('playback_search_scope', {'scope': scope, 'candidate_count': len(candidates)})
+                return {'status': 'ranked', 'query': intent.query, 'intent': intent.kind,
+                        'resolved_intent': asdict(intent), 'generation': head['generation'],
+                        'device': config.device_key, 'retrieval': {'source': 'sqlite', 'scope': scope, 'truncated': False},
+                        'candidates': candidates[:10], 'candidate_count': len(candidates),
+                        'candidates_truncated': len(candidates) > 10,
+                        'playback_context': context, 'ranking_policy': 'context-lexical-v1; album then artist then global'}
     if intent.artist is not None:
         known = {d['artist'] for d in documents if strong_match(artist_similarity(intent.artist, d['artist'], config.aliases)[1])}
         if known:

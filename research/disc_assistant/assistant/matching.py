@@ -2,7 +2,7 @@
 from difflib import SequenceMatcher
 import re
 
-from research.disc_assistant.assistant.languages import normalized
+from research.disc_assistant.assistant.nlu.languages import normalized
 from research.disc_assistant.library.transliteration import fold
 from research.disc_assistant.library.artists import artist_names
 

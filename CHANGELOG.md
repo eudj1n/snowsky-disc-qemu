@@ -14,6 +14,17 @@ Active firmware: **V2.57**. Local protocol research is finalized in
 
 ### Added
 
+- Disc Assistant research prototype with Russian/English commands to find and play
+  tracks, artists and albums from the device library, pause/resume playback and
+  navigate the queue through a persistent text console. [Setup](research/disc_assistant/README.md).
+- Disc Assistant Web with text and microphone input, local Whisper speech
+  recognition and optional spoken replies through Piper.
+  [Browser interface](docs/ASSISTANT_WEB.md), [speech setup](docs/ASSISTANT_TTS.md).
+- Assistant current-track likes, now-playing questions, configurable volume steps
+  and album/artist search priority, with a concise [command guide](docs/ASSISTANT_QUICK_GUIDE.md).
+- Installable Controller library with typed current-track/favorite/volume results,
+  strict playback decoding and CI checks for types and wheel installation.
+  [Controller API](docs/CONTROLLER_API.md).
 - Preserved the historical, unsupported diskOS UI experiment with isolated build/run
   helpers, recorded V2.40 results and criteria for revisiting its status. [Preview](docs/DISKOS_PREVIEW.md).
 - Experimental local browser execution of DISC through TinyEMU/WebAssembly,

@@ -1,6 +1,10 @@
-"""Public device models. No wire tags, application configuration or storage paths."""
+"""Public device models. No wire tags or application configuration/storage paths."""
+from __future__ import annotations
+
 from dataclasses import asdict, dataclass
-from enum import Enum
+from typing import Any, Mapping
+from controller.wire import validate_playback
+from enum import Enum, IntEnum
 
 
 @dataclass(frozen=True)
@@ -13,7 +17,7 @@ class DeviceConfig:
     max_tracks: int = 100000
     max_requests: int = 10000
 
-    def __post_init__(self):
+    def __post_init__(self) -> None:
         if not isinstance(self.host, str) or not self.host.strip() or self.host != self.host.strip():
             raise ValueError('host must be a nonempty trimmed string')
         for name, low, high in (('tcp_port', 1, 65535), ('http_port', 1, 65535),
@@ -40,6 +44,27 @@ class PlaybackState(str, Enum):
     STOPPED = 'stopped'
 
 
+class WirePlaybackState(IntEnum):
+    """Stock Link state values; STOPPED may also mean loading in a snapshot."""
+    PLAYING = 0
+    PAUSED = 1
+    STOPPED = 2
+
+
+class PlaybackSource(IntEnum):
+    """Reviewed stock playerflag values; artist scope may include an album."""
+    CURRENT_QUEUE = 0
+    LIBRARY = 1
+    ARTIST = 2
+    ALBUM = 3
+    FOLDER = 4
+    PLAYLIST = 5
+    FAVORITES = 6
+    ARTIST_SCOPE = 7
+    GENRE_SCOPE = 8
+    GENRE_TRACK = 10
+
+
 class OperationStatus(str, Enum):
     NOT_SENT = 'not_sent'
     UNCERTAIN = 'uncertain'
@@ -47,6 +72,7 @@ class OperationStatus(str, Enum):
     ALREADY_SATISFIED = 'already_satisfied'
     PLAYING = 'playing'
     OBSERVED = 'observed'
+    UNAVAILABLE = 'unavailable'
 
 
 class PlayMode(str, Enum):
@@ -66,15 +92,17 @@ class Track:
     artist: str | None
     album: str | None
     queue_position: int | None
+    path: str | None = None
 
     @classmethod
-    def from_wire(cls, state):
-        song = state.get('song') or {}
+    def from_wire(cls, state: object) -> Track | None:
+        song = validate_playback(state if state is not None else {}).get('song') or {}
         if not isinstance(song, dict) or not song.get('song_name'):
             return None
         position = song.get('pos_id')
         return cls(song['song_name'], song.get('song_artist_name'), song.get('song_album_name'),
-                   position - 1 if type(position) is int and position > 0 else None)
+                   position - 1 if type(position) is int and position > 0 else None,
+                   song.get('song_file_path'))
 
 
 @dataclass(frozen=True)
@@ -85,24 +113,34 @@ class PlaybackSnapshot:
     mode: PlayMode | None = None
     scan_active: bool | None = None
     observed_at: float | None = None
+    favorite: bool | None = None
+    source: PlaybackSource | None = None
 
     @classmethod
-    def from_observation(cls, observation):
+    def from_observation(cls, observation: Mapping[str, Any]) -> PlaybackSnapshot:
+        state = validate_playback(observation.get('state') or {})
         mode = observation.get('mode')
-        return cls(PlaybackState(observation.get('playback', 'unknown')),
-                   Track.from_wire(observation.get('state') or {}), observation.get('position_ms'),
-                   MODES[mode] if type(mode) is int and 0 <= mode < len(MODES) else None,
-                   observation.get('scan_active'), observation.get('observed_at'))
+        return cls(
+            state=PlaybackState(observation.get('playback', 'unknown')),
+            track=Track.from_wire(state), position_ms=observation.get('position_ms'),
+            mode=MODES[mode] if type(mode) is int and 0 <= mode < len(MODES) else None,
+            scan_active=observation.get('scan_active'),
+            observed_at=observation.get('observed_at'), favorite=state.get('love'),
+            source=source_from_wire(state.get('playerflag')),
+        )
 
     @classmethod
-    def from_wire(cls, state):
-        state = state or {}
+    def from_wire(cls, state: object) -> PlaybackSnapshot:
+        state = validate_playback(state if state is not None else {})
         track = Track.from_wire(state)
         value = state.get('state')
-        label = ('playing' if value == 0 else 'paused') if track and value in (0, 1) else 'unknown'
-        if value == 2:
+        label = 'unknown'
+        if track and value in (WirePlaybackState.PLAYING, WirePlaybackState.PAUSED):
+            label = 'playing' if value == WirePlaybackState.PLAYING else 'paused'
+        if value == WirePlaybackState.STOPPED:
             label = 'loading'  # A snapshot alone never proves final stop.
-        return cls(PlaybackState(label), track)
+        return cls(PlaybackState(label), track, favorite=state.get('love'),
+                   source=source_from_wire(state.get('playerflag')))
 
 
 @dataclass(frozen=True)
@@ -121,7 +159,7 @@ class QueueSnapshot:
     playback: PlaybackSnapshot
 
     @classmethod
-    def from_wire(cls, value):
+    def from_wire(cls, value: Mapping[str, Any]) -> QueueSnapshot:
         return cls(tuple(QueueItem(row['pos'], row['name'], row['author']) for row in value['items']),
                    value['mark'] if value['mark'] >= 0 else None, MODES[value['mode']],
                    value['continuation'], PlaybackSnapshot.from_wire(value.get('state')))
@@ -135,11 +173,11 @@ class DeviceSnapshot:
     playback: PlaybackSnapshot
     error: str | None = None
 
-    def to_dict(self):
+    def to_dict(self) -> dict[str, Any]:
         return asdict(self)
 
     @classmethod
-    def from_status(cls, status):
+    def from_status(cls, status: Mapping[str, Any]) -> DeviceSnapshot:
         return cls(ConnectionState(status['connection']), status['enabled'], status['generation'],
                    PlaybackSnapshot.from_observation(status['observation']), status.get('last_error'))
 
@@ -156,17 +194,50 @@ class CommandResult:
     reason: str | None = None
     requested_mode: PlayMode | None = None
     previous_mode: PlayMode | None = None
-    confirmation: dict | None = None
+    confirmation: dict[str, Any] | None = None
+    volume: int | None = None
+    previous_volume: int | None = None
+    error_type: str | None = None
 
-    def to_dict(self):
+    def to_dict(self) -> dict[str, Any]:
         return asdict(self)
 
     @classmethod
-    def from_result(cls, result, action):
-        return cls(result['operation_id'], OperationStatus(result['status']), action,
-                   result.get('mutation_attempted', False), PlaybackSnapshot.from_wire(result.get('state')),
-                   QueueSnapshot.from_wire(result['queue']) if 'queue' in result else None,
-                   result.get('outcome'), result.get('reason'),
-                   MODES[result['requested']] if 'requested' in result else None,
-                   MODES[result['previous']] if 'previous' in result else None,
-                   result.get('confirmation'))
+    def from_result(cls, result: Mapping[str, Any], action: str) -> CommandResult:
+        return cls(
+            operation_id=result['operation_id'], status=OperationStatus(result['status']), action=action,
+            mutation_attempted=result.get('mutation_attempted', False),
+            playback=PlaybackSnapshot.from_wire(result.get('state')),
+            queue=QueueSnapshot.from_wire(result['queue']) if 'queue' in result else None,
+            outcome=result.get('outcome'), reason=result.get('reason'),
+            requested_mode=mode_from_wire(result.get('requested')),
+            previous_mode=mode_from_wire(result.get('previous')),
+            confirmation=result.get('confirmation'), volume=volume_from_wire(result.get('volume')),
+            previous_volume=volume_from_wire(result.get('previous_volume')), error_type=result.get('error_type'),
+        )
+
+
+
+def mode_from_wire(value: object) -> PlayMode | None:
+    if value is None:
+        return None
+    if type(value) is not int or not 0 <= value < len(MODES):
+        raise ValueError('invalid play mode in operation result')
+    return MODES[value]
+
+
+def volume_from_wire(value: object) -> int | None:
+    if value is None:
+        return None
+    if type(value) is not int or not 0 <= value <= 120:
+        raise ValueError('invalid volume in operation result')
+    return value
+
+
+def source_from_wire(value: object) -> PlaybackSource | None:
+    if type(value) is not int:
+        return None
+    try:
+        return PlaybackSource(value)
+    except ValueError:
+        return None

@@ -11,10 +11,10 @@ from unittest.mock import patch
 
 from research.disc_assistant import launcher
 from research.disc_assistant.assistant.config import load
-from research.disc_assistant.assistant.interpreter import InterpretationContext, interpret_request
-from research.disc_assistant.assistant.interpretation_sources import LiteralSource, SlotSource
+from research.disc_assistant.assistant.nlu.interpreter import InterpretationContext, interpret_request
+from research.disc_assistant.assistant.nlu.interpretation_sources import LiteralSource, SlotSource
 from research.disc_assistant.assistant.journal import Trace, history_command
-from research.disc_assistant.experiments.nlu import dataset, shadow_report as reports
+from research.disc_assistant.assistant.nlu.evaluation import dataset, shadow_report as reports
 
 
 def source(name='literal', intent=None, status='recognized', **extra):

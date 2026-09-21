@@ -8,7 +8,7 @@ from string import Formatter
 import tomllib
 import unicodedata
 
-from research.disc_assistant.assistant.languages import DEFAULT_LOCALE, LOCALES, SECTIONS, load_languages
+from research.disc_assistant.assistant.nlu.languages import DEFAULT_LOCALE, LOCALES, SECTIONS, load_languages
 
 REPLIES = LOCALES / 'replies'
 DEFAULT_LANGUAGE = DEFAULT_LOCALE
@@ -22,6 +22,11 @@ MESSAGE_FIELDS = {
         'speech.unavailable', 'speech.invalid', 'speech.no_speech',
         'catalog.stale', 'preferences.invalid', 'playback.paused', 'playback.already_paused',
         'language.changed', 'interpreter.unavailable', 'interpreter.invalid', 'playback.resumed', 'playback.already_playing', 'playback.stopped', 'playback.restarted')},
+    **{key: frozenset() for key in ('playback.unavailable', 'favorite.added', 'favorite.removed',
+        'favorite.already_added', 'favorite.already_removed')},
+    'playback.current': frozenset(('title', 'artist')),
+    'playback.current_paused': frozenset(('title', 'artist')),
+    'volume.changed': frozenset(('volume',)),
     'playback.started': frozenset(('title', 'artist')),
     'playback.track_changed': frozenset(('title', 'artist')),
 }
@@ -138,6 +143,19 @@ def message_for(result, command, failure=None):
     if command != 'ask':
         return 'system.no_message', {}, False
     action = result.get('action')
+    if action == 'now_playing':
+        if status == 'unavailable':
+            return 'playback.unavailable', {}, True
+        if status == 'observed':
+            song = result['state']['song']
+            clean = lambda value: ''.join(c for c in str(value or '') if not unicodedata.category(c).startswith('C'))[:200]
+            return ('playback.current_paused' if result['state']['state'] == 1 else 'playback.current'), {
+                'title': clean(song.get('song_name')), 'artist': clean(song.get('song_artist_name'))}, False
+    if status in ('confirmed', 'already_satisfied') and action in ('like', 'dislike'):
+        suffix = 'added' if action == 'like' else 'removed'
+        return 'favorite.' + ('already_' if status == 'already_satisfied' else '') + suffix, {}, False
+    if status in ('confirmed', 'already_satisfied') and action == 'volume':
+        return 'volume.changed', {'volume': result['volume']}, False
     if status in ('confirmed', 'already_satisfied'):
         if action == 'pause':
             return ('playback.already_paused' if status == 'already_satisfied' else 'playback.paused'), {}, False
@@ -181,7 +199,7 @@ class Responses:
         if text is not None and len(text) > MAX_TEXT_LENGTH:
             text = text[:MAX_TEXT_LENGTH - 1] + '…'
         speak = bool(text and source not in ('scheduled', 'startup')
-                     and (self.mode == 'all' or (self.mode == 'errors' and problem)))
+                     and (self.mode == 'all' or (self.mode == 'errors' and (problem or result.get('action') == 'now_playing'))))
         result['response'] = asdict(UserResponse(code, text, self.language, speak))
         return result
 

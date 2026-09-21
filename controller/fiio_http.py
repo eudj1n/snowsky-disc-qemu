@@ -59,7 +59,8 @@ def range_body(ranges):
         if not isinstance(pair, (list, tuple)) or len(pair) != 2:
             raise ValueError('each range is [first, last]')
         first, last = pair
-        integer(first); integer(last)
+        integer(first)
+        integer(last)
         if first <= previous or last < first or last - first >= 1000000:
             raise ValueError('ranges must be ordered, nonoverlapping and bounded')
         previous = last

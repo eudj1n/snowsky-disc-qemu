@@ -12,7 +12,7 @@ from controller.fiio_link import Client as BaseClient
 from controller.fiio_http import HTTPClient
 from research.disc_assistant.assistant.config import Config
 from research.disc_assistant.assistant.controls import execute as control
-from research.disc_assistant.assistant.intents import ControlIntent
+from research.disc_assistant.assistant.nlu.intents import ControlIntent
 from research.disc_assistant.assistant.playback import execute
 from research.disc_assistant.assistant.queue import observe as queue_observe
 from research.disc_assistant.assistant.session import sync

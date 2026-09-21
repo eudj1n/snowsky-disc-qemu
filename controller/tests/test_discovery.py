@@ -23,7 +23,7 @@ class DiscoveryTests(unittest.TestCase):
         self.assertEqual(interface_address('127.0.0.1'), '127.0.0.1')
 
     def test_membership_on_explicit_interface_and_no_send(self):
-        with patch('controller.fiio_discovery.socket.socket') as factory:
+        with patch('controller.fiio_discovery.socket.socket'):
             sock = listen('192.0.2.1')
             sock.bind.assert_called_once_with(('', PORT))
             sock.setsockopt.assert_any_call(socket.IPPROTO_IP, socket.IP_ADD_MEMBERSHIP,

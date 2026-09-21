@@ -98,7 +98,7 @@ class LibraryTests(unittest.IsolatedAsyncioTestCase):
                         verify_folder(http, fixture['folder'], 1, rows[2]['name'])
 
     async def test_album_clients_preserve_generic_scope_and_never_retry(self):
-        from controller.fiio_library import album_command, verify_album
+        from controller.fiio_library import album_command
         for index in (None, 1):
             tcp, ws = self.clients()
             for client in (tcp, ws):

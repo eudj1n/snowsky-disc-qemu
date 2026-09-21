@@ -96,7 +96,7 @@ reviewed after their intended meaning is resolved.
 
 ```sh
 assistant_python=research/disc_assistant/assistant/.venv/bin/python
-"$assistant_python" -m research.disc_assistant.experiments.nlu.dataset review \
+"$assistant_python" -m research.disc_assistant.assistant.nlu.evaluation.dataset review \
   --queue /tmp/disc-shadow-report/pending.jsonl \
   --annotations /tmp/disc-annotations.jsonl --output /tmp/disc-reviewed.jsonl
 ./research/disc_assistant/run.sh shadow-report \

@@ -65,8 +65,10 @@ historical model studies; current `/explain` adds the newer source comparison.
 ## Storage and publication
 
 Community files [`assistant/locales/commands/`](../research/disc_assistant/assistant/locales/commands/)
-are the source of truth. Each locale supplies literal slot templates, rejection
-phrases and examples with stable IDs and semantic labels. Definitions and required
+supply literal slot templates and rejection phrases. Optional labelled references
+live separately in `research/disc_assistant/assistant/nlu/data/command_references/`;
+they are not required for a locale contribution. The loader combines these sources
+into the same logical payload before hashing. Definitions and required
 arguments are shared code; language-specific matching text stays in TOML.
 
 Assistant SQLite **schema 3** adds `command_snapshots`, `command_examples` and
@@ -85,7 +87,7 @@ pruning is not implemented. Journal pruning/clearing does not remove them.
 
 ## Training and import
 
-The isolated [supervised experiment](../research/disc_assistant/experiments/nlu/README.md#supervised-command-study)
+The isolated [supervised experiment](../research/disc_assistant/assistant/nlu/evaluation/README.md#supervised-command-study)
 trains two multinomial logistic regression heads: shared word/character TF-IDF
 features, and frozen multilingual MiniLM sentence embeddings. It does not
 fine-tune the encoder. Only the text head is exported for diagnostic inference.
@@ -103,7 +105,7 @@ After preparing the experiment environment/model as documented:
 
 ```sh
 lab=/tmp/disc-nlu-lab
-"$lab/venv/bin/python" -m research.disc_assistant.experiments.nlu.train_commands \
+"$lab/venv/bin/python" -m research.disc_assistant.assistant.nlu.evaluation.train_commands \
   --work "$lab" --output "$lab/commands-study"
 # Select the matching locale first; import only the bundle for that locale.
 ./research/disc_assistant/run.sh commands import "$lab/commands-study/ru-commands.json"

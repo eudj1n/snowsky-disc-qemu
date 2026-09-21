@@ -1,0 +1,213 @@
+# Curated diagnostic training references; not a held-out evaluation set.
+version = 1
+locale = "ru"
+
+[[examples]]
+id = "ru-train-pause-1"
+label = "pause"
+text = "Пауза"
+
+[[examples]]
+id = "ru-train-pause-2"
+label = "pause"
+text = "Поставь музыку на паузу"
+
+[[examples]]
+id = "ru-train-pause-3"
+label = "pause"
+text = "Приостанови воспроизведение"
+
+[[examples]]
+id = "ru-train-resume-1"
+label = "resume"
+text = "Продолжи"
+
+[[examples]]
+id = "ru-train-resume-2"
+label = "resume"
+text = "Продолжай играть"
+
+[[examples]]
+id = "ru-train-resume-3"
+label = "resume"
+text = "Возобнови воспроизведение"
+
+[[examples]]
+id = "ru-train-stop-1"
+label = "stop"
+text = "Стоп"
+
+[[examples]]
+id = "ru-train-stop-2"
+label = "stop"
+text = "Останови музыку"
+
+[[examples]]
+id = "ru-train-stop-3"
+label = "stop"
+text = "Прекрати воспроизведение"
+
+[[examples]]
+id = "ru-train-next-1"
+label = "next"
+text = "Следующий трек"
+
+[[examples]]
+id = "ru-train-next-2"
+label = "next"
+text = "Пропусти эту песню"
+
+[[examples]]
+id = "ru-train-next-3"
+label = "next"
+text = "Перейди к следующей композиции"
+
+[[examples]]
+id = "ru-train-previous-1"
+label = "previous"
+text = "Предыдущий трек"
+
+[[examples]]
+id = "ru-train-previous-2"
+label = "previous"
+text = "Верни прошлую песню"
+
+[[examples]]
+id = "ru-train-previous-3"
+label = "previous"
+text = "Переключи на предыдущую композицию"
+
+[[examples]]
+id = "ru-train-play-1"
+label = "play"
+text = "Включи Кино"
+
+[[examples]]
+id = "ru-train-play-2"
+label = "play"
+text = "Поставь Би-2"
+
+[[examples]]
+id = "ru-train-play-3"
+label = "play"
+text = "Хочу послушать Группу крови"
+
+[[examples]]
+id = "ru-train-language-1"
+label = "language"
+text = "Переключи язык на английский"
+
+[[examples]]
+id = "ru-train-language-2"
+label = "language"
+text = "Используй русский язык команд"
+
+[[examples]]
+id = "ru-train-language-3"
+label = "language"
+text = "Измени язык интерфейса"
+
+[[examples]]
+id = "ru-train-reject-1"
+label = "reject"
+text = "Сегодня хорошая погода"
+
+[[examples]]
+id = "ru-train-reject-2"
+label = "reject"
+text = "Я купил новый плеер"
+
+[[examples]]
+id = "ru-train-reject-3"
+label = "reject"
+text = "Что означает пауза?"
+
+[[examples]]
+id = "ru-train-reject-4"
+label = "reject"
+text = "Не включай музыку"
+
+[[examples]]
+id = "ru-train-reject-5"
+label = "reject"
+text = "Она сказала следующий трек"
+
+[[examples]]
+id = "ru-train-reject-6"
+label = "reject"
+text = "Послушаю завтра"
+
+[[examples]]
+id = "ru-negative-1"
+label = "reject"
+text = "Не приостанавливай воспроизведение"
+
+[[examples]]
+id = "ru-negative-2"
+label = "reject"
+text = "Не возобновляй песню"
+
+[[examples]]
+id = "ru-negative-3"
+label = "reject"
+text = "Не прекращай воспроизведение"
+
+[[examples]]
+id = "ru-negative-4"
+label = "reject"
+text = "Не переходи к другой песне"
+
+[[examples]]
+id = "ru-negative-5"
+label = "reject"
+text = "Не возвращай предыдущую композицию"
+
+[[examples]]
+id = "ru-negative-6"
+label = "reject"
+text = "Не переключай язык интерфейса"
+
+[[examples]]
+id = "ru-negative-7"
+label = "reject"
+text = "Никогда не начинай воспроизведение"
+
+[[examples]]
+id = "ru-negative-8"
+label = "reject"
+text = "В записи интервью обошлись без паузы"
+
+[[examples]]
+id = "ru-negative-9"
+label = "reject"
+text = "Я сказал пауза в разговоре"
+
+[[examples]]
+id = "ru-negative-10"
+label = "reject"
+text = "Кто-то написал следующая песня на бумаге"
+
+[[examples]]
+id = "ru-negative-11"
+label = "reject"
+text = "На кнопке написано остановить музыку"
+
+[[examples]]
+id = "ru-negative-12"
+label = "reject"
+text = "Как сказать продолжи по-английски?"
+
+[[examples]]
+id = "ru-negative-13"
+label = "reject"
+text = "Я не хочу менять язык"
+
+[[examples]]
+id = "ru-negative-14"
+label = "reject"
+text = "Объясни значение слова предыдущий"
+
+[[examples]]
+id = "ru-negative-15"
+label = "reject"
+text = "Расскажи про кнопку паузы"
