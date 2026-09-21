@@ -9,7 +9,7 @@
 # emu idles (`sleep infinity`); ./run.sh execs its /repo/emulator/scripts/* pipeline.
 # Optional wsbridge profile: docker compose --profile wsbridge up -d
 # Separate unprivileged native service; no MIPS rootfs changes.
-# Opt-in phone LAN testing uses controller/bridge/lan_bridge.py on the host (docs/DISCOVERY.md).
+# Opt-in phone LAN testing uses controller/bridge/lan_bridge.py on the host (controller/docs/discovery.md).
 # Keep these Docker publications loopback-only; no automatic LAN exposure.
 name: snowsky-disc-qemu
 
@@ -37,7 +37,7 @@ services:
       - work:/work                       # extracted rootfs + runtime state (persists across restarts)
     ports:
       # FiiO Link services the emulated device binds. Lets a host client
-      # reach the emulated player. See docs/PROTOCOL.md.
+      # reach the emulated player. See docs/protocol/protocol.md.
       # Comment out any that clash with something already on your host.
       - "127.0.0.1:12100:12100"          # auth-free control: never expose to LAN by default
       - "127.0.0.1:12113:12103"          # direct stock HTTP, without the WebSocket bridge

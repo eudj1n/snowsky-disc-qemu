@@ -1,4 +1,4 @@
-"""Conservative stock DISC lock-screen requests; see docs/REMOTE_MODES_THEMES.md."""
+"""Conservative stock DISC lock-screen requests; see docs/protocol/remote-modes-themes.md."""
 from pathlib import Path
 import re
 import struct

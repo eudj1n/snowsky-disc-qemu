@@ -98,7 +98,7 @@ for online query latency. No Pi performance claim follows from desktop numbers.
 The experiment does not enable semantic commands in `ask` or the console. It does
 not train SetFit, generate natural-language Typesense filters, install an LLM,
 record speech or add automatic vocabulary correction. See the
-[research plan](../../../../../docs/ASSISTANT_NLU_RESEARCH.md) for the remaining
+[research plan](../../../docs/evaluation/nlu-research.md) for the remaining
 Natural Language Search, slot extraction, phonetic and training comparisons.
 
 Unit tests use no model or Docker and are included in `run.sh test`. They verify
@@ -166,7 +166,7 @@ extraction and exports portable JSON for `/explain`; the second measures whether
 the frozen embedding geometry helps after supervised training. Neither fine-tunes
 the encoder or enables live command execution. Reference vectors are exported
 alongside the text model and can be published atomically to the Assistant command
-catalog. See [storage and import](../../../../../docs/ASSISTANT_COMMAND_CATALOG.md).
+catalog. See [storage and import](../../../docs/reference/command-catalog.md).
 
 ```sh
 lab=/tmp/disc-nlu-lab
@@ -253,7 +253,7 @@ local model/environment:
   --work "$lab" --output "$lab/commands-v2-run"
 ```
 
-Use a new output directory. The [data workflow and results](../../../../../docs/ASSISTANT_NLU_DATA.md)
+Use a new output directory. The [data workflow and results](../../../docs/evaluation/nlu-data.md)
 cover collection, annotation schema, split auditing, reproduction and limitations.
 [Full v2 evidence](reports/2026-09-18-commands-v2.json) preserves all development
 trials and evaluation predictions. The selected complete preview recognizes 12/35
@@ -279,5 +279,5 @@ loads ML dependencies. Use the normal launcher:
 It separates observations by language, input type and model/rule revision, writes
 a pending queue compatible with `dataset review`, and optionally scores saved
 predictions against `--reviewed PATH`. No automatic labels, training or model
-selection. See [reporting and review](../../../../../docs/ASSISTANT_SHADOW_REPORTS.md)
-and [the current MVP gate](../../../../../docs/ASSISTANT_MVP.md).
+selection. See [reporting and review](../../../docs/evaluation/shadow-reports.md)
+and [the current MVP gate](../../../docs/reference/mvp.md).

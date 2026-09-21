@@ -1,0 +1,435 @@
+# Status
+
+_Current overview updated 2026-09-19. Dated experiments below retain their original findings._
+
+Owner accepted the current PEQ/SACD checkpoint for PR #20 integration into `2.x`.
+Remaining #8/#9 research is optional backlog, not a blocker for this checkpoint.
+No firmware tag, stable release or new hardware validation is implied.
+
+Issue #8 audit: the limited stereo SACD metadata/identity checkpoint is committed
+in PR #20, including title replacement at the same path and exact restoration.
+Replacing the image with different tracks/layout remains unchecked; seek/EOF,
+DST/multichannel and hardware output are extensions. Issue #8 remains open with
+those limits; this status audit does not rerun media or change PEQ #9's pause.
+See [SACD status](../../research/docs/reports/sacd.md#status-audit-2026-09-17).
+
+## Current capabilities
+
+**V2.57 is the active/default firmware; V2.40 is historical.** Its legacy runtime
+profile remains selectable pending a separate cleanup, without ongoing support
+or backport guarantees. The emulator boots the stock UI,
+browses and scans local media, decodes audio, and exposes the FiiO Link service.
+The browser viewer adds live navigation, sound, physical-button gestures and
+peripheral controls. See the [README](../../README.md) for setup and the visual overview.
+
+| Area | Current result | Details |
+| --- | --- | --- |
+| **Boot / UI** | Fingerprint-validated firmware, English main menu without the first-boot wizard, taps/holds/swipes. Boot waits for network, input and framebuffer readiness. | [Emulation](emulation.md), [Touch](touch.md) |
+| **Storage** | FAT SD browsing and stock manual indexing. V2.57 insertion-triggered automatic scans handle Cyrillic add/rename/delete cases. Boot remounting alone does not trigger auto-scan. | [Media library](media-library.md) |
+| **Audio** | Stock decoder → tinyalsa → PCM capture; source-sample comparisons, WAV export and browser playback with DAC gain. Browser live mode joins the current capture rather than replaying its full history. | [Audio](audio.md) |
+| **Viewer** | Responsive CSS device, physical buttons, audio switch, USB charging simulation, real guest SD hotplug, brightness, and collapsed Debug controls. | [Viewer](../../viewer/docs/usage.md) |
+| **Controls / power** | Assigned volume gestures, play/pause, sleep/wake and guest-only off/on. Stock libc reboot calls are confined and automatic poweroff requests handled by the viewer. | [Keys](keys.md) |
+| **USB power / idle** | V2.57 viewer cable drives stock sink-role/ADC detection and inhibits idle power-off; display timeout remains independent. TCP/WS screen-off reconnect, natural shutdown and explicit local boot/recovery tested. No USB data or hardware charging model. | [Power and reconnect](idle-power.md) |
+| **Frame transport** | Last-written buffer marker, lossless PNGs on visible changes, periodic idle refresh and device-state SSE. | [Viewer internals](../../viewer/docs/usage.md#how-it-works) |
+| **Local protocol** | TCP 12100 settings/catalog and remote playback: list-position selection, next/previous, seek, modes, albums and built-in favorites. Current-queue selection checks fresh bounds and needs no label, verified on V2.40/V2.57. Optional native WS→TCP bridge on host 12103; direct stock HTTP on 12113. Physical DISC V2.57 comparisons are recorded separately. | [Remote control](../../docs/protocol/remote-control.md), [WebSocket](../../controller/docs/websocket.md) |
+| **LAN discovery** | Exact UDP announcements observed on physical V2.57; emulator tests confirm suppression during TCP connection and resumption after disconnect. FiiO Control on iPhone discovered the emulator and opened its library through the opt-in, one-phone host TCP/HTTP bridge. Default ports stay localhost-only. | [Discovery and safe manual test](../../controller/docs/discovery.md) |
+| **Stock file/library API** | HTTP folders, streamed uploads/progress and single-path deletion; custom playlist create/rename/add/remove/delete. Network scanning indexes uploaded music. Current-cover JPEG retrieved on physical V2.57. | [HTTP API](../../docs/protocol/http-api.md) |
+| **Custom playlist playback** | V2.57 TCP/WS whole-list and track selection with fresh HTTP name/bounds checks. Tests distinguish list position from SQLite ID and cover rename/edit/position shifts. Physical app comparison remains separate. | [Playlist contract](../../docs/protocol/playlists.md) |
+| **Genres / folders / bulk selection** | V2.57 guarded playback and grouped bulk add; index-only deletion/rescan tested. Physical genre hierarchy/scoped-album commands confirmed. Captured whole-genre Play all now tested and used; indexed genre tracks retain type 10. Folder/bulk app flows remain unobserved. Source/group deletion is not exposed. | [Library contract](../../docs/protocol/library-browsing.md) |
+| **Natural track/list end** | V2.57 five-mode EOF behavior observed over TCP/WS on a short WAV/FLAC custom queue: stop, repeat-one, wrap and random continuation. Gapless/folder jump off. Final stop leaves the queue intact but `0202` silent; loading state 2 is not terminal stop. | [EOF contract and acceptance](../../docs/protocol/track-end.md) |
+| **CUE / DSD metadata** | Generated V2.57 CUE/WAV, DSF and DFF index and select over TCP/WS; CUE queue/favorites use positions. Stock IDs can collide, CUE track fields are lossy and HTTP can mark the wrong row. One owner-approved stereo SACD ISO also has TCP/WS metadata, queue and favorite checks; native DSD output remains unvalidated. | [Formats and identity](../../docs/protocol/formats.md), [SACD](../../research/docs/reports/sacd.md) |
+| **Scan cancellation** | V2.57 TCP/WS cooperative cancellation leaves a partial replacement index; finish event is shared with full scans. Fresh full scanning restores the complete catalog; source files are unchanged. | [Scan contract](../../docs/protocol/library-scan.md) |
+| **Library reset** | Dedicated V2.57 `0621` discards index/favorites, not files/settings/custom-list rows. Requires explicit confirmation. Immediate replies can be inconsistent; rescan alone does not recreate favorites. | [Reset scope and recovery](../../docs/protocol/library-reset.md) |
+| **Remote settings** | TCP/WS gain, DRE, filter, SPDIF, channel balance and user PEQ/master gain with readback and SQLite persistence checks. Stock Gain/filter labels mapped; all six iPhone filter rows now physically paired with codes and restoration confirmed. Balance checks opposite-channel DAC writes. All supported EQ preset codes and ten User slots have focused isolation/restoration checks; app BYPASS/Save captures are deferred. Hardware DSP response remains unvalidated. | [Settings protocol](../../docs/protocol/remote-settings.md), [PEQ](../../research/docs/reports/peq.md) |
+| **Playback preferences** | V2.57 gapless, folder jump and ReplayGain are readable via fresh `0501` snapshots. Six local UI setter tags are rejected by the independent TCP allowlist, also through the WS bridge; no remote setters exposed. | [Evidence and limits](../../docs/protocol/remote-settings.md#playback-preferences-v257) |
+| **Modes and lock screen** | Stock USB/local/AirPlay control transitions, five Bluetooth source-codec preferences, five system themes, full custom PNG/overlay metadata and four V2.57 custom styles. Physical audio and screen rendering need separate checks. | [Modes and themes](../../docs/protocol/remote-modes-themes.md) |
+| **OTA monitoring** | Daily catalog check and one tracking Issue per new main-OS/recovery pair. First GitHub-hosted run passed. Package metadata/signature and one chunk were checked separately; guest installation remains untested. | [OTA](../../firmware/docs/ota.md) |
+
+### Browser execution experiment
+
+The separate [TinyEMU/WebAssembly prototype](../../experiments/browser/docs/overview.md) executes V2.57 inside
+the browser and has verified menu navigation, taps/swipes, Back, and manual
+screen sleep/wake with upward-swipe unlock. Audio, media import and persistence
+are not implemented. An observed lockscreen SIGBUS remains unisolated; the next
+milestone is navigation and sleep/wake/unlock stability. The Docker emulator
+results above do not establish browser-runtime acceptance.
+
+### Historical diskOS preview
+
+The [unsupported diskOS experiment](../../experiments/diskos/docs/preview.md) is preserved under
+`experiments/diskos/`. Historical V2.40 results include UI navigation, library scan
+and verified WAV/PCM playback; same-track selection after restart and font
+coverage remain recorded limitations. Its migration to the current source
+layout does not constitute fresh full runtime acceptance. A 2026-09-17
+[screenshot run](../../experiments/diskos/docs/preview.md#preservation-checks) checked build/startup,
+the main screen and quick-panel brightness only. The report defines the
+upstream fixes and local validation needed to return to active experimental status.
+
+### CSS viewer — 2026-09-17
+
+The viewer now draws a square device without a photo: a flat black screen bezel,
+Power on top, Play/pause and the volume rocker on the right, and audio/USB/microSD
+along the bottom. The face has no logo or lettering. Desktop renders the live
+frame at 360×360; narrower layouts preserve proportions and smooth downscaling.
+Skin loading and alignment settings have been removed; physical-button and
+peripheral handlers are unchanged. See [VIEWER.md](../../viewer/docs/usage.md).
+
+Firmware-free validation after UI unification: 313 Python and 37 JavaScript tests
+plus shell/shim checks passed. Full V2.57 disposable integration also passed, including the Viewer’s
+CSS/HTML/JS, frame/PCM and sleep/wake/stop/boot checks. Live browser checks covered
+Power startup/wake, unlocking with a swipe,
+audio and USB toggles, and a 320 px viewport without horizontal overflow.
+The two audio sockets share the browser audio switch; they do not emulate output
+selection. The updated screenshots record appearance, not hardware fidelity. The WASM
+experiment uses the same stylesheet and geometry, with a distinct badge, bottom
+status and adjacent Debug/Prototype console disclosures. See [browser screenshots](../../experiments/browser/docs/overview.md).
+
+### Current visual evidence
+
+| Main menu | Local playback | Clock lockscreen |
+| --- | --- | --- |
+| ![V2.57 menu](../../docs/images/readme-menu.png) | ![V2.57 playback](../../docs/images/readme-playing.png) | ![V2.57 clock](../../docs/images/readme-clock.png) |
+
+Fresh captures from the actual V2.57 guest, 2026-09-15. The current CSS device
+and controls are shown in [VIEWER.md](../../viewer/docs/usage.md). These are screenshots, not mockups;
+they illustrate the interface rather than replacing protocol/audio assertions.
+The 2026-09-16 preference/playlist/scan/reset/EOF/formats/discovery investigations change protocol helpers/tests, not
+the viewer UI; these captures remain the current visual reference.
+
+Idle/USB checkpoint, 2026-09-16: raw stock frames on generated test media.
+Native flag/counter and protocol checks establish the behavior; these images
+only illustrate the UI. [Capture provenance](../../docs/images/README.md).
+
+| After 310 seconds on USB power, locally woken | After idle shutdown, local Power boot and WS recovery |
+| --- | --- |
+| ![V2.57 clock after USB-powered idle](../../docs/images/18-usb-power-clock.png) | ![V2.57 menu after explicit local reboot](../../docs/images/19-idle-reboot-menu.png) |
+
+## Releases and verification
+
+- 2026-09-16 physical filter walkthrough: all six FiiO Control rows mapped to
+  protocol codes, every setter acknowledged, final fresh read confirms original
+  second-row selection. Sanitized fixture and TCP/WS regression test added;
+  277 Python / 23 JavaScript tests, shell checks and four shim builds passed.
+  No runtime/UI changes or repeated firmware tests. The supplied
+  [English app screenshot](../../docs/images/20-fiio-control-filters-en.png) is curated;
+  it is not an emulator screenshot.
+  [Mapping and limits](../../docs/protocol/remote-settings.md#physical-fiio-control-filter-mapping-2026-09-16).
+
+- 2026-09-16 follow-up: captured whole-genre Play all adopted after TCP/WS
+  comparison; stock Gain/filter labels mapped and all values checked; long theme
+  aliases proved unsafe because firmware truncates before decoding. Guard retained.
+  Fresh V2.57 `library`, `settings`, `themes` passed; firmware-free suite passed
+  276 Python / 23 JavaScript tests, shell syntax and four shim builds. No physical
+  writes, interactive guest changes or UI changes; existing screenshots remain
+  current. Full/long idle tests not rerun for these controller-only changes.
+  [Checkpoint and limits](../../research/docs/status.md#validation-genre-variant-settings-labels-and-alias-boundary-2026-09-16).
+
+- 2026-09-16 physical genre capture: HTTP hierarchy and scoped-album selection
+  match helpers; app whole-genre Play all differs (type 8 / empty album versus
+  tested type 10). Sanitized fixture and firmware-free regression checks added.
+  Firmware-free suite passed 274 Python / 23 JavaScript tests, shell syntax and
+  four shim builds. Capture also shows CUE loading/status anomalies, not successful EOF. No device
+  commands replayed, runtime/UI changes or new screenshots.
+  [Evidence and remaining gaps](../../docs/protocol/library-browsing.md#physical-genre-flow-2026-09-16).
+
+- 2026-09-16 library browsing: focused fresh V2.57 `library` acceptance passes
+  TCP/WS playback and direct/proxied HTTP reads/bulk addition/index-only deletion.
+  Generated overlapping tags, pagination, stale/empty selector rejection and
+  source hashes checked. Firmware-free suite: 271 Python / 23 JavaScript tests,
+  shell syntax checks and four shim builds. Interactive guest and physical player untouched; full
+  and long idle/USB scenarios not rerun. Viewer unchanged; existing screenshots
+  remain the visual reference. [Scope and gaps](../../docs/protocol/library-browsing.md).
+- 2026-09-16 custom styles: physical app POST/GET confirms all four values with
+  unchanged PNG. Added style allowlist and focused `themes` integration; fresh
+  V2.57 direct/proxy checks pass with explicit time off/on. Firmware-free checks:
+  261 Python / 23 JavaScript, shell checks and four shims. Full and long power
+  tests not rerun. [Evidence and limits](../../research/docs/reports/fiio-control-app.md#physical-custom-style-save-2026-09-16).
+- 2026-09-16 physical custom-theme capture: HAR/PCAP confirms unchanged full-PNG
+  uploads for color/Date edits and subsequent metadata/image readback. Sanitized
+  fixture and tests added; 259 Python / 23 JavaScript tests, shell checks and four
+  shim builds passed. Runtime unchanged; firmware integration and long power
+  tests not rerun. [Evidence and limits](../../research/docs/reports/fiio-control-app.md#physical-custom-theme-save-2026-09-16).
+- 2026-09-16 idle/USB checkpoint: 257 Python and 23 JavaScript tests, four shim
+  builds, focused `idle` / `idle-usb` / `library-reset` and full local V2.57
+  integration passed. USB held the native idle counter at zero for 310 seconds
+  while paused; unplugging restored counting. TCP/WS survived 135 seconds of
+  silence with screen timeout and separately recovered after natural power-off
+  and explicit local Power boot. Fixed LAN timeout cancellation and two test
+  fixture races; all failures are retained in
+  [the investigation](../../research/docs/status.md#idle-reconnect-and-usb-power-investigation-2026-09-16).
+  This is not a hosted release gate or physical iOS-background/Wi-Fi validation.
+- 2026-09-16 LAN discovery checkpoint: 250 Python and 23 JavaScript tests, four
+  shim builds, focused discovery and full local V2.57 integration passed. Physical
+  iPhone FiiO Control discovered the emulator, connected, opened its library and
+  found it again after disconnect via the explicitly approved one-phone host
+  bridge. Temporary LAN listeners were then closed; defaults remain localhost-only.
+  Full-run validation exposed and corrected two old EOF test assumptions; both
+  failures and the successful third run are recorded in
+  [the investigation](../../research/docs/status.md#lan-discovery-investigation-2026-09-16).
+  This is not a hosted release gate or validation of all official-app functions.
+- 2026-09-16 CUE/DSF/DFF checkpoint: 232 Python and 23 JavaScript tests, four
+  shim builds, focused TCP/WS acceptance and full local V2.57 integration passed.
+  Generated sources verify metadata and positional selection, including two CUE
+  favorites; tests preserve duplicate IDs and document misleading HTTP marks.
+  Subsequent EOF/scan/reset/SD/preference checks passed. SACD ISO, native DSD/DoP
+  and hardware audio remain unvalidated; this is not a hosted release gate.
+  [Validation and limits](../../research/docs/status.md#cue-dsd-investigation-2026-09-16).
+- 2026-09-16 natural-EOF checkpoint: 224 Python and 23 JavaScript tests, four
+  shim builds, focused TCP/WS acceptance and full local V2.57 integration passed.
+  All five modes are checked with real short-file completion, event/queue/runtime
+  agreement and fixture restoration. Subsequent scan/reset/SD/preference checks
+  passed too. Static analysis explains suppressed `0202` replies after stop.
+  Gapless/folder jump enabled and physical timing remain unvalidated; this is
+  not a hosted release gate. [Validation details](../../research/docs/status.md#natural-eof-investigation-2026-09-16).
+- 2026-09-16 library-reset checkpoint: 213 Python and 23 JavaScript tests,
+  four shim builds, focused TCP/WS acceptance and full local V2.57 integration
+  passed. Tests verify destructive scope, unchanged source/settings/custom lists,
+  stale immediate responses, rescan/restart recovery and surviving-list playback.
+  Subsequent SD/preference checks also passed. This is not a hosted release gate.
+  [Validation and stock limitations](../../research/docs/status.md#library-reset-investigation-2026-09-16).
+- 2026-09-16 scan-cancellation checkpoint: 209 Python and 23 JavaScript tests,
+  four shim builds, focused cancellation checks and full local V2.57 integration
+  passed. TCP/WS cancellation leaves a partial replacement catalog; full rescans
+  restore all tracks, with source bytes unchanged. Final acceptance uses 1024
+  generated WAVs; subsequent SD/preference tests passed too. This is not a hosted
+  release gate. [Validation details](../../research/docs/status.md#scan-cancellation-investigation-2026-09-16).
+- 2026-09-16 playlist checkpoint: 206 Python and 23 JavaScript tests, four shim
+  builds, focused playlist checks and full local V2.57 integration passed.
+  Both TCP/WS cover list/track selection, ID gaps, rename/edit and stale bounds.
+  Full-run investigation added a CI-only display-time fixture and bounded
+  read-only PID discovery; interactive defaults are unchanged. Failure history
+  and remaining sleep/wake limits are in the
+  [checkpoint report](../../research/docs/status.md#custom-playlist-investigation-2026-09-16).
+- 2026-09-16 preference checkpoint: 193 Python and 23 JavaScript tests, four shim
+  builds, focused TCP/WS preference checks and full local V2.57 integration passed.
+  Full integration passed on retry after a queue-state failure without retained logs;
+  isolated queue reads passed too. [Validation details](../../research/docs/status.md#playback-preference-investigation-2026-09-16)
+  preserve the failure and limitations. This is not a hosted release gate.
+- [v2.40 historical stable release](https://github.com/eudj1n/snowsky-disc-qemu/releases/tag/v2.40)
+  remains Latest. [v2.57](https://github.com/eudj1n/snowsky-disc-qemu/releases/tag/v2.57)
+  is retained as a Pre-release snapshot, with its original exact-commit test evidence.
+  The next stable V2.57 release will use a new name such as `v2.57-r1`.
+- [V2.57 report](../../firmware/docs/reports/2.57.md): input fingerprints, compatibility findings and
+  validation scope. Vendor feature announcements are reference material, not
+  claims that every hardware or stock-software feature was tested.
+- [Daily OTA run](https://github.com/eudj1n/snowsky-disc-qemu/actions/runs/34932983704):
+  catalog access from a GitHub runner succeeded; V2.57/recovery 18 had no update,
+  so issue creation was correctly skipped. Creation/deduplication has synthetic tests.
+- [CI policy](../../docs/development/ci.md): release gates apply to the exact release commit and the
+  firmware being released. The [single-active-firmware policy](../../firmware/docs/porting.md#support-policy--one-active-firmware)
+  keeps V2.57 active and older releases historical; an OTA announcement alone
+  does not replace the working version.
+
+## Remaining work and limits
+
+The actionable DISC protocol backlog and session handoff are maintained in
+[PROTOCOL_RESEARCH.md](../../research/docs/status.md), including checkpoint validation,
+remaining settings/library investigations and future web-remote work.
+
+Current research: remaining wallpaper questions and an audit of FiiO Control's
+DISC screens against existing protocol helpers using user-provided
+screenshots; see [the audit plan](../../research/docs/reports/fiio-control-app.md#screen-coverage-audit).
+The first six wallpaper screenshots are inventoried. Physical HAR/PCAP confirms
+full unchanged PNG retransmission for color/Date and four custom styles, now
+exposed by the helper and tested on V2.57. Long aliases hit a verified firmware
+truncation limit; color-slider/alpha UI semantics and catalog remain gaps. See
+[capture evidence](../../research/docs/reports/fiio-control-app.md#physical-custom-style-save-2026-09-16).
+The next 12 library/PEQ/settings screens are also inventoried. Existing helpers
+cover most base reads/settings; genre/scoped-album app commands now have physical
+evidence, while folder playback, batch UI actions,
+exact PEQ Save flow are not established. Stock Gain/filter labels are mapped and
+every value tested; the subsequent physical filter walkthrough maps all six app
+rows and confirms restoration. English rows 5/6 have a duplicate label despite
+distinct codes; Russian endings remain clipped. See
+[coverage matrix](../../research/docs/reports/fiio-control-app.md#library-peq-and-settings-screens-second-batch-2026-09-16).
+Nine further screenshots clarify genre → album → track nesting, Add to Playlist /
+Delete at two levels, device/local PEQ saving and separate BYPASS/Auto EQ/local
+catalog screens. These are audited UI gaps, not new validated commands; see
+[third batch](../../research/docs/reports/fiio-control-app.md#genre-hierarchy-batch-actions-and-peq-third-batch-2026-09-16).
+PEQ is documented but explicitly deferred to
+[issue #9](https://github.com/eudj1n/snowsky-disc-qemu/issues/9), not part of the
+current library/playback implementation scope.
+Physical iOS background/reconnect testing is deferred unless an error appears
+(owner decision, 2026-09-16), not a blocker for the completed idle/USB checkpoint.
+Long power tests remain opt-in under the [test selection policy](../../docs/development/ci.md#test-selection-policy).
+
+- **Hardware/audio:** USB storage and USB DAC, Bluetooth audio, native DSD/DoP and MCU/UART
+  behavior require separate validation. V2.57 viewer USB models power detection only;
+  its headphone control enables browser audio, not stock headphone detection.
+- **Networking:** Full FiiO Control phone-app compatibility, mDNS lifecycle,
+  Wi-Fi association and cloud streaming remain unvalidated. UDP discovery evidence
+  and the bounded LAN bridge are documented separately. The WS bridge is an
+  emulator adapter, not newly discovered native stock WebSocket support.
+- **Power/timing:** guest-only process stop is not hardware standby or a stock
+  shutdown animation. qemu-user does not reproduce hardware timing and the
+  privileged container is not a general sandbox for arbitrary firmware syscalls.
+- **Updates:** the monitor creates a research task; downloading an entire new
+  package, analysing its binaries, preparing support/release and closing the
+  Issue remain manual. Guest OTA flashing is not exercised by the monitor.
+- **Frames:** the active-buffer marker is a selection hint, not an atomic framebuffer
+  fence. Older shims fall back to a heuristic; standalone captures still export
+  both raw sub-buffers. See the transport limits in [VIEWER.md](../../viewer/docs/usage.md).
+
+## Historical evidence
+
+The log below records what was known **at the time of each experiment**, including
+failures later fixed, old viewer layouts and the pre-publication phase. Use the
+current overview above for today's support claims. Historical binary addresses
+are version-specific.
+
+<details>
+<summary>Earlier captures, investigation notes and CI milestones</summary>
+
+## Screens reached
+
+| | screen |
+|---|---|
+| ![splash](../../docs/images/01-splash.png) | Boot splash (SNOWSKY / FIIO OWNED BRAND) |
+| ![low battery](../../docs/images/02-low-battery.png) | Critically-low-battery warning (before the battery sysfs fix) |
+| ![language](../../docs/images/03-language.png) | First-boot language wizard, **English** selected (options stay in their native scripts; the 确定 button is the fallback locale until you confirm) |
+| ![main](../../docs/images/04-main-menu.png) | **Main menu** carousel (Settings / Browse files / Now playing), battery 100%, volume 120 |
+| ![files](../../docs/images/05-file-browser.png) | **File browser** at `/tmp/sdcard` showing the `Test Artist` folder from `./emulator/sdcard` |
+| ![tracks](../../docs/images/06-sd-tracks.png) | Two levels in — `/tmp/sdcard/Test Artist/Greatest Hits` listing the `.wav` tracks |
+
+## Current controls — screenshots from 2026-09-11
+
+These are actual emulator/browser captures, not mockups. Permanent copies are in
+`docs/images/`; diagnostic captures in ignored `shots/` are not required to reproduce them.
+
+| | Verified screen |
+|---|---|
+| ![Gesture settings](../../docs/images/07-key-gesture-settings.png) | Stock **Custom volume settings**: Single press, Double press, Long press. All three assignments were changed through this app and restored to 1 / 0 / 1. |
+| ![Long-press assignment](../../docs/images/08-key-long-press-assignment.png) | Stock **Long press** action selection; **Adjust volume** restored after testing Switch track. |
+| ![Physical controls](../../docs/images/09-viewer-physical-controls.jpg) | Updated viewer with Volume −/+, Play / pause and Power / lock, plus gesture instructions and device status. |
+| ![Locked screen](../../docs/images/10-viewer-screen-locked.jpg) | Power short-click: screen is black, status reports locked, touch requests return HTTP 409. A second click wakes the stock UI. |
+
+Checks passed: **16 Python tests + 7 JavaScript tests**, plus live guest state readback,
+browser click/double-click, GPIO holds, settings changes/persistence, DAC gain, and an
+off/on cycle. Viewer screenshots were captured from the actual browser page.
+The full track/position/gesture matrix and physical-device timing were not exhaustively tested.
+
+## Network and library checks — 2026-09-11
+
+| Actual browser capture | Result |
+|---|---|
+| ![Media-library settings](../../docs/images/11-media-library-settings.jpg) | **Update now / Auto update** in the stock application. The indicator alone is not proof that automatic scanning is enabled or implemented. |
+| ![Library scan completed](../../docs/images/12-media-library-scanned.jpg) | **4 songs scanned**, using the stock scanner after the mount-source fix; all four returned by TCP 0401. |
+| ![TCP-controlled playback](../../docs/images/13-network-playback-paused.jpg) | **01 - Tone A.wav**, selected through TCP from the indexed library, left paused after the play/pause test. The central Play icon agrees with wire state 1 and internal state 2. |
+
+Passed: **28 Python tests + 7 JavaScript tests**, Compose validation, image rebuild /
+container recreation, repeated setup/boot and viewer Power-on. The live host check
+`python3 -m controller.diagnostics.verify_network --control --start-library` verifies protocol 3.06,
+volume **119 → 118 → 119**, the same track's wire state **0 → 1 → 0**, and HTTP 12103.
+The test leaves playback paused. Guest memory independently confirmed volume 119,
+player state 2 (paused), network-ready=1, Docker IP and dropped dangerous capabilities.
+Automatic scanning did not ingest the fifth test file; WebSocket returned 200 instead
+of 101. Those are recorded limitations, not passing checks.
+
+## Skin controls and WebSocket findings — 2026-09-11
+
+| Actual browser capture | Result |
+|---|---|
+| ![Quiet skin hotspots](../../docs/images/14-skin-hotspots.jpg) | Physical controls on the skin: translucent pink circles, no icons at rest. Power is centered over the top button; Play/pause and the volume rocker are on the right. Gesture shortcuts and alignment are hidden in collapsed **Debug**. |
+| ![Hotspot hover](../../docs/images/15-skin-hotspot-hover.jpg) | Hover reveals the icon and label; focus/pressed feedback remains available. Volume changed **115 → 114 → 115**, with DAC gains **0.37584 → 0.35481 → 0.37584**. |
+
+Passed **37 Python + 10 JavaScript tests**. Live browser clicks verified volume,
+Power startup/wake and play/pause (internal state **2 → 1 → 2**, left paused).
+Confirmed hover CSS: fill alpha 0.13/icon opacity 0 at rest, 0.32/1 on hover.
+Debug expands/collapses; closing it clears alignment mode and its readout.
+Automated checks cover keyboard feedback, pointer/blur cancellation, duplicate-click
+suppression, a second finger's release and plain/skin HTML generation. Mobile layout
+and the no-skin fallback were not visually tested in this session.
+
+**WebSocket diagnosis is complete, but stock WS control does not work:** the active
+12103 callback `004b9d38` dispatches a 16-entry HTTP table with no WebSocket route.
+Unknown URLs go directly to empty HTTP 200 (`0048f8f8`). `/api/websocket` and a made-up
+URL returned the same result. The older explanation involving a dashboard password
+was incorrect; the bundled dashboard handler is not connected to this listener.
+Read-only route inspection and strict upgrade probes are committed; see
+[NETWORK.md](network.md#websocket-investigation). No binary patch, new dependency,
+port or ad-hoc image change was made. Dockerfile/Compose remain unchanged for this step.
+The existing viewer startup script applies the UI changes: `./run.sh view`, then reload.
+
+## Working WebSocket bridge — 2026-09-11
+
+![Browser WebSocket protocol inspector](../../docs/images/16-websocket-protocol.jpg)
+
+Actual browser WS frames: `0599000C0000` → `a599000C0306`, settings, four indexed
+tracks, Tone A metadata with paused state 1, plus unsolicited a-tag notifications.
+The read-only inspector at **http://localhost:12103/bridge/** clearly identifies the
+emulator bridge. It was disconnected after capture to free the single-client channel.
+
+**55 Python + 10 JavaScript tests passed**, plus repeated `./run.sh wscheck --control`:
+TCP/WS settings/catalog equal; volume **115 → 114 → 115**; same track playing → paused;
+second WS rejected with 409; reconnect handshake 0306. Independent guest probe showed
+volume 115 and internal paused state 2. Host 12103 gives a valid 101, while direct
+stock HTTP on host 12113 still gives 200. Browser Origin and real WS transport verified.
+Docker image rebuilt and Compose recreated without deleting the work volume.
+After recreating only the bridge, a powered-off guest correctly produced HTTP 503;
+normal guest boot restored WS control and the full volume/playback/reconnect check passed.
+
+Stock closes/reopens its TCP listener between clients. The bridge retries connection
+refusal up to three seconds, never commands; the read-only TCP comparison also tolerates
+handover. One early playback check ran after stock idle shutdown had set NO_WORK_MODE;
+restarting the guest with its viewer supervisor restored playback, then WS control passed.
+The emulator's idle-poweroff policy itself was not changed.
+
+## Reproducible CI baseline — 2026-09-11
+
+![Fresh generated media library](../../docs/images/17-ci-fresh-library.png)
+
+Actual screenshot from a **fresh disposable work volume**, not the interactive
+four-track library. The stock scanner indexed one generated `CI Tone.wav`; TCP and
+WebSocket returned that same track. Volume **120 → 119 → 120**, play/pause,
+exclusive WS connection (409), reconnect (0306), and TCP/WS parity passed locally.
+Fast carousel flings were nondeterministic, so CI uses a slow drag and scrolls the
+Settings list to its end before selecting Update media lib → Update now.
+The complete local clean-volume run also passed a byte-exact audio check: signed
+16-bit stereo WAV becomes 32-bit / 44.1 kHz PCM, with two source periods found exactly.
+All temporary stacks, work volumes, generated media and SD loop devices were cleaned up.
+
+**67 Python + 10 JavaScript tests**, shell syntax and all four MIPS shim builds pass
+in the pinned Debian image. Missing/skipped Python checks fail CI. The Docker base
+digest and Debian/security snapshot are pinned, including native aiohttp and Node.
+The full workflow uses a secret download URL, verifies the consumed rootfs SHA-256,
+generates its own media and isolates containers/volumes/ports. See [CI.md](../../docs/development/ci.md).
+
+`2.x` is now GitHub's default branch; historical `main` is retained. The firmware-free
+workflow passed on GitHub ([run](https://github.com/eudj1n/snowsky-disc-qemu/actions/runs/34602295491)).
+The first hosted firmware run passed build/tests and the secret-backed download, but
+the runner's old Docker Engine rejected Compose `interface_name` before guest startup.
+Both workflows now explicitly install Engine 28.5.2 / Compose 2.39.4.
+That rerun reached the real scanner/control checks and exposed a state-only `a202`
+notification racing a now-playing reply. The verifier now polls read-only queries
+for complete metadata and the expected state/track, with a bounded timeout; it never
+retries play/pause commands. Four regression tests cover this behavior.
+**Both hosted workflows passed on commit `bf54fa0`**:
+[firmware-free CI](https://github.com/eudj1n/snowsky-disc-qemu/actions/runs/34603213882)
+and [fresh V2.40 integration](https://github.com/eudj1n/snowsky-disc-qemu/actions/runs/34603214877).
+This includes the private download, verified rootfs, stock scan, TCP/WS controls,
+byte-exact PCM and cleanup on an amd64 hosted runner; the same flow passed locally
+on arm64. After the Node.js 24 action upgrade and Dependabot setup, both workflows
+also passed on release commit **`e3aab81`**:
+[CI](https://github.com/eudj1n/snowsky-disc-qemu/actions/runs/34603924267) and
+[firmware integration](https://github.com/eudj1n/snowsky-disc-qemu/actions/runs/34603924295).
+The CI job has no Node.js 20 deprecation annotations; the firmware run uploaded zero
+artifacts. Dependabot's initial jobs passed and opened
+[PR #1](https://github.com/eudj1n/snowsky-disc-qemu/pull/1), retaining full SHA pins;
+the major checkout update is left for separate review, not automatically merged.
+GitHub immutable
+releases are enabled. Branch protection/rulesets returned HTTP 403
+because the private repository's current plan does not support them; visibility was
+not changed. The initial OAuth `workflow`-scope blocker was resolved by the owner.
+**[v2.40](https://github.com/eudj1n/snowsky-disc-qemu/releases/tag/v2.40) is published**,
+with an annotated tag at `e3aab81dc50acbd11c1939b920fbd2cd8abf9a12`, immutable release
+enabled and no uploaded assets. It is an emulator source baseline, not a flashable
+firmware package. This status-only follow-up does not move the tested release tag.
+V2.57 remains the next migration target.
+
+The repository has been renamed to **`eudj1n/snowsky-disc-qemu`** and `origin` updated;
+it remains private, with `2.x` as default. Local directory and Docker image/container/
+volume names remain unchanged to preserve state. Public-facing documentation cleanup
+and investigation of other ECHO-based products are deferred to separate work.
+
+
+</details>

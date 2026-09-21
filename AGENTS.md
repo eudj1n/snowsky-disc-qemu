@@ -1,7 +1,7 @@
 # AGENTS.md
 
 Shared instructions for coding agents continuing this project. Read this, then
-`docs/EMULATION.md`. The goal: run the FiiO Snowsky Disc stock firmware under qemu-user
+`emulator/docs/emulation.md`. Use `docs/README.md` as the documentation index. The goal: run the FiiO Snowsky Disc stock firmware under qemu-user
 and drive its UI, as groundwork for custom firmware / a sync bridge.
 
 ## TL;DR of the current state
@@ -13,14 +13,14 @@ got the UI up (all encoded in `emulator/scripts/10_setup_env.sh`): raise **`RLIM
 the boot-animation overlay. Touch coordinates are **180°-rotated** and press/release must be
 **separated in time** (and a ~1 s hold is a long-press — use ~0.3 s to open a list item). The
 SD needs a re-mount after the guest's boot-time umount (`sd_mount()` in `lib.sh`). See
-`docs/STATUS.md` for screenshots and what's next.
+`emulator/docs/status.md` for screenshots and what's next.
 
 ## How to run
 
 Host: `./run.sh up <…/main_os/ota_v257>` (once) → `./run.sh boot` → `./run.sh tap <x> <y>`.
 Screenshots are copied to `./shots/`. For an **interactive** session use `./run.sh view` →
 open `http://localhost:8080` (live screen, click=tap, drag=swipe; responsive CSS device
-with physical buttons and audio/USB/microSD controls) — see `docs/VIEWER.md`; the daemon is `viewer/server.py` /
+with physical buttons and audio/USB/microSD controls) — see `viewer/docs/usage.md`; the daemon is `viewer/server.py` /
 `viewer/scripts/40_stream.sh`. `boot` now keeps the guests alive ~30 min (`GUEST_TTL`) for this. `./run.sh shell` gives a container shell where the
 `/repo/emulator/scripts/*.sh` pipeline lives. Everything qemu-side runs **inside** the container
 (named `snowsky-disc-qemu`, `--privileged`); `/work` is a Docker volume holding the extracted
@@ -46,7 +46,7 @@ count printed by `fb2png.py` is only a fallback heuristic, not evidence of recen
   **nan2008** flag (`build_shims.sh` stamps it).
 - Start **`mq_ui` first** (creates the `ui` queue), then `mq_player`. Boot waits for
   network listeners, both input devices and a framebuffer flush before capturing;
-  use the readiness result rather than a fixed sleep (see `docs/VIEWER.md`).
+  use the readiness result rather than a fixed sleep (see `viewer/docs/usage.md`).
 - Touch: append 16-byte `input_event`s to `/rootfs/dev/input/event1`. Press =
   `ABS_MT_TRACKING_ID=0` / `BTN_TOUCH=1`; release = `TRACKING_ID=-1` / `BTN_TOUCH=0`. The
   read-cb drains all queued events per call, so **inject press → sleep ~1s → release**, else
@@ -80,7 +80,7 @@ count printed by `fb2png.py` is only a fallback heuristic, not evidence of recen
 
 ## Where things are
 
-See `docs/REPOSITORY.md` for component boundaries and the entry-point inventory.
+See `docs/architecture/repository.md` for component boundaries and the entry-point inventory.
 Use explicit package imports and `python3 -m package.module` from the repository
 root. Do not add directory-specific `sys.path` searches. Controller must remain
 independent of emulator, viewer, firmware, research and experiments; integration tests use
@@ -92,28 +92,28 @@ component; cross-component scenarios and generated media live under `tests/`.
   `emulator/shims/mqshim.c` (only needed if you suspect an attr/errno issue — normally unused).
 - Runtime/diagnostics: `emulator/runtime/inject.py` (touch), `research/diagnostics/uisniff.c` (sniff the `ui` mqueue non-destructively),
   `emulator/runtime/fb2png.py` (framebuffer → PNG, BGRX + 180° rotation), `viewer/server.py` (live viewer +
-  touch/swipe HTTP bridge; served by `viewer/scripts/40_stream.sh`, `docs/VIEWER.md`).
+  touch/swipe HTTP bridge; served by `viewer/scripts/40_stream.sh`, `viewer/docs/usage.md`).
 - RE: `research/ghidra/` scripts + notes. Key functions: `mq_ui` main `FUN_004036ec`, touch device
   open `FUN_0055da20`, touch read-cb `FUN_0055db8c`.
 - Firmware acquisition + decrypt: `firmware/README.md` (password `fo123`; rootfs and
   six stock binary hashes pinned in `firmware/v<version>.json`).
-- Protocol + real-device RE: `docs/PROTOCOL.md` (FiiO Link frames, verified-live 12100 handshake
+- Protocol + real-device RE: `docs/protocol/protocol.md` (FiiO Link frames, verified-live 12100 handshake
   `0599…`, the corrected 12103 route mapping — **TCP device control is auth-free**;
-  stock file transfer uses separate HTTP, see `docs/HTTP_API.md`), `docs/DEVICE.md`
-  (ports/mDNS, no stock debug unlock), `docs/DISKOS.md` (V2.40 builds;
+  stock file transfer uses separate HTTP, see `docs/protocol/http-api.md`), `docs/protocol/device.md`
+  (ports/mDNS, no stock debug unlock), `research/docs/reports/diskos.md` (V2.40 builds;
   only the size cap blocks). Network/auth `mq_player` function addresses are in `research/ghidra/README.md`.
 
 ## Disc Assistant research checkpoint
 
 The text/voice music assistant lives in `experiments/disc_assistant/`. Read its
 [AGENTS.md](experiments/disc_assistant/AGENTS.md) before changing it, then
-[architecture](docs/ASSISTANT_ARCHITECTURE.md) and
-[current status](docs/ASSISTANT_STATUS.md). Keep it under experiments until a
+[architecture](experiments/disc_assistant/docs/architecture/pipeline.md) and
+[current status](experiments/disc_assistant/docs/status.md). Keep it under experiments until a
 separately agreed promotion or repository split; documentation remains English.
 
 The owner accepted the **software MVP against the stock V2.57 emulator** on
 2026-09-19: 64/64 text scenarios (35 RU / 29 EN), including 19 no-mutation cases
-with zero observed writes. [Acceptance evidence](docs/ASSISTANT_MVP_ACCEPTANCE.md)
+with zero observed writes. [Acceptance evidence](experiments/disc_assistant/docs/reports/2026-09-19-mvp-acceptance.md)
 preserves the report, candidate and reproduction commands; issue #21 is complete.
 This is known regression acceptance, not a human-speech accuracy estimate.
 Physical acceptance (#23) and speech quality/native-Docker/Orange Pi performance
@@ -128,7 +128,7 @@ Physical acceptance (#23) and speech quality/native-Docker/Orange Pi performance
   adapters. Web uses Whisper Server; Piper replies require browser sound opt-in.
   Assistant owns interpretation, response locale, search/ranking and history;
   `library/` owns catalog snapshots/indexing. Shared persistent state and guarded
-  playback belong in [Controller](docs/CONTROLLER_API.md), with no research imports.
+  playback belong in [Controller](controller/docs/api.md), with no research imports.
 - Preserve one action per request, one saved input/response locale and fresh
   selection/queue checks. Never automatically replay an uncertain mutation.
   Learned sources remain shadow-only. The shared `MutationPacer` waits only for
@@ -145,7 +145,7 @@ Physical acceptance (#23) and speech quality/native-Docker/Orange Pi performance
 
 ## Conventions
 
-- For another firmware/product, read `docs/PORTING.md` and its `docs/firmware/<version>.md`
+- For another firmware/product, read `firmware/docs/porting.md` and its `firmware/docs/reports/<version>.md`
   report first. `firmware/inventory/` contains observed inputs, not runtime enablement
   profiles. Keep vendor-reported changes separate from verified emulator features;
   update `CHANGELOG.md` for emulator changes. Never replace V2.40 hashes/addresses blindly.
@@ -154,10 +154,10 @@ Physical acceptance (#23) and speech quality/native-Docker/Orange Pi performance
 - Actively support one firmware: the latest validated version (currently V2.57).
   Develop on `2.x`; preserve older versions as historical release snapshots, without
   promised backports or continuing integration gates. Promote only after validation,
-  not on an OTA announcement. Preserve inventories and analysis; see `docs/PORTING.md`.
+  not on an OTA announcement. Preserve inventories and analysis; see `firmware/docs/porting.md`.
   V2.40 runtime/diagnostic profiles remain temporarily, but hosted CI runs only V2.57;
   their removal is a separate implementation task, not part of this policy change.
-- Read `docs/FIRMWARE_PROFILES.md` before adding firmware. The single active default
+- Read `firmware/docs/firmware-profiles.md` before adding firmware. The single active default
   is `firmware/active-version`; `.env` may pin a reviewed override. Keep runtime
   capabilities, diagnostic addresses and acceptance selection in the runtime profile.
   Controller compatibility is independent and selected from device `soc_version`,
@@ -167,12 +167,12 @@ Physical acceptance (#23) and speech quality/native-Docker/Orange Pi performance
   Key patch validation normalizes only the permitted instruction, then checks the full
   stock hash and executable PT_LOAD mapping. Read-only key/network/HTTP diagnostics select
   separately verified V2.40/V2.57 addresses by full binary fingerprint (see
-  `docs/DIAGNOSTICS.md`); legacy GDB breakpoint files remain V2.40-specific.
-- Public-release preparation: `docs/PUBLIC_RELEASE.md`. Keep passwords out of the root
+  `research/docs/diagnostics.md`); legacy GDB breakpoint files remain V2.40-specific.
+- Public-release preparation: `docs/development/public-release.md`. Keep passwords out of the root
   README and private-project names out of tracked files. Do not change visibility or
   rewrite immutable history without explicit approval. Code/photo license: MIT.
 - Default development branch: `2.x`; firmware-based release tags `v2.40`, then
-  `v2.40-r1` for emulator fixes against the same firmware. See `docs/CI.md` for pinned
+  `v2.40-r1` for emulator fixes against the same firmware. See `docs/development/ci.md` for pinned
   CI, secret-backed downloads and release gates. Never log a direct firmware URL.
   Existing `v2.57` is an immutable pre-release snapshot; keep it and use a new name
   (next available: `v2.57-r1`) for the eventual stable V2.57 release.
@@ -182,7 +182,7 @@ Physical acceptance (#23) and speech quality/native-Docker/Orange Pi performance
   V2.57 CI alone presets `LIGTH_ON_TIME=7` (never) while stopped and verifies UI
   index/timeout readback, avoiding screen-timeout interference in long network tests.
   Do not copy this into interactive setup or treat it as a remote-wake fix; see
-  `docs/CI.md`. `POWER_SAVE` is unchanged in ordinary CI; opt-in `idle`/`idle-usb`
+  `docs/development/ci.md`. `POWER_SAVE` is unchanged in ordinary CI; opt-in `idle`/`idle-usb`
   instead use reviewed 120-second screen and 0/300-second idle fixtures.
 - Select tests by impact; do not rerun long power acceptance for unrelated work.
   Documentation-only changes need diff/link checks, not firmware execution.
@@ -191,7 +191,7 @@ Physical acceptance (#23) and speech quality/native-Docker/Orange Pi performance
   power/USB/timer/shutdown/reconnect changes, a new firmware profile, and the exact
   release candidate. They are explicit local gates, not part of `full` or the
   current hosted workflow. Keep the real 310-second USB observation; do not shorten
-  firmware timers to make it pass faster. See `docs/CI.md#test-selection-policy`.
+  firmware timers to make it pass faster. See `docs/development/ci.md#test-selection-policy`.
 - Firmware and anything derived from it (rootfs, `.enc`, `.squashfs`, FiiO binaries, Ghidra
   project, captured `shots/`) are **git-ignored** — never commit firmware. Commit code,
   scripts, docs, and the curated screenshots in `docs/images/`.
@@ -199,11 +199,11 @@ Physical acceptance (#23) and speech quality/native-Docker/Orange Pi performance
   source of truth and the work stays reproducible from another machine.
 - Screenshots for the docs live in `docs/images/`; throwaway captures go to `shots/` (ignored).
 
-## Likely next tasks (see docs/STATUS.md "Next")
+## Likely next tasks (see emulator/docs/status.md "Next")
 
 The agreed local DISC protocol checkpoint is finalized. Start with
-`docs/DISC_CAPABILITIES.md` for the controller contract and
-`docs/PROTOCOL_RESEARCH.md` for evidence/history:
+`docs/protocol/disc-capabilities.md` for the controller contract and
+`research/docs/status.md` for evidence/history:
 it records the checkpoint, remaining tasks in priority order and validation status.
 Update that document when completing a research item so another session can resume.
 Keep the high-level protocol tracker (GitHub issue #10) current as checkpoints complete.
@@ -221,7 +221,7 @@ reports registration/sign-in is required); no new cloud capture/login now.
 `update_system_lock_screen` now edits/activates system metadata and verifies
 original-image/metadata readback; no automatic mutation retry. Direct/proxy
 V2.57 themes acceptance and 297 Python / 23 JS tests pass. Capability
-consolidation is complete; see `docs/DISC_CAPABILITIES.md`.
+consolidation is complete; see `docs/protocol/disc-capabilities.md`.
 
 Owner accepted current PR #20 PEQ/SACD scope for `2.x` on 2026-09-19. Remaining
 #8/#9 investigations are optional backlog in those existing issues, not merge
@@ -233,7 +233,7 @@ the owner resumes. No new capture, reconnect/write or scheduled follow-up now.
 Current physical Custom 10 state/restoration is unknown after Auto EQ Save and
 disconnect (6851 shows master -4.6). First resumed step: reconnect/read Custom
 10 before Reset, without repeating Save; then reset/readback/Off. Share/login
-is explicitly deferred. See the pause checkpoint in `docs/PROTOCOL_RESEARCH.md`.
+is explicitly deferred. See the pause checkpoint in `research/docs/status.md`.
 Owner subsequently requested committing/pushing this #9 checkpoint on
 `codex/api-sacd-peq-checkpoints`; the research/device work remains paused.
 
@@ -251,7 +251,7 @@ is an earlier frequency-edit/reset attempt. Save callback `4ef604` is a no-op;
 edits persist directly. Reset clears current User bands/master and persists.
 Owner navigated back, not a true reconnect; no edited-band getter before Reset.
 Final mode in that capture is USER10 (approved disposable slot), not Off.
-See `docs/PEQ.md`; no repeat full sweep.
+See `research/docs/reports/peq.md`; no repeat full sweep.
 Local Save `215948` creates app card `p1`/`p2` without extra captured device
 mutation; fresh reselection reads first gain -3.5/master -6.5, then Reset without
 Save restores the baseline. PCAP ends 22:02:48, before 22:03 Apply screenshots
@@ -300,8 +300,8 @@ copy, and is excluded from full/hosted CI. One stereo uncompressed DSD64 ISO
 indexes ten tracks; first/last catalog/queue/favorite selection works on TCP/WS.
 Favorites lose ISO path/track/flag despite distinct stored rows. Read all queue
 pages and observe advancing position before Pause; no mutation retries. Keep
-private ISO/audio/tags/logs out of Git/artifacts. See `docs/SACD.md` and the latest
-`docs/PROTOCOL_RESEARCH.md` checkpoint for exact validation and remaining limits.
+private ISO/audio/tags/logs out of Git/artifacts. See `research/docs/reports/sacd.md` and the latest
+`research/docs/status.md` checkpoint for exact validation and remaining limits.
 
 Physical `211747` / `212141` captures confirm folder type 4 and ordinary album
 type 3; artist-scoped albums use type 7 with exact `{"artist":"…", "album":"…"}`
@@ -314,7 +314,7 @@ the `213631` capture shows no playback request for reported ineffective root
 taps. Named-genre Play all then works on the same connection. This is an app-side
 dispatch gap in that state, not a firmware rejection or proof of a permanent
 missing feature. Root wire semantics remain unknown; do not repeat identical
-captures or invent empty selectors. See `docs/LIBRARY_BROWSING.md`.
+captures or invent empty selectors. See `docs/protocol/library-browsing.md`.
 Physical `215831` confirms first/third album-track addition: one HTTP
 `POST /add_custom_list/`, `type: album/song`, `dst_list_id: 1`, decoded ranges
 `[[0,0],[2,2]]`; fresh count/membership verifies two tracks. HAR preserves HTTP
@@ -324,7 +324,7 @@ per owner. `221421` then confirms one `style/album` POST for group positions
 `type: update`, `list_id: 2`. Fresh GET confirms renamed list/count 105;
 only the first 100 membership rows were requested. Do not claim full membership
 identity or repeat these add captures. `CI_SCENARIO=library-delete` now isolates
-seven category-delete cases on generated V2.57 media. Read `docs/LIBRARY_DELETE.md`:
+seven category-delete cases on generated V2.57 media. Read `docs/protocol/library-delete.md`:
 index-only general deletion loses favorites/custom membership; custom source
 deletion can affect other lists or leave stale entries. Public helpers keep flag
 zero. Physical `224332` confirms scoped-track DELETE with unchecked source box
@@ -340,7 +340,7 @@ Current-track/CUE deletion is outside the verified scope.
 Local audio works: `tinyshim` redirects `/proc/asound/cards` discovery to `/etc/asound.cards`
 (x2000), so stock firmware selects I2S3_OUT (6), hw:0,3. No audio binary patches.
 Capture: `/audio.pcm` + `/audio.fmt`; `./run.sh audio` exports a WAV, and the viewer offers
-Enable sound / Replay capture. See `docs/AUDIO.md` for runtime evidence and corrected route
+Enable sound / Replay capture. See `emulator/docs/audio.md` for runtime evidence and corrected route
 interpretation (`0x10000000` is INPUT). USB/BT and DSD remain unvalidated.
 
 Physical controls now work in the viewer: volume single/double/hold respects the app's
@@ -352,9 +352,9 @@ buttons, plus audio/USB/microSD connectors. No photo or alignment settings are u
 Gesture shortcuts and audio replay live in collapsed **Debug**. Shared page/device
 styles live in `viewer/static/device.css`, copied into the standalone browser
 experiment by its UI refresh/build. QEMU/WASM badges distinguish execution modes.
-See `docs/VIEWER.md` and `docs/BROWSER.md`.
+See `viewer/docs/usage.md` and `experiments/browser/docs/overview.md`.
 Raw power code `0x108` can invoke `poweroff -f` and is blocked in the viewer — do not sweep
-event codes blindly. See `docs/KEYS.md` and the current screenshots in `docs/STATUS.md`.
+event codes blindly. See `emulator/docs/keys.md` and the current screenshots in `emulator/docs/status.md`.
 The stock idle-poweroff path also calls BusyBox `reboot`; `fbshim` blocks the kernel call
 and publishes `emu/power-request` for the viewer to stop only this guest. This was tested
 with actual guest `poweroff -f` after verifying its dynamic symbol binding to the shim.
@@ -368,7 +368,7 @@ remain unavailable (ENODEV); USB data/storage/DAC are not implemented. V2.40
 retains its old charging-status-only behavior. Cable transitions can wake the
 display; Sleep and Screen off are separate from idle power-off. Opt-in disposable
 `CI_SCENARIO=idle` and `idle-usb` cover long lifecycle behavior; ordinary full CI
-checks native cable detection briefly. See `docs/IDLE_POWER.md`. Never defeat idle
+checks native cable detection briefly. See `emulator/docs/idle-power.md`. Never defeat idle
 policy with fake touches or replay mutations after reconnect; a stopped guest
 requires explicit local Power before a new handshake and fresh state reads.
 
@@ -378,7 +378,7 @@ the stock netlink detector subscribes. No Wi-Fi DB overrides or network binary p
 Guest `ip` read queries use stock BusyBox (the standalone ip address dump fails in qemu).
 `guest_run()` drops dangerous capabilities; wrappers block automatic OTA/NTP/hwclock
 and network reconfiguration. All ports publish only on localhost. Recreate the container
-with `docker compose up -d --build`, then boot/view. See `docs/NETWORK.md` for repeatable
+with `docker compose up -d --build`, then boot/view. See `emulator/docs/network.md` for repeatable
 probes, `controller/fiio_link.py` for host control. V2.40's active HTTP callback `004b9d38`
 has no WebSocket route in table `006c7a50`; unknown URLs return empty 200 via `0048f8f8`.
 The bundled mg_dash code is not the active router; the earlier password-gate explanation
@@ -391,8 +391,8 @@ Enable with `docker compose --profile wsbridge up -d wsbridge`; ordinary up/star
 do not launch it. CI enables the profile explicitly.
 `./run.sh wscheck --control` compares TCP/WS and checks volume/playback (leaves paused).
 `http://localhost:12103/bridge/` is a read-only protocol inspector; disconnect it before
-another client (stock TCP is single-client). See `docs/WEBSOCKET.md`. LAN discovery
-and FiiO Control app compatibility are tracked in `docs/DISCOVERY.md`.
+another client (stock TCP is single-client). See `controller/docs/websocket.md`. LAN discovery
+and FiiO Control app compatibility are tracked in `controller/docs/discovery.md`.
 V2.57 UDP discovery is plain `SNOWSKY DISC` to 224.0.0.255:12101, ~2 s, no
 embedded IP/ports. TCP accept suppresses it before handshake; disconnect resumes
 it (`CI_SCENARIO=discovery`). Passive host tool: `controller/fiio_discovery.py`.
@@ -407,7 +407,7 @@ were then closed. This does not validate every app operation or physical iOS
 background/reconnect; emulator idle/USB behavior is covered separately above.
 
 Stock HTTP file/playlist operations and remote settings are documented in
-`docs/HTTP_API.md` and `docs/REMOTE_SETTINGS.md`. Use `controller/fiio_http.py` for
+`docs/protocol/http-api.md` and `docs/protocol/remote-settings.md`. Use `controller/fiio_http.py` for
 `/dir/`, raw-body `/audio/` uploads, `/progress/`, single-path `/file/` deletion and
 custom playlists. HTTP 200 is not success; progress can survive deletion. Playlist
 headers named `list_id`/`src_list_id`/`dst_list_id` use positions, not database IDs.
@@ -417,7 +417,7 @@ means list position, not SQLite LIST_ID. `play_playlist(position, index=None,
 http=..., expected_name=...)` checks fresh HTTP list/track rows and name before
 sending; the HTTP client must target the same device. Catalog ordering need not
 match insertion order. No atomic revision exists; serialize edits and never
-replay selections. See `docs/PLAYLISTS.md`; focused `CI_SCENARIO=playlists` checks
+replay selections. See `docs/protocol/playlists.md`; focused `CI_SCENARIO=playlists` checks
 TCP/WS with ID gaps, rename/add/remove and stale/empty-selector rejection.
 V2.57 `play_genre` uses captured type 8 with empty album for whole-genre Play all,
 type 10 for an indexed genre track, or type 8 for a named genre-scoped album; type 8's
@@ -434,7 +434,7 @@ commands and HTTP genre hierarchy. Whole-genre type 8 is now compared against
 type 10 in disposable CI (modes 0/4, queue/order/restart). Do not use empty-album
 type 8 for indexed playback: that separate path failed the exploratory probe.
 Folder playback/bulk actions are not in the capture;
-see `docs/LIBRARY_BROWSING.md` before continuing the remaining workflows.
+see `docs/protocol/library-browsing.md` before continuing the remaining workflows.
 Avoid stock batch recursive deletion (it constructs shell commands). `0622/0000`
 starts a scan; watch `a60a` start/finish and `a622` counts. Gain/DRE/filter/SPDIF and
 PEQ helpers are shared by TCP/WS; filter and EQ network enums differ from SQLite.
@@ -449,7 +449,7 @@ Fixture tests pin all six; curated English app screenshot is in docs/images/.
 V2.57 `cancel_library_scan()` sends `0622/0001` once without draining events.
 Cancellation leaves a partial replacement index, not a rollback; `a60a/0005`
 also occurs after cancel. Do not query through the sequential client while
-collecting scan events or replay cancel after reconnect. See `docs/LIBRARY_SCAN.md`;
+collecting scan events or replay cancel after reconnect. See `docs/protocol/library-scan.md`;
 `CI_SCENARIO=scan-cancel` checks TCP/WS and recovery on disposable generated media.
 V2.57 `reset_library(confirm=True)` sends dedicated `0621/0000` once, not `0800`.
 It drops SONG/MY_LOVE and queue tables; files/settings/custom-list rows survive.
@@ -457,7 +457,7 @@ Immediate HTTP favorites have invalid total -1; custom songs can have count >0
 with no items, and empty `a202` does not mean stopped playback. Rescan rebuilds
 tracks/custom membership but not MY_LOVE; guest restart recreates empty favorites.
 Never reset during a scan, replay an uncertain reset, or silently reboot. See
-`docs/LIBRARY_RESET.md` and disposable `CI_SCENARIO=library-reset`.
+`docs/protocol/library-reset.md` and disposable `CI_SCENARIO=library-reset`.
 Channel balance uses getter `0712`, setter `0713`, reply `a712`: helper integers
 -20..20 mean L20..0..R20; wire high byte 0=left/1=right, low byte=magnitude.
 It is not signed 16-bit or percent. `BALANCE_VOL` stores the packed value;
@@ -476,7 +476,7 @@ Admission alone is insufficient too: `0426` is admitted but has no handler.
 The new CI scenarios use only disposable generated media. Never substitute the
 broad `0800` factory-reset command for the app's library-reset action.
 
-`docs/REMOTE_MODES_THEMES.md` covers stock work-mode control (Link 1 USB DAC,
+`docs/protocol/remote-modes-themes.md` covers stock work-mode control (Link 1 USB DAC,
 8 local, 10 AirPlay), the five `06d3` source-codec preferences, and lock-screen HTTP.
 Mode/codec readback does not establish hardware audio. Codec changes reopen the
 local player; restore the desired mode afterwards. `controller/fiio_theme.py` uploads
@@ -494,7 +494,7 @@ exceeds the stock 63-byte bound: header truncation occurs BEFORE percent-decodin
 and can persist invalid UTF-8. Boundary tests verify this through direct/proxy HTTP
 and raw SQLite bytes; keep the client rejection despite HTTP 200/blank GET alias.
 
-Physical iOS captures are summarized in `docs/FIIO_CONTROL_APP.md`; only sanitized
+Physical iOS captures are summarized in `research/docs/reports/fiio-control-app.md`; only sanitized
 protocol fixtures live in `controller/tests/fixtures/`. Full `a202` snapshots and state-only
 deltas coexist; DISC uses 0 playing / 1 paused. Paused seeks have no immediate
 position acknowledgement. Current queue is observed via HTTP `curlist/song`, then
@@ -514,7 +514,7 @@ metadata-free `a202 state=2`; fresh `0202` is silent, but mode reads and the
 retained HTTP queue work. Internal stopped state is 3, not wire 2. Full loading
 snapshots also have state 2; duplicate state-0 deltas are not repeats. Observe
 events without queries during EOF and never infer stop from timeout alone.
-See `docs/TRACK_END.md` and disposable `CI_SCENARIO=track-end`; physical timing,
+See `docs/protocol/track-end.md` and disposable `CI_SCENARIO=track-end`; physical timing,
 gapless/folder-jump enabled and stopped-state resume remain unvalidated.
 CUE/DSF/DFF metadata and positional selection are covered by disposable V2.57
 `CI_SCENARIO=formats`. Both CUE entries can share path and `song_track=0`;
@@ -523,8 +523,8 @@ row. Keep snapshot/position identity, never deduplicate by ID. CUE favorites
 responses lose path/track/isCue even though distinct database tracks survive and
 positional playback works. Generated DSF/DFF establish source metadata, not native
 DSD/DoP or hardware output. SACD ISO now has separate approved-sample checks; see
-`docs/SACD.md` and `docs/FORMATS.md`.
-`docs/M21_COMPARISON.md` is reference only: M21's FiiO Music uses UTF-16 length
+`research/docs/reports/sacd.md` and `docs/protocol/formats.md`.
+`research/docs/reports/m21-comparison.md` is reference only: M21's FiiO Music uses UTF-16 length
 units, a different state enum and toggle semantics. DISC remains the priority;
 do not copy those Android rules into its client.
 
@@ -540,4 +540,4 @@ the UI; backlight-on may still show a clock lockscreen. Click the Auto text row
 mmc nodes alias one loop device, and cold enumeration otherwise misses the partition
 name needed by stock hotplug remounting. Cyrillic add/rename/delete are checked in
 `tests/integration/storage_check.py` (V2.57 only). USB export/eject remains unvalidated. See
-`docs/SETTINGS.md` and `docs/MEDIA_LIBRARY.md`; do not inject broad netlink broadcasts.
+`emulator/docs/settings.md` and `emulator/docs/media-library.md`; do not inject broad netlink broadcasts.

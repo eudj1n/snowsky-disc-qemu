@@ -2,7 +2,7 @@
 
 Experimental application and CLI orchestration in `experiments/disc_assistant/assistant/`.
 See the [prototype guide](../README.md) for setup, commands and acceptance, and the
-[implementation plan](../../../docs/ASSISTANT.md) for later voice/playback work.
+[implementation plan](../docs/roadmap.md) for later voice/playback work.
 
 | File | Responsibility |
 | --- | --- |
@@ -43,7 +43,7 @@ The official [typesense-python](https://github.com/typesense/typesense-python)
 2.0.0 AsyncClient is used only by library search; its transport closes on CLI exit.
 Aiohttp serves the web interface and bounded loopback speech adapters. Web always
 uses Whisper Server. `setup --all` installs the runtime and optional speech bundle;
-see [Piper and managed services](../../../docs/ASSISTANT_TTS.md). CLI/file STT may
+see [Piper and managed services](../docs/guides/tts.md). CLI/file STT may
 retain its explicit CLI backend. Piper runs in its own Python 3.11 container;
 optional host dependencies cover TOML editing, sample resampling and an explicit
 public CA bundle for model downloads.
@@ -62,7 +62,7 @@ releases TCP and disables reconnect; `/exit` releases local ownership. Unexpecte
 loss invalidates observations and pending commands. Reconnect performs handshake
 and fresh reads only; no selection, toggle or mode write is replayed. Search
 failures leave controls available. See the implemented
-[M2c contract](../../../docs/ASSISTANT_PLAYBACK.md#m2c-persistent-device-session).
+[M2c contract](../docs/architecture/playback.md#m2c-persistent-device-session).
 
 Existing one-shot commands keep their bounded connection lifecycle and JSON/exit
 status contract for scripts and cron. Their initial connection refusal is retried
@@ -71,7 +71,7 @@ not reconnected. They require the interactive process to release the shared
 ownership lock before device access. Offline search/index/status remain independent.
 The request/decision journal now retains bounded local evidence, including operation
 IDs and outcomes. It is not an IPC endpoint, replay mechanism or listening-history
-collector. See the [journal contract](../../../docs/ASSISTANT_HISTORY.md).
+collector. See the [journal contract](../docs/guides/history.md).
 
 Explicit continuous context has two named mutation phases, mode then selection;
 each allows at most one write and reports partial results. Controls never change
@@ -82,16 +82,16 @@ Russian and English metadata/aliases are searchable independently of the device'
 UI language. Typed play requests now use lexical ranking and fresh selection verification.
 The owner deferred dialogue/confirmation: `ask` launches the best result; `rank`
 shows the same ordering without playback. See the
-[command table](../../../docs/ASSISTANT_COMMANDS.md).
+[command table](../docs/guides/commands.md).
 
 `[language].locale = "ru"` is the initial default. `/language CODE` and startup
 `--language CODE` persist one locale for both interpretation and responses.
 `/language reset` stores the configured default. Old language lists migrate using
 their first entry. Literal language-switch commands use the same settings handler.
 Music names remain unrestricted; metadata version markers are independent of the
-interaction locale. See the [architecture](../../../docs/ASSISTANT_ARCHITECTURE.md).
+interaction locale. See the [architecture](../docs/architecture/pipeline.md).
 
-The reusable device core is now in [Controller](../../../docs/CONTROLLER_API.md):
+The reusable device core is now in [Controller](../../../controller/docs/api.md):
 receiver/reconnect, scan/state reduction, pagination, controls, mode readback and
 queue/selection verification. Assistant supplies storage ownership and policy;
 Controller imports no research/application modules. Legacy internal re-exports
@@ -104,10 +104,10 @@ Every traced result includes a `response` object with `code`, nullable localized
 commands share the policy; the journal records the generated reply and template
 provenance. Defaults are Russian replies and speech eligibility for problems only.
 `/language en` changes input/output together; `/response mode all` changes speech eligibility.
-No audio or dialogue is implemented. See the [response contract](../../../docs/ASSISTANT_RESPONSES.md).
+No audio or dialogue is implemented. See the [response contract](../docs/reference/responses.md).
 
 Community locales consist of command and response TOML catalogs. Follow the
-[contribution guide](../../../docs/ASSISTANT_LOCALES.md), then run `/locales` or the
+[contribution guide](../docs/reference/locales.md), then run `/locales` or the
 standalone validator. No runtime Python registry edits are required.
 
-The browser entry point is `run.sh web --bootstrap`; see [Disc Assistant Web](../../../docs/ASSISTANT_WEB.md). It owns the same device lock as the console.
+The browser entry point is `run.sh web --bootstrap`; see [Disc Assistant Web](../docs/guides/web.md). It owns the same device lock as the console.

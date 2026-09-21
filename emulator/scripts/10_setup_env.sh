@@ -3,7 +3,7 @@
 # under qemu-user. Idempotent: safe to re-run (e.g. after a container restart,
 # which clears mounts + binfmt).
 #
-# Encodes every non-obvious fix required to reach the main screen — see docs/EMULATION.md.
+# Encodes every non-obvious fix required to reach the main screen — see emulator/docs/emulation.md.
 set -euo pipefail
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"; source "$HERE/lib.sh"
 [ -d "$ROOTFS" ] || { err "no rootfs at $ROOTFS — run 00_extract_rootfs.sh first"; exit 1; }
@@ -44,7 +44,7 @@ cp "$REPO/emulator/shims/asound.cards" "$ROOTFS/etc/asound.cards" # x2000 card d
 printf '/lib/fbshim.so\n/lib/asndshim.so\n/lib/tinyshim.so\n' > "$ROOTFS/etc/ld.so.preload"   # guest ld.so reads this (LD_PRELOAD won't survive popen)
 
 # 2b) Enable physical-key handling: mq_player gates keys on a flag that isn't set headless.
-#     Patch the guard so injected event0 keys reach the dispatcher (docs/RE.md). KEYS_ENABLE=0 to skip.
+#     Patch the guard so injected event0 keys reach the dispatcher (research/docs/methods.md). KEYS_ENABLE=0 to skip.
 "$REPO/emulator/scripts/patch_keys.sh"
 bash "$REPO/emulator/scripts/15_controls.sh"
 

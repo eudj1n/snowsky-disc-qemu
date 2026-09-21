@@ -29,5 +29,5 @@ moved or retrained. Logical snapshot hashes include their source content; a path
 move alone does not change it. New command grammar does invalidate old command
 snapshots: rebuild explicitly and retrain an optional diagnostic model if needed.
 
-The existing [locale guide](../../../../docs/ASSISTANT_LOCALES.md) explains language
+The existing [locale guide](../../docs/reference/locales.md) explains language
 contributions. A new language does not require a training/reference dataset.

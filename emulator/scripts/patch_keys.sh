@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Exact-build guarded key-enable patch. Unknown binaries fail closed; see docs/PORTING.md.
+# Exact-build guarded key-enable patch. Unknown binaries fail closed; see firmware/docs/porting.md.
 # Full stock hash (normalizing only the one allowed patch) and PT_LOAD mapping are checked.
 set -euo pipefail
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"; source "$HERE/lib.sh"

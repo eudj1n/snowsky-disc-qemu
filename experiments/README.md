@@ -5,9 +5,9 @@ Their location does not imply equal maturity or extend firmware support.
 
 | Project | Status and verified scope | Start here |
 | --- | --- | --- |
-| Disc Assistant | Active text/voice application; software MVP accepted against stock V2.57. Quantified physical/speech acceptance remains separate. | [README](disc_assistant/README.md), [status](../docs/ASSISTANT_STATUS.md) |
-| Browser | Active TinyEMU/WASM prototype; experimental boot/UI evidence, separate from the supported qemu-user runtime. | [README](browser/README.md), [results](../docs/BROWSER.md) |
-| diskOS preview | Historical, unsupported source-built V2.40 preview; no recurring firmware acceptance gate. | [README](diskos/README.md), [results](../docs/DISKOS_PREVIEW.md) |
+| Disc Assistant | Active text/voice application; software MVP accepted against stock V2.57. Quantified physical/speech acceptance remains separate. | [README](disc_assistant/README.md), [status](disc_assistant/docs/status.md) |
+| Browser | Active TinyEMU/WASM prototype; experimental boot/UI evidence, separate from the supported qemu-user runtime. | [README](browser/README.md), [results](browser/docs/overview.md) |
+| diskOS preview | Historical, unsupported source-built V2.40 preview; no recurring firmware acceptance gate. | [README](diskos/README.md), [results](diskos/docs/preview.md) |
 
 Shared production-facing libraries remain outside this namespace. In particular,
 Controller must never import an experiment. Firmware analysis belongs in

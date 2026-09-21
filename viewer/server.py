@@ -17,7 +17,7 @@ the real stock UI from a browser on the host, no hardware.
   GET /events     SSE device snapshots on connect/change, with idle heartbeats
   GET /key?k=…    single press (volume_up|volume_down|play_pause|power), or safe ?code=<int>
 
-Framebuffer facts (see docs/EMULATION.md): fb0 is 360x1080x4 (three 360x360 BGRX
+Framebuffer facts (see emulator/docs/emulation.md): fb0 is 360x1080x4 (three 360x360 BGRX
 sub-buffers); mq_ui alternates drawing to buf0/buf1 and does NOT pan, so the live
 screen is the last-written sub-buffer, reported by fbshim in emu/fb-live (diff fallback
 for older shims).

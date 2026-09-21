@@ -2,7 +2,7 @@
 
 Scripts used to decompile the MIPS UI binaries (`mq_ui`, `mq_player`) from the rootfs.
 
-See [../docs/RE.md](../../docs/RE.md) for the deep-analysis playbook (method + findings per
+See [../docs/RE.md](../docs/methods.md) for the deep-analysis playbook (method + findings per
 direction: keys, audio, network, touch) and how to re-analyse a new firmware version.
 
 ## Reusing the built decompiler + project
@@ -40,7 +40,7 @@ After importing/analyzing `mq_ui`, the relevant existing helpers are:
 ```
 
 The resulting conditions and live acceptance are summarized in
-[MEDIA_LIBRARY.md](../../docs/MEDIA_LIBRARY.md). Use actual function entries with
+[MEDIA_LIBRARY.md](../../emulator/docs/media-library.md). Use actual function entries with
 `DecAt`; creating a function at a mid-function label can give misleading decompilation.
 
 ## The two facts that make xrefs easy
@@ -65,7 +65,7 @@ The resulting conditions and live acceptance are summarized in
   use `-readOnly -postScript FindText.java 'FAST_LL|SLOW_PC'` on V2.57 `mq_ui`,
   then `DecAt.java` at the reported function entries. UI translations also live
   in `/usr/project/config/ui/set_menu/others.json`; see
-  [Gain/filter evidence](../../docs/REMOTE_SETTINGS.md#gain-and-filter-labels-v257).
+  [Gain/filter evidence](../../docs/protocol/remote-settings.md#gain-and-filter-labels-v257).
 - `TouchDump.java` — the original touch-string finder (below).
 
 ## Setup notes (Ghidra 12.x)
@@ -117,7 +117,7 @@ Decompile arbitrary functions by address (pass addresses as script args):
   runs the UI refresh loop.
 - `FUN_0055da20` opens `/dev/input/event%d` (`O_RDWR|O_NONBLOCK`).
 - `FUN_0055db8c` is the touch read-cb — event grammar + coordinate scaling documented in
-  [../docs/TOUCH.md](../../docs/TOUCH.md).
+  [../docs/TOUCH.md](../../emulator/docs/touch.md).
 - Language switch (first-boot wizard) is in `mq_ui` `FUN_004776e4` — the `LANGUAGE` column is a
   0-based index (`0 zh · 1 tw · 2 en · …`); see `AGENTS.md`.
 
@@ -138,11 +138,11 @@ static xrefs don't link them — these were read from the decompiled bodies:
 - `FUN_004d9974` = `get_input_event` — opens `/dev/input/event%d` and matches names via
   `EVIOCGNAME`; under emulation this is the loop that hangs `mq_player` until `x2000_key` (event0)
   **and** the touch device (event1) both resolve. The FiiO Link / library dispatch and full
-  conclusion are in [../docs/PROTOCOL.md](../../docs/PROTOCOL.md).
+  conclusion are in [../docs/PROTOCOL.md](../../docs/protocol/protocol.md).
 
 ### Physical-key handler (event0) — `echo_sys_control.c`
 
-Traced with `RefsTo`/`DecAt` (full write-up + code table in [../docs/RE.md](../../docs/RE.md)):
+Traced with `RefsTo`/`DecAt` (full write-up + code table in [../docs/RE.md](../docs/methods.md)):
 
 - `FUN_004d9974` `echo_start_key_server` — opens `/dev/input/event%d`, spawns the reader.
 - `FUN_004d9840` `echo_loop_key` — reads 16-byte `input_event`; on `type==EV_KEY` calls
@@ -152,10 +152,10 @@ Traced with `RefsTo`/`DecAt` (full write-up + code table in [../docs/RE.md](../.
   play/pause, `0xfb/0xfc`=single volume +/−, `0x10a/0x10b`=double volume +/−,
   `0x107/0x106`=held volume +/− (GPIO-gated), `0x103/0x109`=screen sleep/wake,
   `0x108`=standby/shutdown. `0x10c/0x10d` only log. Volume gestures honor app assignments;
-  see [../docs/KEYS.md](../../docs/KEYS.md) for corrected semantics and runtime evidence.
+  see [../docs/KEYS.md](../../emulator/docs/keys.md) for corrected semantics and runtime evidence.
   Gated by `DAT_0082e9c1`
   (key-enable, 0 under emulation) — the guard `lbu v0,65(s2)` at `0x004de70c` is patched to
-  `li v0,1` by `emulator/scripts/patch_keys.sh` so keys dispatch (see [../docs/RE.md](../../docs/RE.md)).
+  `li v0,1` by `emulator/scripts/patch_keys.sh` so keys dispatch (see [../docs/RE.md](../docs/methods.md)).
 
 ## Tooling on this machine
 

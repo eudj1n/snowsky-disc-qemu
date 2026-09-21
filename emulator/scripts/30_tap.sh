@@ -7,7 +7,7 @@
 #
 # Coordinates are the ones you SEE (top-left origin). They are flipped to raw touch
 # coordinates internally (panel is 180deg-rotated). Press and release are separated
-# in time so LVGL samples the press before the release (see docs/TOUCH.md).
+# in time so LVGL samples the press before the release (see emulator/docs/touch.md).
 set -euo pipefail
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"; source "$HERE/lib.sh"
 DX="${1:?usage: 30_tap.sh <x> <y>}"; DY="${2:?usage: 30_tap.sh <x> <y>}"

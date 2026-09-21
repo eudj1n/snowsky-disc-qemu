@@ -31,8 +31,8 @@ new dataset version. Do not edit this test set after viewing its model results.
 Run from the repository root:
 
 ```sh
-python3 -m research.disc_assistant.assistant.nlu.evaluation.dataset validate \
-  research/disc_assistant/assistant/nlu/data/datasets/commands-v2
+python3 -m experiments.disc_assistant.assistant.nlu.evaluation.dataset validate \
+  experiments/disc_assistant/assistant/nlu/data/datasets/commands-v2
 ```
 
 The class-balanced and ordinary linear comparisons use C=0.1/1/10, score thresholds

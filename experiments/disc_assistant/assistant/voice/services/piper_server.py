@@ -1,7 +1,7 @@
 """Private Piper worker. Explicit voices only; no downloads or arbitrary file API.
 
 Piper is a separate GPL-3.0 component. This adapter source is covered by the
-repository license; see docs/ASSISTANT_TTS.md for dependency/model notices.
+repository license; see experiments/disc_assistant/docs/guides/tts.md for dependency/model notices.
 """
 import argparse
 import hashlib

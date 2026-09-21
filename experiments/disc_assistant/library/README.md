@@ -80,4 +80,4 @@ Schema 4 / lexical-v5 add a derived SHA-256 `artist_key` for exact raw-credit
 filtering before Typesense top-50 retrieval. This prevents unrelated artist names
 inside titles from crowding out a requested artist. The full original credit and
 semicolon member projection remain unchanged. Run `/index`, not `/sync`. The
-SQLite schema remains version 1. Compare the [measured variants](../../../docs/ASSISTANT_REVIEW_EVALUATION.md).
+SQLite schema remains version 1. Compare the [measured variants](../docs/reports/2026-09-18-review-evaluation.md).

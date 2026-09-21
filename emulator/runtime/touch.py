@@ -46,7 +46,7 @@ class Touch:
     def tap(self, dx, dy):
         # A plain click: the read-cb drains all queued events per poll and reports the
         # NET state, so press+release in one batch = no tap. Hold ~0.3s so LVGL samples
-        # the pressed state first (see docs/TOUCH.md).
+        # the pressed state first (see emulator/docs/touch.md).
         self.press(dx, dy)
         time.sleep(0.30)
         self.release()
