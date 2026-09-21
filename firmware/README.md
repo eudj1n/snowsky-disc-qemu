@@ -3,15 +3,15 @@
 The firmware is **not** stored in this repository. Download it yourself from FiiO.
 
 The default comes from [active-version](active-version); runtime selection and
-controller compatibility are described in [firmware profiles](../docs/FIRMWARE_PROFILES.md).
+controller compatibility are described in [firmware profiles](docs/firmware-profiles.md).
 GitHub integration downloads use only that profile's named secret
 (currently `FIRMWARE_V257_URL`, passed to the downloader as `FIRMWARE_URL`), never a committed direct URL. Legacy V2.40 local tooling
 still understands `FIRMWARE_V240_URL`, but hosted CI does not receive it. Runtime profiles:
-[v2.40.json](v2.40.json), [v2.57.json](v2.57.json). See [CI policy](../docs/CI.md).
+[v2.40.json](v2.40.json), [v2.57.json](v2.57.json). See [CI policy](../docs/development/ci.md).
 
-The daily [OTA monitor](../docs/OTA.md) opens a tracking Issue for a new vendor
+The daily [OTA monitor](docs/ota.md) opens a tracking Issue for a new vendor
 version. It does not download the full archive or enable that firmware for runtime
-use. Active support follows the [single-firmware policy](../docs/PORTING.md#support-policy--one-active-firmware).
+use. Active support follows the [single-firmware policy](docs/porting.md#support-policy--one-active-firmware).
 V2.57 is active; the V2.40 profile remains temporarily pending legacy cleanup.
 
 ## Where to get it

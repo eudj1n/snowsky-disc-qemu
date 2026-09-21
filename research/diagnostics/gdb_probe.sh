@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Runtime inspection of mq_player via qemu-user's gdbstub — observe LIVE state before patching.
 # (Lesson from the audio task: static decompilation alone whack-a-moles a hardware state machine;
-#  read the actual globals/branches at runtime instead. See docs/RE.md.)
+#  read the actual globals/branches at runtime instead. See research/docs/methods.md.)
 #
 # Boots mq_ui normally, launches mq_player under the gdbstub (explicit `qemu -g`, so QEMU_GDB is
 # NOT inherited by its popen children — they run via binfmt as usual), then runs gdb-multiarch with

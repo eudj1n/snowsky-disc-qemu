@@ -45,3 +45,5 @@ in the wheel. Emulator/firmware acceptance belongs to the integration repository
 The wheel includes the bridge inspector HTML and PEP 561 type marker. Before a
 repository split, copy this component with its tests and license, then keep the
 installed-wheel check in the consuming repository.
+
+See the [Controller documentation](docs/README.md) for the API and optional bridges.

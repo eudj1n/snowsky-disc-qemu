@@ -3,7 +3,7 @@
 
 Mutations return the raw reply, not a success assertion: stock can return empty
 200 on failure. Serialize operations and verify with a subsequent read. No retry,
-recursive deletion, reset, or firmware access is provided. See docs/HTTP_API.md.
+recursive deletion, reset, or firmware access is provided. See docs/protocol/http-api.md.
 """
 import argparse
 from dataclasses import dataclass

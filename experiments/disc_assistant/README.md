@@ -1,22 +1,22 @@
 # Disc Assistant research prototype
 
-Start with the [command quick guide](../../docs/ASSISTANT_QUICK_GUIDE.md).
+Start with the [command quick guide](docs/guides/quick-guide.md).
 Language understanding is organized under [assistant/nlu](assistant/nlu/README.md).
 
 
 **Software MVP accepted (2026-09-19):** all 64 declared emulator scenarios passed.
-See [acceptance evidence and reproduction](../../docs/ASSISTANT_MVP_ACCEPTANCE.md).
+See [acceptance evidence and reproduction](docs/reports/2026-09-19-mvp-acceptance.md).
 Physical-device and human-speech/performance acceptance remain separate follow-ups.
 
 Desktop prototype: **device catalog → SQLite → Typesense → ranked text commands → playback**.
 The experiment lives entirely here until it is ready for promotion into the main
-project. The [plan](../../docs/ASSISTANT.md) describes the wider assistant/dock work.
+project. The [plan](docs/roadmap.md) describes the wider assistant/dock work.
 It runs independently of the emulator and uses the shared
-[Controller session/state API](../../docs/CONTROLLER_API.md) and guarded device helpers.
+[Controller session/state API](../../controller/docs/api.md) and guarded device helpers.
 Language, catalog/search policy and the request journal remain in this prototype.
 
 - [assistant/](assistant/README.md): configuration, one-shot CLI and a persistent interactive session.
-- [Disc Assistant Web](../../docs/ASSISTANT_WEB.md): separate browser UI, text/microphone input and optional Piper replies.
+- [Disc Assistant Web](docs/guides/web.md): separate browser UI, text/microphone input and optional Piper replies.
 - [library/](library/README.md): complete catalog reads, snapshot storage and search.
 - [check.py](check.py): disposable acceptance with synthetic TCP/HTTP servers and a
   real Typesense container. No firmware or physical device is needed.
@@ -24,13 +24,13 @@ Language, catalog/search policy and the request journal remain in this prototype
 `search` returns metadata candidates. `rank` explains the ordering for a typed
 `Включи …` / `Play …` command without playback; `ask` launches its best matching
 artist or track after fresh device checks. The owner deferred interactive choice:
-there is no confirmation prompt, including for fuzzy matches. [Browser text/microphone input](../../docs/ASSISTANT_WEB.md) is available with
+there is no confirmation prompt, including for fuzzy matches. [Browser text/microphone input](docs/guides/web.md) is available with
 `./experiments/disc_assistant/run.sh web --bootstrap`. The owner reports successful
 microphone play/stop on a physical player; quantified acceptance, listening history
 and lyrics remain pending.
-See the [command table and ranking policy](../../docs/ASSISTANT_COMMANDS.md).
-Localized [user responses](../../docs/ASSISTANT_RESPONSES.md) include text, speech
-eligibility and reserved dialogue metadata. [New locales](../../docs/ASSISTANT_LOCALES.md)
+See the [command table and ranking policy](docs/guides/commands.md).
+Localized [user responses](docs/reference/responses.md) include text, speech
+eligibility and reserved dialogue metadata. [New locales](docs/reference/locales.md)
 can be contributed as TOML catalogs without runtime Python changes.
 
 ## Run on a computer
@@ -46,11 +46,11 @@ activation or exported secret is needed. From the repository root:
 ```
 
 For Typesense exit 139 on vendor kernels without `/proc/self/io`, use the explicit
-[I/O accounting compatibility option](../../docs/ASSISTANT_TYPESENSE.md).
+[I/O accounting compatibility option](docs/guides/typesense.md).
 
 To compare Whisper decoder/thread/model choices on fixed recordings without
-controlling a player, use [speech-benchmark](../../docs/ASSISTANT_SPEECH_BENCHMARK.md).
-Uncertain playback results now include [queue mismatch evidence](../../docs/ASSISTANT_QUEUE_DIAGNOSTICS.md)
+controlling a player, use [speech-benchmark](docs/evaluation/speech-benchmark.md).
+Uncertain playback results now include [queue mismatch evidence](docs/guides/queue-diagnostics.md)
 when a queue guard fails.
 
 `setup` creates `assistant/.venv` if missing, installs the pinned requirements,
@@ -74,7 +74,7 @@ number. Both HTTP and TCP must point to the same device.
 For microphone input and spoken replies, use `setup --all`, then
 `./experiments/disc_assistant/run.sh web --bootstrap`. Web always uses Whisper Server.
 Enable sound on the page; choose All available replies to hear successful controls.
-See [speech setup and lifecycle](../../docs/ASSISTANT_TTS.md) for models, services,
+See [speech setup and lifecycle](docs/guides/tts.md) for models, services,
 config backup and external engine options.
 
 Start the complete text-console flow:
@@ -122,7 +122,7 @@ To explicitly select and persist English at startup:
 ./experiments/disc_assistant/run.sh --language en listen
 ```
 
-See [architecture and migration](../../docs/ASSISTANT_ARCHITECTURE.md) for interpreter,
+See [architecture and migration](docs/architecture/pipeline.md) for interpreter,
 speech provider and single-locale contracts. Music metadata remains multilingual.
 
 File-based voice input is now available before microphone work:
@@ -138,7 +138,7 @@ Install/configure the external STT model/executable first; TTS currently uses
 macOS `say`. Only `ask` executes the command. In the console use `/transcribe FILE`,
 `/rank --audio FILE` or `/ask --audio FILE`. Corpus generation, evaluation,
 format limits and known recognition errors are documented in
-[ASSISTANT_VOICE.md](../../docs/ASSISTANT_VOICE.md). No microphone or spoken reply
+[ASSISTANT_VOICE.md](docs/guides/voice.md). No microphone or spoken reply
 delivery is implemented yet.
 
 The terminal uses `prompt_toolkit`: Up/Down recall, Ctrl-R history search, Tab
@@ -153,7 +153,7 @@ After updating an existing checkout, rerun `run.sh setup` to install new pinned
 dependencies, then restart `listen`; existing config and keys are preserved.
 Prompt, input, results and errors use separate colors. The optional `[terminal]`
 section customizes styles; `NO_COLOR=1` disables colors. Font family/size belong
-to your terminal's settings. See [terminal appearance](../../docs/ASSISTANT_COMMANDS.md#terminal-appearance).
+to your terminal's settings. See [terminal appearance](docs/guides/commands.md#terminal-appearance).
 
 Use `/debug on` to stream request stages and search diagnostics, `/debug off` to
 stop, or launch with `run.sh --debug listen`. For a playback-free diagnosis, use
@@ -161,7 +161,7 @@ stop, or launch with `run.sh --debug listen`. For a playback-free diagnosis, use
 the JSON result on stdout and traces on stderr. Traced results include
 `timing.total_ms` and `request_id` even with journal collection disabled; IDs alone
 do not guarantee saved history. Debug is session-only and follows the `debug`
-terminal color. See [timing boundaries and trace fields](../../docs/ASSISTANT_COMMANDS.md#timing-and-live-debug-traces).
+terminal color. See [timing boundaries and trace fields](docs/guides/commands.md#timing-and-live-debug-traces).
 
 The application owns one TCP socket and continuously receives events, including
 while waiting for input or doing HTTP/search work. Unexpected disconnects trigger
@@ -258,7 +258,7 @@ Controls and queue observation bypass search and catalog storage:
 claimed. Already-satisfied pause/resume/stop sends nothing. Unknown current state
 blocks blind toggles. Previous selects the preceding queue row at any elapsed
 position; first row is a no-op. Native Controller previous retains its restart shortcut.
-See the [command contract](../../docs/ASSISTANT_COMMANDS.md).
+See the [command contract](docs/guides/commands.md).
 
 To continue through the end of the selected album/artist context, opt in in your
 personal TOML (existing configs preserve the player's mode):
@@ -373,7 +373,7 @@ One-shot `run.sh history` has the same commands. For cron attribution, run
 `run.sh --source scheduled --language en ask 'Pause'`. Collection defaults to enabled with
 90-day retention and 10,000 completed requests. Configure `[journal].enabled`,
 `retention_days` and `max_requests` in TOML. Restart the console after config/code
-updates. See the [journal contract](../../docs/ASSISTANT_HISTORY.md) for migration,
+updates. See the [journal contract](docs/guides/history.md) for migration,
 bounded evidence, export, retention and interrupted-operation semantics.
 
 ## Verification and promotion
@@ -427,7 +427,7 @@ bash ci/assistant.sh /absolute/path/to/main_os/ota_v257 /tmp/assistant-run-01
 
 This opt-in runner creates a disposable guest/search stack, runs 46 RU/EN cases
 with independent state/queue checks, and retains reports/screenshots in the new
-output directory. See [scenario instructions](../../docs/ASSISTANT_EMULATOR_ACCEPTANCE.md)
+output directory. See [scenario instructions](docs/evaluation/emulator-acceptance.md)
 for selected cases, known failures and adding fixtures. It does not use personal
 settings, libraries or the physical player.
 
@@ -481,18 +481,18 @@ It uses explicit isolated dependencies/model preparation and read-only reports;
 normal `run.sh start`/`ask` behavior and requirements are unchanged. The guide
 contains reproduction commands, measured results and remaining limitations.
 
-The [command catalog and explanation preview](../../docs/ASSISTANT_COMMAND_CATALOG.md)
+The [command catalog and explanation preview](docs/reference/command-catalog.md)
 add `run.sh explain TEXT` / `/explain TEXT` and `commands [rebuild|import FILE]`.
 They keep locale examples, reference vectors and optional trained text classifiers
 in versioned Assistant SQLite snapshots. They require no new runtime dependencies
 and never change the executing interpreter. The supervised study and import
 instructions are linked from that guide.
 
-For reviewed command data and training, see the [v2 workflow](../../docs/ASSISTANT_NLU_DATA.md):
+For reviewed command data and training, see the [v2 workflow](docs/evaluation/nlu-data.md):
 private history queues, explicit annotation, immutable dataset snapshots and a
 four-way supervised comparison. Current model results remain diagnostic; live
 execution and independent human/Pi acceptance remain separate steps.
-[Independent sources and optional shadow comparison](../../docs/ASSISTANT_INTERPRETATION_SOURCES.md)
+[Independent sources and optional shadow comparison](docs/architecture/interpretation-sources.md)
 are now implemented: `/shadow on` records comparisons, `/debug on` displays them,
 and `/explain TEXT` previews each source without execution. The primary still
 executes commands. MVP scope is one action per request; complex commands are deferred.
@@ -511,9 +511,9 @@ Then run the following from a shell; no runtime config/device is needed:
 The new private directory contains readable/JSON reports, source evidence and a
 pending annotation queue. `--review-scope all` includes agreeing inputs;
 `--reviewed PATH` computes quality from explicit reviewed annotations.
-See [workflow and denominators](../../docs/ASSISTANT_SHADOW_REPORTS.md).
+See [workflow and denominators](docs/evaluation/shadow-reports.md).
 
-[The MVP](../../docs/ASSISTANT_MVP.md) is input through execution on DISC with
+[The MVP](docs/reference/mvp.md) is input through execution on DISC with
 agreed error limits. First measure the baseline, then agree thresholds. The
 [MVP checklist](https://github.com/eudj1n/snowsky-disc-qemu/issues/21) distinguishes
 implemented work from acceptance; [AGENTS.md](AGENTS.md) supports session handoff.

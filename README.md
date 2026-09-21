@@ -6,7 +6,7 @@ The real stock interface, media library and audio decoder run under `qemu-user`.
 Browse an SD card, play a track, navigate by touch and operate the player's buttons
 without a physical device.
 
-[Quick start](#run-the-emulator) · [Viewer](#viewer) · [Controller](#controller) · [Disc Assistant](#experimental-disc-assistant) · [FiiO Control compatibility](#fiio-control-compatibility) · [Source releases](https://github.com/eudj1n/snowsky-disc-qemu/releases) · [Validation & screenshots](docs/STATUS.md)
+[Documentation](docs/README.md) · [Quick start](#run-the-emulator) · [Viewer](#viewer) · [Controller](#controller) · [Disc Assistant](#experimental-disc-assistant) · [FiiO Control compatibility](#fiio-control-compatibility) · [Source releases](https://github.com/eudj1n/snowsky-disc-qemu/releases) · [Validation & screenshots](emulator/docs/status.md)
 
 <table>
   <tr>
@@ -71,7 +71,7 @@ cd snowsky-disc-qemu
 
 The reviewed default is selected by `firmware/active-version` (currently V2.57);
 `FW_VERSION` in `.env` can pin an installation to a reviewed version. See
-[firmware profiles](docs/FIRMWARE_PROFILES.md). Setup verifies and extracts the firmware, builds the shims,
+[firmware profiles](firmware/docs/firmware-profiles.md). Setup verifies and extracts the firmware, builds the shims,
 prepares the emulated SD card, and saves the OTA path in `.env`. Boot starts the
 firmware processes and writes screen captures to `shots/`.
 
@@ -104,7 +104,7 @@ For direct Compose setup, copy `.env.example` to `.env`, set `OTA_DIR`, then run
 simulated hardware interfaces. USB storage/DAC, Bluetooth audio, native DSD/DoP and
 hardware-accurate timing remain unvalidated. Docker runs the emulator container
 privileged for its mounts, message queues and MIPS binfmt setup; services bind to
-localhost. See [emulation internals](docs/EMULATION.md) and [validation limits](docs/STATUS.md).
+localhost. See [emulation internals](emulator/docs/emulation.md) and [validation limits](emulator/docs/status.md).
 
 ## Viewer
 
@@ -135,13 +135,13 @@ screens without a photo asset or manual alignment.
 
 The headphone control enables browser audio; USB simulates power detection on
 V2.57, preventing idle power-off while connected (no USB data/DAC). See
-[power behavior](docs/IDLE_POWER.md). SD
+[power behavior](emulator/docs/idle-power.md). SD
 removal performs an actual guest unmount and refuses a busy card. These behaviors
-and setup options are covered in the **[viewer guide](docs/VIEWER.md)**.
+and setup options are covered in the **[viewer guide](viewer/docs/usage.md)**.
 
 ## Experimental: firmware running entirely in the browser
 
-The [browser experiment](docs/BROWSER.md) runs V2.57 locally through
+The [browser experiment](experiments/browser/docs/overview.md) runs V2.57 locally through
 TinyEMU/WebAssembly → RISC-V Linux → qemu-mipsel. A static server supplies the
 files; the browser executes the firmware. Docker is needed to build the bundle.
 
@@ -156,7 +156,7 @@ Start/Stop and Save screen, alongside the optional Prototype console.
 The prototype supports the stock menu, taps, swipes, Back and screen sleep/wake.
 Audio, SD/media import and saved state are not connected; lockscreen stability
 remains an open research item. It has a separate build/run command under
-`experiments/browser/`. See the [reproduction guide and limitations](docs/BROWSER.md).
+`experiments/browser/`. See the [reproduction guide and limitations](experiments/browser/docs/overview.md).
 
 ## Experimental: Disc Assistant
 
@@ -186,11 +186,11 @@ HTTP 12113); a physical DISC normally uses HTTP 12103. Close other control clien
 before connecting. The Assistant has its own launcher and optional services;
 the root emulator launcher does not start it. See the
 [setup and console guide](experiments/disc_assistant/README.md),
-[web guide](docs/ASSISTANT_WEB.md) and [speech setup](docs/ASSISTANT_TTS.md).
+[web guide](experiments/disc_assistant/docs/guides/web.md) and [speech setup](experiments/disc_assistant/docs/guides/tts.md).
 
 **Software MVP accepted on 2026-09-19:** all 64 declared V2.57 emulator text
 scenarios passed (35 RU / 29 EN), including 19 no-mutation cases with zero
-observed mutation writes. The [acceptance report](docs/ASSISTANT_MVP_ACCEPTANCE.md)
+observed mutation writes. The [acceptance report](experiments/disc_assistant/docs/reports/2026-09-19-mvp-acceptance.md)
 records the evidence and reproduction commands. This known regression cohort
 does not establish human-speech accuracy or hardware performance.
 
@@ -203,7 +203,7 @@ and [speech quality/platform performance](https://github.com/eudj1n/snowsky-disc
 
 ## Historical experiment: diskOS UI preview
 
-The [unsupported diskOS preview](docs/DISKOS_PREVIEW.md) preserves a source-built
+The [unsupported diskOS preview](experiments/diskos/docs/preview.md) preserves a source-built
 UI running over the stock V2.40 backend. The 2026-09-13 experiment verified touch
 navigation, library scanning and WAV playback with PCM comparison. Its build
 helpers and isolated launcher live in `experiments/diskos/`; known playback/font
@@ -228,7 +228,7 @@ The WebSocket client and WebSocket bridge additionally require `aiohttp`.
 | **Settings** | Volume, gain, filters, channel balance, basic PEQ, work modes and codec preferences. |
 | **Lock screen** | Custom image uploads and supported system/custom theme metadata. |
 
-See the **[controller capability summary](docs/DISC_CAPABILITIES.md)** for verified
+See the **[controller capability summary](docs/protocol/disc-capabilities.md)** for verified
 operations, firmware limits and remaining research.
 
 From the repository root, query settings, tracks and current playback without
@@ -262,8 +262,8 @@ docker compose --profile wsbridge stop wsbridge
 The bridge is an explicit adapter to the stock service. It runs as a separate,
 optional container. Disconnect the inspector before using another control client:
 the stock TCP service accepts one client at a time.
-See [network setup](docs/NETWORK.md), [WebSocket bridge](docs/WEBSOCKET.md),
-and [protocol reference](docs/PROTOCOL.md).
+See [network setup](emulator/docs/network.md), [WebSocket bridge](controller/docs/websocket.md),
+and [protocol reference](docs/protocol/protocol.md).
 
 </details>
 
@@ -275,7 +275,7 @@ the host, connected, opened the emulator's media library and found it again afte
 a confirmed disconnect. The owner reports FiiO Control **4.6.0** for these tests;
 the emulator runs DISC **V2.57**.
 
-The [LAN bridge setup](docs/DISCOVERY.md) forwards the stock TCP/HTTP services and
+The [LAN bridge setup](controller/docs/discovery.md) forwards the stock TCP/HTTP services and
 announces the emulator on a trusted LAN. It requires an explicit phone IP allowlist
 and a time limit because the stock APIs have no authentication. Normal startup
 remains localhost-only. The tested phone connection uses TCP/HTTP directly.
@@ -284,7 +284,7 @@ This verifies discovery, connection and library access. Full app coverage,
 background reconnect and Android interoperability remain unvalidated. Captures
 from FiiO Control connected to a **physical DISC** additionally document playback,
 library, settings and theme workflows; their evidence and implementation status
-are recorded separately in the [FiiO Control research](docs/FIIO_CONTROL_APP.md).
+are recorded separately in the [FiiO Control research](research/docs/reports/fiio-control-app.md).
 
 ## Firmware support & development
 
@@ -298,9 +298,9 @@ from current code is a separate task. The historical `v2.40` release is retained
 The existing `v2.57` is a **pre-release snapshot**; the eventual stable V2.57 release
 will use a new name such as `v2.57-r1`. Hosted firmware CI runs only active V2.57.
 
-A daily [OTA monitor](docs/OTA.md) creates one tracking Issue for each newly detected
+A daily [OTA monitor](firmware/docs/ota.md) creates one tracking Issue for each newly detected
 main-OS/recovery pair. Firmware analysis, support PRs, release preparation and Issue
-closure remain manual. See the [porting process](docs/PORTING.md).
+closure remain manual. See the [porting process](firmware/docs/porting.md).
 
 <details>
 <summary><b>Existing installations and switching firmware</b></summary>
@@ -319,25 +319,25 @@ preserve the previous version's final validated snapshot in a source release.
 Releases may also ship improvements before the next vendor update; emulator
 revisions against the same firmware use tags such as `v2.40-r1`.
 Firmware-free CI and clean-volume integration for the active firmware provide release
-evidence. See [CI & release gates](docs/CI.md), [release notes](https://github.com/eudj1n/snowsky-disc-qemu/releases)
+evidence. See [CI & release gates](docs/development/ci.md), [release notes](https://github.com/eudj1n/snowsky-disc-qemu/releases)
 and [CHANGELOG.md](CHANGELOG.md).
 
 ## Documentation & source map
 
-See [repository components and Python entry points](docs/REPOSITORY.md) for the
+See [repository components and Python entry points](docs/architecture/repository.md) for the
 source layout, dependency boundaries and test locations.
 
 | Area | Start here | Source |
 | --- | --- | --- |
-| **Emulator** | [How it works](docs/EMULATION.md) · [Current results](docs/STATUS.md) | `run.sh`, `emulator/scripts/`, `emulator/shims/`, `docker/` |
-| **Viewer** | [Viewer guide](docs/VIEWER.md) · [Touch](docs/TOUCH.md) · [Buttons](docs/KEYS.md) | `viewer/server.py`, `viewer/static/` |
-| **Media** | [Audio](docs/AUDIO.md) · [Library](docs/MEDIA_LIBRARY.md) · [Settings](docs/SETTINGS.md) | `emulator/sdcard/`, `emulator/runtime/audio.py` |
-| **Controller** | [Capabilities](docs/DISC_CAPABILITIES.md) · [Network](docs/NETWORK.md) · [Protocol](docs/PROTOCOL.md) · [WebSocket](docs/WEBSOCKET.md) · [Opt-in phone LAN bridge](docs/DISCOVERY.md) | `controller/fiio_link.py`, `controller/bridge/ws_bridge.py`, `controller/bridge/lan_bridge.py` |
-| **Firmware research** | [Acquisition](firmware/README.md) · [Porting](docs/PORTING.md) · [Reverse engineering](docs/RE.md) | `firmware/`, `research/ghidra/` |
-| **Browser experiment** | [Build, results and next milestone](docs/BROWSER.md) | `experiments/browser/`, `experiments/browser/tests/test_browser_*.js` |
-| **Disc Assistant experiment** | [Setup](experiments/disc_assistant/README.md) · [Architecture](docs/ASSISTANT_ARCHITECTURE.md) · [Accepted software MVP](docs/ASSISTANT_MVP_ACCEPTANCE.md) | `experiments/disc_assistant/`, shared `controller/` API |
-| **Historical diskOS experiment** | [Preview results, limitations and status](docs/DISKOS_PREVIEW.md) | `experiments/diskos/` |
-| **Contributing** | [CI](docs/CI.md) · [Agent instructions](AGENTS.md) | `ci/`, `.github/workflows/` |
+| **Emulator** | [How it works](emulator/docs/emulation.md) · [Current results](emulator/docs/status.md) | `run.sh`, `emulator/scripts/`, `emulator/shims/`, `docker/` |
+| **Viewer** | [Viewer guide](viewer/docs/usage.md) · [Touch](emulator/docs/touch.md) · [Buttons](emulator/docs/keys.md) | `viewer/server.py`, `viewer/static/` |
+| **Media** | [Audio](emulator/docs/audio.md) · [Library](emulator/docs/media-library.md) · [Settings](emulator/docs/settings.md) | `emulator/sdcard/`, `emulator/runtime/audio.py` |
+| **Controller** | [Capabilities](docs/protocol/disc-capabilities.md) · [Network](emulator/docs/network.md) · [Protocol](docs/protocol/protocol.md) · [WebSocket](controller/docs/websocket.md) · [Opt-in phone LAN bridge](controller/docs/discovery.md) | `controller/fiio_link.py`, `controller/bridge/ws_bridge.py`, `controller/bridge/lan_bridge.py` |
+| **Firmware research** | [Acquisition](firmware/README.md) · [Porting](firmware/docs/porting.md) · [Reverse engineering](research/docs/methods.md) | `firmware/`, `research/ghidra/` |
+| **Browser experiment** | [Build, results and next milestone](experiments/browser/docs/overview.md) | `experiments/browser/`, `experiments/browser/tests/test_browser_*.js` |
+| **Disc Assistant experiment** | [Setup](experiments/disc_assistant/README.md) · [Architecture](experiments/disc_assistant/docs/architecture/pipeline.md) · [Accepted software MVP](experiments/disc_assistant/docs/reports/2026-09-19-mvp-acceptance.md) | `experiments/disc_assistant/`, shared `controller/` API |
+| **Historical diskOS experiment** | [Preview results, limitations and status](experiments/diskos/docs/preview.md) | `experiments/diskos/` |
+| **Contributing** | [CI](docs/development/ci.md) · [Agent instructions](AGENTS.md) | `ci/`, `.github/workflows/` |
 
 ## License & scope
 

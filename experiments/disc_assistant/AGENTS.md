@@ -8,12 +8,12 @@ Conversation may be Russian; **tracked documentation and comments are English**.
 
 Issue #27 / `codex/assistant-contextual-voice` adds favorites, now-playing,
 configurable volume and guarded album/artist context ranking. Read
-`../../docs/ASSISTANT_QUICK_GUIDE.md` and the latest status before continuing.
+`docs/guides/quick-guide.md` and the latest status before continuing.
 Working NLU now lives in `assistant/nlu`; optional evaluation tools are in
 `assistant/nlu/evaluation` and data/references in `assistant/nlu/data`.
 Locale TOML stays in `assistant/locales`; command templates contain no training
 examples. Learned models remain shadow-only and frozen corpus/report bytes are
-preserved. Follow `../../docs/PYTHON_QUALITY_REVIEW.md` for the requested quality
+preserved. Follow `../../docs/development/reports/2026-09-21-python-quality.md` for the requested quality
 review and possible future Controller extraction; no extraction is performed.
 
 ## Product boundary updated 2026-09-19: software MVP accepted
@@ -22,7 +22,7 @@ The owner explicitly accepted **software MVP against the stock emulator**, and
 confirmed that the existing reproducible 64-case run suffices. Close/retain
 [MVP #21](https://github.com/eudj1n/snowsky-disc-qemu/issues/21) as completed within
 that scope; do not make new audio cohorts, physical hardware or performance
-optimization prerequisites for it. Read `../../docs/ASSISTANT_MVP_ACCEPTANCE.md`.
+optimization prerequisites for it. Read `docs/reports/2026-09-19-mvp-acceptance.md`.
 
 Accepted candidate `48477e8`: 64/64 manifest-v7 text scenarios (35 RU / 29 EN),
 19 no-mutation cases with zero observed writes; 192 Controller, 354 prototype,
@@ -57,7 +57,7 @@ on 2026-09-19). Piper replies honor response.speak and explicit per-tab sound op
 failure never changes/replays a command; cache and journal preserve voice hashes.
 `voice/text.py` is the identity TTS-only preparation hook; do not add blanket
 transliteration or change frozen samples without a separate pronunciation study.
-See `../../docs/ASSISTANT_WEB.md` and `../../docs/ASSISTANT_TTS.md`.
+See `docs/guides/web.md` and `docs/guides/tts.md`.
 The owner reports physical microphone play/stop success; representative quantified
 RU/EN acceptance remains pending. Initial isolated-word Piper → base round trip
 misrecognized both commands; do not present this plumbing check as accuracy.
@@ -80,21 +80,21 @@ Docker overhead or a model-quality result.
 Orange Pi: the owner confirmed `/proc/self/io` is absent on the current Armbian
 kernel, matching the trigger in their Typesense issue #2998. The opt-in
 `[typesense].io_accounting_compat` wrapper and diagnostics are documented in
-`../../docs/ASSISTANT_TYPESENSE.md`. The owner subsequently confirmed working
+`docs/guides/typesense.md`. The owner subsequently confirmed working
 search on the board; one voice trace took 13.47 seconds and ended uncertain during
 queue verification despite matching artist playback. See current status for
 timings and next diagnostic work. Do not infer quantified MVP acceptance or
 Docker performance overhead; fallback process I/O metrics are zeros.
 
 Queue guard failures now carry `confirmation.queue` with the actual failing read
-and failed fields; see `../../docs/ASSISTANT_QUEUE_DIAGNOSTICS.md`. This is evidence
+and failed fields; see `docs/guides/queue-diagnostics.md`. This is evidence
 only, without relaxed guards or retry. Keep initial `last_observed` separate from
 the subsequent queue read when diagnosing uncertain playback.
 
 `run.sh speech-benchmark` now compares frozen WAVs in sequential disposable Whisper
 servers (beam5/greedy, thread counts, optional existing models). No device or search
 access; private output contains reusable samples, hashes and labelled-only scores.
-See `../../docs/ASSISTANT_SPEECH_BENCHMARK.md`. The benchmark leaves production decoder/journal
+See `docs/evaluation/speech-benchmark.md`. The benchmark leaves production decoder/journal
 behavior unchanged; command pacing is the separate follow-up above. Initial
 352-test and native Docker plumbing checks passed; the owner's base-model latency
 pilot is recorded in current status, with transcript quality still unreviewed. The historical Controller WebSocket
@@ -106,17 +106,17 @@ one reference model is allowed, `--threads` is rejected and `--server-threads` i
 only operator-declared metadata; weights/build/threads are not server-attested.
 Restart the external server explicitly between thread/model comparisons.
 
-Start with `../../docs/ASSISTANT_STATUS.md`: current review follow-up and evidence.
+Start with `docs/status.md`: current review follow-up and evidence.
 The owner authorized five sequential increments, each committed and pushed.
 
-- `../../docs/ASSISTANT_BASELINE.md`: private bound case set (30 RU / 21 EN),
+- `docs/evaluation/physical-baseline.md`: private bound case set (30 RU / 21 EN),
   `baselines/my-player-text-v2/` beneath configured data_dir. Media/gold are frozen;
   physical RU-01–19 are recorded; continue at RU-21 (RU-20 locale switch is last).
   RU-17 rejection gold is disputed because its text could be a recording title;
   retain the original attempt and separate review, not a confirmed defect count.
   Private run context is authoritative. Do not publish personal packet contents.
   CSV observation header is in `evaluation/acceptance/`.
-- `../../docs/ASSISTANT_EMULATOR_ACCEPTANCE.md`: owner-proposed next validation
+- `docs/evaluation/emulator-acceptance.md`: owner-proposed next validation
   direction, a disposable full Assistant/Typesense/stock-firmware scenario runner.
   Implemented via `bash ci/assistant.sh OTA_DIR NEW_REPORT_DIR [--case ID]`.
   The current manifest v7 has 64 cases (v4 had 46); the 2026-09-19 pacing
@@ -132,14 +132,14 @@ The owner authorized five sequential increments, each committed and pushed.
 - `library/README.md`: semicolon-separated artist members are a derived projection;
   source artist tags remain exact device selectors. Schema 4 requires `/index`,
   not `/sync`; ranking is lexical-v5 (known artist filtered before top-50). No aggregate person-level queue is implemented.
-- `../../docs/ASSISTANT.md`: implementation roadmap and historical increments.
-- `../../docs/ASSISTANT_ARCHITECTURE.md`: interpreter/STT/TTS contracts, one saved locale.
-- `../../docs/ASSISTANT_INTERPRETATION_SOURCES.md`: independent evidence and shadow boundary.
-- `../../docs/ASSISTANT_SHADOW_REPORTS.md`: offline reports, review queue and measured limitations.
-- `../../docs/ASSISTANT_NLU_DATA.md`: annotations, frozen corpora and supervised studies.
-- `../../docs/ASSISTANT_COMMANDS.md`, `README.md`: current user commands/setup.
-- `../../docs/ASSISTANT_LOCALES.md`: community locale/template extension.
-- `../../docs/DISC_CAPABILITIES.md`: Controller contract; protocol details stay there.
+- `docs/roadmap.md`: implementation roadmap and historical increments.
+- `docs/architecture/pipeline.md`: interpreter/STT/TTS contracts, one saved locale.
+- `docs/architecture/interpretation-sources.md`: independent evidence and shadow boundary.
+- `docs/evaluation/shadow-reports.md`: offline reports, review queue and measured limitations.
+- `docs/evaluation/nlu-data.md`: annotations, frozen corpora and supervised studies.
+- `docs/guides/commands.md`, `README.md`: current user commands/setup.
+- `docs/reference/locales.md`: community locale/template extension.
+- `../../docs/protocol/disc-capabilities.md`: Controller contract; protocol details stay there.
 
 Current implementation includes persistent sessions/reconnect without mutation replay,
 CLI/console and separate web text/microphone input, library snapshots/Typesense, ranking, continuation through native queues,

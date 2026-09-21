@@ -1,7 +1,7 @@
 # diskOS preview — historical, unsupported
 
 Preserved source for the V2.40 warm UI handoff experiment. See
-[the report and reproduction instructions](../../docs/DISKOS_PREVIEW.md) for
+[the report and reproduction instructions](docs/preview.md) for
 historical results, known bugs, source provenance and conditions for returning
 to active experimental status.
 

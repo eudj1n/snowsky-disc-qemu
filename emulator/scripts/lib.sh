@@ -82,5 +82,5 @@ sd_probe(){
 
 # Convert a screen (as-you-see-it) coordinate to the raw touch coordinate.
 # The panel + LVGL display are rotated 180deg; the touch path applies no rotation,
-# so tap points must be flipped: raw = 359 - displayed.  (see docs/TOUCH.md)
+# so tap points must be flipped: raw = 359 - displayed.  (see emulator/docs/touch.md)
 rot(){ echo $(( (SCR_W-1) - $1 )) $(( (SCR_H-1) - $2 )); }

@@ -7,8 +7,8 @@ protocol or emulator evidence:
 - `diagnostics/`: ELF inspection, GDB and process-memory probes; unit tests live
   in `diagnostics/tests/`.
 
-Start with the [RE playbook](../docs/RE.md) and
-[diagnostics guide](../docs/DIAGNOSTICS.md). Reviewed runtime profiles stay in
+Start with the [RE playbook](docs/methods.md) and
+[diagnostics guide](docs/diagnostics.md). Reviewed runtime profiles stay in
 `firmware/`; public control operations stay in `controller/`.
 
 Runnable application prototypes live in [experiments](../experiments/README.md).

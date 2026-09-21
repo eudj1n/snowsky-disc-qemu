@@ -112,7 +112,7 @@ def wait_ready(config, timeout=45):
         if time.monotonic() >= deadline:
             raise SearchReadinessError(
                 'Typesense readiness timed out; inspect the disc-assistant container logs. '
-                'For exit 139 with missing /proc/self/io, see docs/ASSISTANT_TYPESENSE.md '
+                'For exit 139 with missing /proc/self/io, see experiments/disc_assistant/docs/guides/typesense.md '
                 '(typesense.io_accounting_compat).')
         time.sleep(0.5)
 

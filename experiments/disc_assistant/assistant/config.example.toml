@@ -16,7 +16,7 @@ host = "127.0.0.1"
 port = 8108
 protocol = "http"
 api_key_env = "TYPESENSE_API_KEY"
-# Opt-in wrapper for kernels without /proc/self/io; see docs/ASSISTANT_TYPESENSE.md.
+# Opt-in wrapper for kernels without /proc/self/io; see experiments/disc_assistant/docs/guides/typesense.md.
 io_accounting_compat = false
 
 [language]
@@ -55,7 +55,7 @@ suggestion = "ansibrightblack italic"
 
 # Speech input. Web always uses Whisper Server; CLI can still use backend="cli".
 # Optional file-based speech. Install engines/models explicitly; no automatic download.
-# See docs/ASSISTANT_VOICE.md. Use setup --all for managed Whisper Server and Piper (RU/EN).
+# See experiments/disc_assistant/docs/guides/voice.md. Use setup --all for managed Whisper Server and Piper (RU/EN).
 [speech]
 backend = "cli" # opt-in: "server" (model remains loaded in whisper-server)
 catalog_hints = false # bounded names from the active snapshot, never expected transcripts

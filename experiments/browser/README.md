@@ -2,7 +2,7 @@
 
 Active experimental TinyEMU/WASM runtime and local bundle builder. This is a
 separate execution path from the supported qemu-user emulator; see the
-[verified results and limitations](../../docs/BROWSER.md).
+[verified results and limitations](docs/overview.md).
 
 From the repository root:
 

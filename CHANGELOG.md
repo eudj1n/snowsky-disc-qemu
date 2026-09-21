@@ -2,15 +2,15 @@
 
 User-facing changes to **snowsky-disc-qemu**, not vendor firmware announcements.
 Keep entries short and group related work; protocol details and validation evidence
-belong in the linked documentation. Vendor notes live in `docs/firmware/<version>.md`.
-See [release and support policy](docs/PORTING.md).
+belong in the linked documentation. Vendor notes live in `firmware/docs/reports/<version>.md`.
+See [release and support policy](firmware/docs/porting.md).
 
 ## [Current]
 
 Current development since the `v2.57` pre-release; not a published release.
 Active firmware: **V2.57**. Local protocol research is finalized in
 [issue #10](https://github.com/eudj1n/snowsky-disc-qemu/issues/10); see the
-[controller capability summary](docs/DISC_CAPABILITIES.md).
+[controller capability summary](docs/protocol/disc-capabilities.md).
 
 ### Added
 
@@ -19,47 +19,50 @@ Active firmware: **V2.57**. Local protocol research is finalized in
   navigate the queue through a persistent text console. [Setup](experiments/disc_assistant/README.md).
 - Disc Assistant Web with text and microphone input, local Whisper speech
   recognition and optional spoken replies through Piper.
-  [Browser interface](docs/ASSISTANT_WEB.md), [speech setup](docs/ASSISTANT_TTS.md).
+  [Browser interface](experiments/disc_assistant/docs/guides/web.md), [speech setup](experiments/disc_assistant/docs/guides/tts.md).
 - Assistant current-track likes, now-playing questions, configurable volume steps
-  and album/artist search priority, with a concise [command guide](docs/ASSISTANT_QUICK_GUIDE.md).
+  and album/artist search priority, with a concise [command guide](experiments/disc_assistant/docs/guides/quick-guide.md).
 - Installable Controller library with typed current-track/favorite/volume results,
   strict playback decoding and CI checks for types and wheel installation.
-  [Controller API](docs/CONTROLLER_API.md).
+  [Controller API](controller/docs/api.md).
 - Preserved the historical, unsupported diskOS UI experiment with isolated build/run
-  helpers, recorded V2.40 results and criteria for revisiting its status. [Preview](docs/DISKOS_PREVIEW.md).
+  helpers, recorded V2.40 results and criteria for revisiting its status. [Preview](experiments/diskos/docs/preview.md).
 - Experimental local browser execution of DISC through TinyEMU/WebAssembly,
-  with a separate build workflow, live screen, taps, swipe navigation, Back and screen sleep/wake controls. [Prototype](docs/BROWSER.md).
+  with a separate build workflow, live screen, taps, swipe navigation, Back and screen sleep/wake controls. [Prototype](experiments/browser/docs/overview.md).
 - Remote playback, seeking, play modes, favorites and guarded queue selection,
-  with natural end-of-track/list checks. [Playback](docs/REMOTE_CONTROL.md).
+  with natural end-of-track/list checks. [Playback](docs/protocol/remote-control.md).
 - HTTP file transfer, library browsing and custom playlist management/playback;
   artist-scoped album, genre and folder selection (including captured FiiO Control Play all) and guarded
-  bulk playlist additions. [Library](docs/LIBRARY_BROWSING.md).
+  bulk playlist additions. [Library](docs/protocol/library-browsing.md).
 - Disposable category-deletion checks documenting membership loss, file removal
-  and stale references. [Deletion limits](docs/LIBRARY_DELETE.md).
+  and stale references. [Deletion limits](docs/protocol/library-delete.md).
 - Library scan cancellation and dedicated index reset with recovery checks;
-  reset preserves source files. [Scan](docs/LIBRARY_SCAN.md), [reset](docs/LIBRARY_RESET.md).
+  reset preserves source files. [Scan](docs/protocol/library-scan.md), [reset](docs/protocol/library-reset.md).
 - Remote audio settings with verified stock Gain and physical-app filter mapping, channel balance
   and PEQ helpers with stock preset labels and ten-slot isolation checks; read-only gapless,
-  folder-jump and ReplayGain preferences. [Settings and limits](docs/REMOTE_SETTINGS.md).
+  folder-jump and ReplayGain preferences. [Settings and limits](docs/protocol/remote-settings.md).
 - Work-mode/codec preferences and custom wallpaper uploads, including four styles
   and captured color/Date save behavior, with verified safe name limits. System
   themes now support verified opacity, color, style and overlay edits.
-  [Modes and themes](docs/REMOTE_MODES_THEMES.md).
+  [Modes and themes](docs/protocol/remote-modes-themes.md).
 - Passive LAN discovery and an opt-in, time-limited bridge for one phone;
   FiiO Control on iPhone verified discovery, connection, emulator library access
-  and rediscovery after disconnect. [Compatibility and limits](docs/DISCOVERY.md).
+  and rediscovery after disconnect. [Compatibility and limits](controller/docs/discovery.md).
 - USB-power emulation that inhibits stock idle shutdown, plus idle/reconnect
-  checks. USB data/DAC is not emulated. [Power behavior](docs/IDLE_POWER.md).
+  checks. USB data/DAC is not emulated. [Power behavior](emulator/docs/idle-power.md).
 - CUE/DSF/DFF metadata and track-selection checks, plus opt-in stereo SACD ISO
   catalog/queue/favorites checks using approved local media. Native DSD output remains
-  unvalidated. [Formats](docs/FORMATS.md), [SACD scope](docs/SACD.md).
+  unvalidated. [Formats](docs/protocol/formats.md), [SACD scope](research/docs/reports/sacd.md).
 - Sanitized physical-app fixtures, focused integration scenarios and optional
   local failure logs, including captured genre browsing/album selection.
-  Long power tests run only when relevant. [Testing](docs/CI.md).
+  Long power tests run only when relevant. [Testing](docs/development/ci.md).
 - Daily OTA catalog monitoring with tracking issues; no automatic firmware
   download or promotion. Optional viewer Power-on script for custom startup.
 
 ### Changed
+
+- Organize manuals beside their components, with a shared [documentation index](docs/README.md)
+  and automatic checks for local links.
 
 - Separate runnable browser, diskOS and Assistant experiments from firmware research;
   component tests and launchers follow their owners. [Layout and migration](experiments/README.md).
@@ -67,21 +70,21 @@ Active firmware: **V2.57**. Local protocol research is finalized in
 - PEQ coverage now includes physical FiiO Control preset, Save/Reset and local
   preset workflows. The client retains validated JSON writes because the app's
   bulk Local Apply format is incompatible with V2.57. Auto EQ and broader SACD
-  checks remain explicit follow-ups. [PEQ](docs/PEQ.md), [SACD](docs/SACD.md).
+  checks remain explicit follow-ups. [PEQ](research/docs/reports/peq.md), [SACD](research/docs/reports/sacd.md).
 
 - Viewer now draws a responsive CSS device with visible physical buttons and
   audio/USB/microSD connectors, removing the photo skin and manual alignment.
   The browser experiment shares its layout and adds a combined Power control;
   QEMU/WASM badges distinguish the two pages. Updated screenshots and guides
-  cover both. [Viewer](docs/VIEWER.md), [browser experiment](docs/BROWSER.md).
+  cover both. [Viewer](viewer/docs/usage.md), [browser experiment](experiments/browser/docs/overview.md).
 
 - Centralize the active firmware default and reviewed runtime/acceptance profiles;
   TCP and WebSocket share device-version compatibility guards. Existing explicit
-  `FW_VERSION` pins remain supported. [Firmware profiles](docs/FIRMWARE_PROFILES.md).
+  `FW_VERSION` pins remain supported. [Firmware profiles](firmware/docs/firmware-profiles.md).
 
 - Separate emulator, viewer, controller, firmware tooling and research into explicit
   components. Keep root launch commands; media now lives in `emulator/sdcard/` and
-  Docker names use `snowsky-disc-qemu`. [Source layout](docs/REPOSITORY.md).
+  Docker names use `snowsky-disc-qemu`. [Source layout](docs/architecture/repository.md).
 - Support one validated firmware on `2.x`; older versions remain historical
   snapshots without promised backports. Hosted integration now targets V2.57 only.
 - Keep immutable `v2.57` as a pre-release and `v2.40` as the historical stable
@@ -92,7 +95,7 @@ Active firmware: **V2.57**. Local protocol research is finalized in
 ### Fixed
 
 - WebSocket bridge releases its connection slot even when an invalid peer disconnects
-  during cleanup, allowing the next client to connect. [Details](docs/WEBSOCKET.md).
+  during cleanup, allowing the next client to connect. [Details](controller/docs/websocket.md).
 
 - LAN bridge timeout cleanup now releases the control connection even during
   continuous upstream notifications.
@@ -101,7 +104,7 @@ Active firmware: **V2.57**. Local protocol research is finalized in
 - Correct MIPS binary-handler registration so it cannot intercept i386 programs;
   setup leaves other architectures' handlers untouched.
 
-Detailed progress, limitations and follow-ups: [protocol research](docs/PROTOCOL_RESEARCH.md).
+Detailed progress, limitations and follow-ups: [protocol research](research/docs/status.md).
 
 ## [2.57] — 2026-09-13 (pre-release)
 
@@ -142,7 +145,7 @@ that snapshot, not current development. Exact-commit CI evidence is in the
 
 At publication, both firmware profiles had validation coverage. Hardware
 BT/USB/DSD, MCU behavior and hardware-accurate power were not validated.
-Current support and release gates are defined in [CI.md](docs/CI.md).
+Current support and release gates are defined in [CI.md](docs/development/ci.md).
 
 ## [v2.40] — 2026-09-11
 
@@ -172,7 +175,7 @@ installable vendor firmware package. Both CI workflows passed on `e3aab81`.
 - Automatic scanning, native stock WebSocket, phone interoperability and
   hardware USB/BT/DSD/power behavior were not fully supported or validated.
 
-See [STATUS.md](docs/STATUS.md) for current capabilities and evidence.
+See [STATUS.md](emulator/docs/status.md) for current capabilities and evidence.
 
 [Current]: https://github.com/eudj1n/snowsky-disc-qemu/compare/v2.57...2.x
 [2.57]: https://github.com/eudj1n/snowsky-disc-qemu/compare/v2.40...v2.57

@@ -28,7 +28,7 @@ was disabled. The original 2026-09-15 viewer capture used stock brightness 38.
 
 These images show the actual firmware and viewer; no interface elements or album
 art were added. They illustrate appearance, not proof of every displayed feature.
-For validation and older dated captures, see [STATUS.md](../STATUS.md).
+For validation and older dated captures, see [STATUS.md](../../emulator/docs/status.md).
 The temporary audio fixture is not part of the repository.
 
 ## Idle / USB-power checkpoint, 2026-09-16
@@ -56,7 +56,7 @@ It shows FiiO Control after switching to English, connected in the physical DISC
 workflow, with row 2 selected. It is not an emulator render or a new packet trace.
 English rows 5 and 6 have identical visible labels; the earlier Russian-language
 walkthrough's TCP capture establishes their different codes. See
-[mapping and evidence](../REMOTE_SETTINGS.md#physical-fiio-control-filter-mapping-2026-09-16).
+[mapping and evidence](../protocol/remote-settings.md#physical-fiio-control-filter-mapping-2026-09-16).
 
 ## Browser experiment UI, 2026-09-17
 
@@ -91,4 +91,4 @@ The build, startup, main screen and quick-panel interaction were checked for thi
 capture; the 2026-09-13 playback and Power-cycle results were not repeated.
 The image does not change the experiment's historical/unsupported status.
 diskOS UI source is GPL-3.0-or-later; the screenshot does not relicense its depicted
-interface. See [the preview report](../DISKOS_PREVIEW.md) for source and limitations.
+interface. See [the preview report](../../experiments/diskos/docs/preview.md) for source and limitations.

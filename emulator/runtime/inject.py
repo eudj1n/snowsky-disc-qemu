@@ -2,7 +2,7 @@
 """Append synthetic touch input_event structs to a device stub file.
 
 Usage:
-    inject.py press <x> <y> <event-file>   # press at RAW coords (see docs/TOUCH.md)
+    inject.py press <x> <y> <event-file>   # press at RAW coords (see emulator/docs/touch.md)
     inject.py release  x   x  <event-file> # release (coords ignored)
 
 Press and release are SEPARATE calls on purpose: the LVGL read-cb drains all queued
