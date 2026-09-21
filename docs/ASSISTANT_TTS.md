@@ -12,9 +12,9 @@ Prerequisites: **Python 3.11+ and running Docker with Compose** (Docker Desktop 
 macOS). These system prerequisites are installed by the owner. From the checkout:
 
 ```sh
-./research/disc_assistant/run.sh setup --all
+./experiments/disc_assistant/run.sh setup --all
 # Then edit ~/disc-assistant.toml: device.key, host and TCP/HTTP ports.
-./research/disc_assistant/run.sh web --bootstrap
+./experiments/disc_assistant/run.sh web --bootstrap
 # Open http://127.0.0.1:8090
 ```
 
@@ -30,7 +30,7 @@ itself never connects to a player or starts containers.
    configuration), and downloads Piper **RU Irina medium** and
    **EN Alba medium**, their ONNX configuration and model cards. URLs use fixed
    repository revisions and every asset has a checked SHA-256 in
-   [`models.json`](../research/disc_assistant/assistant/voice/services/models.json).
+   [`models.json`](../experiments/disc_assistant/assistant/voice/services/models.json).
 3. Builds CPU-only Whisper Server **v1.9.4** and Piper **1.4.2** images; pulls the
    existing Typesense image. No host CMake, Piper Python environment or GPU is needed.
 4. Updates only `[speech]`, `[tts]` and `[services]` for this bundle. Other settings
@@ -40,7 +40,7 @@ itself never connects to a player or starts containers.
 To choose the larger multilingual model explicitly:
 
 ```sh
-./research/disc_assistant/run.sh setup --all --whisper-model small
+./experiments/disc_assistant/run.sh setup --all --whisper-model small
 ```
 
 Base is the default for a configuration without a selected model, not a quality
@@ -88,7 +88,7 @@ obtain its PEM CA bundle from your administrator and pass it explicitly:
 
 ```sh
 DISC_ASSISTANT_CA_BUNDLE=/absolute/path/trusted-proxy-ca.pem \
-  ./research/disc_assistant/run.sh setup --all
+  ./experiments/disc_assistant/run.sh setup --all
 ```
 
 This adds trust only for the model downloader; it does not change pip or Docker
@@ -104,10 +104,10 @@ reuses running services and saved data. Speech startup failure leaves text input
 available; it does not silently switch to another engine.
 
 ```sh
-./research/disc_assistant/run.sh speech-up
-./research/disc_assistant/run.sh speech-down
+./experiments/disc_assistant/run.sh speech-up
+./experiments/disc_assistant/run.sh speech-down
 # Existing search-only lifecycle:
-./research/disc_assistant/run.sh down
+./experiments/disc_assistant/run.sh down
 ```
 
 Closing the page/Assistant service does not stop music or Docker services. The

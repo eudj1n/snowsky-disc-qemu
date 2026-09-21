@@ -4,7 +4,7 @@ Current browser entry point: [Disc Assistant Web](ASSISTANT_WEB.md) records a bo
 microphone utterance and uses this same WAV/STT pipeline. Historical file-only
 measurements below do not establish human microphone accuracy.
 
-Implemented on **2026-09-18** under `research/disc_assistant/`. This first speech
+Implemented on **2026-09-18** under `experiments/disc_assistant/`. This first speech
 slice accepts a WAV file, transcribes it locally, then uses the existing interpreter,
 ranking and guarded Controller execution. It also synthesizes reproducible input
 samples through the same `SpeechSynthesizer` interface now used for Piper replies.
@@ -28,7 +28,7 @@ The persistent console still connects normally on startup, even for preview comm
 
 ### Recorded acceptance
 
-The [2026-09-18 report](../research/disc_assistant/assistant/voice/evaluations/2026-09-18.json)
+The [2026-09-18 report](../experiments/disc_assistant/assistant/voice/evaluations/2026-09-18.json)
 retains model and sample hashes, source expectations, recognized text and actual
 intentions. On macOS 26.6 arm64 with Milena/Samantha at 175 words/minute:
 
@@ -47,7 +47,7 @@ The small-model pass measured roughly 0.84–1.28 seconds per transcription on t
 host, including subprocess/model startup. These are a few sequential samples,
 not a latency benchmark or Pi estimate.
 
-The owner-requested [base/small comparison rerun](../research/disc_assistant/assistant/voice/evaluations/2026-09-18-base-small-comparison.json)
+The owner-requested [base/small comparison rerun](../experiments/disc_assistant/assistant/voice/evaluations/2026-09-18-base-small-comparison.json)
 used those exact saved WAVs and model hashes, without resynthesis or changes to
 the corpus, interpreter or device configuration. It confirmed the same outcomes:
 
@@ -82,8 +82,8 @@ not replace the pending quantified RU/EN cohort.
 For the current web runtime, use [common speech setup](ASSISTANT_TTS.md):
 
 ```sh
-./research/disc_assistant/run.sh setup --all
-./research/disc_assistant/run.sh web --bootstrap
+./experiments/disc_assistant/run.sh setup --all
+./experiments/disc_assistant/run.sh web --bootstrap
 ```
 
 This installs the ordinary runtime, model assets and CPU Docker services. Web
@@ -146,9 +146,9 @@ samples already use the required format. No new Docker service is needed.
 From the repository root, generate a single test file:
 
 ```sh
-./research/disc_assistant/run.sh --language ru synthesize 'Пауза' --output /tmp/disc-pause.wav
-./research/disc_assistant/run.sh --debug transcribe /tmp/disc-pause.wav
-./research/disc_assistant/run.sh --debug rank --audio /tmp/disc-pause.wav
+./experiments/disc_assistant/run.sh --language ru synthesize 'Пауза' --output /tmp/disc-pause.wav
+./experiments/disc_assistant/run.sh --debug transcribe /tmp/disc-pause.wav
+./experiments/disc_assistant/run.sh --debug rank --audio /tmp/disc-pause.wav
 ```
 
 The output path and its `.wav.json` sidecar must not already exist. The sidecar
@@ -159,7 +159,7 @@ write may leave a partial artifact; choose a new output path for the next run.
 To execute the recognized command on the configured device:
 
 ```sh
-./research/disc_assistant/run.sh ask --audio /tmp/disc-pause.wav
+./experiments/disc_assistant/run.sh ask --audio /tmp/disc-pause.wav
 ```
 
 Close an existing console before one-shot `ask`, as with typed commands. Inside
@@ -189,10 +189,10 @@ is retained so this normalization can be inspected, including titles with punctu
 ## Reproducible samples and evaluation
 
 ```sh
-./research/disc_assistant/run.sh --language ru speech-samples /tmp/disc-samples-ru
-./research/disc_assistant/run.sh --language ru speech-check /tmp/disc-samples-ru
-./research/disc_assistant/run.sh --language en speech-samples /tmp/disc-samples-en
-./research/disc_assistant/run.sh --language en speech-check /tmp/disc-samples-en
+./experiments/disc_assistant/run.sh --language ru speech-samples /tmp/disc-samples-ru
+./experiments/disc_assistant/run.sh --language ru speech-check /tmp/disc-samples-ru
+./experiments/disc_assistant/run.sh --language en speech-samples /tmp/disc-samples-en
+./experiments/disc_assistant/run.sh --language en speech-check /tmp/disc-samples-en
 ```
 
 Each generation requires a **new directory**. It creates six WAV/sidecar pairs
@@ -212,7 +212,7 @@ Synthetic voices exercise the pipeline; these scores do not measure human speech
 accuracy or prove suitability for unattended operation.
 
 Community corpora live in
-[`assistant/voice/samples/`](../research/disc_assistant/assistant/voice/samples/).
+[`assistant/voice/samples/`](../experiments/disc_assistant/assistant/voice/samples/).
 For a new locale, add a `<locale>.json` file with `version: 1`, `locale`, and 1–100
 `cases`. Each case needs a unique safe filename `id`, source `text` and an
 `expected` object: `{"status":"recognized","intent":{...}}` or
@@ -267,16 +267,16 @@ executes controls or changes language in response to a sample. As with other CLI
 commands, the explicit global `--language CODE` option persists the test locale.
 
 ```sh
-./research/disc_assistant/run.sh index
-./research/disc_assistant/run.sh --language ru speech-check /tmp/disc-samples-ru --catalog
+./experiments/disc_assistant/run.sh index
+./experiments/disc_assistant/run.sh --language ru speech-check /tmp/disc-samples-ru --catalog
 ```
 
 New bundled corpora include `selection` on music cases. For existing WAV manifests,
 use an overlay rather than regenerating audio or editing hashes:
 
 ```sh
-./research/disc_assistant/run.sh --language ru speech-check /tmp/disc-samples-ru --catalog \
-  --expectations research/disc_assistant/assistant/voice/samples/ru-selections.json
+./experiments/disc_assistant/run.sh --language ru speech-check /tmp/disc-samples-ru --catalog \
+  --expectations experiments/disc_assistant/assistant/voice/samples/ru-selections.json
 ```
 
 Overlay shape:
@@ -316,7 +316,7 @@ retrieval and optional intent-classifier training. See
 
 ### Recorded catalog comparison
 
-The [catalog selection report](../research/disc_assistant/assistant/voice/evaluations/2026-09-18-catalog-selection.json)
+The [catalog selection report](../experiments/disc_assistant/assistant/voice/evaluations/2026-09-18-catalog-selection.json)
 uses the same saved WAVs, native whisper.cpp base/small and seven synthetic catalog
 rows, including other-artist, live and duplicate distractors. After native STT,
 the identical transcripts are replayed against the archived lexical-v2 commit

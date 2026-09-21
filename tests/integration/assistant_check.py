@@ -127,7 +127,7 @@ def screenshot(root, output):
 
 def observed_session(config):
     from controller.session import LiveClient
-    from research.disc_assistant.assistant.live import DeviceSession
+    from experiments.disc_assistant.assistant.live import DeviceSession
 
     class SocketLog:
         def __init__(self, socket, owner):
@@ -239,8 +239,8 @@ def prepare(app, case, tracks):
 
 
 def run(args):
-    from research.disc_assistant.assistant.config import Config
-    from research.disc_assistant.assistant.console import Application
+    from experiments.disc_assistant.assistant.config import Config
+    from experiments.disc_assistant.assistant.console import Application
     if os.environ.get('CI_DISPOSABLE') != '1' or os.environ.get('FW_VERSION') != '2.57':
         raise RuntimeError('Run only through ci/assistant.sh on disposable V2.57')
     suite = load_suite(args.suite)
@@ -253,7 +253,7 @@ def run(args):
     selected = [c for c in suite['cases'] if not args.case or c['id'] in args.case]
     write_json(output / 'manifest.json', suite)
     sources = {}
-    for folder in ('controller', 'research/disc_assistant', 'tests/integration', 'tests/fixtures', 'firmware/profiles', 'ci'):
+    for folder in ('controller', 'experiments/disc_assistant', 'tests/integration', 'tests/fixtures', 'firmware/profiles', 'ci'):
         for directory, dirs, files in os.walk(folder):
             dirs[:] = [d for d in dirs if not d.startswith('.') and d != '__pycache__']
             for name in files:

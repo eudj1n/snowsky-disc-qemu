@@ -92,11 +92,11 @@ In the console:
 The same operations are available without a device or search connection:
 
 ```sh
-./research/disc_assistant/run.sh history
-./research/disc_assistant/run.sh history show REQUEST_ID
-./research/disc_assistant/run.sh history export /absolute/path/history.jsonl
-./research/disc_assistant/run.sh history clear --yes
-./research/disc_assistant/run.sh --source scheduled --language en ask 'Pause'
+./experiments/disc_assistant/run.sh history
+./experiments/disc_assistant/run.sh history show REQUEST_ID
+./experiments/disc_assistant/run.sh history export /absolute/path/history.jsonl
+./experiments/disc_assistant/run.sh history clear --yes
+./experiments/disc_assistant/run.sh --source scheduled --language en ask 'Pause'
 ```
 
 Put global `--config`/`--source` options before the command. Scheduled origin must

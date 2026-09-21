@@ -119,8 +119,8 @@ The output directory must be new. `--models` is optional; without it the model
 source is unavailable and the report still compares rules and slots.
 
 ```sh
-research/disc_assistant/assistant/.venv/bin/python \
-  -m research.disc_assistant.assistant.nlu.evaluation.compare_sources \
+experiments/disc_assistant/assistant/.venv/bin/python \
+  -m experiments.disc_assistant.assistant.nlu.evaluation.compare_sources \
   --models /tmp/disc-command-study-v2-release \
   --output /tmp/disc-source-comparison
 ```

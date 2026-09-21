@@ -3,7 +3,7 @@
 Current extension: [issue #27](https://github.com/eudj1n/snowsky-disc-qemu/issues/27)
 adds current-track likes/questions, configurable volume and context-prioritized
 search. See the [quick guide](ASSISTANT_QUICK_GUIDE.md),
-[NLU ownership](../research/disc_assistant/assistant/nlu/README.md) and
+[NLU ownership](../experiments/disc_assistant/assistant/nlu/README.md) and
 [Python/Controller extraction review](PYTHON_QUALITY_REVIEW.md).
 
 
@@ -18,7 +18,7 @@ and no-replay guards. WebSocket cleanup and listener shutdown regressions are
 resolved. Validation is recorded in the [current checkpoint](ASSISTANT_STATUS.md).
 
 Checkpoint: **2026-09-18**. The desktop prototype in
-[research/disc_assistant](../research/disc_assistant/README.md) now includes catalog
+[experiments/disc_assistant](../experiments/disc_assistant/README.md) now includes catalog
 import, SQLite snapshots, Typesense search, single-locale text commands (Russian or English), explained
 ranking and bounded Controller playback. `rank` previews the ordering; `ask`
 automatically launches the best candidate. The owner explicitly deferred a
@@ -94,7 +94,7 @@ See [remote modes](REMOTE_MODES_THEMES.md) and [idle power](IDLE_POWER.md).
 
 ## Component boundaries
 
-The prototype lives in `research/disc_assistant/`, with separate `assistant/`
+The prototype lives in `experiments/disc_assistant/`, with separate `assistant/`
 and `library/` packages. Their names below describe responsibilities, not root-level
 production packages. Keep the experiment isolated until implementation and
 acceptance justify promotion into the main [repository layout](REPOSITORY.md).
@@ -540,9 +540,9 @@ Also deferred: repository split, cloud accounts/music services, a general chat
 assistant, autonomous destructive commands, comprehensive web-remote features,
 multi-user recommendations and an always-listening production appliance.
 
-The first **M0/M1 subset** now runs under `research/disc_assistant/`. It exposes
+The first **M0/M1 subset** now runs under `experiments/disc_assistant/`. It exposes
 `sync`, `status`, `index` and `search`; setup and tests are in its
-[guide](../research/disc_assistant/README.md). It preserves literal album-scoped
+[guide](../experiments/disc_assistant/README.md). It preserves literal album-scoped
 rows and duplicate multiplicities, publishes snapshots atomically in SQLite and
 rejects lagging search indexes. That initial checkpoint used a short diagnostic session; M2c below adds the
 persistent event-routing application. Internal identities
@@ -852,7 +852,7 @@ seven-row synthetic catalog; they do not establish generalization. See the
 ## Read-only embedding and hybrid experiment, 2026-09-18
 
 Completed the first comparison from the expanded NLU plan in
-[`assistant/nlu/evaluation`](../research/disc_assistant/assistant/nlu/evaluation/README.md): 182
+[`assistant/nlu/evaluation`](../experiments/disc_assistant/assistant/nlu/evaluation/README.md): 182
 RU/EN authored phrases, fixed train/development/test partitions, calibrated intent
 exemplar matching, reusable model/text vector cache and disposable real Typesense
 lexical/vector/hybrid track retrieval. Requirements/model download are explicit
@@ -881,7 +881,7 @@ challenge. The combined preview recognizes 6/16 RU and 5/16 EN commands, versus
 2/16 each for existing rules, and no false activations on eight negatives each.
 Most improvement comes from explicit extraction: EN model selection rejects all
 predictions. This is not evidence for enabling a learned execution provider.
-See [full results and limitations](../research/disc_assistant/assistant/nlu/evaluation/README.md#supervised-command-study).
+See [full results and limitations](../experiments/disc_assistant/assistant/nlu/evaluation/README.md#supervised-command-study).
 
 Validation: 241 firmware-free tests, including snapshot rollback/staleness,
 schema-2 migration, slots, negation, CLI/console execution boundaries and split

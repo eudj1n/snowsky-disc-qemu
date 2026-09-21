@@ -55,7 +55,7 @@ stack, disposable work volume and generated media, then boots stock firmware.
 [`ci/compose.yml`](../ci/compose.yml) removes host port publishing. Existing
 Controller integration checks exercise playback and queue reads on that guest.
 Assistant unit tests use synthetic servers. The older
-[`emulator_check.sh`](../research/disc_assistant/emulator_check.sh) checks controls,
+[`emulator_check.sh`](../experiments/disc_assistant/emulator_check.sh) checks controls,
 queues, EOF and persistent sessions without the complete live search path.
 
 [`ci/assistant.sh`](../ci/assistant.sh) reuses the extraction/setup/boot/cleanup
@@ -170,7 +170,7 @@ The runner exits nonzero and preserves these cases rather than marking them pass
 Manifest v3 added six regression cases for the second credited artist,
 artist/title without a dash and fuzzy title retrieval. These are examined regression
 cases, not an independent holdout. Multi-artist matching is described in the
-[Library metadata policy](../research/disc_assistant/library/README.md#multiple-artist-credits).
+[Library metadata policy](../experiments/disc_assistant/library/README.md#multiple-artist-credits).
 Screenshots of playing and paused fixtures were manually inspected on the stock
 Now-playing screen; the runner makes no automatic visual-acceptance claim.
 Firmware-free infrastructure verification passed 339 Python and 37 JavaScript tests.

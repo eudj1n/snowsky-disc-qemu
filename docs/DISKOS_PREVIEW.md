@@ -8,7 +8,7 @@ acceptance. The active supported stock firmware remains selected by
 
 The source was recovered from experiment commit
 [`1adb3e4`](https://github.com/eudj1n/snowsky-disc-qemu/commit/1adb3e454c03b53d22b5d1d0a0682cd8bd36bb57).
-The preserved implementation lives in `research/diskos/`; this migration updates
+The preserved implementation lives in `experiments/diskos/`; this migration updates
 repository paths, package imports and the CI image name. It retains the pinned
 upstream source and warm-start adaptation, and now rejects firmware other than
 the historically verified V2.40. A fresh build and startup with the current layout
@@ -30,10 +30,10 @@ stock `mq_player`. It does not run the installer or build/flash a NAND image.
 size limit; that limit does not apply to an extracted rootfs and a separately loaded UI.
 
 The UI is static musl, so `/etc/ld.so.preload` cannot provide its framebuffer ioctls.
-`research/diskos/emu_io.c` is linked with `--wrap=ioctl`: it supplies the emulated
+`experiments/diskos/emu_io.c` is linked with `--wrap=ioctl`: it supplies the emulated
 360×360 framebuffer and marks page zero for the viewer. diskOS's own partial
 renderer and IPC framing remain unchanged. The stock binaries retain their original
-paths and normal fingerprint validation. `research/diskos/boot.sh` boots the stock
+paths and normal fingerprint validation. `experiments/diskos/boot.sh` boots the stock
 pair first, then replaces only the running UI with `/usr/data/mq_ui`. This is a
 warm UI handoff, **not** a validation of diskOS's hardware cold-boot installer.
 
@@ -43,7 +43,7 @@ by `DISKOS_EMU_WARM_PLAYER`: skip the redundant V2.40 startup route reinitialisa
 when the backend was already initialised by the stock UI. Without the flag the
 upstream logic remains active. Do not reuse this launcher for a cold backend.
 
-The builder archives the exact commit in `research/diskos/source-revision` from the
+The builder archives the exact commit in `experiments/diskos/source-revision` from the
 local repository. Local edits, untracked files and `config.mk` are not used. Fetch
 that commit if it is missing; change the pin only after reviewing and testing the
 new source. The build copy retains the emulator adaptation and corresponding source.
@@ -94,7 +94,7 @@ export FW_VERSION=2.40
 export OTA_DIR=/absolute/path/to/main_os/ota_v240
 preview() {
   docker compose --env-file /dev/null -p diskos-preview \
-    -f research/diskos/compose.yaml "$@"
+    -f experiments/diskos/compose.yaml "$@"
 }
 mkdir -p work/diskos-preview/sdcard
 # Populate with your media, or create our generated test tone (once):
@@ -104,8 +104,8 @@ docker run --rm --network none -v "$PWD:/repo:ro" \
 preview up -d
 preview exec -T emu bash /repo/emulator/scripts/00_extract_rootfs.sh /ota  # new volume only
 preview exec -T emu bash /repo/emulator/scripts/10_setup_env.sh
-bash research/diskos/build.sh /absolute/path/to/diskos
-preview exec -T emu bash /repo/research/diskos/boot.sh
+bash experiments/diskos/build.sh /absolute/path/to/diskos
+preview exec -T emu bash /repo/experiments/diskos/boot.sh
 preview exec -d emu bash /repo/viewer/scripts/40_stream.sh
 ```
 

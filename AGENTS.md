@@ -83,7 +83,7 @@ count printed by `fb2png.py` is only a fallback heuristic, not evidence of recen
 See `docs/REPOSITORY.md` for component boundaries and the entry-point inventory.
 Use explicit package imports and `python3 -m package.module` from the repository
 root. Do not add directory-specific `sys.path` searches. Controller must remain
-independent of emulator, viewer, firmware and research; integration tests use
+independent of emulator, viewer, firmware, research and experiments; integration tests use
 emulator runtime primitives, not viewer internals. Unit tests live with their
 component; cross-component scenarios and generated media live under `tests/`.
 
@@ -105,10 +105,10 @@ component; cross-component scenarios and generated media live under `tests/`.
 
 ## Disc Assistant research checkpoint
 
-The text/voice music assistant lives in `research/disc_assistant/`. Read its
-[AGENTS.md](research/disc_assistant/AGENTS.md) before changing it, then
+The text/voice music assistant lives in `experiments/disc_assistant/`. Read its
+[AGENTS.md](experiments/disc_assistant/AGENTS.md) before changing it, then
 [architecture](docs/ASSISTANT_ARCHITECTURE.md) and
-[current status](docs/ASSISTANT_STATUS.md). Keep it under research until a
+[current status](docs/ASSISTANT_STATUS.md). Keep it under experiments until a
 separately agreed promotion or repository split; documentation remains English.
 
 The owner accepted the **software MVP against the stock V2.57 emulator** on
@@ -119,7 +119,7 @@ This is known regression acceptance, not a human-speech accuracy estimate.
 Physical acceptance (#23) and speech quality/native-Docker/Orange Pi performance
 (#24) are separate follow-ups, not reasons to reopen this accepted boundary.
 
-- Use `./research/disc_assistant/run.sh`, not the root emulator launcher.
+- Use `./experiments/disc_assistant/run.sh`, not the root emulator launcher.
   `setup --all` installs the optional speech runtime; `web --bootstrap` starts
   search/speech and the browser adapter on loopback 8090; `start` opens the text
   console. Config defaults to `~/disc-assistant.toml`, targeting emulator TCP
@@ -137,7 +137,7 @@ Physical acceptance (#23) and speech quality/native-Docker/Orange Pi performance
 - Stock control has one client owner: do not steal an active console/FiiO Control
   connection. Keep private catalogs, journals, recordings, models and credentials
   out of Git; commit only curated synthetic fixtures and sanitized reports.
-- Prototype checks: `./research/disc_assistant/run.sh test`. Firmware acceptance:
+- Prototype checks: `./experiments/disc_assistant/run.sh test`. Firmware acceptance:
   `bash ci/assistant.sh /absolute/path/to/main_os/ota_v257 /tmp/disc-new-run` uses
   disposable emulator/search resources and generated media. Use a new output
   directory and preserve the accepted report. Choose tests by impact; docs-only

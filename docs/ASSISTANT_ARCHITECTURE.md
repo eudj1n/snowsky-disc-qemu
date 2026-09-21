@@ -37,7 +37,7 @@ Controller. Dialogue remains disabled.
 
 ## Interpretation
 
-[`interpreter.py`](../research/disc_assistant/assistant/nlu/interpreter.py) defines:
+[`interpreter.py`](../experiments/disc_assistant/assistant/nlu/interpreter.py) defines:
 
 ```python
 async def interpret(text: str, context: InterpretationContext) -> Interpretation:
@@ -83,7 +83,7 @@ parse commands to decide whether search is needed. It prepares search credential
 when available; absence does not block control or language commands. Maintenance
 slash commands remain explicit application commands outside natural interpretation.
 
-[`resolver.py`](../research/disc_assistant/assistant/resolver.py) resolves an
+[`resolver.py`](../experiments/disc_assistant/assistant/resolver.py) resolves an
 interpreted music reference against the current catalog. It can infer artist/title
 boundaries from known names. `ranking.rank` accepts an `Intent`, not raw command
 text; search and ranking cannot reinterpret the command. Search result IDs remain
@@ -115,8 +115,8 @@ disabled. Precedence is explicit `--language CODE`, then the saved preference,
 then configuration, then the built-in `ru` default. The startup override is durable:
 
 ```sh
-./research/disc_assistant/run.sh --language en listen
-./research/disc_assistant/run.sh --language ru ask 'Включи Linkin Park — Numb'
+./experiments/disc_assistant/run.sh --language en listen
+./experiments/disc_assistant/run.sh --language ru ask 'Включи Linkin Park — Numb'
 ```
 
 ```text
@@ -139,7 +139,7 @@ language. `/response` controls only `none|errors|all` speech eligibility. Help a
 technical diagnostics remain English; localized user feedback is `response.text`.
 
 Metadata version labels are separate from command language. The library's
-[`version_markers.toml`](../research/disc_assistant/library/version_markers.toml)
+[`version_markers.toml`](../experiments/disc_assistant/library/version_markers.toml)
 recognizes recording conventions such as `Live` and `Remastered` even when Russian
 is active. The locale's version phrases describe requested constraints; they also
 extend metadata recognition for localized labels. No sync/reindex is needed for a
@@ -179,7 +179,7 @@ Corrupt locale/mode values can be repaired with `language reset`/`response reset
 
 ## Speech provider contracts
 
-[`speech.py`](../research/disc_assistant/assistant/speech.py) defines independent
+[`speech.py`](../experiments/disc_assistant/assistant/speech.py) defines independent
 asynchronous protocols:
 
 | Contract | Input | Output |
@@ -220,7 +220,7 @@ snapshot and guarded execution boundaries; none is currently enabled.
 
 
 Read-only implementations now live in
-[`assistant/nlu/evaluation`](../research/disc_assistant/assistant/nlu/evaluation/README.md).
+[`assistant/nlu/evaluation`](../experiments/disc_assistant/assistant/nlu/evaluation/README.md).
 They evaluate class labels and candidate sources without installing a live
 Interpreter provider. Label similarity cannot fabricate music/language slots;
 prototype vector candidates still pass through the common final ranker. See the
@@ -253,7 +253,7 @@ action per request; no planning, sequencing or dialogue is implemented.
 
 The working NLU code is grouped under `assistant/nlu`. Optional offline tools are
 in `nlu/evaluation`; corpora/reference examples are in `nlu/data`. Locale resources
-remain in `assistant/locales` for contributors. See [component ownership](../research/disc_assistant/assistant/nlu/README.md).
+remain in `assistant/locales` for contributors. See [component ownership](../experiments/disc_assistant/assistant/nlu/README.md).
 Learned execution remains disabled. Current-track/favorite/volume commands use
 the same typed text/speech interpretation and capability-checked Controller path.
 Contextual music ranking reads a fresh native queue, with a second guard before

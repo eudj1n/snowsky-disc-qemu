@@ -181,7 +181,7 @@ Do not tune rules or aliases between cases; any change defines a new candidate/r
 ## Operator observations
 
 Use the CSV header in
-[`experiments/acceptance/observations.template.csv`](../research/disc_assistant/experiments/acceptance/observations.template.csv).
+[`evaluation/acceptance/observations.template.csv`](../experiments/disc_assistant/evaluation/acceptance/observations.template.csv).
 Copy it outside Git. One row is one submitted attempt; case IDs are locale-qualified,
 for example `ru-03`. Record unsubmitted blocked cases too, with no request ID.
 

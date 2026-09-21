@@ -1,7 +1,7 @@
 # Quality configuration only. Controller is built from controller/pyproject.toml.
 [tool.ruff]
 target-version = "py311"
-extend-exclude = ["research/disc_assistant/assistant/nlu/data", "controller/build"]
+extend-exclude = ["experiments/disc_assistant/assistant/nlu/data", "controller/build"]
 
 [tool.ruff.lint]
 select = ["E4", "E7", "E9", "F"]
@@ -15,7 +15,7 @@ files = [
   "controller/compatibility.py", "controller/operations.py", "controller/current.py",
   "controller/controls.py", "controller/session.py", "controller/link_commands.py",
   "ci/controller_types.py",
-  "research/disc_assistant/assistant/controller_results.py",
+  "experiments/disc_assistant/assistant/controller_results.py",
 ]
 
 # Incremental boundary: these modules still invoke legacy catalog/transport

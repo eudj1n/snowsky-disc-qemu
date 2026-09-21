@@ -23,7 +23,7 @@ Dimmed controls are not connected in this experiment. [Capture details](images/R
 
 ## Project status
 
-This experiment is maintained under `research/browser/` on the development
+This experiment is maintained under `experiments/browser/` on the development
 branch `2.x`. It has an independent build/run workflow and experimental status;
 the normal viewer and emulator keep their own acceptance criteria.
 
@@ -44,8 +44,8 @@ built bundle contains firmware and is not a distributable project artifact.
 From the repository root, with Docker available and the stock OTA unpacked:
 
 ```sh
-bash research/browser/run.sh build /absolute/path/to/main_os/ota_v257
-bash research/browser/run.sh serve
+bash experiments/browser/run.sh build /absolute/path/to/main_os/ota_v257
+bash experiments/browser/run.sh serve
 ```
 
 Open [the local prototype](http://127.0.0.1:8091/) and click the **Power** button
@@ -82,7 +82,7 @@ proof that the screen has woken. Waking can show the stock clock lockscreen.
 For page-only changes, stop the VM, update the static assets, reload and start:
 
 ```sh
-bash research/browser/run.sh refresh-ui
+bash experiments/browser/run.sh refresh-ui
 ```
 
 This copies UI files and the shared stylesheet with a content-based resource
@@ -96,7 +96,7 @@ reload the page, then start it again.
 The build:
 
 1. Downloads public dependencies pinned by SHA-256 in
-   [sources.json](../research/browser/sources.json). No firmware is downloaded.
+   [sources.json](../experiments/browser/sources.json). No firmware is downloaded.
 2. Runs the existing exact-build validation, shim compilation, device setup and
    configuration priming in a **fresh disposable Compose stack**, with no host
    ports or user media. Exports the stopped rootfs, then removes that stack and

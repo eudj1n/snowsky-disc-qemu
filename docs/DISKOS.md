@@ -71,6 +71,6 @@ a warm UI handoff after stock startup, not the hardware installer/cold-boot path
 
 The installer size cap in [upstream issue #1](https://github.com/b0hemia/diskos/issues/1)
 does not apply to loading the UI in an extracted emulator rootfs. Build scripts and the
-launcher are preserved under `research/diskos/`; the
+launcher are preserved under `experiments/diskos/`; the
 [preview report](DISKOS_PREVIEW.md) records reproduction, limitations and the
 conditions for revisiting its historical/unsupported status.

@@ -52,5 +52,5 @@ new software results. The [physical worksheet](ASSISTANT_BASELINE.md) remains th
 historical evidence and future resumption guide.
 
 Keep personal exports/audio/library data and firmware-derived captures outside
-Git. The curated [software acceptance summary](../research/disc_assistant/experiments/acceptance/reports/2026-09-19-emulator-mvp.json)
+Git. The curated [software acceptance summary](../experiments/disc_assistant/evaluation/acceptance/reports/2026-09-19-emulator-mvp.json)
 contains only generated-fixture case IDs, outcomes, timings and provenance hashes.

@@ -22,8 +22,8 @@ Export from the console:
 Or use the one-shot history command, then create a new report directory:
 
 ```sh
-./research/disc_assistant/run.sh history export /tmp/disc-history.jsonl
-./research/disc_assistant/run.sh shadow-report \
+./experiments/disc_assistant/run.sh history export /tmp/disc-history.jsonl
+./experiments/disc_assistant/run.sh shadow-report \
   --history /tmp/disc-history.jsonl --output /tmp/disc-shadow-report
 ```
 
@@ -77,7 +77,7 @@ By default only inputs with semantic disagreement enter `pending.jsonl`. Use
 `--review-scope all` to include ordinary agreements and unanimously rejected cases:
 
 ```sh
-./research/disc_assistant/run.sh shadow-report \
+./experiments/disc_assistant/run.sh shadow-report \
   --history /tmp/disc-history.jsonl --output /tmp/disc-shadow-all \
   --review-scope all
 ```
@@ -95,11 +95,11 @@ review of text before inspecting source predictions. Only mark ambiguous cases
 reviewed after their intended meaning is resolved.
 
 ```sh
-assistant_python=research/disc_assistant/assistant/.venv/bin/python
-"$assistant_python" -m research.disc_assistant.assistant.nlu.evaluation.dataset review \
+assistant_python=experiments/disc_assistant/assistant/.venv/bin/python
+"$assistant_python" -m experiments.disc_assistant.assistant.nlu.evaluation.dataset review \
   --queue /tmp/disc-shadow-report/pending.jsonl \
   --annotations /tmp/disc-annotations.jsonl --output /tmp/disc-reviewed.jsonl
-./research/disc_assistant/run.sh shadow-report \
+./experiments/disc_assistant/run.sh shadow-report \
   --history /tmp/disc-history.jsonl --output /tmp/disc-shadow-scored \
   --reviewed /tmp/disc-reviewed.jsonl
 ```

@@ -13,15 +13,15 @@ FiiO Control against the same single-client device at the same time.
 
 ```sh
 # Install the runtime, pinned models and service images once.
-./research/disc_assistant/run.sh setup --all
+./experiments/disc_assistant/run.sh setup --all
 # Edit the configured device, then start speech/search, sync/index and serve.
-./research/disc_assistant/run.sh web --bootstrap
+./experiments/disc_assistant/run.sh web --bootstrap
 # Open http://127.0.0.1:8090 in a browser on this computer.
 
 # Reuse an already running Typesense and existing catalog/index instead:
-./research/disc_assistant/run.sh web
+./experiments/disc_assistant/run.sh web
 # A separate configured device/port:
-./research/disc_assistant/run.sh --config /absolute/path/player.toml web --port 8092
+./experiments/disc_assistant/run.sh --config /absolute/path/player.toml web --port 8092
 ```
 
 Use [the common installer](ASSISTANT_TTS.md) on a new machine. `setup` without
@@ -126,9 +126,9 @@ during recognition and SSE events. JavaScript checks cover PCM encoding, channel
 mixing, duration limits and capture stop. Run:
 
 ```sh
-./research/disc_assistant/run.sh test
-node research/disc_assistant/assistant/web/test_audio.mjs
-node research/disc_assistant/assistant/web/test_reply.mjs
+./experiments/disc_assistant/run.sh test
+node experiments/disc_assistant/assistant/web/test_audio.mjs
+node experiments/disc_assistant/assistant/web/test_reply.mjs
 ```
 
 Browser inspection confirmed viewer-style rendering and Preview → Execute Pause

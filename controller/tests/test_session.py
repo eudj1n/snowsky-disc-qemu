@@ -137,7 +137,7 @@ class SessionTests(unittest.TestCase):
 class ControllerBoundaryTests(unittest.TestCase):
     def test_production_controller_imports_no_application_or_runtime_components(self):
         root = Path(__file__).resolve().parents[1]
-        forbidden = {'research', 'emulator', 'viewer', 'firmware', 'tests'}
+        forbidden = {'research', 'experiments', 'emulator', 'viewer', 'firmware', 'tests'}
         for path in root.rglob('*.py'):
             if 'tests' in path.relative_to(root).parts:
                 continue
