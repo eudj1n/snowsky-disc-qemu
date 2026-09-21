@@ -156,7 +156,7 @@ Start/Stop and Save screen, alongside the optional Prototype console.
 The prototype supports the stock menu, taps, swipes, Back and screen sleep/wake.
 Audio, SD/media import and saved state are not connected; lockscreen stability
 remains an open research item. It has a separate build/run command under
-`research/browser/`. See the [reproduction guide and limitations](docs/BROWSER.md).
+`experiments/browser/`. See the [reproduction guide and limitations](docs/BROWSER.md).
 
 ## Experimental: Disc Assistant
 
@@ -174,18 +174,18 @@ inspect interpretation, search and observed playback effects.
 With Python 3.11+, Docker Compose and an accessible player or booted emulator:
 
 ```sh
-./research/disc_assistant/run.sh setup --all
+./experiments/disc_assistant/run.sh setup --all
 # Review ~/disc-assistant.toml before connecting to your target.
-./research/disc_assistant/run.sh web --bootstrap
+./experiments/disc_assistant/run.sh web --bootstrap
 # Open http://localhost:8090.
 ```
 
-For the text console instead, run `./research/disc_assistant/run.sh start`.
+For the text console instead, run `./experiments/disc_assistant/run.sh start`.
 The generated config initially targets the local emulator (TCP 12100, direct
 HTTP 12113); a physical DISC normally uses HTTP 12103. Close other control clients
 before connecting. The Assistant has its own launcher and optional services;
 the root emulator launcher does not start it. See the
-[setup and console guide](research/disc_assistant/README.md),
+[setup and console guide](experiments/disc_assistant/README.md),
 [web guide](docs/ASSISTANT_WEB.md) and [speech setup](docs/ASSISTANT_TTS.md).
 
 **Software MVP accepted on 2026-09-19:** all 64 declared V2.57 emulator text
@@ -194,7 +194,7 @@ observed mutation writes. The [acceptance report](docs/ASSISTANT_MVP_ACCEPTANCE.
 records the evidence and reproduction commands. This known regression cohort
 does not establish human-speech accuracy or hardware performance.
 
-The implementation remains under `research/disc_assistant/`: one action per
+The implementation remains under `experiments/disc_assistant/`: one action per
 request, automatic best-match selection and no replay of uncertain commands.
 Learned interpretation experiments are read-only comparisons; dialogue and dock
 hardware remain future work. Follow-ups track
@@ -206,7 +206,7 @@ and [speech quality/platform performance](https://github.com/eudj1n/snowsky-disc
 The [unsupported diskOS preview](docs/DISKOS_PREVIEW.md) preserves a source-built
 UI running over the stock V2.40 backend. The 2026-09-13 experiment verified touch
 navigation, library scanning and WAV playback with PCM comparison. Its build
-helpers and isolated launcher live in `research/diskos/`; known playback/font
+helpers and isolated launcher live in `experiments/diskos/`; known playback/font
 limitations and the original source revision are recorded in the report.
 
 This is historical evidence, with no ongoing support or current-firmware claim.
@@ -334,9 +334,9 @@ source layout, dependency boundaries and test locations.
 | **Media** | [Audio](docs/AUDIO.md) · [Library](docs/MEDIA_LIBRARY.md) · [Settings](docs/SETTINGS.md) | `emulator/sdcard/`, `emulator/runtime/audio.py` |
 | **Controller** | [Capabilities](docs/DISC_CAPABILITIES.md) · [Network](docs/NETWORK.md) · [Protocol](docs/PROTOCOL.md) · [WebSocket](docs/WEBSOCKET.md) · [Opt-in phone LAN bridge](docs/DISCOVERY.md) | `controller/fiio_link.py`, `controller/bridge/ws_bridge.py`, `controller/bridge/lan_bridge.py` |
 | **Firmware research** | [Acquisition](firmware/README.md) · [Porting](docs/PORTING.md) · [Reverse engineering](docs/RE.md) | `firmware/`, `research/ghidra/` |
-| **Browser experiment** | [Build, results and next milestone](docs/BROWSER.md) | `research/browser/`, `research/tests/test_browser_*.js` |
-| **Disc Assistant experiment** | [Setup](research/disc_assistant/README.md) · [Architecture](docs/ASSISTANT_ARCHITECTURE.md) · [Accepted software MVP](docs/ASSISTANT_MVP_ACCEPTANCE.md) | `research/disc_assistant/`, shared `controller/` API |
-| **Historical diskOS experiment** | [Preview results, limitations and status](docs/DISKOS_PREVIEW.md) | `research/diskos/` |
+| **Browser experiment** | [Build, results and next milestone](docs/BROWSER.md) | `experiments/browser/`, `experiments/browser/tests/test_browser_*.js` |
+| **Disc Assistant experiment** | [Setup](experiments/disc_assistant/README.md) · [Architecture](docs/ASSISTANT_ARCHITECTURE.md) · [Accepted software MVP](docs/ASSISTANT_MVP_ACCEPTANCE.md) | `experiments/disc_assistant/`, shared `controller/` API |
+| **Historical diskOS experiment** | [Preview results, limitations and status](docs/DISKOS_PREVIEW.md) | `experiments/diskos/` |
 | **Contributing** | [CI](docs/CI.md) · [Agent instructions](AGENTS.md) | `ci/`, `.github/workflows/` |
 
 ## License & scope

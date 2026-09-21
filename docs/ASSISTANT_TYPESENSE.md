@@ -41,7 +41,7 @@ api_key_env = "TYPESENSE_API_KEY"
 io_accounting_compat = true
 ```
 
-From `research/disc_assistant`:
+From `experiments/disc_assistant`:
 
 ```sh
 ./run.sh up
@@ -83,10 +83,10 @@ Typesense binary with the missing-file fixture, from the repository root:
 
 ```sh
 docker build --target verification -t disc-assistant-typesense:io-verification \
-  research/disc_assistant/assistant/typesense_compat
+  experiments/disc_assistant/assistant/typesense_compat
 docker build -t disc-assistant-typesense:30.2-io-v1 \
-  research/disc_assistant/assistant/typesense_compat
-python3 research/disc_assistant/assistant/typesense_compat/tests/check_http.py
+  experiments/disc_assistant/assistant/typesense_compat
+python3 experiments/disc_assistant/assistant/typesense_compat/tests/check_http.py
 ```
 
 The verification target reproduces stock exit 139, then checks that the shim

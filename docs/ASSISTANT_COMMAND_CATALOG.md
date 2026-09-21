@@ -21,8 +21,8 @@ The equivalent one-shot commands work offline, including while the console owns
 the device connection:
 
 ```sh
-./research/disc_assistant/run.sh commands
-./research/disc_assistant/run.sh explain 'Пожалуйста включи трек Пауза'
+./experiments/disc_assistant/run.sh commands
+./experiments/disc_assistant/run.sh explain 'Пожалуйста включи трек Пауза'
 ```
 
 `/explain` uses the saved interaction locale. The usual explicit `--language CODE`
@@ -64,9 +64,9 @@ historical model studies; current `/explain` adds the newer source comparison.
 
 ## Storage and publication
 
-Community files [`assistant/locales/commands/`](../research/disc_assistant/assistant/locales/commands/)
+Community files [`assistant/locales/commands/`](../experiments/disc_assistant/assistant/locales/commands/)
 supply literal slot templates and rejection phrases. Optional labelled references
-live separately in `research/disc_assistant/assistant/nlu/data/command_references/`;
+live separately in `experiments/disc_assistant/assistant/nlu/data/command_references/`;
 they are not required for a locale contribution. The loader combines these sources
 into the same logical payload before hashing. Definitions and required
 arguments are shared code; language-specific matching text stays in TOML.
@@ -87,7 +87,7 @@ pruning is not implemented. Journal pruning/clearing does not remove them.
 
 ## Training and import
 
-The isolated [supervised experiment](../research/disc_assistant/assistant/nlu/evaluation/README.md#supervised-command-study)
+The isolated [supervised experiment](../experiments/disc_assistant/assistant/nlu/evaluation/README.md#supervised-command-study)
 trains two multinomial logistic regression heads: shared word/character TF-IDF
 features, and frozen multilingual MiniLM sentence embeddings. It does not
 fine-tune the encoder. Only the text head is exported for diagnostic inference.
@@ -105,11 +105,11 @@ After preparing the experiment environment/model as documented:
 
 ```sh
 lab=/tmp/disc-nlu-lab
-"$lab/venv/bin/python" -m research.disc_assistant.assistant.nlu.evaluation.train_commands \
+"$lab/venv/bin/python" -m experiments.disc_assistant.assistant.nlu.evaluation.train_commands \
   --work "$lab" --output "$lab/commands-study"
 # Select the matching locale first; import only the bundle for that locale.
-./research/disc_assistant/run.sh commands import "$lab/commands-study/ru-commands.json"
-./research/disc_assistant/run.sh explain 'Сделай паузу в музыке'
+./experiments/disc_assistant/run.sh commands import "$lab/commands-study/ru-commands.json"
+./experiments/disc_assistant/run.sh explain 'Сделай паузу в музыке'
 ```
 
 Use a new output directory for each experiment. Model bundles, databases and

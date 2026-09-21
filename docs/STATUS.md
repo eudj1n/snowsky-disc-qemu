@@ -57,7 +57,7 @@ results above do not establish browser-runtime acceptance.
 ### Historical diskOS preview
 
 The [unsupported diskOS experiment](DISKOS_PREVIEW.md) is preserved under
-`research/diskos/`. Historical V2.40 results include UI navigation, library scan
+`experiments/diskos/`. Historical V2.40 results include UI navigation, library scan
 and verified WAV/PCM playback; same-track selection after restart and font
 coverage remain recorded limitations. Its migration to the current source
 layout does not constitute fresh full runtime acceptance. A 2026-09-17

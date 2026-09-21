@@ -16,7 +16,7 @@ Active firmware: **V2.57**. Local protocol research is finalized in
 
 - Disc Assistant research prototype with Russian/English commands to find and play
   tracks, artists and albums from the device library, pause/resume playback and
-  navigate the queue through a persistent text console. [Setup](research/disc_assistant/README.md).
+  navigate the queue through a persistent text console. [Setup](experiments/disc_assistant/README.md).
 - Disc Assistant Web with text and microphone input, local Whisper speech
   recognition and optional spoken replies through Piper.
   [Browser interface](docs/ASSISTANT_WEB.md), [speech setup](docs/ASSISTANT_TTS.md).
@@ -60,6 +60,9 @@ Active firmware: **V2.57**. Local protocol research is finalized in
   download or promotion. Optional viewer Power-on script for custom startup.
 
 ### Changed
+
+- Separate runnable browser, diskOS and Assistant experiments from firmware research;
+  component tests and launchers follow their owners. [Layout and migration](experiments/README.md).
 
 - PEQ coverage now includes physical FiiO Control preset, Save/Reset and local
   preset workflows. The client retains validated JSON writes because the app's

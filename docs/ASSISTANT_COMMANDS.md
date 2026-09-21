@@ -4,8 +4,8 @@ For everyday use, see the [quick guide with RU/EN examples](ASSISTANT_QUICK_GUID
 
 
 Implementation status: **2026-09-18**. The prototype lives in
-[`research/disc_assistant/`](../research/disc_assistant/README.md).
-Run [`run.sh`](../research/disc_assistant/run.sh) from the repository root; virtualenv
+[`experiments/disc_assistant/`](../experiments/disc_assistant/README.md).
+Run [`run.sh`](../experiments/disc_assistant/run.sh) from the repository root; virtualenv
 activation is unnecessary. `ask` starts the best match without a choice dialogue.
 `rank` explains the same decision without connecting to the device.
 
@@ -16,40 +16,40 @@ activation is unnecessary. `ask` starts the best match without a choice dialogue
 
 | Command | Behavior | Device effect |
 | --- | --- | --- |
-| `./research/disc_assistant/run.sh setup` | Prepare the environment, config and private search key; preserve existing settings | None |
-| `./research/disc_assistant/run.sh setup --all [--whisper-model base\|small]` | Install runtime, pinned speech models and Docker images; back up/update speech config | None |
-| `./research/disc_assistant/run.sh speech-up` / `speech-down` | Start/stop managed Whisper Server and Piper | None |
-| `./research/disc_assistant/run.sh speech-benchmark --samples DIR --output DIR` | Compare fixed audio with temporary Whisper servers; `--server URL` uses an existing server without Docker; also accepts `--audio WAV --locale ru` | None; [benchmark guide](ASSISTANT_SPEECH_BENCHMARK.md) |
-| `./research/disc_assistant/run.sh start` | Start Typesense, connect, sync/index, then open the persistent text console | Read only until a playback command is entered |
-| `./research/disc_assistant/run.sh history [ARGS]` | Inspect, export, prune or clear the local request journal | None; offline |
-| `./research/disc_assistant/run.sh response [ARGS]` | Show/set speech policy, or reset its default | None; offline |
-| `./research/disc_assistant/run.sh locales` | Validate each installed locale pair | None; offline |
-| `./research/disc_assistant/run.sh language [CODE\|reset]` | Show/set one interaction locale, or reset to the TOML default | None; offline |
-| `./research/disc_assistant/run.sh web [--bootstrap] [--port 8090]` | Separate [browser interface](ASSISTANT_WEB.md), text and microphone; optional managed speech/search startup and sync/index | Read only until an Execute request is submitted |
-| `./research/disc_assistant/run.sh listen` | Open the persistent console with existing data; no Docker startup or automatic sync/index | Initial handshake and state reads |
-| `./research/disc_assistant/run.sh up` | Start local Typesense and await readiness | None |
-| `./research/disc_assistant/run.sh down` | Stop Typesense, retaining its index volume | None |
-| `./research/disc_assistant/run.sh sync` | Read the catalog twice and publish a consistent SQLite snapshot | Read only; does not start a device scan |
-| `./research/disc_assistant/run.sh status` | Show local snapshot/index status | None; offline |
-| `./research/disc_assistant/run.sh queue` | Read all native queue pages, selected mark and play mode | Read only; no search/index dependency |
-| `./research/disc_assistant/run.sh index` | Rebuild Typesense from SQLite | None |
-| `./research/disc_assistant/run.sh search 'Linkin Park Numb'` | Search metadata and show candidates | None |
-| `./research/disc_assistant/run.sh --language en rank 'Play Linkin Park — Numb'` | Explain ranking or a control intent | None |
-| `./research/disc_assistant/run.sh --language en ask 'Play Linkin Park — Numb'` | Select the best candidate, check fresh rows, dispatch once and verify playback | Starts playback |
-| `./research/disc_assistant/run.sh --language en ask 'Pause'` | Execute a state-aware control | See the control table below |
-| `./research/disc_assistant/run.sh shadow-report --history PATH --output DIR` | Offline source report and pending annotation queue; optional `--reviewed PATH` / `--review-scope all`; see [workflow](ASSISTANT_SHADOW_REPORTS.md) | None; no config or device |
-| `./research/disc_assistant/run.sh explain TEXT` | Preview rules, candidate intention, arguments and rejection reasons | None; offline |
-| `./research/disc_assistant/run.sh commands [rebuild\|import FILE]` | Inspect/publish the active locale command snapshot; rebuild clears its model | None; local database only |
-| `./research/disc_assistant/run.sh test` | Run prototype unit tests | None |
-| `./research/disc_assistant/run.sh check` | Exercise real CLI/controller/SDK against disposable Typesense and a synthetic player | No physical device used |
-| `./research/disc_assistant/run.sh transcribe FILE` | Transcribe PCM WAV with the active locale; return raw and normalized text | None |
-| `./research/disc_assistant/run.sh rank --audio FILE` | Transcribe and preview the normal intent/ranking path | None |
-| `./research/disc_assistant/run.sh ask --audio FILE` | Transcribe then execute the normal guarded command path | Same as typed `ask` |
-| `./research/disc_assistant/run.sh synthesize TEXT --output FILE.wav` | Generate a WAV and provenance sidecar through TTS | None; no speaker output |
-| `./research/disc_assistant/run.sh speech-samples DIR [--corpus JSON]` | Generate synthetic inputs for the active locale in a new directory | None |
-| `./research/disc_assistant/run.sh speech-check DIR` | Check transcripts against expected intentions; nonzero exit on mismatches | None; no settings changes |
-| `./research/disc_assistant/run.sh speech-check DIR --catalog [--expectations FILE]` | Evaluate selected music separately from STT/intent agreement | None; pinned catalog/index only |
-| `./research/disc_assistant/run.sh help` | Show usage | None |
+| `./experiments/disc_assistant/run.sh setup` | Prepare the environment, config and private search key; preserve existing settings | None |
+| `./experiments/disc_assistant/run.sh setup --all [--whisper-model base\|small]` | Install runtime, pinned speech models and Docker images; back up/update speech config | None |
+| `./experiments/disc_assistant/run.sh speech-up` / `speech-down` | Start/stop managed Whisper Server and Piper | None |
+| `./experiments/disc_assistant/run.sh speech-benchmark --samples DIR --output DIR` | Compare fixed audio with temporary Whisper servers; `--server URL` uses an existing server without Docker; also accepts `--audio WAV --locale ru` | None; [benchmark guide](ASSISTANT_SPEECH_BENCHMARK.md) |
+| `./experiments/disc_assistant/run.sh start` | Start Typesense, connect, sync/index, then open the persistent text console | Read only until a playback command is entered |
+| `./experiments/disc_assistant/run.sh history [ARGS]` | Inspect, export, prune or clear the local request journal | None; offline |
+| `./experiments/disc_assistant/run.sh response [ARGS]` | Show/set speech policy, or reset its default | None; offline |
+| `./experiments/disc_assistant/run.sh locales` | Validate each installed locale pair | None; offline |
+| `./experiments/disc_assistant/run.sh language [CODE\|reset]` | Show/set one interaction locale, or reset to the TOML default | None; offline |
+| `./experiments/disc_assistant/run.sh web [--bootstrap] [--port 8090]` | Separate [browser interface](ASSISTANT_WEB.md), text and microphone; optional managed speech/search startup and sync/index | Read only until an Execute request is submitted |
+| `./experiments/disc_assistant/run.sh listen` | Open the persistent console with existing data; no Docker startup or automatic sync/index | Initial handshake and state reads |
+| `./experiments/disc_assistant/run.sh up` | Start local Typesense and await readiness | None |
+| `./experiments/disc_assistant/run.sh down` | Stop Typesense, retaining its index volume | None |
+| `./experiments/disc_assistant/run.sh sync` | Read the catalog twice and publish a consistent SQLite snapshot | Read only; does not start a device scan |
+| `./experiments/disc_assistant/run.sh status` | Show local snapshot/index status | None; offline |
+| `./experiments/disc_assistant/run.sh queue` | Read all native queue pages, selected mark and play mode | Read only; no search/index dependency |
+| `./experiments/disc_assistant/run.sh index` | Rebuild Typesense from SQLite | None |
+| `./experiments/disc_assistant/run.sh search 'Linkin Park Numb'` | Search metadata and show candidates | None |
+| `./experiments/disc_assistant/run.sh --language en rank 'Play Linkin Park — Numb'` | Explain ranking or a control intent | None |
+| `./experiments/disc_assistant/run.sh --language en ask 'Play Linkin Park — Numb'` | Select the best candidate, check fresh rows, dispatch once and verify playback | Starts playback |
+| `./experiments/disc_assistant/run.sh --language en ask 'Pause'` | Execute a state-aware control | See the control table below |
+| `./experiments/disc_assistant/run.sh shadow-report --history PATH --output DIR` | Offline source report and pending annotation queue; optional `--reviewed PATH` / `--review-scope all`; see [workflow](ASSISTANT_SHADOW_REPORTS.md) | None; no config or device |
+| `./experiments/disc_assistant/run.sh explain TEXT` | Preview rules, candidate intention, arguments and rejection reasons | None; offline |
+| `./experiments/disc_assistant/run.sh commands [rebuild\|import FILE]` | Inspect/publish the active locale command snapshot; rebuild clears its model | None; local database only |
+| `./experiments/disc_assistant/run.sh test` | Run prototype unit tests | None |
+| `./experiments/disc_assistant/run.sh check` | Exercise real CLI/controller/SDK against disposable Typesense and a synthetic player | No physical device used |
+| `./experiments/disc_assistant/run.sh transcribe FILE` | Transcribe PCM WAV with the active locale; return raw and normalized text | None |
+| `./experiments/disc_assistant/run.sh rank --audio FILE` | Transcribe and preview the normal intent/ranking path | None |
+| `./experiments/disc_assistant/run.sh ask --audio FILE` | Transcribe then execute the normal guarded command path | Same as typed `ask` |
+| `./experiments/disc_assistant/run.sh synthesize TEXT --output FILE.wav` | Generate a WAV and provenance sidecar through TTS | None; no speaker output |
+| `./experiments/disc_assistant/run.sh speech-samples DIR [--corpus JSON]` | Generate synthetic inputs for the active locale in a new directory | None |
+| `./experiments/disc_assistant/run.sh speech-check DIR` | Check transcripts against expected intentions; nonzero exit on mismatches | None; no settings changes |
+| `./experiments/disc_assistant/run.sh speech-check DIR --catalog [--expectations FILE]` | Evaluate selected music separately from STT/intent agreement | None; pinned catalog/index only |
+| `./experiments/disc_assistant/run.sh help` | Show usage | None |
 
 `search` accepts `--limit N` (1–50). `rank` and `ask` accept one quoted string.
 They alternatively accept `--audio FILE`, mutually exclusive with text. Speech
@@ -58,7 +58,7 @@ requires explicitly configured external engines/models; see
 Default configuration is `~/disc-assistant.toml`; override it with:
 
 ```sh
-./research/disc_assistant/run.sh --config /absolute/path/disc.toml --language en ask 'Play Linkin Park'
+./experiments/disc_assistant/run.sh --config /absolute/path/disc.toml --language en ask 'Play Linkin Park'
 ```
 
 Physical DISC uses its LAN IP, TCP **12100**, HTTP **12103**, and reviewed firmware
@@ -252,9 +252,9 @@ is a preview and does not save the change. `/language ru en` is no longer suppor
 `/response language` is replaced by `/language`. Speech policy stays under `/response mode`.
 
 ```sh
-./research/disc_assistant/run.sh --language en listen
-./research/disc_assistant/run.sh language ru
-./research/disc_assistant/run.sh language reset
+./experiments/disc_assistant/run.sh --language en listen
+./experiments/disc_assistant/run.sh language ru
+./experiments/disc_assistant/run.sh language reset
 ```
 
 The startup flag is persisted. Saved `language.locale` wins over TOML when no flag
@@ -368,8 +368,8 @@ it does not change saved preferences, journal collection or speech policy.
 Pass the global `--debug` flag before the application command:
 
 ```sh
-./research/disc_assistant/run.sh --debug listen
-./research/disc_assistant/run.sh --debug rank 'Включи Макс Корж'
+./experiments/disc_assistant/run.sh --debug listen
+./experiments/disc_assistant/run.sh --debug rank 'Включи Макс Корж'
 ```
 
 One-shot commands and redirected consoles send traces to **stderr**; one-shot

@@ -16,7 +16,7 @@ may leave `disc-stt-bench-*` containers; inspect that prefix before manual clean
 
 For Docker mode, prerequisite: existing `setup --all` installation, local image
 `disc-assistant-whisper:1.9.4`, and an installed model. No downloads or builds occur
-in the benchmark. Run on the board being measured, from `research/disc_assistant`.
+in the benchmark. Run on the board being measured, from `experiments/disc_assistant`.
 Avoid concurrent voice requests/CPU-heavy work; record cooling, power and other
 workload separately. The tool does not automatically measure throttling or swap.
 
@@ -64,7 +64,7 @@ whisper-server -m /path/to/ggml-base.bin --host 127.0.0.1 --port 8080 \
   -t 4 -ng -nf -nlp
 ```
 
-Keep it running in another terminal, then from `research/disc_assistant`:
+Keep it running in another terminal, then from `experiments/disc_assistant`:
 
 ```sh
 ./run.sh speech-benchmark --audio ~/dorn.wav --locale ru \

@@ -17,7 +17,7 @@ def main():
     loader = unittest.TestLoader()
     # Test only source test directories, never ignored user SD/rootfs contents.
     roots = ('emulator/tests', 'viewer/tests', 'controller/tests', 'firmware/tests',
-             'research/tests', 'tests')
+             'research/diagnostics/tests', 'experiments/browser/tests', 'tests')
     suite = unittest.TestSuite(loader.discover(str(repo / root), pattern='test_*.py',
                                               top_level_dir=str(repo)) for root in roots)
     # Catch a new directory missing __init__.py: unittest would silently skip it.

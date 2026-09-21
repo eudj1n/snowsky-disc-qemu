@@ -30,7 +30,7 @@ stop and repeated controls, next/previous before and after the stock restart
 boundary, paused/first-row navigation, missing music, negation, compound-command
 rejection and locale changes. All declared per-case checks passed.
 
-The [curated machine-readable report](../research/disc_assistant/experiments/acceptance/reports/2026-09-19-emulator-mvp.json)
+The [curated machine-readable report](../experiments/disc_assistant/evaluation/acceptance/reports/2026-09-19-emulator-mvp.json)
 preserves all 64 outcomes, timings and source/manifest/report hashes. Full local
 artifacts remain at `/tmp/disc-pacing-acceptance-20260919/`; these temporary files
 are not the only record of the accepted result. The run began on `45590a2` with
@@ -48,7 +48,7 @@ not a paired speed benchmark or an Orange Pi estimate.
 With the reviewed V2.57 OTA directory already available, from the repository root:
 
 ```sh
-./research/disc_assistant/run.sh test
+./experiments/disc_assistant/run.sh test
 
 docker build -t snowsky-disc-qemu-ci docker
 docker run --rm --network none -v "$PWD:/repo:ro" \

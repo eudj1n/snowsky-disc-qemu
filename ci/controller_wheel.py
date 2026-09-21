@@ -23,7 +23,7 @@ def main():
             names = archive.namelist()
             assert 'controller/py.typed' in names
             assert 'controller/bridge/ws_console.html' in names
-            assert not any('/tests/' in name or name.startswith(('research/', 'emulator/', 'viewer/'))
+            assert not any('/tests/' in name or name.startswith(('research/', 'experiments/', 'emulator/', 'viewer/'))
                            for name in names)
         environment = root / 'venv'
         venv.EnvBuilder(with_pip=True).create(environment)

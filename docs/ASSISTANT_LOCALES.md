@@ -15,9 +15,9 @@ No engine-specific code belongs in the command/reply TOML dictionaries.
 
 ## Add a locale
 
-1. Copy `research/disc_assistant/assistant/locales/en.toml` to `<code>.toml`
+1. Copy `experiments/disc_assistant/assistant/locales/en.toml` to `<code>.toml`
    in the same directory.
-2. Copy `research/disc_assistant/assistant/locales/replies/en.toml` to
+2. Copy `experiments/disc_assistant/assistant/locales/replies/en.toml` to
    `replies/<code>.toml`.
 3. Translate the literal command phrases and response templates. Keep all semantic
    keys. Update response metadata `code`, `name` (English display name) and
@@ -88,8 +88,8 @@ edition is not silently replaced with a studio recording.
 ## Response template rules
 
 The keys and allowed parameters are defined by `MESSAGE_FIELDS` in
-[`responses.py`](../research/disc_assistant/assistant/responses.py). The complete
-[English catalog](../research/disc_assistant/assistant/locales/replies/en.toml) is
+[`responses.py`](../experiments/disc_assistant/assistant/responses.py). The complete
+[English catalog](../experiments/disc_assistant/assistant/locales/replies/en.toml) is
 the copyable reference; Russian is another complete example.
 
 `playback.started`, `playback.track_changed`, `playback.current` and
@@ -117,12 +117,12 @@ From the repository root, after the prototype's normal `run.sh setup`:
 
 ```sh
 # No config, device connection, search server or credentials required.
-research/disc_assistant/assistant/.venv/bin/python -m research.disc_assistant.assistant.responses
+experiments/disc_assistant/assistant/.venv/bin/python -m experiments.disc_assistant.assistant.responses
 # Validate a specific locale, or several independent locale pairs.
-research/disc_assistant/assistant/.venv/bin/python -m research.disc_assistant.assistant.responses fr
-research/disc_assistant/assistant/.venv/bin/python -m research.disc_assistant.assistant.responses ru en fr
+experiments/disc_assistant/assistant/.venv/bin/python -m experiments.disc_assistant.assistant.responses fr
+experiments/disc_assistant/assistant/.venv/bin/python -m experiments.disc_assistant.assistant.responses ru en fr
 # Prototype regression suite, including synthetic local network fixtures.
-./research/disc_assistant/run.sh test
+./experiments/disc_assistant/run.sh test
 ```
 
 `run.sh locales` or console `/locales` also validates installed files using the
@@ -131,8 +131,8 @@ templates. It does not establish translation quality; a fluent speaker should
 review phrasing and representative commands.
 
 Add tests alongside
-[`test_responses.py`](../research/disc_assistant/assistant/tests/test_responses.py)
-and [`test_languages.py`](../research/disc_assistant/assistant/tests/test_languages.py).
+[`test_responses.py`](../experiments/disc_assistant/assistant/tests/test_responses.py)
+and [`test_languages.py`](../experiments/disc_assistant/assistant/tests/test_languages.py).
 Cover natural play/artist/track commands, each control, version markers, casing,
 multiword forms and a localized success/uncertain response. These tests should use
 synthetic data and require no physical player. The completeness test automatically includes all installed
@@ -163,7 +163,7 @@ with exactly one `{language}`. Preserve all pattern categories, including
 negation, reported speech and quotes. Templates are literals, not regexes.
 
 Optional labelled training/reference examples live separately in
-`research/disc_assistant/assistant/nlu/data/command_references/<code>.toml`.
+`experiments/disc_assistant/assistant/nlu/data/command_references/<code>.toml`.
 They are not a requirement for adding a language. Preserve stable IDs and labels;
 keep evaluation sets separate and never relabel examined examples as a holdout.
 The catalog loader combines both sources before hashing; moving unchanged

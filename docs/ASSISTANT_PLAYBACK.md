@@ -1,7 +1,7 @@
 # Assistant playback controls and queue
 
 Playback and session increments following ranked text playback, **2026-09-18**. Work remains in
-`research/disc_assistant/`. See [commands](ASSISTANT_COMMANDS.md) for available
+`experiments/disc_assistant/`. See [commands](ASSISTANT_COMMANDS.md) for available
 behavior and [the implementation plan](ASSISTANT.md) for the broader roadmap.
 M2a controls and M2b native queue observation/continuation are implemented.
 M2c adds a persistent foreground text console. Existing one-shot commands remain

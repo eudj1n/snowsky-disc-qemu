@@ -6,7 +6,7 @@ all rows, inputs, hashes and errors. No personal catalog was used.
 
 ## Retrieval
 
-`python -m research.disc_assistant.experiments.search_compare --output NEW_DIR`
+`python -m experiments.disc_assistant.evaluation.search_compare --output NEW_DIR`
 uses a disposable Typesense 30.2 server on loopback port 18118 and the explicit
 `TYPESENSE_API_KEY` environment variable. It builds/removes only its own random
 collection and creates a new local SQLite fixture directory. Start a disposable
@@ -44,7 +44,7 @@ retained and neither is an independent holdout.
 
 ## Speech
 
-`python -m research.disc_assistant.experiments.speech_compare --samples DIR
+`python -m experiments.disc_assistant.evaluation.speech_compare --samples DIR
 --model MODEL --executable WHISPER_CLI --server http://127.0.0.1:18119/inference
 --output NEW_DIR` replays the same six saved WAVs per locale twice (24 observations
 per variant, **12 unique samples**, not 24 independent utterances).
@@ -88,7 +88,7 @@ The desktop run used Metal, context 2048, one parallel slot, four CPU threads,
 192 output tokens, temperature/seed zero. This is **not a Pi benchmark**.
 The adapter uses the server's [schema-constrained chat API](https://github.com/ggml-org/llama.cpp/blob/b11039/tools/server/README.md).
 
-`python -m research.disc_assistant.assistant.nlu.evaluation.structured_compare --model-path
+`python -m experiments.disc_assistant.assistant.nlu.evaluation.structured_compare --model-path
 MODEL_GGUF --output NEW_DIR` compares live rules (including the shared gate),
 slots and structured evidence. It never connects to a player. The 40 existing
 slot examples remain unchanged; 12 explicit album/credit/title/injection/sequence

@@ -65,9 +65,9 @@ exporting history does not reinsert requests.
 Equivalent offline commands:
 
 ```sh
-./research/disc_assistant/run.sh language en
-./research/disc_assistant/run.sh response mode errors
-./research/disc_assistant/run.sh response reset
+./experiments/disc_assistant/run.sh language en
+./experiments/disc_assistant/run.sh response mode errors
+./experiments/disc_assistant/run.sh response reset
 ```
 
 | Mode | Speech eligibility |

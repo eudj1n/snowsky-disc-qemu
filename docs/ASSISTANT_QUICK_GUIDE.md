@@ -2,7 +2,7 @@
 
 Type or say **one command at a time**. Choose one interaction language with
 `/language ru` or `/language en`; music names can use any language.
-Open the browser with `./research/disc_assistant/run.sh web --bootstrap`.
+Open the browser with `./experiments/disc_assistant/run.sh web --bootstrap`.
 Microphone input uses the same commands as text. Enable browser sound for replies.
 
 | Task | Russian examples | English examples |

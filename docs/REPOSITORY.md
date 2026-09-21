@@ -3,8 +3,10 @@
 The repository follows the layout agreed in
 [issue #7](https://github.com/eudj1n/snowsky-disc-qemu/issues/7). The preceding DISC
 protocol checkpoint was committed separately (`f5d0968`, merged by `d4e956c`).
-The core components share one repository and Docker toolchain. Research
-experiments can have separate launchers and optional services, as listed below.
+The core components share one repository and Docker toolchain. Firmware analysis
+lives in `research/`; independent application prototypes live in `experiments/`
+with separate launchers and optional services. See the [experiment index](../experiments/README.md).
+Diagnostic unit tests live in `research/diagnostics/tests/`.
 
 ## Ownership and dependencies
 
@@ -12,12 +14,12 @@ experiments can have separate launchers and optional services, as listed below.
 | --- | --- | --- |
 | `emulator/scripts/`, `emulator/shims/`, `emulator/runtime/` | Guest setup, boot/stop, SD/network stubs, physical input, framebuffer and PCM | Shared `firmware.profile`; native tools from `docker/` |
 | `viewer/server.py`, `viewer/static/` | HTTP/SSE presentation, browser input/audio, shared device CSS | Emulator runtime adapter; no controller transport |
-| `controller/` | Physical-device TCP/HTTP/WS clients, shared session/state/control API, discovery, optional bridges and network diagnostics | Python standard library; `aiohttp` for WS client/bridge; no emulator, firmware or research imports |
+| `controller/` | Physical-device TCP/HTTP/WS clients, shared session/state/control API, discovery, optional bridges and network diagnostics | Python standard library; `aiohttp` for WS client/bridge; no emulator, firmware, research or experiments imports |
 | `firmware/profile.py`, `firmware/v*.json`, `firmware/tools/` | Reviewed profiles/fingerprints, acquisition, extraction, OTA and inventory tools | Native extraction tools where needed |
 | `research/ghidra/`, `research/diagnostics/` | Ghidra, ELF tables, GDB and process-memory inspection | Firmware profiles; emulator process helpers for live memory probes |
-| `research/browser/` | Experimental TinyEMU/WASM runtime, local bundle builder and browser UI | Reviewed firmware preparation/shims; pinned public TinyEMU, Linux and QEMU inputs; separate build image |
-| `research/disc_assistant/` | Experimental text/voice command flow, console/web adapters, catalog snapshots/search, locale/response policy and request history | Shared Controller API; SQLite/Typesense; optional Whisper Server and Piper; separate launcher/services |
-| `research/diskos/` | Historical, unsupported source-built diskOS UI preview and isolated launcher | Pinned upstream source; legacy V2.40 runtime and emulator helpers; no supported-profile promotion |
+| `experiments/browser/` | Experimental TinyEMU/WASM runtime, local bundle builder and browser UI | Reviewed firmware preparation/shims; pinned public TinyEMU, Linux and QEMU inputs; separate build image |
+| `experiments/disc_assistant/` | Experimental text/voice command flow, console/web adapters, catalog snapshots/search, locale/response policy and request history | Shared Controller API; SQLite/Typesense; optional Whisper Server and Piper; separate launcher/services |
+| `experiments/diskos/` | Historical, unsupported source-built diskOS UI preview and isolated launcher | Pinned upstream source; legacy V2.40 runtime and emulator helpers; no supported-profile promotion |
 | `tests/integration/`, `tests/fixtures/` | Cross-component acceptance and generated media | The components under test |
 | `ci/` | Test discovery, disposable Compose orchestration and cleanup | Test implementations under `tests/` |
 
@@ -68,24 +70,24 @@ sourced emulator scripts also support an explicit `REPO` override.
 | `tools/test_*`, `tools/fixtures/` | Component `tests/` directories; sanitized captures in `controller/tests/fixtures/` |
 
 The [browser experiment](BROWSER.md) has a separate shell entry point:
-`bash research/browser/run.sh build /absolute/path/to/main_os/ota_v257`, then
-`bash research/browser/run.sh serve`. Its tests live in `research/tests/`; all
+`bash experiments/browser/run.sh build /absolute/path/to/main_os/ota_v257`, then
+`bash experiments/browser/run.sh serve`. Its tests live in `experiments/browser/tests/`; all
 downloaded inputs, generated images and served firmware remain in ignored
 `work/browser-disc/`. It is maintained as experimental research on `2.x` and
 does not start through the normal `run.sh`, viewer or Compose services.
 
-The [Disc Assistant](../research/disc_assistant/README.md) has its own
-`./research/disc_assistant/run.sh` launcher: `setup --all` installs its optional
+The [Disc Assistant](../experiments/disc_assistant/README.md) has its own
+`./experiments/disc_assistant/run.sh` launcher: `setup --all` installs its optional
 speech runtime, `web --bootstrap` starts the browser interface and `start` opens
 the text console. Neither the root launcher nor Viewer starts these services.
 Tests live with the prototype; `ci/assistant.sh` orchestrates disposable firmware
 acceptance implemented under `tests/integration/`. Its
 [software MVP is accepted](ASSISTANT_MVP_ACCEPTANCE.md), while the implementation
-remains under research and uses the shared Controller without reverse imports.
+remains experimental and uses the shared Controller without reverse imports.
 
 The [historical diskOS preview](DISKOS_PREVIEW.md) preserves its own Compose file,
-`bash research/diskos/build.sh /absolute/path/to/diskos` builder, and in-container
-`bash /repo/research/diskos/boot.sh` launcher. Generated outputs and adapted upstream
+`bash experiments/diskos/build.sh /absolute/path/to/diskos` builder, and in-container
+`bash /repo/experiments/diskos/boot.sh` launcher. Generated outputs and adapted upstream
 sources stay in ignored `work/diskos-preview/`. Its preserved V2.40 results do not
 extend the support policy or require recurring firmware integration gates.
 
@@ -150,10 +152,10 @@ These are local results, not a hosted CI run or a firmware release.
 ## Assistant NLU ownership
 
 The Assistant's working language-understanding component is now
-[`assistant/nlu`](../research/disc_assistant/assistant/nlu/README.md). Executing
+[`assistant/nlu`](../experiments/disc_assistant/assistant/nlu/README.md). Executing
 rules and typed intent validation live there; optional shadow models remain
 non-executing. Offline evaluation/training tools are in `nlu/evaluation`, while
 frozen corpora and labelled references are in `nlu/data`. Translator-facing TOML
 remains in `assistant/locales`, with no training examples in `locales/commands`.
-This internal organization does not promote the research prototype out of
-`research/disc_assistant` or change the Controller dependency direction.
+The Assistant remains an experimental application in `experiments/disc_assistant`;
+NLU is its ordinary subsystem. Controller has no reverse dependency on experiments.
