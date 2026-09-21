@@ -1,5 +1,12 @@
 # Disc Assistant: implementation plan
 
+Current extension: [issue #27](https://github.com/eudj1n/snowsky-disc-qemu/issues/27)
+adds current-track likes/questions, configurable volume and context-prioritized
+search. See the [quick guide](ASSISTANT_QUICK_GUIDE.md),
+[NLU ownership](../research/disc_assistant/assistant/nlu/README.md) and
+[Python/Controller extraction review](PYTHON_QUALITY_REVIEW.md).
+
+
 The **software MVP was accepted on 2026-09-19** against the existing 64/64
 emulator scenario run. See [acceptance and reproducibility](ASSISTANT_MVP_ACCEPTANCE.md).
 Physical acceptance and speech/platform work continue in issues #23/#24.
@@ -845,7 +852,7 @@ seven-row synthetic catalog; they do not establish generalization. See the
 ## Read-only embedding and hybrid experiment, 2026-09-18
 
 Completed the first comparison from the expanded NLU plan in
-[`experiments/nlu`](../research/disc_assistant/experiments/nlu/README.md): 182
+[`assistant/nlu/evaluation`](../research/disc_assistant/assistant/nlu/evaluation/README.md): 182
 RU/EN authored phrases, fixed train/development/test partitions, calibrated intent
 exemplar matching, reusable model/text vector cache and disposable real Typesense
 lexical/vector/hybrid track retrieval. Requirements/model download are explicit
@@ -874,7 +881,7 @@ challenge. The combined preview recognizes 6/16 RU and 5/16 EN commands, versus
 2/16 each for existing rules, and no false activations on eight negatives each.
 Most improvement comes from explicit extraction: EN model selection rejects all
 predictions. This is not evidence for enabling a learned execution provider.
-See [full results and limitations](../research/disc_assistant/experiments/nlu/README.md#supervised-command-study).
+See [full results and limitations](../research/disc_assistant/assistant/nlu/evaluation/README.md#supervised-command-study).
 
 Validation: 241 firmware-free tests, including snapshot rollback/staleness,
 schema-2 migration, slots, negation, CLI/console execution boundaries and split

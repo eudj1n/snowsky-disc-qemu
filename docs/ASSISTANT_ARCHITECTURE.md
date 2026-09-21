@@ -37,7 +37,7 @@ Controller. Dialogue remains disabled.
 
 ## Interpretation
 
-[`interpreter.py`](../research/disc_assistant/assistant/interpreter.py) defines:
+[`interpreter.py`](../research/disc_assistant/assistant/nlu/interpreter.py) defines:
 
 ```python
 async def interpret(text: str, context: InterpretationContext) -> Interpretation:
@@ -58,7 +58,8 @@ validated intention only when recognized:
 | --- | --- |
 | `Intent(query, kind, artist, title)` | Music request; unresolved names remain text, not guessed track IDs |
 | `AlbumIntent(query, album, artist, kind="album")` | Explicit whole or artist-scoped album; no catalog IDs from the interpreter |
-| `ControlIntent(action)` | Allowlisted pause/resume/stop/next/previous |
+| `ControlIntent(action)` | Allowlisted pause/resume/stop/next/previous, current-track likes and read-only now-playing |
+| `VolumeIntent(value, direction)` | Absolute 0..120 or configured relative up/down; exactly one form |
 | `LanguageIntent(locale)` | Set one installed, valid interaction locale |
 
 The `RuleInterpreter` wraps the existing literal grammar. Local-model and remote
@@ -219,7 +220,7 @@ snapshot and guarded execution boundaries; none is currently enabled.
 
 
 Read-only implementations now live in
-[`experiments/nlu`](../research/disc_assistant/experiments/nlu/README.md).
+[`assistant/nlu/evaluation`](../research/disc_assistant/assistant/nlu/evaluation/README.md).
 They evaluate class labels and candidate sources without installing a live
 Interpreter provider. Label similarity cannot fabricate music/language slots;
 prototype vector candidates still pass through the common final ranker. See the
@@ -246,3 +247,14 @@ the primary. A future selector is a separate policy/model, not an implicit sum
 of incompatible scores. The shared bounded compound-command guard runs before
 primary interpretation for both typed and transcribed input. The MVP has one
 action per request; no planning, sequencing or dialogue is implemented.
+
+
+## NLU component organization
+
+The working NLU code is grouped under `assistant/nlu`. Optional offline tools are
+in `nlu/evaluation`; corpora/reference examples are in `nlu/data`. Locale resources
+remain in `assistant/locales` for contributors. See [component ownership](../research/disc_assistant/assistant/nlu/README.md).
+Learned execution remains disabled. Current-track/favorite/volume commands use
+the same typed text/speech interpretation and capability-checked Controller path.
+Contextual music ranking reads a fresh native queue, with a second guard before
+selection; no interpretation provider receives device handles.

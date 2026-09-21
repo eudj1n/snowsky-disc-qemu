@@ -1,5 +1,9 @@
 # Disc Assistant research prototype
 
+Start with the [command quick guide](../../docs/ASSISTANT_QUICK_GUIDE.md).
+Language understanding is organized under [assistant/nlu](assistant/nlu/README.md).
+
+
 **Software MVP accepted (2026-09-19):** all 64 declared emulator scenarios passed.
 See [acceptance evidence and reproduction](../../docs/ASSISTANT_MVP_ACCEPTANCE.md).
 Physical-device and human-speech/performance acceptance remain separate follow-ups.
@@ -470,7 +474,7 @@ entry points, docs and CI together. Promotion does not require splitting reposit
 
 ## Optional NLU and vector research
 
-The separate [NLU experiment](experiments/nlu/README.md) compares rules, character
+The separate [NLU experiment](assistant/nlu/evaluation/README.md) compares rules, character
 matching and local multilingual embeddings on frozen authored RU/EN phrases,
 plus real Typesense lexical/vector/hybrid retrieval against synthetic metadata.
 It uses explicit isolated dependencies/model preparation and read-only reports;

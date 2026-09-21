@@ -338,7 +338,9 @@ class HTTPTests(unittest.TestCase):
                 self.assertEqual(headers['Content-Length'], str(len(data)))
                 self.assertNotIn('Transfer-Encoding', headers)
         finally:
-            server.shutdown(); server.server_close(); thread.join()
+            server.shutdown()
+            server.server_close()
+            thread.join()
 
     def test_no_automatic_retry_on_uncertain_write(self):
         with patch('controller.fiio_http.http.client.HTTPConnection') as constructor:

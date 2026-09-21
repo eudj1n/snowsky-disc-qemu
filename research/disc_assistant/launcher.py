@@ -144,7 +144,7 @@ def main(argv=None):
         if args.command == 'shadow-report':
             if args.source:
                 raise ValueError('--source does not apply to offline shadow reports')
-            from research.disc_assistant.experiments.nlu.shadow_report import main as report_main
+            from research.disc_assistant.assistant.nlu.evaluation.shadow_report import main as report_main
             # run.sh changes cwd; resolve all file arguments against its caller.
             caller = Path(os.environ.get('DISC_ASSISTANT_CALLER_DIR', os.getcwd()))
             arguments = list(args.arguments)

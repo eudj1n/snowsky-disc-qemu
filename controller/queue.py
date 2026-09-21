@@ -1,4 +1,6 @@
 """Native queue observations; independent of search and recommendation policy."""
+from controller.models import WirePlaybackState, PlaybackSource
+from controller.compatibility import Capability, require_client
 from collections import Counter
 from controller.catalog import CatalogReader, CatalogChanged
 from controller.playback import album_matches
@@ -71,7 +73,8 @@ def snapshot(config, client, http, *, expected=None, selected=None, selected_pos
         queue_failure('mode_changed', 'play mode changed during queue observation',
                       before_mode=mode, after_mode=after_mode)
     if expected is not None:
-        keys = lambda rows: Counter((r['name'], r['author']) for r in rows)
+        def keys(rows):
+            return Counter((r['name'], r['author']) for r in rows)
         actual_keys, expected_keys = keys(result['items']), keys(expected)
         if actual_keys != expected_keys:
             queue_failure('membership_mismatch', 'actual queue differs from the requested source',
@@ -80,9 +83,9 @@ def snapshot(config, client, http, *, expected=None, selected=None, selected_pos
                           unexpected_count=sum((actual_keys - expected_keys).values()))
         song = state.get('song', {})
         mark = result['mark']
-        source = 3 if selected and selected['kind'] == 'album' and selected.get('artist') is None else 7
+        source = PlaybackSource.ALBUM if selected and selected['kind'] == 'album' and selected.get('artist') is None else PlaybackSource.ARTIST_SCOPE
         row = result['items'][mark] if 0 <= mark < result['total'] else None
-        checks = {'playing': state.get('state') == 0, 'source': state.get('playerflag') == source,
+        checks = {'playing': state.get('state') == WirePlaybackState.PLAYING, 'source': state.get('playerflag') == source,
                   'mark_in_bounds': row is not None, 'position': song.get('pos_id') == mark + 1,
                   'title': row is not None and song.get('song_name') == row['name'],
                   'artist': row is not None and song.get('song_artist_name') == row['author']}
@@ -116,7 +119,7 @@ def snapshot(config, client, http, *, expected=None, selected=None, selected_pos
     result.update(mode=mode, mode_name=MODES[mode], state=state,
                   continuation=continuation(mode, result['total'], result['mark']),
                   consistency='two_equal_reads_not_atomic',
-                  playback_known=bool(state.get('song')) and state.get('state') in (0, 1))
+                  playback_known=bool(state.get('song')) and state.get('state') in (WirePlaybackState.PLAYING, WirePlaybackState.PAUSED))
     return result
 
 
@@ -142,13 +145,12 @@ def previous_in_queue(config, client, http):
     result = {'operation_id': uuid4().hex, 'action': 'previous', 'status': 'not_sent',
               'mutation_attempted': False, 'navigation_policy': 'previous_queue_row'}
     try:
-        if client.handshake() != '0306' or client.settings().get('soc_version') != 257:
-            raise ValueError('queue navigation requires reviewed DISC V2.57')
+        require_client(client, Capability.QUEUE_NAVIGATION)
         client.wait_for_mutation()
         before = snapshot(config, client, http)
         current = before['mark']
         state = before['state']
-        if (state.get('state') not in (0, 1) or not 0 <= current < before['total']
+        if (state.get('state') not in (WirePlaybackState.PLAYING, WirePlaybackState.PAUSED) or not 0 <= current < before['total']
                 or not _row_matches(state, before['items'][current], current)):
             raise CatalogChanged('current queue position is not confirmed; no selection sent')
         if current == 0:
@@ -177,7 +179,7 @@ def previous_in_queue(config, client, http):
                 continue
             if after['items'] != before['items'] or after['mode'] != before['mode']:
                 raise CatalogChanged('queue changed after selection; selection was not retried')
-            if (after['mark'] == index and after['state'].get('state') == 0
+            if (after['mark'] == index and after['state'].get('state') == WirePlaybackState.PLAYING
                     and _row_matches(after['state'], target, index)):
                 return dict(result, status='confirmed', outcome='track_changed', state=after['state'], queue=after)
             time.sleep(.15)

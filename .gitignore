@@ -32,6 +32,11 @@ Thumbs.db
 # Python cache
 __pycache__/
 *.pyc
+.mypy_cache/
+.ruff_cache/
+*.egg-info/
+/controller/build/
+/controller/dist/
 
 # Local compose env (machine-specific OTA path)
 .env

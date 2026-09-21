@@ -1,4 +1,5 @@
 """Reviewed DISC scan guards and partial playback-state reduction."""
+from controller.models import WirePlaybackState
 from controller.catalog import CatalogChanged
 
 
@@ -44,7 +45,7 @@ def merge_snapshot(state, update):
     if isinstance(update.get('song'), dict) and update['song']:
         if update['song'] != state.get('song'):
             state = {}
-    elif update.get('state') == 2:
+    elif update.get('state') == WirePlaybackState.STOPPED:
         # Loading/EOF state cannot retain a previous song as current evidence.
         state = {}
     return {**state, **update}

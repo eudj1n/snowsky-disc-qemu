@@ -7,7 +7,7 @@ The resulting text models can be imported into `/explain`, not into live `ask`.
 
 ## Current corpus and evidence
 
-[`commands-v2`](../research/disc_assistant/experiments/nlu/datasets/commands-v2/README.md)
+[`commands-v2`](../research/disc_assistant/assistant/nlu/data/datasets/commands-v2/README.md)
 contains **609 rows** with original text, label, typed intention, argument spans,
 locale, split, related-example group, origin and review identity/rationale.
 Train/development/test were committed as `cad202b` before the first v2 model run.
@@ -34,7 +34,7 @@ once inspected, use it as regression during subsequent redesign and collect a
 new holdout. Do not move failed test phrases into training and continue reporting
 them as independent evaluation.
 
-The [full report](../research/disc_assistant/experiments/nlu/evaluations/2026-09-18-commands-v2.json)
+The [full report](../research/disc_assistant/assistant/nlu/evaluation/reports/2026-09-18-commands-v2.json)
 compares ordinary and class-balanced multinomial logistic regression on shared
 word/character TF-IDF features and frozen multilingual MiniLM embeddings. The
 encoder is not fine-tuned. Every variant uses the same splits, C/threshold/margin
@@ -90,13 +90,13 @@ needs no Torch, sklearn or embedding encoder.
 ## Reproduce or import
 
 Prepare the isolated Python 3.12 environment and pinned embedding model using the
-[NLU setup](../research/disc_assistant/experiments/nlu/README.md#reproduce), then:
+[NLU setup](../research/disc_assistant/assistant/nlu/evaluation/README.md#reproduce), then:
 
 ```sh
 lab=/tmp/disc-nlu-lab
-"$lab/venv/bin/python" -m research.disc_assistant.experiments.nlu.dataset validate \
-  research/disc_assistant/experiments/nlu/datasets/commands-v2
-"$lab/venv/bin/python" -m research.disc_assistant.experiments.nlu.study_commands \
+"$lab/venv/bin/python" -m research.disc_assistant.assistant.nlu.evaluation.dataset validate \
+  research/disc_assistant/assistant/nlu/data/datasets/commands-v2
+"$lab/venv/bin/python" -m research.disc_assistant.assistant.nlu.evaluation.study_commands \
   --work "$lab" --output "$lab/commands-v2-run"
 ```
 
@@ -128,7 +128,7 @@ itself was a non-command. Do not use the assistant's selected action as gold.
 ```sh
 ./research/disc_assistant/run.sh history export /tmp/disc-history.jsonl
 assistant_python=research/disc_assistant/assistant/.venv/bin/python
-"$assistant_python" -m research.disc_assistant.experiments.nlu.dataset collect \
+"$assistant_python" -m research.disc_assistant.assistant.nlu.evaluation.dataset collect \
   --history /tmp/disc-history.jsonl --output /tmp/disc-pending.jsonl
 ```
 
@@ -160,7 +160,7 @@ pause request, an annotation looks like this (replace ID/group and reviewer):
 Apply only those explicit annotations; other queue rows remain pending:
 
 ```sh
-"$assistant_python" -m research.disc_assistant.experiments.nlu.dataset review \
+"$assistant_python" -m research.disc_assistant.assistant.nlu.evaluation.dataset review \
   --queue /tmp/disc-pending.jsonl --annotations /tmp/disc-labels.jsonl \
   --output /tmp/disc-reviewed.jsonl
 ```
@@ -183,7 +183,7 @@ in train/development/test for each locale. A small queue of recent requests is n
 sufficient on its own. Retain earlier examined cases in regression. Then freeze:
 
 ```sh
-"$assistant_python" -m research.disc_assistant.experiments.nlu.dataset freeze \
+"$assistant_python" -m research.disc_assistant.assistant.nlu.evaluation.dataset freeze \
   --input /tmp/disc-reviewed-corpus.jsonl --output /tmp/disc-corpus-v3 --name commands-v3
 ```
 

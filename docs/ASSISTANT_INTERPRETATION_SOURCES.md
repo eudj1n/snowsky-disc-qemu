@@ -33,7 +33,7 @@ currently diagnostic; only the shared single-action policy is applied to live ru
 
 ## Evidence contract
 
-`assistant/interpretation_sources.py` defines `Source.evaluate(text, context)` and
+`assistant/nlu/interpretation_sources.py` defines `Source.evaluate(text, context)` and
 `Evidence`. Adding a provider does not require modifying Controller or dispatch.
 Register it in `default_sources`; provide source-specific tests and measurements.
 
@@ -120,7 +120,7 @@ source is unavailable and the report still compares rules and slots.
 
 ```sh
 research/disc_assistant/assistant/.venv/bin/python \
-  -m research.disc_assistant.experiments.nlu.compare_sources \
+  -m research.disc_assistant.assistant.nlu.evaluation.compare_sources \
   --models /tmp/disc-command-study-v2-release \
   --output /tmp/disc-source-comparison
 ```

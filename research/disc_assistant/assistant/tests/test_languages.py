@@ -2,8 +2,8 @@ from pathlib import Path
 import tempfile
 import unittest
 
-from research.disc_assistant.assistant.intents import Intent, parse as parse_text
-from research.disc_assistant.assistant.languages import load_languages
+from research.disc_assistant.assistant.nlu.intents import Intent, parse as parse_text
+from research.disc_assistant.assistant.nlu.languages import load_languages
 from research.disc_assistant.assistant.ranking import score_tracks
 
 

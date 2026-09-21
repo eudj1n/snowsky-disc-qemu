@@ -4,7 +4,7 @@ import json
 from pathlib import Path
 
 from research.disc_assistant.assistant.database import connect
-from research.disc_assistant.assistant.languages import load_languages
+from research.disc_assistant.assistant.nlu.languages import load_languages
 from research.disc_assistant.assistant.responses import available_reply_languages, validate_locale, MODES
 
 

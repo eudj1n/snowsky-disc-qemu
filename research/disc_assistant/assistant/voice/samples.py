@@ -5,12 +5,12 @@ import os
 from pathlib import Path
 import re
 
-from research.disc_assistant.assistant.interpreter import InterpretationContext, interpret_request
+from research.disc_assistant.assistant.nlu.interpreter import InterpretationContext, interpret_request
 from research.disc_assistant.assistant.providers import ProviderUnavailable, InvalidProviderResult
 from research.disc_assistant.assistant.speech import InvalidSpeech, NoSpeech, SpeechUnavailable
 from research.disc_assistant.assistant.voice.backends import transcribe_file, synthesize_text
 from research.disc_assistant.assistant.voice.files import audio_details, load_audio, resolve_path, stt_audio
-from research.disc_assistant.assistant.languages import normalized
+from research.disc_assistant.assistant.nlu.languages import normalized
 from research.disc_assistant.assistant.voice.catalog_evaluation import CatalogEvaluation, music_case, validate_targets
 
 CORPORA = Path(__file__).parent / 'samples'

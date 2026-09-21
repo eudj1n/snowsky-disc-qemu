@@ -194,7 +194,7 @@ class LanBridgeTests(unittest.IsolatedAsyncioTestCase):
                 loop.sock_sendto.assert_awaited_once_with(sock, PAYLOAD, (GROUP, PORT))
 
     def test_sender_uses_selected_interface_and_ttl_one(self):
-        with patch('controller.bridge.lan_bridge.socket.socket') as factory:
+        with patch('controller.bridge.lan_bridge.socket.socket'):
             sock = sender('192.0.2.1')
             sock.bind.assert_called_once_with(('192.0.2.1', 0))
             sock.setsockopt.assert_any_call(socket.IPPROTO_IP, socket.IP_MULTICAST_TTL, 1)

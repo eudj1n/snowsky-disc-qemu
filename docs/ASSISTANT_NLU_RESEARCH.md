@@ -5,7 +5,7 @@ Assistant remains rules plus lexical/transliterated catalog matching. An isolate
 research environment now exercises pinned multilingual MiniLM embeddings,
 character n-grams and real Typesense vector/hybrid retrieval. No learned command
 provider is enabled in the console; SetFit, phonetics and Natural Language Search
-remain pending. [Reproduction and measured results](../research/disc_assistant/experiments/nlu/README.md)
+remain pending. [Reproduction and measured results](../research/disc_assistant/assistant/nlu/evaluation/README.md)
 complement the earlier [catalog speech evaluation](ASSISTANT_VOICE.md#catalog-selection-evaluation).
 
 ## Separate the problems
@@ -180,7 +180,7 @@ enable providers in the live Assistant.
 
 ## First model experiment checkpoint
 
-The opt-in [NLU experiment](../research/disc_assistant/experiments/nlu/README.md)
+The opt-in [NLU experiment](../research/disc_assistant/assistant/nlu/evaluation/README.md)
 has 182 authored bilingual intent phrases and a separate 24-row music catalog
 with development/test queries. It freezes splits, calibrates using development
 only, and records file/model/data signatures. Cached vectors are keyed by pipeline
@@ -247,7 +247,7 @@ example vectors and optional portable classifiers, rejecting stale/mismatched
 imports. `/explain` replaces the proposed `/interpret` name and compares raw rules,
 slot extraction/guards and the optional model without execution or library search.
 
-The [supervised study](../research/disc_assistant/experiments/nlu/README.md#supervised-command-study)
+The [supervised study](../research/disc_assistant/assistant/nlu/evaluation/README.md#supervised-command-study)
 compares linear heads on text features and frozen MiniLM vectors. The encoder is
 not fine-tuned. On a new authored challenge, templates/guards recognize 5/16
 commands per locale; the text fallback adds one RU command and no EN commands.

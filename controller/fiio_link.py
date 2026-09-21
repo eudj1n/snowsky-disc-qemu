@@ -1,5 +1,7 @@
 #!/usr/bin/env python3
 """Small, dependency-free FiiO Link client. Defaults to the local emulator only."""
+from controller.wire import playback_snapshot as playback_snapshot, frame as frame, hex_value as hex_value, play_mode_value as play_mode_value
+from controller.link_commands import ReviewedCommands
 import argparse
 from controller.compatibility import require
 import json
@@ -8,24 +10,7 @@ import socket
 import time
 from controller.fiio_settings import setting_query, setting_command, setting_value, peq_payload, peq_value
 from controller.fiio_playlist import playlist_command, verify_playlist
-from controller.fiio_library import (genre_command, verify_genre, folder_command, verify_folder,
-                          artist_command, verify_artist, album_command, verify_album)
-
-
-def frame(tag, payload=b''):
-    if isinstance(payload, str):
-        payload = payload.encode('utf-8')
-    if len(tag) != 4 or any(c not in '0123456789abcdefABCDEF' for c in tag):
-        raise ValueError('tag must have four hex digits')
-    if len(payload) > 65535 - 8:
-        raise ValueError('frame too large')
-    return tag.encode('ascii') + f'{8 + len(payload):04X}'.encode() + payload
-
-
-def hex_value(value, maximum=65535, width=4):
-    if type(value) is not int or not 0 <= value <= maximum:
-        raise ValueError(f'value outside 0..{maximum}')
-    return f'{value:0{width}X}'
+from controller.fiio_library import (genre_command, verify_genre, folder_command, verify_folder)
 
 
 def list_payload(list_type, name=None, *, indexed=False):
@@ -70,28 +55,6 @@ def library_page(reply):
     return {'total': int(reply[:4], 16), 'items': items}
 
 
-def playback_snapshot(reply):
-    # V2.40 can reply with an empty a202 while a favorites selection loads.
-    # Absence of a snapshot is not a known stopped/paused state.
-    if not reply:
-        return {}
-    result = json.loads(reply)
-    if not isinstance(result, dict):
-        raise ValueError('now-playing payload must be an object')
-    if isinstance(result.get('song'), str):
-        result['song'] = json.loads(result['song'])
-    return result
-
-
-def play_mode_value(reply):
-    if len(reply) != 4 or any(b not in b'0123456789abcdefABCDEF' for b in reply):
-        raise ValueError('play mode must be four hex digits')
-    value = int(reply, 16)
-    if value > 4:
-        raise ValueError('unsupported DISC play mode')
-    return value
-
-
 class Frames:
     """TCP is a byte stream: handle fragments, coalesced replies and UTF-8 bytes."""
     def __init__(self):
@@ -114,7 +77,7 @@ class Frames:
         return result
 
 
-class Client:
+class Client(ReviewedCommands):
     def __init__(self, host='127.0.0.1', port=12100, timeout=8):
         self.socket = socket.create_connection((host, port), timeout)
         self.timeout = timeout
@@ -182,32 +145,14 @@ class Client:
     def handshake(self):
         return self.request('0599', '0000').decode('ascii')
 
-    def settings(self):
-        return json.loads(self.request('0501'))
 
     def now_playing(self):
         return playback_snapshot(self.request('0202'))
 
-    def play_pause(self):
-        # 0201 -> FUN_004e477c -> FUN_00424b2c(0, action); action 0 toggles.
-        self.socket.sendall(frame('0201', '0000'))
-
-    def next_track(self):
-        self.socket.sendall(frame('0201', '0001'))
-
-    def previous_track(self):
-        # At >10 seconds stock restarts this track instead of moving backwards.
-        self.socket.sendall(frame('0201', '0002'))
 
     def seek(self, position_ms):
         self.socket.sendall(frame('0103', hex_value(position_ms, 0x7fffffff, 8)))
 
-    def set_play_mode(self, mode):
-        self.socket.sendall(frame('0102', hex_value(mode, 4)))
-
-    def play_mode(self):
-        # Stock 0105 reads the mode but replies with a102, not a105.
-        return play_mode_value(self.request('0105', expected='a102'))
 
     def scan_library(self):
         """Start stock indexing; observe a60a status and a622 count events."""
@@ -256,20 +201,6 @@ class Client:
             require(version, 'favorite_positions')
         self.socket.sendall(frame('0100', payload))
 
-    def play_queue_index(self, index, *, http=None):
-        """Select a zero-based position in the current queue, with a fresh bounds check.
-
-        The queue can still change between query and selection; Link has no revision
-        token. Never replay this command after reconnecting or reuse a cached count.
-        """
-        position = hex_value(index)
-        # HTTP permits a caller to guard the exact row immediately before send.
-        # The original TCP-only API retains its fresh queue-count query.
-        page = (http.catalog('curlist/song', offset=index, limit=1) if http is not None
-                else self.library('queue'))
-        if index >= page['total'] or (http is not None and len(page['items']) != 1):
-            raise ValueError('position outside the current queue')
-        self.socket.sendall(frame('0100', position + '0000'))
 
     def play_playlist(self, position, index=None, *, http, expected_name):
         """Play a custom list, or its zero-based track index, after fresh HTTP checks.
@@ -283,11 +214,6 @@ class Client:
         verify_playlist(http, position, index, expected_name)
         self.socket.sendall(frame(*command))
 
-    def set_volume(self, value):
-        if type(value) is not int or not 0 <= value <= 120:
-            raise ValueError('volume outside 0..120')
-        # 0502 -> 004e4744 -> callback 0088cc44 -> 004e0fdc (DAC + UI + DB).
-        self.socket.sendall(frame('0502', f'{value:04X}'))
 
     def play_genre(self, genre, index=None, *, album=None, http):
         """Play genre tracks, optionally scoped to an album, with a reviewed contract."""
@@ -297,25 +223,6 @@ class Client:
         verify_genre(http, genre, index, album)
         self.socket.sendall(frame(*command))
 
-    def play_artist(self, artist, index=None, *, album=None, http):
-        """Play an artist, or an artist-scoped album/track, after fresh HTTP checks.
-
-        Indexed type-7 selection requires an album. HTTP must target this device;
-        serialize edits and never replay an uncertain selection.
-        """
-        command = artist_command(artist, index, album)
-        version = self.settings().get('soc_version')
-        require(version, 'artist_playback')
-        verify_artist(http, artist, index, album)
-        self.socket.sendall(frame(*command))
-
-    def play_album(self, album, index=None, *, http):
-        """Play a complete named album after fresh source bounds verification."""
-        command = album_command(album, index)
-        version = self.settings().get('soc_version')
-        require(version, 'album_playback')
-        verify_album(http, album, index)
-        self.socket.sendall(frame(*command))
 
     def play_folder(self, path, index=None, *, http, expected_name=None):
         """Play a folder or its displayed position (including directory rows)."""
@@ -329,6 +236,9 @@ class Client:
         # 0101 -> 004e4cb4 -> comm_play_all(list_type=1), indexed local library.
         # Type 0 reuses the current queue and fails if LIST_SONG_0 is absent.
         self.socket.sendall(frame('0101', list_payload(list_type, name)))
+
+    def _queue_page(self):
+        return self.library('queue')
 
     def library(self, category='tracks', offset=0, name=None):
         return library_page(self.request(*library_request(category, offset, name)))

@@ -11,10 +11,10 @@ from unittest.mock import AsyncMock, Mock, patch
 from research.disc_assistant.assistant import __main__ as cli
 from research.disc_assistant.assistant.config import load
 from research.disc_assistant.assistant.console import Application
-from research.disc_assistant.assistant.interpreter import (
+from research.disc_assistant.assistant.nlu.interpreter import (
     Interpretation, InterpretationContext, RuleInterpreter, interpret_request,
 )
-from research.disc_assistant.assistant.intents import Intent, ControlIntent, LanguageIntent
+from research.disc_assistant.assistant.nlu.intents import Intent, ControlIntent, LanguageIntent
 from research.disc_assistant.assistant.journal import Trace, history_command
 from research.disc_assistant.assistant.providers import ProviderInfo, ProviderUnavailable, InvalidProviderResult
 from research.disc_assistant.library.tests.helpers import TRACKS

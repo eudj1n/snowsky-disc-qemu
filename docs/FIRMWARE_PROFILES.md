@@ -109,3 +109,11 @@ remaining V2.40 profile is a separate task.
   full 310-second paused, screen-off USB observation with unplug recovery.
 - The three disposable stacks and work volumes were removed. These are local
   results, not a hosted workflow run or acceptance of any new firmware version.
+
+
+Assistant session startup, catalog snapshots, playback controls, queue observation
+and navigation, current-track questions/favorites and volume now require named
+Controller capabilities. `require_client()` checks the DISC handshake and fresh
+`soc_version`; raw version literals no longer gate these Assistant paths.
+A future version such as 260 must be explicitly reviewed and registered with the
+capabilities it actually supports. No 260 runtime support is enabled by this change.

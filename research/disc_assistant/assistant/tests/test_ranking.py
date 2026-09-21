@@ -2,8 +2,8 @@ import tempfile
 import unittest
 from unittest.mock import AsyncMock, Mock
 
-from research.disc_assistant.assistant.intents import parse as parse_text, Intent
-from research.disc_assistant.assistant.languages import load_languages
+from research.disc_assistant.assistant.nlu.intents import parse as parse_text, Intent
+from research.disc_assistant.assistant.nlu.languages import load_languages
 from research.disc_assistant.assistant.ranking import rank, score_tracks, ordered
 from research.disc_assistant.library.tests.helpers import TRACKS, ALIASES
 from research.disc_assistant.library.store import Store, StaleSnapshot

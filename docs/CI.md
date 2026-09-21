@@ -1,5 +1,16 @@
 # Branches, CI and firmware inputs
 
+## Python library quality gate
+
+Hosted firmware-free CI also installs the pinned tools in
+[`ci/requirements-quality.txt`](../ci/requirements-quality.txt) and runs
+`bash ci/python-quality.sh` with that environment on `PATH`. This checks
+Controller lint, incremental strict typing and the installed-wheel contract.
+The wheel test builds in a temporary copy, preserves the checkout, checks a core
+installation without aiohttp, and then verifies the WebSocket/bridge extras.
+The extras installation needs package-index access; ordinary Docker firmware-free
+tests still run with networking disabled.
+
 ## Version policy
 
 `2.x` is the default development branch for firmware 2.x. The obsolete `main`

@@ -16,8 +16,8 @@ import time
 import urllib.error
 import urllib.request
 
-from research.disc_assistant.assistant.interpreter import interpret_request, InterpretationContext
-from research.disc_assistant.assistant.languages import normalized, load_languages
+from research.disc_assistant.assistant.nlu.interpreter import interpret_request, InterpretationContext
+from research.disc_assistant.assistant.nlu.languages import normalized, load_languages
 from research.disc_assistant.assistant.responses import locale_code
 from research.disc_assistant.assistant.local_service import endpoint
 from research.disc_assistant.assistant.speech import SpeechContext

@@ -1,0 +1,213 @@
+# Curated diagnostic training references; not a held-out evaluation set.
+version = 1
+locale = "en"
+
+[[examples]]
+id = "en-train-pause-1"
+label = "pause"
+text = "Pause"
+
+[[examples]]
+id = "en-train-pause-2"
+label = "pause"
+text = "Pause the music"
+
+[[examples]]
+id = "en-train-pause-3"
+label = "pause"
+text = "Put playback on pause"
+
+[[examples]]
+id = "en-train-resume-1"
+label = "resume"
+text = "Resume"
+
+[[examples]]
+id = "en-train-resume-2"
+label = "resume"
+text = "Continue playback"
+
+[[examples]]
+id = "en-train-resume-3"
+label = "resume"
+text = "Resume the song"
+
+[[examples]]
+id = "en-train-stop-1"
+label = "stop"
+text = "Stop"
+
+[[examples]]
+id = "en-train-stop-2"
+label = "stop"
+text = "Stop music"
+
+[[examples]]
+id = "en-train-stop-3"
+label = "stop"
+text = "End playback"
+
+[[examples]]
+id = "en-train-next-1"
+label = "next"
+text = "Next track"
+
+[[examples]]
+id = "en-train-next-2"
+label = "next"
+text = "Skip this song"
+
+[[examples]]
+id = "en-train-next-3"
+label = "next"
+text = "Go to the next song"
+
+[[examples]]
+id = "en-train-previous-1"
+label = "previous"
+text = "Previous track"
+
+[[examples]]
+id = "en-train-previous-2"
+label = "previous"
+text = "Go back one song"
+
+[[examples]]
+id = "en-train-previous-3"
+label = "previous"
+text = "Play the previous song"
+
+[[examples]]
+id = "en-train-play-1"
+label = "play"
+text = "Play Queen"
+
+[[examples]]
+id = "en-train-play-2"
+label = "play"
+text = "Put on Coldplay"
+
+[[examples]]
+id = "en-train-play-3"
+label = "play"
+text = "I want to hear Yellow"
+
+[[examples]]
+id = "en-train-language-1"
+label = "language"
+text = "Switch language to Russian"
+
+[[examples]]
+id = "en-train-language-2"
+label = "language"
+text = "Use English for commands"
+
+[[examples]]
+id = "en-train-language-3"
+label = "language"
+text = "Change the interface language"
+
+[[examples]]
+id = "en-train-reject-1"
+label = "reject"
+text = "The weather is nice today"
+
+[[examples]]
+id = "en-train-reject-2"
+label = "reject"
+text = "I bought a new player"
+
+[[examples]]
+id = "en-train-reject-3"
+label = "reject"
+text = "What does pause mean?"
+
+[[examples]]
+id = "en-train-reject-4"
+label = "reject"
+text = "Do not play music"
+
+[[examples]]
+id = "en-train-reject-5"
+label = "reject"
+text = "She said next track"
+
+[[examples]]
+id = "en-train-reject-6"
+label = "reject"
+text = "I will listen tomorrow"
+
+[[examples]]
+id = "en-negative-1"
+label = "reject"
+text = "Do not pause playback"
+
+[[examples]]
+id = "en-negative-2"
+label = "reject"
+text = "Do not resume the song"
+
+[[examples]]
+id = "en-negative-3"
+label = "reject"
+text = "Do not stop playback"
+
+[[examples]]
+id = "en-negative-4"
+label = "reject"
+text = "Do not skip to another song"
+
+[[examples]]
+id = "en-negative-5"
+label = "reject"
+text = "Do not return to the previous song"
+
+[[examples]]
+id = "en-negative-6"
+label = "reject"
+text = "Do not switch the interface language"
+
+[[examples]]
+id = "en-negative-7"
+label = "reject"
+text = "Never start playback"
+
+[[examples]]
+id = "en-negative-8"
+label = "reject"
+text = "The album was released without a pause between sessions"
+
+[[examples]]
+id = "en-negative-9"
+label = "reject"
+text = "I said pause in a conversation"
+
+[[examples]]
+id = "en-negative-10"
+label = "reject"
+text = "Someone wrote next song on a note"
+
+[[examples]]
+id = "en-negative-11"
+label = "reject"
+text = "The label says stop music"
+
+[[examples]]
+id = "en-negative-12"
+label = "reject"
+text = "How do I say resume in Russian?"
+
+[[examples]]
+id = "en-negative-13"
+label = "reject"
+text = "I do not want a language change"
+
+[[examples]]
+id = "en-negative-14"
+label = "reject"
+text = "Please explain what previous means"
+
+[[examples]]
+id = "en-negative-15"
+label = "reject"
+text = "Could you describe the pause button?"

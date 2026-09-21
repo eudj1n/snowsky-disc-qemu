@@ -1,6 +1,6 @@
 """Desktop prototype: catalog search, ranked text requests and verified playback."""
 import argparse
-from dataclasses import replace
+from dataclasses import asdict, replace
 import asyncio
 import json
 import os
@@ -10,8 +10,8 @@ from research.disc_assistant.assistant.config import load
 from research.disc_assistant.assistant.session import sync
 from research.disc_assistant.assistant.ranking import rank
 from research.disc_assistant.assistant.playback import execute, device_lock
-from research.disc_assistant.assistant.intents import ControlIntent, LanguageIntent
-from research.disc_assistant.assistant.interpreter import InterpretationContext, interpret_request
+from research.disc_assistant.assistant.nlu.intents import ControlIntent, LanguageIntent, VolumeIntent
+from research.disc_assistant.assistant.nlu.interpreter import InterpretationContext, interpret_request
 from research.disc_assistant.assistant.preferences import effective_config, language_command, response_command
 from research.disc_assistant.assistant.journal import Trace, history_command, outcome, debug_stderr
 from research.disc_assistant.assistant.responses import Responses, exception_result, validate_locales
@@ -46,15 +46,27 @@ async def search_command(config, store, args, trace, intent=None):
         if args.command == 'index':
             return await search.build(store, config.device_key)
         if args.command in ('ask', 'rank'):
-            ranking = await rank(config, store, search, intent, trace=trace)
-            trace.search(ranking)
-            if args.command == 'rank' or not ranking['candidates']:
-                return ranking
-            trace.select(ranking)
-            trace.event('execution_started', {'action': 'play'})
-            result = execute(config, store, ranking)
-            trace.event('execution_result', outcome(result))
-            return result
+            from contextlib import ExitStack
+            from research.disc_assistant.assistant.device import PlaybackClient
+            from research.disc_assistant.assistant.context import read as read_context
+            from research.disc_assistant.assistant.nlu.intents import Intent
+            with ExitStack() as stack:
+                shared = None
+                def context():
+                    nonlocal shared
+                    stack.enter_context(device_lock(config.data_dir))
+                    shared = stack.enter_context(PlaybackClient(config.host, config.tcp_port, config.timeout))
+                    return read_context(config, shared)
+                ranking = await rank(config, store, search, intent, trace=trace,
+                                     context=context if args.command == 'ask' else None)
+                trace.search(ranking)
+                if args.command == 'rank' or not ranking['candidates']:
+                    return ranking
+                trace.select(ranking)
+                trace.event('execution_started', {'action': 'play'})
+                result = execute(config, store, ranking, shared=shared)
+                trace.event('execution_result', outcome(result))
+                return result
         result = await search.search(store, config.device_key, args.query, limit=args.limit)
         trace.search(result, phase='retrieval')
         return result
@@ -63,7 +75,7 @@ async def search_command(config, store, args, trace, intent=None):
 
 
 def shadow_sources(config):
-    from research.disc_assistant.assistant.interpretation_sources import default_sources
+    from research.disc_assistant.assistant.nlu.interpretation_sources import default_sources
     return default_sources(config) if config.shadow else None
 
 
@@ -157,10 +169,10 @@ def main(argv=None, *, interpreter=None, transcriber=None, synthesizer=None):
                         interpreter=interpreter, trace=trace, shadow=shadow_sources(config),
                         shadow_timeout_ms=config.shadow_timeout_ms)) if args.command in ('ask', 'rank') else None)
             if args.command == 'explain':
-                from research.disc_assistant.assistant.explain import preview
+                from research.disc_assistant.assistant.nlu.explain import preview
                 result = preview(config, args.text, trace)
             elif args.command == 'commands':
-                from research.disc_assistant.assistant.command_catalog import command
+                from research.disc_assistant.assistant.nlu.command_catalog import command
                 result = command(config, args.arguments)
                 trace.event('command_catalog', result)
             elif args.command == 'transcribe':
@@ -186,9 +198,9 @@ def main(argv=None, *, interpreter=None, transcriber=None, synthesizer=None):
             elif args.command == 'queue':
                 trace.event('execution_started', {'action': 'queue', 'read_only': True})
                 result = observe_queue(config)
-            elif isinstance(intent, (ControlIntent, LanguageIntent)):
+            elif isinstance(intent, (ControlIntent, VolumeIntent, LanguageIntent)):
                 if args.command == 'rank':
-                    result = {'status': 'planned', 'action': intent.action if isinstance(intent, ControlIntent) else 'set_language', 'requires_search': False}
+                    result = {'status': 'planned', 'action': intent.action if isinstance(intent, (ControlIntent, VolumeIntent)) else 'set_language', 'requires_search': False, 'intent': asdict(intent)}
                 else:
                     trace.event('execution_started', {'action': intent.action})
                     result = control(config, intent)

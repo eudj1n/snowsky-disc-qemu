@@ -12,10 +12,10 @@ from research.disc_assistant.assistant import controls
 from research.disc_assistant.assistant.__main__ import main
 from research.disc_assistant.assistant.config import Config
 from research.disc_assistant.assistant.device import ObservedSocket, PlaybackClient
-from research.disc_assistant.assistant.intents import ControlIntent, Intent, parse as parse_text
+from research.disc_assistant.assistant.nlu.intents import ControlIntent, Intent, parse as parse_text
 from research.disc_assistant.assistant.tests.test_playback import FakeClient
 
-from research.disc_assistant.assistant.languages import load_languages
+from research.disc_assistant.assistant.nlu.languages import load_languages
 
 def parse(text, rules=None):
     # Low-level grammar comparisons explicitly exercise both dictionaries.

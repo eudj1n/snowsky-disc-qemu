@@ -8,11 +8,11 @@ from types import SimpleNamespace
 import unittest
 from aiohttp import web
 from research.disc_assistant.assistant.config import load
-from research.disc_assistant.assistant.interpreter import interpret_request, InterpretationContext
-from research.disc_assistant.assistant.intents import ControlIntent, AlbumIntent
-from research.disc_assistant.assistant.interpretation_sources import collect, default_sources, diagnostic_choice
-from research.disc_assistant.assistant.structured_source import StructuredSource
-from research.disc_assistant.experiments.nlu.shadow_report import provenance
+from research.disc_assistant.assistant.nlu.interpreter import interpret_request, InterpretationContext
+from research.disc_assistant.assistant.nlu.intents import ControlIntent, AlbumIntent
+from research.disc_assistant.assistant.nlu.interpretation_sources import collect, default_sources, diagnostic_choice
+from research.disc_assistant.assistant.nlu.structured_source import StructuredSource
+from research.disc_assistant.assistant.nlu.evaluation.shadow_report import provenance
 
 
 class StructuredTests(unittest.IsolatedAsyncioTestCase):

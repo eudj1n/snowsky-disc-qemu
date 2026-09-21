@@ -92,7 +92,7 @@ class ConfigSessionTests(unittest.TestCase):
 
     def test_unknown_firmware_never_reads_catalog(self):
         with patch.object(session, 'Client', return_value=self.client(999)), patch.object(session, 'HTTPClient') as http:
-            with self.assertRaisesRegex(ValueError, 'V2.57'):
+            with self.assertRaisesRegex(ValueError, 'catalog_snapshot.*999'):
                 session.sync(self.config, self.store)
             http.assert_not_called()
 

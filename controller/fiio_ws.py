@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 """Async FiiO Link client over the emulator WebSocket bridge (requires aiohttp)."""
+from controller.wire import settings_snapshot, volume_command, favorite_command
 import argparse
 from controller.compatibility import require
 import asyncio
@@ -92,7 +93,7 @@ class WSClient:
         return (await self.request('0599', '0000')).decode('ascii')
 
     async def settings(self):
-        return json.loads(await self.request('0501'))
+        return settings_snapshot(await self.request('0501'))
 
     async def tracks(self, offset=0):
         return await self.library('tracks', offset)
@@ -104,9 +105,10 @@ class WSClient:
         return playback_snapshot(await self.request('0202'))
 
     async def set_volume(self, value):
-        if type(value) is not int or not 0 <= value <= 120:
-            raise ValueError('volume outside 0..120')
-        await self.send('0502', f'{value:04X}')
+        await self.send(*volume_command(value))
+
+    async def set_favorite(self, value):
+        await self.send(*favorite_command(value))
 
     async def play_pause(self):
         await self.send('0201', '0000')

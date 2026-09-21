@@ -1,5 +1,6 @@
 """Bounded request/decision journal. Evidence collection, never a replay queue."""
 import asyncio
+from research.disc_assistant.assistant.nlu import RULES_VERSION
 from dataclasses import asdict
 from contextlib import contextmanager
 from datetime import datetime, timedelta, timezone
@@ -13,13 +14,13 @@ import time
 from uuid import uuid4
 
 from research.disc_assistant.assistant.database import connect
-from research.disc_assistant.assistant.languages import load_languages, normalized
+from research.disc_assistant.assistant.nlu.languages import load_languages, normalized
 from research.disc_assistant.library.store import StaleSnapshot
 from research.disc_assistant.library.versions import metadata_markers
 from research.disc_assistant.library.transliteration import fingerprint as transliteration_fingerprint
 from research.disc_assistant.assistant.responses import Responses
 from research.disc_assistant.assistant.providers import ProviderUnavailable, InvalidProviderResult
-from research.disc_assistant.assistant.interpreter import UnsupportedCommand
+from research.disc_assistant.assistant.nlu.interpreter import UnsupportedCommand
 from research.disc_assistant.assistant.speech import SpeechUnavailable, InvalidSpeech, NoSpeech
 
 
@@ -173,8 +174,8 @@ class Trace:
             self.journal = Journal(self.config)
             self.journal.prune()
             rules = asdict(load_languages((self.config.locale,)))
-            context = {'locale': self.config.locale, 'shadow_enabled': self.config.shadow, 'command_rules_version': 'literal-v2',
-                       'matching_policy': 'lexical-v4', 'transliteration_sha256': transliteration_fingerprint(),
+            context = {'locale': self.config.locale, 'shadow_enabled': self.config.shadow, 'command_rules_version': RULES_VERSION,
+                       'matching_policy': 'context-lexical-v1/lexical-v5', 'transliteration_sha256': transliteration_fingerprint(),
                        'language_rules_sha256': hashlib.sha256(json.dumps(rules, sort_keys=True).encode()).hexdigest(),
                        'metadata_markers_sha256': hashlib.sha256(json.dumps(metadata_markers().phrases).encode()).hexdigest(),
                        'selection_policy': 'automatic-best-match', 'continuous_context': self.config.continuous_context,

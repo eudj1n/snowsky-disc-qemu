@@ -2,8 +2,8 @@
 from dataclasses import replace
 import unittest
 from unittest.mock import Mock, AsyncMock
-from research.disc_assistant.assistant.intents import AlbumIntent
-from research.disc_assistant.assistant.interpreter import interpret_request, InterpretationContext, validate_intent
+from research.disc_assistant.assistant.nlu.intents import AlbumIntent
+from research.disc_assistant.assistant.nlu.interpreter import interpret_request, InterpretationContext, validate_intent
 from research.disc_assistant.assistant.ranking import rank, score_albums
 from research.disc_assistant.assistant.tests import test_ranking, test_playback
 from controller.playback import matches

@@ -1,4 +1,6 @@
 """Persistent foreground session: one socket reader, serialized operations, no replay."""
+from controller.models import WirePlaybackState
+from controller.compatibility import Capability, require_client
 from collections import deque
 from contextlib import contextmanager, nullcontext
 from copy import deepcopy
@@ -8,32 +10,36 @@ import threading
 import time
 from uuid import uuid4
 
-from controller.fiio_link import Client, Frames, frame, playback_snapshot
-from controller.device import PlaybackClient, ObservedSocket, MutationPacer
+from controller.fiio_link import Frames, frame
+from controller.link_commands import ReviewedCommands
+from controller.wire import playback_snapshot
+from controller.device import MutationGuard, ObservedSocket, MutationPacer
 from controller.events import validate_scan_events, merge_snapshot
-from controller.models import DeviceConfig, DeviceSnapshot, CommandResult
+from controller.models import DeviceConfig, DeviceSnapshot, CommandResult, PlayMode
+from controller.contracts import ControlAction, CurrentAction
+from typing import Any, Callable, Iterator, Self
+from types import TracebackType
+from contextlib import AbstractContextManager
+from controller.wire import WireState
 
 
 class LiveSocket(ObservedSocket):
-    def sendall(self, data):
-        mutation = data[:4] in (b'0100', b'0101', b'0102', b'0201')
+    def sendall(self, data: bytes) -> None:
+        mutation = data[:4] in (b'0100', b'0101', b'0102', b'0201', b'0104', b'0502')
         if not mutation and data[:4] not in (b'0599', b'0501', b'0105', b'0202'):
             raise ValueError('command is outside the reviewed persistent-session surface')
         if self.session.closed.is_set():
             raise ConnectionError('session ended; request was not replayed')
         try:
-            return super().sendall(data)
+            super().sendall(data)
         except OSError:
             self.session.close()
             raise
 
 
-class LiveClient(Client):
+class LiveClient(MutationGuard, ReviewedCommands):
     """Only _receive touches recv; request callers wait on a condition variable."""
-    begin_phase = PlaybackClient.begin_phase
-    wait_for_mutation = PlaybackClient.wait_for_mutation
-
-    def __init__(self, host, port, timeout):
+    def __init__(self, host: str, port: int, timeout: float) -> None:
         raw = socket.create_connection((host, port), timeout)
         raw.settimeout(.25)
         self.timeout = timeout
@@ -41,25 +47,27 @@ class LiveClient(Client):
         self.condition = threading.Condition()
         self.requests = threading.Lock()
         self.frames = Frames()
-        self.events = deque()
-        self.waiting = None
-        self.reply = None
+        self.events: deque[tuple[str, bytes]] = deque()
+        self.waiting: str | None = None
+        self.reply: bytes | None = None
         self.active = False
         self.mutation_attempted = False
         self.mutation_phase = 'selection'
-        self.attempted_phases = set()
+        self.attempted_phases: set[str] = set()
         self.pacer = MutationPacer(closed=self.closed)
-        self.handshake_value = None
-        self.state, self.position, self.mode = {}, None, None
+        self.handshake_value: str | None = None
+        self.state: WireState = {}
+        self.position: int | None = None
+        self.mode: int | None = None
         self.playback = 'unknown'
         self.scan_active = False
-        self.observed_at = None
+        self.observed_at: float | None = None
         self.zero_progress = False
-        self.socket = LiveSocket(raw, self)
+        self.socket: LiveSocket = LiveSocket(raw, self)
         self.reader = threading.Thread(target=self._receive, daemon=True, name='disc-reader')
         self.reader.start()
 
-    def close(self):
+    def close(self) -> None:
         self.closed.set()
         try:
             self.socket.shutdown(socket.SHUT_RDWR)
@@ -70,12 +78,12 @@ class LiveClient(Client):
             self.state, self.position, self.playback = {}, None, 'unknown'
             self.condition.notify_all()
 
-    def handshake(self):
+    def handshake(self) -> str:
         if self.handshake_value is None:
-            self.handshake_value = super().handshake()
+            self.handshake_value = self.request('0599', '0000').decode('ascii')
         return self.handshake_value
 
-    def now_playing(self):
+    def now_playing(self) -> WireState:
         update = playback_snapshot(self.request('0202'))
         if not update:
             return {}
@@ -84,7 +92,7 @@ class LiveClient(Client):
         with self.condition:
             return deepcopy(self.state)
 
-    def _update(self, tag, payload):
+    def _update(self, tag: str, payload: bytes) -> None:
         self.observed_at = time.time()
         if tag == 'a202':
             update = playback_snapshot(payload)
@@ -94,10 +102,10 @@ class LiveClient(Client):
             self.state = merge_snapshot(self.state, update)
             if self.state.get('song') != old_song:
                 self.position = None
-            if update.get('state') == 2:
+            if update.get('state') == WirePlaybackState.STOPPED:
                 self.playback = 'stopped' if not update.get('song') and self.zero_progress else 'loading'
-            elif self.state.get('song') and self.state.get('state') in (0, 1):
-                self.playback = 'playing' if self.state['state'] == 0 else 'paused'
+            elif self.state.get('song') and self.state.get('state') in (WirePlaybackState.PLAYING, WirePlaybackState.PAUSED):
+                self.playback = 'playing' if self.state['state'] == WirePlaybackState.PLAYING else 'paused'
             else:
                 self.playback = 'unknown'
             self.zero_progress = False
@@ -115,7 +123,7 @@ class LiveClient(Client):
             elif value == 5:
                 self.scan_active = False
 
-    def _receive(self):
+    def _receive(self) -> None:
         try:
             while not self.closed.is_set():
                 try:
@@ -139,7 +147,7 @@ class LiveClient(Client):
         finally:
             self.close()
 
-    def request(self, tag, payload=b'', *, expected=None):
+    def request(self, tag: str, payload: bytes | str = b'', *, expected: str | None = None) -> bytes:
         expected = expected or 'a' + tag[1:].lower()
         with self.requests:
             with self.condition:
@@ -161,11 +169,12 @@ class LiveClient(Client):
                         self.condition.wait(remaining)
                     if self.closed.is_set():
                         raise ConnectionError('device disconnected during request')
+                    assert self.reply is not None
                     return self.reply
                 finally:
                     self.waiting, self.reply = None, None
 
-    def begin_operation(self, timeout):
+    def begin_operation(self, timeout: float) -> None:
         with self.condition:
             if self.closed.is_set():
                 raise ConnectionError('device disconnected before operation')
@@ -179,12 +188,12 @@ class LiveClient(Client):
             self.mutation_phase = 'selection'
             self.attempted_phases = set()
 
-    def end_operation(self):
+    def end_operation(self) -> None:
         with self.condition:
             self.active = False
             self.events.clear()
 
-    def event(self, timeout=None):
+    def event(self, timeout: float | None = None) -> tuple[str, bytes]:
         deadline = time.monotonic() + (self.timeout if timeout is None else timeout)
         with self.condition:
             while not self.events and not self.closed.is_set():
@@ -196,13 +205,13 @@ class LiveClient(Client):
                 raise ConnectionError('device disconnected')
             return self.events.popleft()
 
-    def take_events(self):
+    def take_events(self) -> list[tuple[str, bytes]]:
         with self.condition:
             events = list(self.events)
             self.events.clear()
             return events
 
-    def scan_guard(self):
+    def scan_guard(self) -> None:
         with self.condition:
             if self.closed.is_set():
                 raise ConnectionError('device disconnected')
@@ -210,7 +219,7 @@ class LiveClient(Client):
             if self.scan_active:
                 raise ValueError('observed library scan activity; wait for completion')
 
-    def view(self):
+    def view(self) -> dict[str, Any]:
         with self.condition:
             return {'playback': self.playback, 'state': deepcopy(self.state),
                     'position_ms': self.position, 'mode': self.mode,
@@ -219,7 +228,9 @@ class LiveClient(Client):
 
 class DiscSession:
     """Own a connection until explicit disconnect/exit; commands never wait for recovery."""
-    def __init__(self, config: DeviceConfig, *, ownership=None, client_factory=LiveClient, backoff=.5, health_interval=30):
+    def __init__(self, config: DeviceConfig, *, ownership: AbstractContextManager[Any] | None = None,
+                 client_factory: Callable[[str, int, float], LiveClient] = LiveClient,
+                 backoff: float = .5, health_interval: float = 30) -> None:
         self.config, self.client_factory = config, client_factory
         self.ownership = ownership
         self.backoff, self.health_interval = backoff, health_interval
@@ -227,30 +238,31 @@ class DiscSession:
         self.operations = threading.Lock()
         self.shutdown = threading.Event()
         self.enabled = False
-        self.client = None
+        self.client: LiveClient | None = None
         self.generation = 0
         self.connection = 'disconnected'
-        self.last_error = None
+        self.last_error: str | None = None
 
-    def __enter__(self):
+    def __enter__(self) -> Self:
         self.owner = self.ownership if self.ownership is not None else nullcontext()
         self.owner.__enter__()
         self.worker = threading.Thread(target=self._run, daemon=True, name='disc-session')
         self.worker.start()
         return self
 
-    def __exit__(self, *args):
+    def __exit__(self, exc_type: type[BaseException] | None, exc: BaseException | None,
+                 traceback: TracebackType | None) -> None:
         self.shutdown.set()
         self.disconnect()
         self.worker.join(self.config.timeout * 4 + 2)
-        self.owner.__exit__(*args)
+        self.owner.__exit__(exc_type, exc, traceback)
 
-    def connect(self):
+    def connect(self) -> None:
         with self.guard:
             self.enabled = True
             self.guard.notify_all()
 
-    def disconnect(self):
+    def disconnect(self) -> None:
         with self.guard:
             self.enabled = False
             self.generation += 1
@@ -260,7 +272,7 @@ class DiscSession:
             self.connection = 'disconnected'
             self.guard.notify_all()
 
-    def wait_ready(self, timeout):
+    def wait_ready(self, timeout: float) -> bool:
         deadline = time.monotonic() + timeout
         with self.guard:
             while self.connection != 'ready' and self.enabled:
@@ -270,23 +282,29 @@ class DiscSession:
                 self.guard.wait(remaining)
             return self.connection == 'ready'
 
-    def status(self):
+    def status(self) -> dict[str, Any]:
         with self.guard:
             ready = self.client is not None and not self.client.closed.is_set() and self.connection == 'ready'
             return {'connection': self.connection if ready or self.connection != 'ready' else 'reconnecting',
                     'enabled': self.enabled, 'generation': self.generation, 'last_error': self.last_error,
-                    'observation': self.client.view() if ready else {'playback': 'unknown', 'state': {}}}
+                    'observation': self.client.view() if ready and self.client is not None else {'playback': 'unknown', 'state': {}}}
 
-    def snapshot(self):
+    def snapshot(self) -> DeviceSnapshot:
         """Immutable normalized observations; no network request or device mutation."""
         return DeviceSnapshot.from_status(self.status())
 
-    def _perform(self, action, callback):
+    def _perform(self, action: str, callback: Callable[[LiveClient], Any]) -> CommandResult:
         client = None
         operation_id = uuid4().hex
         try:
             with self.operation() as client:
                 result = callback(client)
+                if isinstance(result, CommandResult):
+                    from dataclasses import replace
+                    from controller.models import OperationStatus
+                    return (replace(result, status=OperationStatus.UNCERTAIN,
+                                    reason='connection lost during operation; no replay')
+                            if client.closed.is_set() and result.mutation_attempted else result)
                 result.setdefault('operation_id', operation_id)
                 if client.closed.is_set() and result.get('mutation_attempted'):
                     result.update(status='uncertain', reason='connection lost during operation; no replay')
@@ -299,54 +317,74 @@ class DiscSession:
                 result['confirmation'] = {'queue': exc.diagnostics}
         return CommandResult.from_result(result, action)
 
-    def control(self, action):
+    def control(self, action: ControlAction) -> CommandResult:
         """State-aware pause/resume/next/previous. No native stop is claimed."""
-        from controller.controls import control
+        from controller.operations import playback_control
         if action not in ('pause', 'resume', 'next', 'previous'):
             raise ValueError('unsupported device control action')
-        return self._perform(action, lambda client: control(client, action, self.config.timeout))
+        return self._perform(action, lambda client: playback_control(client, action, timeout=self.config.timeout))
 
-    def pause(self):
+    def current_track(self) -> CommandResult:
+        return self._current('now_playing')
+
+    def set_favorite(self, favorite: bool) -> CommandResult:
+        if type(favorite) is not bool:
+            raise ValueError('favorite must be a boolean')
+        return self._current('like' if favorite else 'dislike')
+
+    def set_volume(self, value: int) -> CommandResult:
+        return self._current('volume', value=value)
+
+    def adjust_volume(self, delta: int) -> CommandResult:
+        return self._current('volume', delta=delta)
+
+    def _current(self, action: CurrentAction, *, value: int | None = None,
+                 delta: int | None = None) -> CommandResult:
+        from controller.operations import current_track
+        return self._perform(action, lambda client: current_track(client, action,
+            value=value, delta=delta, timeout=self.config.timeout))
+
+    def pause(self) -> CommandResult:
         return self.control('pause')
 
-    def resume(self):
+    def resume(self) -> CommandResult:
         return self.control('resume')
 
-    def next_track(self):
+    def next_track(self) -> CommandResult:
         return self.control('next')
 
-    def previous_track(self):
+    def previous_track(self) -> CommandResult:
         return self.control('previous')
 
-    def previous_in_queue(self):
+    def previous_in_queue(self) -> CommandResult:
         """Select the preceding queue row; never use the native restart shortcut."""
         from controller.fiio_http import HTTPClient
         from controller.queue import previous_in_queue
         return self._perform('previous', lambda client: previous_in_queue(self.config, client,
             HTTPClient(self.config.host, self.config.http_port, self.config.timeout)))
 
-    def set_play_mode(self, mode):
+    def set_play_mode(self, mode: PlayMode | str) -> CommandResult:
         from controller.controls import set_mode
         from controller.models import PlayMode
         mode = PlayMode(mode)
         return self._perform('set_play_mode', lambda client: set_mode(client, mode))
 
-    def queue(self):
+    def queue(self) -> CommandResult:
         from controller.fiio_http import HTTPClient
         from controller.queue import snapshot
-        def read(client):
+        def read(client: LiveClient) -> dict[str, Any]:
             http = HTTPClient(self.config.host, self.config.http_port, self.config.timeout)
             return {'status': 'observed', 'queue': snapshot(self.config, client, http)}
         return self._perform('queue', read)
 
-    def play_artist(self, artist, *, album=None, index=None):
+    def play_artist(self, artist: str, *, album: str | None = None, index: int | None = None) -> CommandResult:
         """Fresh named artist/album context or zero-based track; preserve play mode."""
         from controller.fiio_http import HTTPClient
         from controller.fiio_library import artist_command
         from controller.catalog import CatalogReader, CatalogChanged
         from controller.playback import GuardedHTTP, verify_playing
         from controller.queue import snapshot
-        def select(client):
+        def select(client: LiveClient) -> dict[str, Any]:
             artist_command(artist, index, album)
             client.wait_for_mutation()
             http = HTTPClient(self.config.host, self.config.http_port, self.config.timeout)
@@ -375,14 +413,14 @@ class DiscSession:
             return result
         return self._perform('play_artist', select)
 
-    def play_album(self, album):
+    def play_album(self, album: str) -> CommandResult:
         """Play all artists in a named native album; verify its complete queue."""
         from controller.fiio_http import HTTPClient
         from controller.fiio_library import album_command
         from controller.catalog import CatalogReader, CatalogChanged
         from controller.playback import GuardedHTTP, verify_playing
         from controller.queue import snapshot
-        def select(client):
+        def select(client: LiveClient) -> dict[str, Any]:
             album_command(album)
             client.wait_for_mutation()
             http = HTTPClient(self.config.host, self.config.http_port, self.config.timeout)
@@ -404,7 +442,7 @@ class DiscSession:
         return self._perform('play_album', select)
 
     @contextmanager
-    def operation(self):
+    def operation(self) -> Iterator[LiveClient]:
         with self.guard:
             requested_generation = self.generation
             if self.connection != 'ready' or self.client is None or self.client.closed.is_set():
@@ -421,7 +459,7 @@ class DiscSession:
             finally:
                 client.end_operation()
 
-    def _run(self):
+    def _run(self) -> None:
         delay = self.backoff
         while not self.shutdown.is_set():
             with self.guard:
@@ -443,8 +481,7 @@ class DiscSession:
                             client.close()
                             continue
                         self.client = client
-                    if client.handshake() != '0306' or client.settings().get('soc_version') != 257:
-                        raise ValueError('persistent session requires reviewed DISC V2.57')
+                    require_client(client, Capability.PERSISTENT_SESSION)
                     client.play_mode()
                     try:
                         client.now_playing()

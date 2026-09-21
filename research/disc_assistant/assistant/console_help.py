@@ -1,6 +1,8 @@
 """Interactive command reference shared by adapters."""
 HELP = '''Enter Play … / Включи …, Pause / Пауза, Resume / Продолжи, Stop / Стоп,
 Next track / Следующий трек, Previous track / Предыдущий трек.
+Like / Лайк, Unlike / Не нравится, What is playing? / Что играет?
+Volume 40 / Громкость 40, Louder / Громче, Quieter / Тише.
 Commands use one active locale; /language CODE changes input and replies.
 /connect  /disconnect  /device  /status  /queue  /sync  /index
 /search TEXT  /rank TEXT  /explain TEXT  /commands [rebuild|import FILE]

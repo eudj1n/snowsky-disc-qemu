@@ -114,3 +114,8 @@ enabled = false
 timeout = 10
 # For /explain, explicitly raise [interpretation].shadow_timeout_ms if needed.
 # /shadow on records this source too, waiting up to that shared deadline.
+
+[volume]
+# Relative commands use device units (0..120); each step is 1..120.
+up_step = 20
+down_step = 20

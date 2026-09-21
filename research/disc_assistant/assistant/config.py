@@ -5,7 +5,7 @@ from pathlib import Path
 import sys
 import tomllib
 
-from research.disc_assistant.assistant.languages import load_languages
+from research.disc_assistant.assistant.nlu.languages import load_languages
 from research.disc_assistant.assistant.responses import DEFAULT_LANGUAGE, validate_response_preferences, locale_code
 
 
@@ -40,6 +40,8 @@ class Config:
     tts: dict = field(default_factory=dict)
     services: dict = field(default_factory=dict)
     typesense_io_compat: bool = False
+    volume_up_step: int = 20
+    volume_down_step: int = 20
 
 
 def default_data_dir():
@@ -75,6 +77,7 @@ def load(path):
                'response': {'language', 'mode'},
                'dialogue': {'enabled'},
                'playback': {'continuous_context'},
+               'volume': {'up_step', 'down_step'},
                'journal': {'enabled', 'retention_days', 'max_requests'},
                'speech': {'backend', 'server_url', 'catalog_hints', 'model', 'whisper_executable', 'timeout', 'max_seconds', 'voices', 'stt_languages', 'rate'},
                'terminal': {'color', 'prompt', 'input', 'result', 'error', 'warning', 'suggestion', 'debug'}}
@@ -188,16 +191,35 @@ def load(path):
     if io_compat and (search.get('host', '127.0.0.1') not in ('localhost', '127.0.0.1') or protocol != 'http'):
         raise ValueError('typesense.io_accounting_compat applies only to managed local HTTP search')
     return Config(
-        text(device.get('key'), 'device.key'), text(device.get('host'), 'device.host'),
-        number(device.get('tcp_port', 12100), 'tcp_port', 1, 65535),
-        number(device.get('http_port', 12103), 'http_port', 1, 65535), data_dir,
-        text(search.get('host', '127.0.0.1'), 'typesense.host'),
-        number(search.get('port', 8108), 'typesense.port', 1, 65535), protocol,
-        text(search.get('api_key_env', 'TYPESENSE_API_KEY'), 'api_key_env'), aliases,
-        number(sync.get('page_size', 200), 'page_size', 1, 200),
-        number(sync.get('timeout', 8), 'timeout', 1, 120),
-        number(sync.get('max_tracks', 100000), 'max_tracks', 1, 1000000),
-        number(sync.get('max_requests', 10000), 'max_requests', 2, 100000), locale, continuous,
-        journal_enabled, number(journal.get('retention_days', 90), 'journal.retention_days', 1, 3650),
-        number(journal.get('max_requests', 10000), 'journal.max_requests', 1, 1000000), terminal,
-        response['mode'], dialogue, speech, shadow, shadow_timeout, structured, tts, services, io_compat)
+        device_key=text(device.get('key'), 'device.key'),
+        host=text(device.get('host'), 'device.host'),
+        tcp_port=number(device.get('tcp_port', 12100), 'tcp_port', 1, 65535),
+        http_port=number(device.get('http_port', 12103), 'http_port', 1, 65535),
+        data_dir=data_dir,
+        search_host=text(search.get('host', '127.0.0.1'), 'typesense.host'),
+        search_port=number(search.get('port', 8108), 'typesense.port', 1, 65535),
+        search_protocol=protocol,
+        api_key_env=text(search.get('api_key_env', 'TYPESENSE_API_KEY'), 'api_key_env'),
+        aliases=aliases,
+        page_size=number(sync.get('page_size', 200), 'page_size', 1, 200),
+        timeout=number(sync.get('timeout', 8), 'timeout', 1, 120),
+        max_tracks=number(sync.get('max_tracks', 100000), 'max_tracks', 1, 1000000),
+        max_requests=number(sync.get('max_requests', 10000), 'max_requests', 2, 100000),
+        locale=locale,
+        continuous_context=continuous,
+        journal_enabled=journal_enabled,
+        journal_retention_days=number(journal.get('retention_days', 90), 'journal.retention_days', 1, 3650),
+        journal_max_requests=number(journal.get('max_requests', 10000), 'journal.max_requests', 1, 1000000),
+        terminal=terminal,
+        response_mode=response['mode'],
+        dialogue_enabled=dialogue,
+        speech=speech,
+        shadow=shadow,
+        shadow_timeout_ms=shadow_timeout,
+        structured=structured,
+        tts=tts,
+        services=services,
+        typesense_io_compat=io_compat,
+        volume_up_step=number(raw.get('volume', {}).get('up_step', 20), 'volume.up_step', 1, 120),
+        volume_down_step=number(raw.get('volume', {}).get('down_step', 20), 'volume.down_step', 1, 120),
+    )

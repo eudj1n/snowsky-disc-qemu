@@ -42,8 +42,8 @@ class ObservedSocket:
         return getattr(self.socket, name)
 
     def sendall(self, data):
-        if data[:4] in (b'0100', b'0101', b'0102', b'0201'):
-            kind = 'mode' if data[:4] == b'0102' else 'selection'
+        if data[:4] in (b'0100', b'0101', b'0102', b'0201', b'0104', b'0502'):
+            kind = {b'0102': 'mode', b'0104': 'favorite', b'0502': 'volume'}.get(data[:4], 'selection')
             if self.session.mutation_phase != kind:
                 raise RuntimeError('unexpected mutation in the current phase')
             if self.session.mutation_phase in self.session.attempted_phases:
@@ -55,7 +55,22 @@ class ObservedSocket:
         return self.socket.sendall(data)
 
 
-class PlaybackClient(Client):
+class MutationGuard:
+    pacer: MutationPacer
+    attempted_phases: set[str]
+    mutation_phase: str
+
+    def wait_for_mutation(self) -> None:
+        self.pacer.wait()
+
+    def begin_phase(self, name: str) -> None:
+        if (name not in ('mode', 'selection', 'favorite', 'volume') or name in self.attempted_phases
+                or (name == 'mode' and self.attempted_phases)):
+            raise RuntimeError('mutation phase cannot be replayed')
+        self.mutation_phase = name
+
+
+class PlaybackClient(MutationGuard, Client):
     """One synchronous reader; retain unrelated events across Controller queries."""
     def __init__(self, host='127.0.0.1', port=12100, timeout=8):
         # Stock temporarily closes its listener after a client disconnects.
@@ -78,14 +93,7 @@ class PlaybackClient(Client):
         self.pacer = MutationPacer()
         self.socket = ObservedSocket(self.socket, self)
 
-    def wait_for_mutation(self):
-        self.pacer.wait()
 
-    def begin_phase(self, name):
-        if (name not in ('mode', 'selection') or name in self.attempted_phases
-                or (name == 'mode' and self.attempted_phases)):
-            raise RuntimeError('mutation phase cannot be replayed')
-        self.mutation_phase = name
 
     def retain(self, event):
         if len(self.observed) >= 10000:
