@@ -91,7 +91,7 @@ results, so a second database is not required. Prototype generation outside the
 search engine keeps model selection replaceable. Do not add vector fields to the
 active index until an experiment needs them; publish complete new collections
 atomically as with the lexical projection. See the existing
-[embedding snapshot plan](../roadmap.md#planned-embedding-snapshots).
+[embedding snapshot plan](../reports/2026-09-21-design-history.md#planned-embedding-snapshots).
 
 ## Acceptance measures
 

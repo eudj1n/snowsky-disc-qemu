@@ -8,3 +8,4 @@ Repository-wide CI, quality checks, release preparation and dated reviews.
 ## Reports
 
 - [Python quality and Controller extraction review](reports/2026-09-21-python-quality.md)
+- [Repository refactoring validation, 2026-09-21](reports/2026-09-21-repository-refactor.md)

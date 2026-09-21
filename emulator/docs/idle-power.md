@@ -221,4 +221,4 @@ guest-libc read ABI and resumed unplugged counting. Firmware-free checks passed
 acceptance and the final full ordinary V2.57 regression passed (exit 0), including
 PCM, controls, protocol/settings/formats/EOF, scan/reset/SD and preference checks.
 This is local validation, not a hosted release gate. Failure history is preserved in
-[the research checkpoint](../../research/docs/status.md#idle-reconnect-and-usb-power-investigation-2026-09-16).
+[the research checkpoint](../../research/docs/reports/2026-09-19-protocol-checkpoints.md#idle-reconnect-and-usb-power-investigation-2026-09-16).

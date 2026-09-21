@@ -10,6 +10,10 @@ only Controller into a separate process and imports every production module.
 The main remaining work is a stable, typed library contract and distributable
 packaging, rather than moving device logic out of the application again.
 
+The resolution was integrated through [PR #28](https://github.com/eudj1n/snowsky-disc-qemu/pull/28).
+The findings below are historical; use [Controller documentation](../../../controller/docs/README.md)
+for the current API and [CI policy](../ci.md) for current checks.
+
 ## Original findings, resolved in the follow-up below
 
 | Priority | Finding and evidence | Recommended change |

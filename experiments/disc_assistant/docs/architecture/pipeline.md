@@ -1,6 +1,6 @@
 # Assistant interpretation, language and speech boundaries
 
-Implemented in the research prototype on 2026-09-18. This supersedes the earlier
+Implemented in the experimental Assistant on 2026-09-18. This supersedes the earlier
 merged-input/separate-response language policy. One locale now governs interaction;
 interpreters and speech engines have independent provider contracts.
 

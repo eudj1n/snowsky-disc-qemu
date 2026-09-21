@@ -39,7 +39,7 @@ that human speech accuracy has been accepted.
   [acceptance report](../reports/2026-09-19-mvp-acceptance.md).
 - Learned source arbitration, semantic retrieval, fine-tuning, recommendations,
   wake word/VAD, dialogue/compound planning and dock hardware remain later roadmap
-  work. Promotion from research or a repository split is a separate decision.
+  work. Promotion from experiments or a repository split is a separate decision.
 
 ## Original physical baseline is preserved
 

@@ -172,7 +172,7 @@ Final validation: 250 Python tests, 23 JavaScript tests, shell checks, four shim
 builds, Compose validation, focused discovery and full local V2.57 integration
 passed. Two pre-existing EOF test assumptions surfaced in the full runs and were
 corrected with trace evidence before the successful third run; see the
-[failure/validation history](../../research/docs/status.md#lan-discovery-investigation-2026-09-16).
+[failure/validation history](../../research/docs/reports/2026-09-19-protocol-checkpoints.md#lan-discovery-investigation-2026-09-16).
 
 ### Host adapter shutdown regression (2026-09-19)
 

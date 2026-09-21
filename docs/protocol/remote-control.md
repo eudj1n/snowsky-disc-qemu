@@ -276,7 +276,7 @@ was restored and playback left paused. Firmware-free checks passed 177 Python
 tests, 23 JavaScript tests, shell checks and four shim builds; later changes to
 test preparation passed syntax checks and both targeted runs. These initial runs
 were focused checks; subsequent full-regression results are recorded in the
-[continuation plan](../../research/docs/status.md#validation-log-for-this-checkpoint).
+[dated full-regression evidence](../../research/docs/reports/2026-09-19-protocol-checkpoints.md#idle-reconnect-and-usb-power-investigation-2026-09-16).
 The physical DISC was not probed for these reads.
 
 The focused run uses stock network indexing to avoid coupling these reads to UI

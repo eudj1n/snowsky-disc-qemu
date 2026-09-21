@@ -1,6 +1,8 @@
 # Disc Assistant documentation
 
-Text and voice application, runtime contracts and evaluation evidence. Start with status and the quick guide.
+Start with [current status](status.md), [setup](guides/setup.md) and the
+[command quick guide](guides/quick-guide.md). The [roadmap](roadmap.md) links
+deferred work; reports below preserve earlier evidence, not current instructions.
 
 ## Architecture
 
@@ -23,6 +25,7 @@ Text and voice application, runtime contracts and evaluation evidence. Start wit
 - [Assistant request and decision journal](guides/history.md)
 - [Queue confirmation diagnostics](guides/queue-diagnostics.md)
 - [Disc Assistant command quick guide](guides/quick-guide.md)
+- [Assistant setup and lifecycle](guides/setup.md)
 - [Local speech services and Piper replies](guides/tts.md)
 - [Assistant Typesense on kernels without process I/O accounting](guides/typesense.md)
 - [Speech input and file-based experiments](guides/voice.md)
@@ -31,6 +34,7 @@ Text and voice application, runtime contracts and evaluation evidence. Start wit
 ## Reference
 
 - [Command catalog and explanation preview](reference/command-catalog.md)
+- [Assistant configuration and data](reference/configuration.md)
 - [Contributing Assistant locales](reference/locales.md)
 - [Disc Assistant software MVP: accepted scope](reference/mvp.md)
 - [Assistant user responses](reference/responses.md)
@@ -38,7 +42,8 @@ Text and voice application, runtime contracts and evaluation evidence. Start wit
 ## Reports
 
 - [Review follow-up comparisons, 2026-09-18](reports/2026-09-18-review-evaluation.md)
+- [Emulator acceptance development checkpoints](reports/2026-09-19-emulator-checkpoints.md)
 - [Disc Assistant software MVP acceptance](reports/2026-09-19-mvp-acceptance.md)
-
-- [Disc Assistant: implementation plan](roadmap.md)
-- [Assistant current checkpoint](status.md)
+- [Historical design and implementation plan](reports/2026-09-21-design-history.md)
+- [Development checkpoints through 2026-09-21](reports/2026-09-21-development-checkpoints.md)
+- [Preserved earlier prototype guide](reports/2026-09-21-prototype-guide.md)

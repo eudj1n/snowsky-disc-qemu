@@ -103,7 +103,7 @@ component; cross-component scenarios and generated media live under `tests/`.
   (ports/mDNS, no stock debug unlock), `research/docs/reports/diskos.md` (V2.40 builds;
   only the size cap blocks). Network/auth `mq_player` function addresses are in `research/ghidra/README.md`.
 
-## Disc Assistant research checkpoint
+## Disc Assistant checkpoint
 
 The text/voice music assistant lives in `experiments/disc_assistant/`. Read its
 [AGENTS.md](experiments/disc_assistant/AGENTS.md) before changing it, then
@@ -199,143 +199,44 @@ Physical acceptance (#23) and speech quality/native-Docker/Orange Pi performance
   source of truth and the work stays reproducible from another machine.
 - Screenshots for the docs live in `docs/images/`; throwaway captures go to `shots/` (ignored).
 
-## Likely next tasks (see emulator/docs/status.md "Next")
+## Research scope and handoff
 
-The agreed local DISC protocol checkpoint is finalized. Start with
-`docs/protocol/disc-capabilities.md` for the controller contract and
-`research/docs/status.md` for evidence/history:
-it records the checkpoint, remaining tasks in priority order and validation status.
-Update that document when completing a research item so another session can resume.
-Keep the high-level protocol tracker (GitHub issue #10) current as checkpoints complete.
+The agreed local DISC protocol checkpoint is finalized. Closed issue #10 stays
+closed. Read `research/docs/status.md` for current scope and pause conditions;
+`docs/protocol/disc-capabilities.md` owns supported behavior. Detailed dated
+captures and earlier priorities live in `research/docs/reports/`, not in a new
+request to repeat them. PEQ/SACD scope for PR #20 was accepted on 2026-09-19;
+remaining #8/#9 investigations are optional backlog, not checkpoint blockers.
 
-Physical opacity capture `230929` edits **system slot 1 / FIIO Sheep**, not custom:
-empty POST bodies, displayed 100 → 49 → 0 → 100 map directly to `back-groud: alpha`;
-fresh GET confirms 49/0/100 and unchanged preview images. Owner reports visible
-refresh requires unlock/relock when already locked. Do not confuse saved metadata
-with repaint, invert opacity, or reuse empty-body updates for custom themes.
-Color capture `231820` now confirms exact RGB saves/readback and hue/lightness-like
-slider roles. Final pink 255/169/169 differs from initial 191/139/66; do not claim
-restoration or infer a numerical slider conversion formula. Official wallpapers
-and FiiO account/cloud sync are deferred by owner decision to issue #11 (owner
-reports registration/sign-in is required); no new cloud capture/login now.
-`update_system_lock_screen` now edits/activates system metadata and verifies
-original-image/metadata readback; no automatic mutation retry. Direct/proxy
-V2.57 themes acceptance and 297 Python / 23 JS tests pass. Capability
-consolidation is complete; see `docs/protocol/disc-capabilities.md`.
+PEQ #9 is paused by owner after capture 225312. No capture, reconnect/write or
+scheduled follow-up until explicitly resumed. Physical Custom 10 restoration is
+unknown after Auto EQ Save/disconnect (screenshot 6851, master -4.6). First resumed
+step: capture reconnect/read Custom 10 before Reset, without repeating Save;
+then reset/readback/Off on the approved slot. Diagnose a failed reconnect without
+replaying writes or silently rebooting. No repeated preset/Local Apply sweep,
+Random, catalog enumeration or login. Share/account/cloud remain deferred to #11.
+The JSON PEQ helper is reviewed; captured malformed Local Apply bytes and code
+240 BYPASS must not be copied into public writes. See the PEQ report.
 
-Owner accepted current PR #20 PEQ/SACD scope for `2.x` on 2026-09-19. Remaining
-#8/#9 investigations are optional backlog in those existing issues, not merge
-blockers. No new device/media run, firmware tag or stable release is requested.
-Keep closed #10 unchanged and preserve the unresolved Custom 10 state below.
+SACD #8 covers stereo metadata/identity and same-path title replacement. Different
+track-layout replacement, seek/EOF, DST/multichannel, redistributable fixture and
+hardware DSD/DoP remain unverified. Do not run media tests to update status.
+Old ignored logs may be absent; distinguish dated evidence from fresh verification.
 
-PEQ #9 paused by owner after capture 225312 on 2026-09-17; continue only when
-the owner resumes. No new capture, reconnect/write or scheduled follow-up now.
-Current physical Custom 10 state/restoration is unknown after Auto EQ Save and
-disconnect (6851 shows master -4.6). First resumed step: reconnect/read Custom
-10 before Reset, without repeating Save; then reset/readback/Off. Share/login
-is explicitly deferred. See the pause checkpoint in `research/docs/status.md`.
-Owner subsequently requested committing/pushing this #9 checkpoint on
-`codex/api-sacd-peq-checkpoints`; the research/device work remains paused.
+Library selections use their reviewed scoped selectors and fresh positions;
+artist-scoped albums must not become generic albums. Root-tab Play all wire
+semantics and current-track/CUE deletion remain unverified. Keep source-delete
+helpers restricted as documented; preserved captures are not instructions to
+repeat physical mutations. Themes use the reviewed system/custom distinction;
+read `docs/protocol/remote-modes-themes.md` before new work.
 
-API follow-ups #8/#9 resumed 2026-09-17. `CI_SCENARIO=peq` checks all 21
-reviewed preset codes and ten User slots through TCP/WS, including isolation and
-restoration; `EQ_LABELS` uses network codes and stock device labels. Fresh slot
-Q=.71 becomes .7 on persistence/reload: back up a reloaded profile. Physical
-`203157` captures factory presets, USER1–USER10, BYPASS then Off. Owner-confirmed
-BYPASS sends 0690/00F0 and gets a639/00F0, but fingerprinted V2.57 has no 240
-case: it reapplies/persists the previous mode and echoes the input. Keep public
-240 writes rejected; this is not proof of DSP bypass. Initial/final Off match
-without a final fresh getter. Follow-up `214316` captures compact-hex `0678`
-(first gain -3.4), master -6.1, device Save `0626` and Reset `0675`; `214151`
-is an earlier frequency-edit/reset attempt. Save callback `4ef604` is a no-op;
-edits persist directly. Reset clears current User bands/master and persists.
-Owner navigated back, not a true reconnect; no edited-band getter before Reset.
-Final mode in that capture is USER10 (approved disposable slot), not Off.
-See `research/docs/reports/peq.md`; no repeat full sweep.
-Local Save `215948` creates app card `p1`/`p2` without extra captured device
-mutation; fresh reselection reads first gain -3.5/master -6.5, then Reset without
-Save restores the baseline. PCAP ends 22:02:48, before 22:03 Apply screenshots
-6838/6839; latter shows shifted/duplicate frequency labels without wire evidence.
-Follow-up `221148` captures Apply's malformed bulk range/7-byte format; V2.57
-decodes 8-byte records. Disposable replay moves the first-band cut to position 9
-(32 Hz/-3.5), while first band becomes 32768 Hz/+6.2/Q179.2. On reselection,
-loader `45d66c` resets the invalid first band to 32 Hz/0/Q.71 (persisted .7),
-leaving the misplaced last cut and duplicate 32 Hz. Both phases are pinned.
-Keep the JSON helper, never copy that bulk payload. Physical post-Apply getter
-is still absent, but final Reset/baseline reread/Off are captured. No repeat
-Save/Apply sweep. Local menu offers Deleted/Share/Rename (`IMG_6842`); owner
-reports Share says “Please login first” and explicitly excludes that flow.
-Defer Share/account to #11, with no further captures/login requests. Remaining
-editor/Auto EQ checks should use only flows available without an account.
-Owner confirms Custom 10 Advanced settings offers only Peak in Filter type
-(iOS 4.6.0); no repeat filter dropdown capture. Auto EQ screenshots 6843/6844
-confirm searchable measurements and separate FT1 entries by FIIO/oratory1990;
-owner reports thousands of entries. Do not enumerate the catalog or infer its
-upstream source. Target screenshot 6845 includes Harman over-ear 2018; owner
-reports a large target list without search. Capture 224117 shows only initial
-USER10/default reads and cover GET, no PEQ writes. Screenshot 6846 has FT1 +
-Harman selected but flat PEQ/visible zero gains; 6847 Save as offers device or
-personal, unconfirmed. Capture 224456/6848 shows Random replacing both selectors
-with Massdrop Nobel X / KRK SYSTEMS KNS 8400(Innerfidelity); red PEQ/visible gains
-stay zero and captured device traffic is read-only. Next test deterministic
-FT1 by FIIO/Harman Save as → device → Confirm in approved USER10, read back
-before Reset, then reset/readback/Off. Save-time generation remains unknown;
-account work stays excluded. Do not repeat Random or the full catalog audit.
-Follow-up 225312 has only two unanswered 0599 handshakes and TCP resets;
-owner reports disconnect after Save-result screenshot 6851 (nonzero bands,
-master -4.6). No Save/write/readback/cleanup is captured. Do not replay Save;
-first reconnect and read Custom 10 before Reset, then reset/readback/Off.
-Persistence and disconnect cause remain unknown; do not infer a firmware crash.
-Focused TCP/WS `peq` passes mismatch/recovery, correct JSON application,
-isolation/restoration; firmware-free checks pass 326 Python / 37 JavaScript.
-Issue #8 status audited against committed `f5c08b7` / PR #20: approved stereo
-metadata/identity and same-path title replacement are complete; source replacement
-with different tracks/layout is still untested. Seek/EOF, DST/multichannel,
-redistributable playable fixture and hardware output are separate extensions.
-Keep #8 open with these limits; no media run is needed for a status update.
-Old ignored SACD logs are absent in this checkout; distinguish dated reported
-acceptance from fresh verification. PEQ #9 remains paused; do not change closed #10.
-`CI_SCENARIO=sacd` requires explicit approved `CI_SACD_ISO`, makes a temporary
-copy, and is excluded from full/hosted CI. One stereo uncompressed DSD64 ISO
-indexes ten tracks; first/last catalog/queue/favorite selection works on TCP/WS.
-Favorites lose ISO path/track/flag despite distinct stored rows. Read all queue
-pages and observe advancing position before Pause; no mutation retries. Keep
-private ISO/audio/tags/logs out of Git/artifacts. See `research/docs/reports/sacd.md` and the latest
-`research/docs/status.md` checkpoint for exact validation and remaining limits.
+Component documentation belongs beside code; root `docs/README.md` is the index.
+Follow `docs/decisions/0001-component-and-documentation-ownership.md`: current
+status is concise, dated evidence is preserved, and issues own actionable backlog.
+Moving root `run.sh` and clarifying `docker/` ownership is tracked separately in
+issue #29; this refactoring does not silently change their entry points.
 
-Physical `211747` / `212141` captures confirm folder type 4 and ordinary album
-type 3; artist-scoped albums use type 7 with exact `{"artist":"…", "album":"…"}`
-syntax. Whole-artist Play all uses type 7 with empty album, not a root Artists
-action. Guarded `play_artist` checks fresh `artist/song` or `artist/album/song`;
-indexed type 7 requires a named album. `CI_SCENARIO=library` tests overlapping
-artist/album names on TCP/WS; do not flatten artist albums to generic type 3.
-All four root-tab Play all buttons are confirmed in iPhone FiiO Control, but
-the `213631` capture shows no playback request for reported ineffective root
-taps. Named-genre Play all then works on the same connection. This is an app-side
-dispatch gap in that state, not a firmware rejection or proof of a permanent
-missing feature. Root wire semantics remain unknown; do not repeat identical
-captures or invent empty selectors. See `docs/protocol/library-browsing.md`.
-Physical `215831` confirms first/third album-track addition: one HTTP
-`POST /add_custom_list/`, `type: album/song`, `dst_list_id: 1`, decoded ranges
-`[[0,0],[2,2]]`; fresh count/membership verifies two tracks. HAR preserves HTTP
-chunk framing, which is not part of the JSON. Folder batch actions are absent
-per owner. `221421` then confirms one `style/album` POST for group positions
-0/2, expanding 16 + 89 tracks, and playlist rename via `custom_list_cmd`,
-`type: update`, `list_id: 2`. Fresh GET confirms renamed list/count 105;
-only the first 100 membership rows were requested. Do not claim full membership
-identity or repeat these add captures. `CI_SCENARIO=library-delete` now isolates
-seven category-delete cases on generated V2.57 media. Read `docs/protocol/library-delete.md`:
-index-only general deletion loses favorites/custom membership; custom source
-deletion can affect other lists or leave stale entries. Public helpers keep flag
-zero. Physical `224332` confirms scoped-track DELETE with unchecked source box
-and `delete_source: 0`; album B becomes empty and A keeps two tracks. File
-inspection was skipped. Group Delete shows unsupported (`IMG_6820`, owner report;
-no PCAP), so do not repeat it. `225423` confirms flag one for A1 at position 1
-(actual order A2, A1); directory retains A2 and B1. Post-delete offset 1 gives
-empty items with total 1: refresh from zero, do not call the album empty.
-Track-level flag-zero/one capture work is complete. All supplied
-iOS checks used FiiO Control 4.6.0 per owner confirmation on 2026-09-16.
-Current-track/CUE deletion is outside the verified scope.
+## Emulator and protocol implementation notes
 
 Local audio works: `tinyshim` redirects `/proc/asound/cards` discovery to `/etc/asound.cards`
 (x2000), so stock firmware selects I2S3_OUT (6), hw:0,3. No audio binary patches.

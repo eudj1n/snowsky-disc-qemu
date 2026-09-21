@@ -2,7 +2,7 @@
 
 Experimental application and CLI orchestration in `experiments/disc_assistant/assistant/`.
 See the [prototype guide](../README.md) for setup, commands and acceptance, and the
-[implementation plan](../docs/roadmap.md) for later voice/playback work.
+[roadmap](../docs/roadmap.md) for deferred work.
 
 | File | Responsibility |
 | --- | --- |
@@ -10,12 +10,12 @@ See the [prototype guide](../README.md) for setup, commands and acceptance, and 
 | `database.py`, `journal.py` | Schema migrations, bounded request/decision events, retention, inspection/export/clear |
 | `preferences.py` | Versioned Assistant SQLite settings; one persistent locale and speech policy with atomic legacy migration, override/reset and effective configuration |
 | `config.py`, `config.example.toml` | Explicit device/search/storage configuration and aliases |
-| `command_catalog.py`, `command_features.py`, `explain.py` | Versioned locale references, portable classifier and non-executing explanation preview |
-| `interpreter.py`, `intents.py` | Replaceable text/context interpretation, literal grammar and validated intentions |
-| `resolver.py`, `matching.py`, `ranking.py` | Catalog name resolution and explained ranking of interpreted music requests |
+| `command_catalog.py`, `nlu/command_features.py`, `nlu/explain.py` | Versioned locale references, portable classifier and non-executing explanation preview |
+| `nlu/interpreter.py`, `nlu/intents.py` | Replaceable text/context interpretation, literal grammar and validated intentions |
+| `resolver.py`, `nlu/matching.py`, `ranking.py` | Catalog name resolution and explained ranking of interpreted music requests |
 | `providers.py`, `speech.py` | Provider identity and independent asynchronous STT/TTS/capture/output contracts |
 | `responses.py`, `locales/replies/*.toml` | Shared localized feedback, speech policy, template validation and reserved dialogue contract |
-| `languages.py`, `locales/*.toml` | Validated language dictionaries; one active command/target/version dictionary and language-switch aliases |
+| `nlu/languages.py`, `locales/*.toml` | Validated language dictionaries; one active command/target/version dictionary and language-switch aliases |
 | `playback.py` | Serialized, fresh Controller selection and playback-state verification |
 | `device.py`, `controls.py` | Application ownership and intent adapters over Controller controls; Assistant Stop policy |
 | `queue.py` | Controller queue adapter; Assistant continuous-context opt-in |
@@ -94,8 +94,7 @@ interaction locale. See the [architecture](../docs/architecture/pipeline.md).
 The reusable device core is now in [Controller](../../../controller/docs/api.md):
 receiver/reconnect, scan/state reduction, pagination, controls, mode readback and
 queue/selection verification. Assistant supplies storage ownership and policy;
-Controller imports no research/application modules. Legacy internal re-exports
-keep the research CLI/test entry points compatible during promotion.
+Controller imports no research/application modules. Explicit `experiments.disc_assistant` imports identify the current application namespace.
 
 ## User responses and locale contributions
 
@@ -104,7 +103,7 @@ Every traced result includes a `response` object with `code`, nullable localized
 commands share the policy; the journal records the generated reply and template
 provenance. Defaults are Russian replies and speech eligibility for problems only.
 `/language en` changes input/output together; `/response mode all` changes speech eligibility.
-No audio or dialogue is implemented. See the [response contract](../docs/reference/responses.md).
+Optional Piper browser replies are implemented; dialogue remains disabled. See the [response contract](../docs/reference/responses.md).
 
 Community locales consist of command and response TOML catalogs. Follow the
 [contribution guide](../docs/reference/locales.md), then run `/locales` or the

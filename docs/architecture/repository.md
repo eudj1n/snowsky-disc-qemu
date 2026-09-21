@@ -8,6 +8,10 @@ lives in `research/`; independent application prototypes live in `experiments/`
 with separate launchers and optional services. See the [experiment index](../../experiments/README.md).
 Diagnostic unit tests live in `research/diagnostics/tests/`.
 
+Documentation follows [ADR 0001](../decisions/0001-component-and-documentation-ownership.md);
+start with the [documentation index](../README.md). Component manuals travel with
+their code; shared protocol and development contracts have repository-wide owners.
+
 ## Ownership and dependencies
 
 | Component | Owns | Depends on |
@@ -25,8 +29,8 @@ Diagnostic unit tests live in `research/diagnostics/tests/`.
 
 `firmware/` remains at the root because runtime and research share its reviewed
 profiles. `docker/` describes the shared development/test environment. Neither is
-just build output. The public entry points `run.sh` and `compose.yaml` remain at
-the root.
+just build output. The current entry points `run.sh` and `compose.yaml` remain at
+the root. Launcher/Docker ownership is the separate [follow-up #29](https://github.com/eudj1n/snowsky-disc-qemu/issues/29).
 
 The [shared Controller API](../../controller/docs/api.md) owns persistent device state and
 verified playback operations. Assistant owns its language/search/history policy;

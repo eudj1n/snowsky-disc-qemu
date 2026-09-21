@@ -1,6 +1,6 @@
 # Assistant request and decision journal
 
-Implemented in the research prototype on **2026-09-18**. This records requests,
+Implemented in the experimental Assistant on **2026-09-18**. This records requests,
 search decisions and operation outcomes for later analysis. It does not yet
 collect listening intervals or change ranking/recommendations.
 [Localized responses](../reference/responses.md) record generation and eligibility,

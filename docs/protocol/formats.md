@@ -121,4 +121,4 @@ one DSD64 stereo DSF and uncompressed DFF. SACD ISO has a [separate opt-in scena
 Embedded/multi-file CUE, other text encodings,
 DST, higher DSD rates, full CUE seek/EOF boundaries and hardware audio need their
 own evidence. Current validation/failure history is in
-[the research checkpoint](../../research/docs/status.md#cue-dsd-investigation-2026-09-16).
+[the research checkpoint](../../research/docs/reports/2026-09-19-protocol-checkpoints.md#cue-dsd-investigation-2026-09-16).

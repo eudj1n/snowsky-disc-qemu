@@ -1,6 +1,6 @@
 # Independent interpretation sources and shadow comparison
 
-Implemented in the research prototype on **2026-09-18**. Experiments now share an
+Implemented in the experimental Assistant on **2026-09-18**. Experiments now share an
 interpretation-evidence contract. They remain independent sources, not sequential
 stages that silently reuse another source's decision. A future selector may learn
 which evidence to trust. No score weighting, learned selector or automatic model
