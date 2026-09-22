@@ -32,6 +32,14 @@ class Handler(socketserver.BaseRequestHandler):
                         if server.silent_now:
                             continue
                         result, body = 'a202', json.dumps(server.state).encode()
+                    elif tag == '0103':
+                        server.writes += 1
+                        if server.drop_write:
+                            self.request.shutdown(socket.SHUT_RDWR)
+                            return
+                        if server.state['state'] == 1:
+                            continue
+                        result, body = 'a103', f'{int(payload, 16) // 1000 * 1000:08X}'.encode()
                     elif tag in ('0104', '0502'):
                         server.writes += 1
                         if server.drop_write:

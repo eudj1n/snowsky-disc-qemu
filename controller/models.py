@@ -93,6 +93,7 @@ class Track:
     album: str | None
     queue_position: int | None
     path: str | None = None
+    duration_ms: int | None = None
 
     @classmethod
     def from_wire(cls, state: object) -> Track | None:
@@ -102,7 +103,7 @@ class Track:
         position = song.get('pos_id')
         return cls(song['song_name'], song.get('song_artist_name'), song.get('song_album_name'),
                    position - 1 if type(position) is int and position > 0 else None,
-                   song.get('song_file_path'))
+                   song.get('song_file_path'), song.get('song_duration_time'))
 
 
 @dataclass(frozen=True)

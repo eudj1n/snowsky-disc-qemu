@@ -1,5 +1,6 @@
 """Persistent web-facing selections/edits on disposable generated CI media."""
 from controller import DeviceConfig, DiscSession, QueueItem
+from dataclasses import replace
 from controller.catalog import CatalogReader
 from controller.fiio_http import HTTPClient
 
@@ -29,14 +30,59 @@ def check():
             position = next(r['pos'] for r in playlists if r['name'] == 'Web CI renamed')
             members = CatalogReader(http).rows('custom/song', src_list_id=position)
         selected = tuple(QueueItem(r['pos'], r['name'], r['author']) for r in members)
+        result = session.play_playlist('Web CI renamed', expected=selected)
+        assert result.status == 'playing' and result.playback.source == 5, result
+        result = session.play_playlist('Web CI renamed', index=0, expected=selected)
+        assert result.status == 'playing' and result.queue.selected_position == 0, result
+        with session.operation():
+            tracks = CatalogReader(http).rows('all/song')
+        all_expected = tuple(QueueItem(r['pos'], r['name'], r['author']) for r in tracks)
+        index = next(i for i, row in enumerate(tracks) if row['name'] == selected[0].title)
+        result = session.play_catalog_track(index, expected=all_expected)
+        assert result.status == 'playing' and result.playback.source == 1, result
+        original_favorite = session.snapshot().playback.favorite
+        assert session.set_favorite(True).status in ('confirmed', 'already_satisfied')
+        with session.operation():
+            favorites = CatalogReader(http).rows('love/song')
+        favorite_expected = tuple(QueueItem(r['pos'], r['name'], r['author']) for r in favorites)
+        favorite_index = next(i for i, row in enumerate(favorites) if row['name'] == selected[0].title)
+        result = session.play_catalog_track(favorite_index, favorites=True, expected=favorite_expected)
+        assert result.status == 'playing' and result.playback.source == 6, result
+        playback = session.snapshot().playback
+        assert playback.track.duration_ms and playback.track.duration_ms > 10000, playback
+        rejected = session.seek(2000, expected=replace(playback.track, title='Stale'), source=playback.source)
+        assert rejected.status == 'not_sent' and not rejected.mutation_attempted, rejected
+        result = session.seek(2500, expected=playback.track, source=playback.source)
+        assert result.status == 'confirmed', result
+        assert session.pause().status in ('confirmed', 'already_satisfied')
+        playback = session.snapshot().playback
+        result = session.seek(5500, expected=playback.track, source=playback.source)
+        assert result.status == 'uncertain' and result.outcome == 'seek_waiting_for_playback', result
+        assert session.snapshot().playback.state == 'paused'
+        # Explicit resume belongs to this acceptance scenario, not seek behavior.
+        assert session.resume().status == 'confirmed'
+        import time
+        deadline = time.monotonic() + 5
+        while session.snapshot().playback.position_ms is None and time.monotonic() < deadline:
+            time.sleep(.1)
+        assert 5000 <= session.snapshot().playback.position_ms <= 10000, session.snapshot()
+        print('Web playback and playing/paused seek checks passed; restoring fixture state', flush=True)
+        # Leave favorites before removing its current member: stock may stop that source.
+        restored = session.play_album('CI Album', index=1, expected=expected)
+        assert restored.status == 'playing', restored
+        paused = session.pause()
+        assert paused.status in ('confirmed', 'already_satisfied'), paused
+        if original_favorite is False:
+            assert session.set_favorite(False).status == 'confirmed'
         result = session.remove_playlist_track('Web CI renamed', 0, expected=selected)
         assert result.status == 'confirmed', result
         # This entire stack is disposable; remove only this generated empty list.
         with session.operation():
             http.delete_playlist(position)
             assert all(r['name'] != 'Web CI renamed' for r in CatalogReader(http).rows('custom'))
-        assert session.pause().status in ('confirmed', 'already_satisfied')
-    print('WEB SESSION ACCEPTANCE PASSED: indexed album, queue, stale-source rejection and playlist edits', flush=True)
+        paused = session.pause()
+        assert paused.status in ('confirmed', 'already_satisfied'), paused
+    print('WEB SESSION ACCEPTANCE PASSED: indexed album, queue, stale-source rejection playlist edits, catalog/favorite/playlist playback and seek', flush=True)
 
 
 if __name__ == '__main__':

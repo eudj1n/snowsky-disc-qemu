@@ -235,6 +235,33 @@ no replay. There is no public source-file deletion or playlist deletion here.
 `tests/integration/web_session_check.py` exercises these operations on generated
 media in disposable V2.57 `queue` and `full` CI scenarios.
 
+## Catalog playback and seek
+
+`play_playlist(name, *, index=None, expected=None)` resolves a unique current
+playlist name, checks two equal source reads and rechecks names/members inside
+the final low-level preflight. `play_catalog_track(index, *, favorites=False,
+expected=None)` selects the original all-tracks/favorites position, never a song
+ID or an index renumbered by a browser filter. Both accept displayed `QueueItem`
+tuples and verify the selected track, source, queue membership and mark.
+Unknown versions cannot inherit the V2.57 `catalog_playback` capability.
+
+`seek(position_ms, *, expected: Track, source: PlaybackSource)` requires the
+exact displayed track (including path, queue position and duration), a fresh
+playing/paused state and a position before the known end. The `seek` capability
+and observed socket enforce one paced `0103` attempt; reconnect never replays it.
+`Track.duration_ms` is an optional validated stock duration, not an estimate.
+
+During playback, confirmation requires a fresh `a103` in the requested
+whole-second position window while the same track/source is still observed.
+This is observation, not an atomic firmware acknowledgement. Paused seek returns
+`uncertain` with outcome `seek_waiting_for_playback`: it clears cached position,
+does not resume, and does not retry. `confirmation` retains requested/rounded
+milliseconds. The browser separates requested preview from observed progress.
+A later explicit resume may produce the first useful position tick.
+
+Generated V2.57 FLAC acceptance covers both seek states and stale-track rejection.
+This does not extend validation to SACD/CUE seek or hardware audio output.
+
 ## Current-state operations
 
 The session facade exposes current-track reads, favorites and volume directly.

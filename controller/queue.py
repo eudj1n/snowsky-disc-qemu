@@ -83,7 +83,7 @@ def snapshot(config, client, http, *, expected=None, selected=None, selected_pos
                           unexpected_count=sum((actual_keys - expected_keys).values()))
         song = state.get('song', {})
         mark = result['mark']
-        source = PlaybackSource.ALBUM if selected and selected['kind'] == 'album' and selected.get('artist') is None else PlaybackSource.ARTIST_SCOPE
+        source = selected.get('source') if selected and selected.get('source') is not None else PlaybackSource.ALBUM if selected and selected['kind'] == 'album' and selected.get('artist') is None else PlaybackSource.ARTIST_SCOPE
         row = result['items'][mark] if 0 <= mark < result['total'] else None
         checks = {'playing': state.get('state') == WirePlaybackState.PLAYING, 'source': state.get('playerflag') == source,
                   'mark_in_bounds': row is not None, 'position': song.get('pos_id') == mark + 1,

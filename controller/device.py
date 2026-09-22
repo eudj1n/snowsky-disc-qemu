@@ -42,7 +42,7 @@ class ObservedSocket:
         return getattr(self.socket, name)
 
     def sendall(self, data):
-        if data[:4] in (b'0100', b'0101', b'0102', b'0201', b'0104', b'0502'):
+        if data[:4] in (b'0100', b'0101', b'0102', b'0103', b'0201', b'0104', b'0502'):
             kind = {b'0102': 'mode', b'0104': 'favorite', b'0502': 'volume'}.get(data[:4], 'selection')
             if self.session.mutation_phase != kind:
                 raise RuntimeError('unexpected mutation in the current phase')

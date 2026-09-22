@@ -53,7 +53,7 @@ def album_matches(state, selected, *, config=None, http=None):
 
 def matches(state, selected, rows, *, album_verified=False):
     song = state.get('song')
-    source = PlaybackSource.ALBUM if selected['kind'] == 'album' and selected.get('artist') is None else PlaybackSource.ARTIST_SCOPE
+    source = selected.get('source') if selected and selected.get('source') is not None else PlaybackSource.ALBUM if selected['kind'] == 'album' and selected.get('artist') is None else PlaybackSource.ARTIST_SCOPE
     if state.get('state') != WirePlaybackState.PLAYING or state.get('playerflag') != source or not isinstance(song, dict):
         return False
     artist, title = song.get('song_artist_name'), song.get('song_name')

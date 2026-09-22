@@ -15,7 +15,7 @@ from controller.link_commands import ReviewedCommands
 from controller.wire import playback_snapshot
 from controller.device import MutationGuard, ObservedSocket, MutationPacer
 from controller.events import validate_scan_events, merge_snapshot
-from controller.models import DeviceConfig, DeviceSnapshot, CommandResult, PlayMode, QueueItem
+from controller.models import DeviceConfig, DeviceSnapshot, CommandResult, PlayMode, QueueItem, Track, PlaybackSource
 from controller.contracts import ControlAction, CurrentAction
 from typing import Any, Callable, Iterator, Self
 from types import TracebackType
@@ -25,7 +25,7 @@ from controller.wire import WireState
 
 class LiveSocket(ObservedSocket):
     def sendall(self, data: bytes) -> None:
-        mutation = data[:4] in (b'0100', b'0101', b'0102', b'0201', b'0104', b'0502')
+        mutation = data[:4] in (b'0100', b'0101', b'0102', b'0103', b'0201', b'0104', b'0502')
         if not mutation and data[:4] not in (b'0599', b'0501', b'0105', b'0202'):
             raise ValueError('command is outside the reviewed persistent-session surface')
         if self.session.closed.is_set():
@@ -461,6 +461,25 @@ class DiscSession:
         from controller.queue import select_queue_index
         return self._perform('play_queue_index', lambda client: select_queue_index(self.config, client,
             HTTPClient(self.config.host, self.config.http_port, self.config.timeout), index, expected=expected))
+
+    def play_playlist(self, name: str, *, index: int | None = None,
+                      expected: tuple[QueueItem, ...] | None = None) -> CommandResult:
+        from controller.source_playback import select
+        return self._perform('play_playlist', lambda client: select(self.config, client,
+            'playlist', index=index, name=name, expected=expected))
+
+    def play_catalog_track(self, index: int, *, favorites: bool = False,
+                           expected: tuple[QueueItem, ...] | None = None) -> CommandResult:
+        from controller.source_playback import select
+        if type(favorites) is not bool:
+            raise ValueError('favorites must be a boolean')
+        return self._perform('play_catalog_track', lambda client: select(self.config, client,
+            'favorites' if favorites else 'tracks', index=index, expected=expected))
+
+    def seek(self, position_ms: int, *, expected: Track, source: PlaybackSource) -> CommandResult:
+        from controller.seeking import seek
+        return self._perform('seek', lambda client: seek(client, position_ms,
+            expected=expected, source=source, timeout=self.config.timeout))
 
     def create_playlist(self, name: str) -> CommandResult:
         return self._playlist_edit('create', name)

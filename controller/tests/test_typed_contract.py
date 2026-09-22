@@ -53,7 +53,8 @@ class WireContractTests(TestCase):
 
     def test_persistent_client_has_no_raw_destructive_surface(self):
         self.assertFalse(issubclass(LiveClient, Client))
-        for method in ('scan_library', 'reset_library', 'set_device_setting', 'set_peq', 'seek'):
+        self.assertTrue(hasattr(LiveClient, 'seek'))  # Reviewed, paced, one attempt per operation.
+        for method in ('scan_library', 'reset_library', 'set_device_setting', 'set_peq'):
             self.assertFalse(hasattr(LiveClient, method), method)
 
 
