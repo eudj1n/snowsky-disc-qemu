@@ -38,8 +38,12 @@ albums into generic whole albums.
 
 Without a saved Library snapshot, views load a bounded complete live category
 (at most 10,000 records and 60 HTTP requests), and search filters that view. After
-synchronization, albums/artists/tracks use SQLite and search switches to the full
-saved track collection. Favorites/playlists remain live. Virtualization and paged
+synchronization, albums/artists/tracks use SQLite. Search always filters the
+current view and never redirects to tracks. Album search includes all observed
+artist credits; artist/playlist search uses names, and track search uses
+title/artist/album. Detail views retain their scoped rows and selection tokens.
+Navigation clears the query; refresh preserves it. Placeholders and empty states
+describe the current entity in RU/EN. Favorites/playlists remain live. Virtualization and paged
 presentation are future work.
 Cached browsing uses a separate short source-token lock, so device cover reads or
 an active synchronization cannot block reading the previous local snapshot.

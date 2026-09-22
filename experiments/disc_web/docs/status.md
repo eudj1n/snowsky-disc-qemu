@@ -216,6 +216,18 @@ snapshot schema.
   passed with sync-time duration observation, guarded cached selection, stale
   membership rejection and offline browsing; the temporary stack was removed.
 
+## Contextual search — 2026-09-22
+
+Search now remains on the current page, including with a saved Library snapshot.
+Albums match titles and all credited artists; artists/playlists match names;
+tracks match title/artist/album within the current list. Artist and album details
+retain their original scope and selection identities. RU/EN placeholders and
+empty-state hints follow the page; navigation clears the query and refresh keeps it.
+Browser checks verified album/credit matching, artist albums, exclusion of tracks
+outside an album, and the 390 px layout. Web passed 36 Python / 13 JavaScript
+tests; firmware-free CI passed 502 Python / 50 JavaScript tests and four shim
+builds. No backend or device protocol changes were required.
+
 ## Next implementation stages
 
 1. Local-file metadata enrichment and verified artwork/CUE sidecar handling.

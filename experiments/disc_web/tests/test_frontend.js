@@ -45,11 +45,21 @@ test('missing timing stays unknown and elapsed time uses whole seconds', async (
   assert.equal(timeLabel(125.9), '2:05');
 });
 test('search combines case-insensitive title and artist without changing identities', async () => {
-  const {filterItems} = await core;
+  const {filterItems,searchKind} = await core;
   const items = [{id:'1',title:'Тихий океан',artist:'Берег'}, {id:'2',title:'Океан',artist:'Другой'}];
   assert.deepEqual(filterItems(items, '  ОКЕАН берег '), [items[0]]);
   assert.deepEqual(filterItems(items, ''), items);
   assert.deepEqual(filterItems(items, '<script>'), []);
+  const albums=[{type:'album',title:'Коллекция',artists:['Первый','Второй']},
+    {type:'album',title:'Второй альбом',artist:'Другой'}];
+  assert.deepEqual(filterItems(albums,'коллекция второй'),[albums[0]]);
+  assert.strictEqual(filterItems(albums,'коллекция')[0],albums[0]);
+  assert.deepEqual(filterItems([{type:'artist',title:'Исполнитель',album:'Другой'}],'другой'),[]);
+  assert.deepEqual(filterItems([{type:'playlist',title:'Мой микс'}],'МИКС'),[{type:'playlist',title:'Мой микс'}]);
+  for(const view of ['home','albums','artist']) assert.equal(searchKind(view),'albums');
+  for(const view of ['tracks','album','favorites','playlist']) assert.equal(searchKind(view),'tracks');
+  assert.equal(searchKind('artists'),'artists');
+  assert.equal(searchKind('playlists'),'playlists');
 });
 test('navigation preserves literal names and artist scope through deep links', async () => {
   const {routeHash,parseRoute} = await core;

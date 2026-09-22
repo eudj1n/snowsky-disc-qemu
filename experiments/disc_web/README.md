@@ -104,7 +104,11 @@ There is no automatic sync or restart after failure. A failed network GET may be
 repeated once within the request budget; two complete equal reads are still required.
 
 Albums, artists and tracks (including album membership) then load from SQLite.
-Search searches the whole saved collection. Disconnecting leaves those views
+Search stays in the current view: albums by title or credited artist, artists by
+name, tracks by title/artist/album, and playlists by name. Album/playlist detail
+search filters only its tracks; artist detail filters that artist's albums. Home
+search filters its albums. Typing never changes the page, including offline;
+navigating to another page clears the query. Disconnecting leaves those views
 available, with playback disabled; favorites, custom playlists and the current
 queue still need a live player. Sync date, track count and offline/stale status
 remain visible. A failed sync preserves the previous snapshot. Refresh reloads

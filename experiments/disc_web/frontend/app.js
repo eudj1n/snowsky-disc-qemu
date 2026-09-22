@@ -4,7 +4,7 @@ import {createConnection} from './connection.mjs';
 import {createImporter} from './imports.mjs';
 import {t, initLocale, setLocale, getLocale} from './i18n.mjs';
 await initLocale();
-import {escapeHTML as esc, timeLabel, trackColumns, filterItems, routeHash, parseRoute, trackDuration, playbackIdentity, seekAllowed, coverIdentity, artworkSource} from './core.mjs';
+import {escapeHTML as esc, timeLabel, trackColumns, filterItems, searchKind, routeHash, parseRoute, trackDuration, playbackIdentity, seekAllowed, coverIdentity, artworkSource} from './core.mjs';
 
 const paths = {
  moon:'M20.8 13.3A9 9 0 0 1 10.7 3.2a9 9 0 1 0 10.1 10.1Z',
@@ -44,7 +44,7 @@ document.querySelector('.skip-link').onclick = event => {event.preventDefault();
 const titleKeys = {home:'home',albums:'albums',artists:'artists',tracks:'tracks',favorites:'favorites',playlists:'playlists',album:'album',artist:'artist',playlist:'playlist'};
 let state = null, route = parseRoute(location.hash), currentItems = [], homeTracks = [], activeItem = null;
 let requestSequence = 0, busy = false, genre = '', toastTimer, pollTimer, lastTrack = '', libraryLoading = false;
-let artistScope = '', pendingSearch=null, displayedSnapshot=null;
+let artistScope = '', displayedSnapshot=null;
 let lastCoverRequest='';
 const cachedViews=new Set(['home','albums','artists','tracks','album','artist']);
 const canBrowse=()=>state?.connection==='ready'||(state?.catalogue?.available&&cachedViews.has(route.view));
@@ -150,7 +150,7 @@ function navigate(view, item=null) {
 }
 window.addEventListener('hashchange', () => {
   route = parseRoute(location.hash); artistScope = route.artist;
-  $('search').value = pendingSearch??''; pendingSearch=null; genre = ''; window.scrollTo(0,0); loadView();
+  $('search').value = ''; genre = ''; window.scrollTo(0,0); loadView();
 });
 for (const button of document.querySelectorAll('[data-view]')) button.addEventListener('click', () => navigate(button.dataset.view));
 function updateNav() {
@@ -160,8 +160,10 @@ function updateNav() {
     button.classList.toggle('active', active);
     if (active) button.setAttribute('aria-current', 'page'); else button.removeAttribute('aria-current');
   }
-  $('search').placeholder = state?.catalogue?.available?t('catalogue_search'):t('find_section',{name:route.name || t(titleKeys[route.view]).toLowerCase()});
-  $('search').setAttribute('aria-label',t(state?.catalogue?.available?'catalogue_search':'search_this_section'));
+  const kind=searchKind(route.view);
+  const label=route.name ? t('search_scoped_'+kind,{name:route.name}) : t('search_'+kind);
+  $('search').placeholder = label;
+  $('search').setAttribute('aria-label',label);
 }
 async function loadView() {
   albumInfo.clear();
@@ -273,7 +275,7 @@ function renderView() {
   const isTracks = ['tracks','favorites','album','playlist'].includes(route.view);
   const count = items.length;
   const columns=trackColumns(items);
-  const empty = `<div class="empty-state">${icon(query ? 'search' : 'music')}<h2>${query ? t('no_matches_yet') : t('a_little_quiet_here')}</h2><p>${query ? t('try_another_title_or_artist_search_looks_within_this_section') : t('your_collection_will_appear_here_after_adding_music_to_your_player')}</p></div>`;
+  const empty = `<div class="empty-state">${icon(query ? 'search' : 'music')}<h2>${query ? t('no_matches_yet') : t('a_little_quiet_here')}</h2><p>${query ? t('search_empty_'+searchKind(route.view)) : t('your_collection_will_appear_here_after_adding_music_to_your_player')}</p></div>`;
   let heading;
   if (detail) {
     const item = activeItem?.title === route.name ? {...activeItem} : {title:route.name,art:items[0]?.art};
@@ -489,7 +491,6 @@ $('queue-button').onclick=()=>{const open=$('queue').hidden; $('queue').hidden=!
 $('close-queue').onclick=()=>{$('queue').hidden=true; $('queue-button').setAttribute('aria-expanded','false'); $('queue-button').focus();};
 $('refresh').onclick=()=>{if(!busy && !libraryLoading) {lastCoverRequest=''; loadView();}};
 $('search').oninput=()=>{
-  if(state?.catalogue?.available && $('search').value && route.view!=='tracks') {pendingSearch=$('search').value;navigate('tracks');return;}
   if(canBrowse() && !libraryLoading) {renderView();updatePlayer();}
 };
 document.addEventListener('keydown',event=>{

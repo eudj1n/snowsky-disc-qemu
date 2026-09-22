@@ -11,7 +11,16 @@ export function trackColumns(items) {
 }
 export function filterItems(items, query) {
   const words = query.trim().toLocaleLowerCase().split(/\s+/).filter(Boolean);
-  return items.filter(item => words.every(word => `${item.title ?? ''} ${item.artist ?? ''} ${item.album ?? ''}`.toLocaleLowerCase().includes(word)));
+  return items.filter(item => {
+    const fields = ['artist','playlist'].includes(item.type) ? [item.title]
+      : item.type==='album' ? [item.title,item.artist,...(item.artists||[])]
+      : [item.title,item.artist,item.album];
+    const text=fields.filter(Boolean).join(' ').toLocaleLowerCase();
+    return words.every(word=>text.includes(word));
+  });
+}
+export function searchKind(view) {
+  return ({home:'albums',albums:'albums',artist:'albums',artists:'artists',playlists:'playlists'})[view] || 'tracks';
 }
 export function routeHash(route) {
   return '#' + new URLSearchParams({view:route.view, ...(route.name ? {name:route.name} : {}), ...(route.artist ? {artist:route.artist} : {})});
