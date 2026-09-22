@@ -20,6 +20,7 @@
   color-scheme:light;
   --muted:#82847b;
   --accent:#f35c3f;
+  --accent-ink:#21140f;
   --sidebar:224px;
   --player:100px;
 }
@@ -506,7 +507,7 @@ main {
   border-radius:24px;
   padding:12px 22px;
   background:var(--accent);
-  color:#fff;
+  color:var(--accent-ink);
   font-size:12px;
   font-weight:600;
 }
@@ -949,6 +950,7 @@ main {
 }
 
 .play-button:hover:not(:disabled) {
+  color:var(--accent-ink);
   transform:scale(1.07);
   background:var(--accent);
 }
@@ -1909,7 +1911,7 @@ html[lang="en"] .hero h2 { font-size:39px; }
 .import-sleeve { position:absolute; width:105px; height:125px; top:15px; left:2px; z-index:2; border-radius:7px; transform:rotate(-12deg); background:linear-gradient(140deg,#d8e5b3,#658468); box-shadow:0 10px 24px #0002; }
 .import-sleeve::after { content:'disc.'; position:absolute; bottom:12px; left:14px; font-size:24px; font-weight:700; color:#253c2b; letter-spacing:-1px; }
 .import-record { position:absolute; width:124px; height:124px; top:12px; right:0; border-radius:50%; background:radial-gradient(circle,#e6af7b 0 4%,#a86641 4.5% 20%,transparent 20.5%),repeating-radial-gradient(circle,#242b25 0 2px,#333b34 3px 4px); box-shadow:0 9px 16px #0002; }
-.import-plus { position:absolute; z-index:3; right:0; bottom:0; width:43px; height:43px; border:4px solid var(--paper); border-radius:50%; background:var(--accent); color:white; font-size:28px; display:grid; place-items:center; line-height:1; }
+.import-plus { position:absolute; z-index:3; right:0; bottom:0; width:43px; height:43px; border:4px solid var(--paper); border-radius:50%; background:var(--accent); color:var(--accent-ink); font-size:28px; display:grid; place-items:center; line-height:1; }
 .import-notice { padding:10px 13px; background:var(--banner); color:var(--banner-ink); border-radius:10px; font-size:12px; line-height:1.5; }
 .import-transfer { padding-top:12px; }
 .import-drop { display:flex; flex-direction:column; align-items:center; gap:10px; padding:25px 15px; margin-top:13px; border:1px dashed var(--secondary); border-radius:16px; background:var(--raised); transition:background .15s; }
@@ -2004,3 +2006,16 @@ html[lang="en"] .hero h2 { font-size:39px; }
 .discovered-player strong { display:block; font-size:11px; letter-spacing:1px; color:var(--ink); }
 .discovered-player small { display:block; margin-top:5px; color:var(--muted); }
 @media(max-width:600px) { .connection-dialog { padding:22px; max-height:calc(100dvh - 20px); } .connection-intro { gap:16px; } .connection-intro h2 { font-size:23px; } .discovery-controls { flex-wrap:wrap; } .discovery-controls label { flex-basis:100%; } .discovery-controls button { width:100%; } }
+
+/* Omit catalog columns when the device supplies no values for that view. */
+.track-row.no-album .track-album, .track-row.no-duration .track-duration { display:none; }
+main .track-row.no-album { grid-template-columns:28px 40px minmax(100px,1fr) 46px 28px; }
+main .track-row.no-duration { grid-template-columns:28px 40px minmax(100px,1fr) minmax(70px,.55fr) 28px; }
+main .track-row.no-album.no-duration { grid-template-columns:28px 40px minmax(100px,1fr) 28px; }
+.queue-panel .track-row.no-album.no-duration { grid-template-columns:20px 34px minmax(0,1fr); }
+@media (max-width:540px) {
+  main .track-row.no-duration, main .track-row.no-album.no-duration { grid-template-columns:19px 34px minmax(0,1fr) 25px; }
+  main .track-row.no-album:not(.no-duration) { grid-template-columns:19px 34px minmax(0,1fr) 30px 25px; }
+}
+
+.album-card p span { display:block; overflow:hidden; text-overflow:ellipsis; line-height:1.6; }

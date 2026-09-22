@@ -40,6 +40,16 @@ Views currently load a bounded complete category (at most 10,000 records and 60
 HTTP requests); browser search filters that view. This is not a persistent search
 index. Large-library virtualization and paged presentation are future work.
 
+Visible album cards optionally request `kind=album_info` through the same library
+endpoint. This reads the scoped album rows and returns distinct literal credits,
+count and connection generation, without allocating playback selection tokens.
+The browser serializes these reads, discards old-view/connection results and keeps
+at most 256 summaries for 60 seconds within the view. Refresh/navigation clears
+them. Failures retain the known group count. No persistent Library snapshot,
+Assistant import or guessed title/artist-to-album join is introduced. Empty
+album/duration columns are hidden per view; the album detail retains its known
+scope. A current-track duration is not applied to other catalog rows by name.
+
 ## HTTP surface
 
 | Endpoint | Behavior |
@@ -64,6 +74,9 @@ or escaped HTML. Requests are not logged with private names or query strings.
 The process remembers up to 4,096 request IDs and rejects further writes once
 that budget is reached, rather than evicting IDs and allowing replay. This is not durable exactly-once delivery. Browsers never retry a
 write or persist commands for reconnect. Unknown results remain uncertain.
+JSON reads rejected as busy (HTTP 409) may retry up to six times with bounded
+backoff, so cover/catalog overlap need not become a failed collection screen.
+Transport failures, other HTTP errors and every POST fail without replay.
 
 State polling every 1.5 seconds reads cached session state, not the device socket.
 The browser disables control after a server/connection loss. Duration comes from

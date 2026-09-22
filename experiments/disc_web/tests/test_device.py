@@ -92,6 +92,20 @@ class DeviceTests(unittest.TestCase):
         with self.assertRaises(CatalogChanged):
             device.browse('albums')
 
+    def test_album_info_preserves_scope_counts_rows_and_does_not_create_selections(self):
+        device, session, http, client = self.fixture()
+        http.catalog.return_value = {'total': 3, 'items': [
+            dict(pos=0, name='One', author='Artist'),
+            dict(pos=1, name='Two', author='Guest'),
+            dict(pos=2, name='Three', author='Artist')]}
+        result = device.browse('album_info', 'Collection', 'Artist')
+        self.assertEqual(result, {'generation': 5, 'count': 3, 'artists': ['Artist', 'Guest']})
+        http.catalog.assert_called_once_with('artist/album/song', offset=0, limit=200,
+                                            artist='Artist', album='Collection')
+        self.assertEqual(device.sources, {})
+        self.assertEqual(client.scan_guard.call_count, 2)
+        session.play_album.assert_not_called()
+
     def test_playlist_names_rechecked_after_read(self):
         device, _, http, _ = self.fixture()
         http.catalog.side_effect = [

@@ -1,8 +1,10 @@
+import {createAlbumInfo} from './album-info.mjs';
+import {requestJSON} from './request.mjs';
 import {createConnection} from './connection.mjs';
 import {createImporter} from './imports.mjs';
 import {t, initLocale, setLocale, getLocale} from './i18n.mjs';
 await initLocale();
-import {escapeHTML as esc, timeLabel, filterItems, routeHash, parseRoute, trackDuration, playbackIdentity, seekAllowed} from './core.mjs';
+import {escapeHTML as esc, timeLabel, trackColumns, filterItems, routeHash, parseRoute, trackDuration, playbackIdentity, seekAllowed} from './core.mjs';
 
 const paths = {
  moon:'M20.8 13.3A9 9 0 0 1 10.7 3.2a9 9 0 1 0 10.1 10.1Z',
@@ -43,6 +45,7 @@ const titleKeys = {home:'home',albums:'albums',artists:'artists',tracks:'tracks'
 let state = null, route = parseRoute(location.hash), currentItems = [], homeTracks = [], activeItem = null;
 let requestSequence = 0, busy = false, genre = '', toastTimer, pollTimer, lastTrack = '', libraryLoading = false;
 let artistScope = '';
+const albumInfo=createAlbumInfo({api,getState:()=>state,isBusy:()=>busy||libraryLoading,caption:cardCaption});
 const importer = createImporter({getState:()=>state, isBusy:()=>busy||libraryLoading, refreshState, loadView, api, toast});
 const connection = createConnection({getState:()=>state, isBusy:()=>busy||libraryLoading||state?.busy, refreshState, api, command, setBusy:value=>{busy=value;updatePlayer();}});
 let editContext = null, menuContext = null, seekDraft = null, seekFeedback = '', seekIdentity = '', pendingSeek = null, seekRequested = null;
@@ -101,10 +104,8 @@ function toast(message, error=false) {
   toastTimer = setTimeout(() => $('toast').hidden = true, error ? 11000 : 4500);
 }
 async function api(path, body) {
-  const response = await fetch(path, body ? {method:'POST', headers:{'Content-Type':'application/json','X-Disc-Token':state?.token || ''}, body:JSON.stringify(body)} : {});
-  const data = await response.json();
-  if (!response.ok) throw new Error(t('request_failed'));
-  return data;
+  try {return await requestJSON(path,{body,token:state?.token});}
+  catch {throw new Error(t('request_failed'));}
 }
 function art(item, css='art') {
   const src = item?.art;
@@ -134,6 +135,7 @@ function updateNav() {
   $('search').placeholder = t('find_section',{name:route.name || t(titleKeys[route.view]).toLowerCase()});
 }
 async function loadView() {
+  albumInfo.clear();
   updateNav();
   const sequence = ++requestSequence;
   if ($('track-dialog').open) $('track-dialog').close();
@@ -163,16 +165,24 @@ function renderDisconnected() {
   $('main').innerHTML = `<div class="intro"><div><span class="eyebrow">${t('your_music_your_space')}</span><h1>${t('welcome_back')}</h1></div></div><div class="empty-state">${icon('device')}<h2>${t('it_starts_with_your_disc')}</h2><p>${t('connect_your_player_to_explore_your_collection_choose_an_album_and_take_control_of_your_music')}</p><button id="empty-connect" class="primary-button">${icon('device')} ${t('connect_your_player')}</button></div>`;
   $('empty-connect').onclick = showDevice;
 }
+function cardCaption(item) {
+  if(item.type==='artist') return t('browse_albums');
+  const artist=item.artists?.length>1?t('various_artists'):item.artist;
+  const count=Number.isInteger(item.count)&&item.count>=0?t('track_count',{count:item.count}):'';
+  return [artist,count].filter(Boolean).join('\n') || t(item.type==='playlist'?'playlist_on_disc':'album_on_disc');
+}
 function cards(items, extra='') {
-  return `<div class="album-grid ${extra}">${items.map((item, i) => `<article class="album-card ${item.type === 'artist' ? 'artist-card' : ''}"><button class="album-cover-button" data-card="${i}" aria-label="${esc(t('open_item',{name:item.title}))}">${art(item)}</button><h3>${esc(item.title)}</h3><p>${esc(item.type==='artist' ? t('browse_albums') : item.artist || (item.type==='playlist' ? t('playlist_on_disc') : t('album_on_disc')))}</p>${item.genre ? `<div class="album-sub"><span>${esc(item.genre)}</span><span>${esc(item.year)}</span></div>` : ''}</article>`).join('')}</div>`;
+  return `<div class="album-grid ${extra}">${items.map((item, i) => `<article class="album-card ${item.type === 'artist' ? 'artist-card' : ''}"><button class="album-cover-button" data-card="${i}" aria-label="${esc(t('open_item',{name:item.title}))}">${art(item)}</button><h3>${esc(item.title)}</h3><p><span>${esc(cardCaption(item)).replaceAll('\n','</span><span>')}</span></p>${item.genre ? `<div class="album-sub"><span>${esc(item.genre)}</span><span>${esc(item.year)}</span></div>` : ''}</article>`).join('')}</div>`;
 }
 function rows(items, queue=false) {
+  const columns=trackColumns(items);
   return `<div class="track-list">${items.map((item,i) => {
     const selected = queue ? item.position === state?.playback?.track?.queue_position : item.id === state?.playback?.track?.id && state?.demo;
-    return `<div data-track-row="${i}" class="track-row ${selected ? 'is-current' : ''}" ${state?.demo ? `data-track-id="${esc(item.id)}"` : ''}><span class="track-number">${state?.demo || item.playable ? `<button data-track="${i}" aria-label="${queue ? t('select_in_queue') : t('play_label')} ${esc(item.title)}">${selected ? icon('music') : icon('play')}</button>` : i+1}</span><span class="track-thumb">${art(item)}</span><div class="track-meta"><strong>${esc(item.title)}</strong><small>${esc(item.artist || '—')}</small></div><span class="track-album">${esc(item.album || '')}</span><span class="track-duration">${timeLabel(item.duration)}</span>${!queue ? `<button class="icon-button track-edit" data-track-menu="${i}" aria-label="${t('track_actions')}: ${esc(item.title)}" aria-haspopup="menu">⋯</button>` : ''}</div>`;
+    return `<div data-track-row="${i}" class="track-row ${!columns.album ? 'no-album' : ''} ${!columns.duration ? 'no-duration' : ''} ${selected ? 'is-current' : ''}" ${state?.demo ? `data-track-id="${esc(item.id)}"` : ''}><span class="track-number">${state?.demo || item.playable ? `<button data-track="${i}" aria-label="${queue ? t('select_in_queue') : t('play_label')} ${esc(item.title)}">${selected ? icon('music') : icon('play')}</button>` : i+1}</span><span class="track-thumb">${art(item)}</span><div class="track-meta"><strong>${esc(item.title)}</strong><small>${esc(item.artist || '—')}</small></div><span class="track-album">${esc(item.album || '—')}</span><span class="track-duration">${timeLabel(item.duration)}</span>${!queue ? `<button class="icon-button track-edit" data-track-menu="${i}" aria-label="${t('track_actions')}: ${esc(item.title)}" aria-haspopup="menu">⋯</button>` : ''}</div>`;
   }).join('')}</div>`;
 }
 function bindCards(items) {
+  albumInfo.observe($('main'),items);
   for (const button of $('main').querySelectorAll('[data-card]')) button.onclick = () => {
     const item = items[Number(button.dataset.card)];
     navigate(item.type, item);
@@ -232,6 +242,7 @@ function renderView() {
   const detail = ['album','artist','playlist'].includes(route.view);
   const isTracks = ['tracks','favorites','album','playlist'].includes(route.view);
   const count = items.length;
+  const columns=trackColumns(items);
   const empty = `<div class="empty-state">${icon(query ? 'search' : 'music')}<h2>${query ? t('no_matches_yet') : t('a_little_quiet_here')}</h2><p>${query ? t('try_another_title_or_artist_search_looks_within_this_section') : t('your_collection_will_appear_here_after_adding_music_to_your_player')}</p></div>`;
   let heading;
   if (detail) {
@@ -250,7 +261,7 @@ function renderView() {
   }
   if (route.view==='playlists') heading+=`<button id="create-playlist" class="secondary-button playlist-create">+ ${t('new_playlist')}</button>`;
   if (route.view==='playlist') heading+=`<button id="rename-playlist" class="secondary-button playlist-create">${t('rename')}</button>`;
-  $('main').innerHTML = heading + (!count ? empty : isTracks ? `<div class="track-row track-header"><span>#</span><span></span><span>${t('title')}</span><span class="track-album">${t('album_label')}</span><span>${icon('clock')}</span></div>${rows(items)}` : cards(items));
+  $('main').innerHTML = heading + (!count ? empty : isTracks ? `<div class="track-row track-header ${!columns.album ? 'no-album' : ''} ${!columns.duration ? 'no-duration' : ''}"><span>#</span><span></span><span>${t('title')}</span><span class="track-album">${t('album_label')}</span><span class="track-duration">${icon('clock')}</span></div>${rows(items)}` : cards(items));
   bindCards(items); bindTracks($('main'), items);
   if ($('create-playlist')) $('create-playlist').onclick=()=>openPlaylistEditor('create');
   if ($('rename-playlist')) $('rename-playlist').onclick=()=>openPlaylistEditor('rename');
@@ -278,6 +289,7 @@ async function refreshState() {
     $('connection-label').textContent = state.demo ? t('demo_mode') : ({ready:t('connected'),connecting:t('connecting'),reconnecting:t('reconnecting'),disconnected:t('disconnected')}[state.connection] || state.connection);
     $('status-light').classList.toggle('ready',state.connection==='ready');
     if (previous && (previous.connection !== state.connection || previous.generation !== state.generation)) {
+      albumInfo.clear();
       if (state.connection === 'ready') loadView();
       else {++requestSequence; libraryLoading=false; renderDisconnected(); $('queue').hidden=true; $('queue-button').setAttribute('aria-expanded','false');}
     }

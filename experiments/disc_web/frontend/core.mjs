@@ -5,6 +5,10 @@ export function timeLabel(seconds) {
   if (!Number.isFinite(seconds) || seconds < 0) return '—:—';
   return `${Math.floor(seconds / 60)}:${String(Math.floor(seconds % 60)).padStart(2, '0')}`;
 }
+export function trackColumns(items) {
+  return {album:items.some(item=>Boolean(item.album)),
+    duration:items.some(item=>Number.isFinite(item.duration)&&item.duration>=0)};
+}
 export function filterItems(items, query) {
   const words = query.trim().toLocaleLowerCase().split(/\s+/).filter(Boolean);
   return items.filter(item => words.every(word => `${item.title ?? ''} ${item.artist ?? ''} ${item.album ?? ''}`.toLocaleLowerCase().includes(word)));

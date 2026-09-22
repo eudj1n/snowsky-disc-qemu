@@ -139,6 +139,21 @@ emulator volume was used.
   Browser checks cover discovery, connection, reload and RU/dark and EN/light
   dialogs at desktop and 390 px. No firmware/runtime code changed.
 
+## Catalog presentation refinement — 2026-09-22
+
+UI refinement on 2026-09-22: visible album cards now show observed track credits
+and counts, with separate lines so long credits cannot hide the count. Optional
+summary reads retain the album's artist scope and never create playback tokens.
+Empty album/time columns are omitted instead of suggesting unavailable catalog
+metadata. Primary coral buttons use dark text (calculated contrast 6.94:1 in dark
+appearance and 5.47:1 in light appearance). Physical read-only browsing confirmed
+an album's credit/count and the compact track table; playback was not changed by
+the check. App tests passed 26 Python / 11 JavaScript checks; firmware-free checks
+passed 456 Python / 48 JavaScript tests and all four shim builds. The final
+frontend suite passed 12 tests including bounded retry for busy reads and zero
+replay for POST/transport failures. This addresses observed cover/catalog
+contention while preserving mutation admission.
+
 ## Next implementation stages
 
 1. File browsing/management and verified artwork/CUE sidecar handling.

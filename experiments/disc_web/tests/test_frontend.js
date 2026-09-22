@@ -60,3 +60,33 @@ test('seek uses observed duration and invalidates a draft on track/source/reconn
   ]) assert.notEqual(playbackIdentity(altered),playbackIdentity(state));
   assert.equal(playbackIdentity({...state,playback:{...state.playback,position_ms:20000}}),playbackIdentity(state));
 });
+
+test('catalog columns require observed metadata, not fabricated album or duration values', async () => {
+  const {trackColumns} = await core;
+  assert.deepEqual(trackColumns([{title:'Track',album:null,duration:null}]),{album:false,duration:false});
+  assert.deepEqual(trackColumns([{album:'Collection',duration:null}]),{album:true,duration:false});
+  assert.deepEqual(trackColumns([{duration:0},{duration:123}]),{album:false,duration:true});
+  assert.deepEqual(trackColumns([{duration:NaN},{duration:-1}]),{album:false,duration:false});
+});
+
+test('busy reads wait within a bound; mutations and transport failures are never replayed', async () => {
+  const {requestJSON}=await import('../frontend/request.mjs');
+  let calls=0;
+  const busy=async()=>{calls++;return {status:409,ok:false,json:async()=>({})};};
+  const pause=async()=>{};
+  await assert.rejects(requestJSON('/api/library',{},busy,pause));
+  assert.equal(calls,7);
+  calls=0;
+  await assert.rejects(requestJSON('/api/action',{body:{action:'next'}},busy,pause));
+  assert.equal(calls,1);
+  calls=0;
+  await assert.rejects(requestJSON('/api/library',{},async()=>{calls++;throw new Error('lost');},pause));
+  assert.equal(calls,1);
+  calls=0;
+  const result=await requestJSON('/api/library',{},async()=>{
+    if(calls++===0) return {status:409,ok:false,json:async()=>({})};
+    return {status:200,ok:true,json:async()=>({items:[]})};
+  },pause);
+  assert.deepEqual(result,{items:[]});
+  assert.equal(calls,2);
+});

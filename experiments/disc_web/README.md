@@ -55,6 +55,10 @@ or exposed control service is started. Demo disables connection and discovery.
 
 - Responsive home, album grid/detail, artist-scoped albums, tracks, favorites
   and custom playlist browsing; search within the current view.
+- Visible album cards read their track credits and count on demand. Multiple
+  distinct credits are labelled Various artists. Completely unknown album/time
+  columns are omitted: stock catalog rows supply neither per-track album nor
+  duration; duration in Now Playing comes from its separate observed state.
 - Persistent bottom player, expanded Now Playing with mobile-accessible controls,
   and an explicitly refreshed queue drawer.
 - Light, dark and system appearance; RU/EN interface with saved browser preferences.

@@ -102,6 +102,12 @@ class Device:
         try:
             with self.session.operation() as client:
                 client.scan_guard()
+                if kind == 'album_info':
+                    rows = (self._rows('artist/album/song', artist=artist, album=name) if artist
+                            else self._rows('album/song', album=name))
+                    client.scan_guard()
+                    return {'generation': self.state()['generation'], 'count': len(rows),
+                            'artists': list(dict.fromkeys(row['author'] for row in rows if row['author']))}
                 categories = {'albums': 'album', 'artists': 'artist', 'tracks': 'all/song',
                               'favorites': 'love/song', 'playlists': 'custom'}
                 if kind in categories:

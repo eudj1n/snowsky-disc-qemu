@@ -256,5 +256,6 @@
   "connection_found": {
     "one": "Found {count} player",
     "other": "Found {count} players"
-  }
+  },
+  "various_artists": "Various artists"
 }
