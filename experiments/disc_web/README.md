@@ -81,8 +81,9 @@ or exposed control service is started. Demo disables connection and discovery.
   chooser; drag-and-drop accepts individual files.
 - Explicit library scan with discovered-track count and fresh catalog refresh
   after its observed end. Transfer and scan are separate user actions.
-- Current-track cover from stock HTTP; other live covers use honest placeholders.
-  The stock API here only supplies the currently playing cover.
+- Current-track cover from stock HTTP. Library retains safely associated artwork
+  and durations for offline track/album display; missing fields use placeholders.
+  The stock API only supplies the currently playing cover and duration.
 - An isolated demo with eight original SVG covers and fictional names, genre
   filtering, track/queue selections, simulated playback and favorites. It has no
   stored music files, audible output, persistence or real-device mutations.
@@ -126,8 +127,20 @@ external changes are not continuously detected. Sync is bounded to 10,000 tracks
 request may use its socket timeout). Browsing the previous snapshot remains possible
 while sync owns the connection. Other device operations fail busy rather than queue.
 
-Core sync does not add duration or artwork absent from the source. Enrichment,
-external metadata services and shared Assistant/Web TCP ownership are later stages.
+Library synchronization includes an optional enrichment stage for available
+current-track artwork and duration. The same Library mechanism runs when Web
+loads current artwork during listening. Exact, unique tags, fresh album membership
+and stable current-track reads are required; duplicate or shortened metadata is
+not guessed. This does not fill every track or cycle playback. New catalog
+snapshots do not inherit observations by name.
+
+Observations and source provenance live in `observations.sqlite3` beside the
+catalog; catalog schema 1 and Assistant storage are unchanged. The banner reports
+the number of enriched tracks. Cached artwork and durations survive disconnect
+and restart. Artwork is restricted to JPEG/PNG, 8 MiB per image and 256 MiB total
+body storage. The stock image endpoint has no atomic track identity, so guarded
+reads remain observations. Local-file extraction, external metadata services and
+shared Assistant/Web TCP ownership remain future stages.
 
 ## Import behavior
 

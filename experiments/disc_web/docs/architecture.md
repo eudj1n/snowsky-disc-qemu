@@ -66,6 +66,7 @@ scope. A current-track duration is not applied to other catalog rows by name.
 | `GET /api/library?kind=...&name=...&artist=...` | Named category/detail projection; saved Library snapshot, bounded live HTTP reads or fictional demo rows |
 | `GET /api/queue` | Fresh public facade queue result |
 | `GET /api/cover` | Current device JPEG/PNG; no arbitrary proxy URL |
+| `GET /api/artwork/<digest>` | Library-cached JPEG/PNG associated with the active endpoint/snapshot; available offline |
 | `POST /api/upload?name=relative/path.flac` | Raw bounded file body, token, request ID and generation headers; private staging then async facade upload |
 | `POST /api/sync` | Token/request ID/connection generation, asynchronous read-only Library synchronization |
 | `POST /api/scan` | JSON request ID/generation, one async observed scan |
@@ -114,6 +115,22 @@ Root `library/catalog.py` retains its two-equal-read and membership-multiplicity
 checks. `library/store.py` atomically publishes complete immutable snapshots;
 `library/snapshot.py` provides offline group/track projections. Core storage uses
 SQLite schema 1, unchanged for Assistant; Typesense is not imported by Web.
+
+`library/sync.py` owns the catalog/enrichment/publication stages. Web's worker
+supplies its owned lease, cancellation/generation guard and bounded HTTP adapter.
+`library/observation.py` owns current-track association and guarded artwork reads;
+`library/enrichment.py` stores provenance, durations and deduplicated image bodies
+separately from raw tags. `backend/enrichment.py` only adapts these Library APIs to
+the active endpoint, browser identity and local artwork route. Browsing projects
+known durations and track artwork; album art represents an observed member's cover.
+
+Current-cover loading and sync use the same Library association rules: exact
+unique title/artist/album, two fresh ordered album-membership comparisons, stable
+path/position/duration/source around the image read. Ambiguous/shortened metadata
+is skipped. Browser cover identities include path and queue position, preventing
+same-title transitions from retaining another row's artwork. The stock endpoint
+still has no atomic image/track identity. Enrichment is partial, and new snapshots
+do not inherit old associations. No playback cycling or external lookup is used.
 
 The default directory is separate from Assistant's. Endpoint keys include host
 and both ports; they are not device serials. No old Assistant data is copied or

@@ -285,5 +285,7 @@
   "catalogue_error_limit": "Ответ каталога отсутствует или превышен лимит чтения.",
   "catalogue_error_connection": "Не удалось завершить чтение с плеера.",
   "catalogue_error_unavailable": "Каталог не прошёл проверку. Повторите синхронизацию, когда плеер будет свободен.",
-  "catalogue_error_identity_timeout": "DISC не ответил на запрос версии прошивки."
+  "catalogue_error_identity_timeout": "DISC не ответил на запрос версии прошивки.",
+  "catalogue_enriched": "Данные сохранены для треков: {count}",
+  "catalogue_enriching": "Сохраняем доступные обложки и длительности…"
 }

@@ -12,6 +12,10 @@ databases, snapshot IDs and search signatures remain unchanged by the move.
 - `catalog.py`: bounded pagination of `all/song`, `album` and `album/song`;
   full membership comparison with duplicate multiplicities; two equal reads.
 - `snapshot.py`: offline artist/album projections and duplicate-preserving selection context.
+- `sync.py`: common stable-catalog synchronization and optional enrichment stage.
+- `observation.py`: current-track duration/artwork observation and conservative
+  association with a catalog row, using the application's existing session lease.
+- `enrichment.py`: separate snapshot-scoped observations and bounded artwork storage.
 - `store.py`: SQLite schema 1, snapshot-scoped internal IDs, literal source
   observations, atomic snapshot/index publication and concurrent-import guards.
 - `search/typesense.py`: official async SDK adapter, versioned search projection,
@@ -31,7 +35,7 @@ there is no shared mutable Typesense alias or partial collection exposure.
 Source rows do not expose reliable permanent recording identities. Duplicate
 names/IDs are preserved, not merged; each row has a snapshot ID and exact source
 scope/position. Old snapshots remain stored. Reconciliation, favorites, history,
-lyrics, edition metadata and retention policies remain future work. Do not treat
+lyrics, edition metadata and general retention policies remain future work. Do not treat
 these cached positions as playback selectors or a score as calibrated confidence.
 
 Runtime data belongs outside the checkout; this package stores only source code
@@ -103,6 +107,34 @@ album memberships, including identical titles and repeated CUE entries. They do
 not promise a live device revision. Applications must retain snapshot provenance
 and pass fresh expected source rows through Controller before playback.
 
-Source tags remain unchanged. Core snapshots do not invent durations, artwork,
-years or genres. Future enrichment needs separately stored provenance and must
-not overwrite raw source observations or treat ambiguous duplicates as one track.
+## Enrichment during synchronization
+
+`synchronize()` owns the catalog-to-enrichment flow. Applications supply an owned
+client/HTTP transport, private stores, request budgets and a final cancellation /
+connection check; stage callbacks support progress reporting. After two matching
+catalog reads, Library observes the available current track, verifies scan and
+connection guards, publishes the complete catalog and stores any supported
+enrichment against its new generation. Optional metadata failures preserve the
+complete catalog; observed scans or cancellation still block publication.
+
+`observe_current()` is also the common path for enrichment during listening.
+Stock HTTP only exposes the current cover, and Link only exposes current-track
+duration. Library never advances playback to obtain metadata. Association requires
+an exact title/artist/album match unique within that snapshot and two fresh album
+reads matching its full ordered membership. Shortened names and ambiguous
+duplicates, including repeated CUE entries, remain unassociated. Track path,
+duration, queue position and source must remain stable around the cover read.
+The stock cover endpoint has no atomic track identity: this is a guarded
+observation, not proof of an atomic image/track pair.
+
+`observations.sqlite3` is independent of catalog schema 1. It retains source,
+path, association method and observation time; it never replaces raw tags.
+Track observations are scoped to endpoint, snapshot and exact row. A new snapshot
+does not inherit old metadata by name. JPEG/PNG artwork is content-addressed and
+deduplicated, with an 8 MiB per-image and 256 MiB total-body budget; a full artwork
+budget still permits duration observations. Offline consumers can display the
+stored fields. Missing or unsupported fields remain unknown.
+
+Local-file tag extraction and external providers can extend this Library stage
+later; neither is implemented or contacted by this source. Full-collection
+durations/artwork are therefore not promised by a stock-only synchronization.

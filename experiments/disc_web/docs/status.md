@@ -188,10 +188,38 @@ This establishes shared catalog storage. Duration extraction, persistent artwork
 lyrics and external metadata enrichment are subsequent work, not supplied by this
 snapshot schema.
 
+## Library-owned enrichment checkpoint — 2026-09-22
+
+- Library now owns synchronization stages, metadata association and observation
+  storage. Web supplies the existing session lease, admission, request budgets
+  and cancellation guard, and renders the resulting fields. Current-cover reads
+  during listening use the same Library mechanism as explicit synchronization.
+- The stock source supplies only current-track duration and artwork. Exact unique
+  title/artist/album, two fresh album-membership reads and stable track identity
+  around the image read are required. Duplicate/CUE ambiguity, shortened tags,
+  changed paths/positions/durations/source and scans are rejected. The stock cover
+  endpoint has no atomic image identity; observations retain this limitation and
+  source provenance. No track cycling or external lookup is performed.
+- Separate snapshot-scoped SQLite observations preserve raw catalog schema 1.
+  Cached track images and durations appear in tables; albums can use an observed
+  member's image. New snapshots never inherit associations by title. Images are
+  deduplicated and bounded to 8 MiB each / 256 MiB total bodies, scoped to the
+  active endpoint and snapshot when served. Missing fields remain unknown.
+- Authorized physical read-only sync completed with 779 tracks and one enriched
+  current track. Its image and 4:53 duration appeared in the saved track table and
+  survived a server restart/offline browsing; album detail used the cached image.
+  RU/dark desktop and EN/light 390 px layouts were checked. No physical playback,
+  file or settings mutations were performed; personal data stayed outside Git.
+- Validation: Web passed 36 Python / 13 JavaScript tests; firmware-free CI passed
+  502 Python / 50 JavaScript tests, shell checks and four shim builds. Final focused
+  Library/Web enrichment tests passed 10 checks. Disposable V2.57 `queue` acceptance
+  passed with sync-time duration observation, guarded cached selection, stale
+  membership rejection and offline browsing; the temporary stack was removed.
+
 ## Next implementation stages
 
-1. File browsing/management and verified artwork/CUE sidecar handling.
-2. Extend device settings, cover caching, large-catalog presentation and live
+1. Local-file metadata enrichment and verified artwork/CUE sidecar handling.
+2. Extend device settings, file management, large-catalog presentation and live
    multi-browser invalidation; integrate optional Assistant through one owner.
 
 Do not expose placeholder settings as functioning controls or use diagnostic

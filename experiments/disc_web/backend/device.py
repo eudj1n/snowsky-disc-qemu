@@ -176,6 +176,13 @@ class Device:
         head, snapshot = self.catalogue.snapshot()
         if snapshot is None:
             return None
+        metadata = self.catalogue.metadata.rows(head['generation'])
+        def observed(row):
+            fields = metadata.get(row['id'], {})
+            duration = fields.get('duration_ms')
+            digest = fields.get('artwork')
+            return dict(duration=duration / 1000 if duration is not None else None,
+                        art='/api/artwork/' + digest if digest else None)
         token = None
         if kind in ('tracks', 'album'):
             rows = snapshot.tracks(album=name if kind == 'album' else None,
@@ -185,7 +192,7 @@ class Device:
                 generation=self.state()['generation'], created=time.monotonic()))
             items = [dict(id=row['id'], title=row['title'], artist=row['artist'], album=row['album'],
                 type='track', selection=f'{token}:{i}', playable=True, editable=not artist,
-                duration=None, art=None) for i, row in enumerate(rows)]
+                **observed(row)) for i, row in enumerate(rows)]
         else:
             rows = snapshot.groups('artist' if kind == 'artists' else 'album',
                                    artist=name if kind == 'artist' else None)
@@ -193,6 +200,14 @@ class Device:
                 artist=row['artists'][0] if len(row['artists']) == 1 else '',
                 type='artist' if kind == 'artists' else 'album', art=None,
                 scope_artist=name if kind == 'artist' else None) for i, row in enumerate(rows)]
+            if kind != 'artists':
+                artwork = {}
+                for row in snapshot.tracks(artist=name if kind == 'artist' else None):
+                    image = observed(row)['art']
+                    if image:
+                        artwork.setdefault(row['album'], image)
+                for item in items:
+                    item['art'] = artwork.get(item['title'])
         return dict(kind=kind, name=name, items=items, snapshot=head['generation'])
 
     def queue(self):
@@ -209,11 +224,13 @@ class Device:
         finally:
             self.lock.release()
 
-    def cover(self):
+    def cover(self, expected=None):
         if not self.lock.acquire(False):
             raise BusyError('Another operation is in progress.')
         try:
-            with self.session.operation():
+            with self.session.operation() as client:
+                if self.catalogue:
+                    return self.catalogue.metadata.capture(client, expected)
                 return self.http.cover()
         finally:
             self.lock.release()

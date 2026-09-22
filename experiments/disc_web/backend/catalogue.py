@@ -1,16 +1,18 @@
 """Web ownership of shared Library storage and explicit read-only synchronization."""
 from copy import deepcopy
+from contextlib import nullcontext
 from http.client import HTTPException
 import json
 import sqlite3
 import threading
 import time
 
-from controller.compatibility import Capability, require_client
-from controller.events import check_events
 from library.catalog import CatalogReader
+from library.enrichment import Enrichment
 from library.store import Store
+from library.sync import synchronize
 from experiments.disc_web.backend.device import BusyError
+from experiments.disc_web.backend.enrichment import Metadata
 
 CACHED_VIEWS = frozenset(('albums', 'artists', 'tracks', 'album', 'artist'))
 
@@ -23,6 +25,7 @@ class Catalogue:
         self.stop = threading.Event()
         self.job = None
         self.verified = None
+        self.metadata = Metadata(self)
         with Store(directory):
             pass
 
@@ -50,6 +53,7 @@ class Catalogue:
                     'observed_at': head.get('observed_at'), 'track_count': head['track_count'],
                     'stale': self.verified != (self.key(), state['generation']) or state['connection'] != 'ready',
                     'phase': status.get('phase', 'idle'), 'pages': status.get('pages', 0),
+                    'enrichment': self.metadata.state(head['generation']),
                     'error': status.get('error'), 'stage': status.get('stage'),
                     'error_type': status.get('error_type'), 'error_detail': status.get('error_detail')}
 
@@ -86,6 +90,13 @@ class Catalogue:
         class ObservedHTTP:
             requests = 0
 
+            def cover(self):
+                if owner.stop.is_set() or time.monotonic() >= deadline or self.requests >= 1000:
+                    raise TimeoutError('Synchronization stopped before artwork read')
+                owner.device.protocol_generation(generation)
+                self.requests += 1
+                return owner.device.http.cover()
+
             def catalog(self, *args, **kwargs):
                 # Stock Wi-Fi can drop a read. Repeat only this GET once; both
                 # complete catalog observations must still compare equal.
@@ -108,24 +119,22 @@ class Catalogue:
 
         try:
             with Store(self.directory) as store:
-                expected = store.head(key)['generation']
-                self.update(stage='identity')
                 raw_generation = self.device.protocol_generation(generation)
                 with self.device.session.operation(expected_generation=raw_generation) as client:
-                    version = require_client(client, Capability.CATALOG_SNAPSHOT)
-                    client.scan_guard()
-                    check_events(client)
-                    self.update(stage='catalog')
-                    tracks = CatalogReader(ObservedHTTP(), page_size=100, max_tracks=10000, max_requests=1000).read_stable()
-                    self.update(stage='verification')
-                    check_events(client, during_read=True)
-                    client.scan_guard()
-                    self.device.protocol_generation(generation)
-                    if client.closed.is_set() or self.stop.is_set() or time.monotonic() >= deadline:
-                        raise ConnectionError('Synchronization interrupted; previous snapshot retained')
-                    store.publish(key, tracks, {'soc_version': version,
-                        'consistency': 'two-equal-reads-not-atomic', 'identity': 'snapshot-only'},
-                        expected_generation=expected)
+                    def before_publish():
+                        self.device.protocol_generation(generation)
+                        if client.closed.is_set() or self.stop.is_set() or time.monotonic() >= deadline:
+                            raise ConnectionError('Synchronization interrupted; previous snapshot retained')
+                    try:
+                        enrichment_context = Enrichment(self.directory)
+                    except (OSError, sqlite3.Error):
+                        enrichment_context = nullcontext(None)
+                    http = ObservedHTTP()
+                    with enrichment_context as enrichment:
+                        synchronize(store, key,
+                            CatalogReader(http, page_size=100, max_tracks=10000, max_requests=1000),
+                            client, http, enrichment=enrichment, before_publish=before_publish,
+                            on_stage=lambda stage: self.update(stage=stage))
                 with self.guard:
                     self.verified = (key, generation)
                 with self.device.lock:

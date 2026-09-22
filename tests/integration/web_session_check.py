@@ -123,11 +123,18 @@ def check():
             device = Device(session.config, session=session, http=http)
             catalogue = device.catalogue = Catalogue(device, threading.Lock(), directory)
             try:
+                assert session.play_album('CI Album', index=1, expected=expected).status == 'playing'
+                assert session.pause().status in ('confirmed', 'already_satisfied')
                 generation = device.state()['generation']
                 catalogue.start(generation, 'web-library-acceptance')
                 catalogue.worker.join(60)
                 assert catalogue.state()['phase'] == 'done', catalogue.state()
                 saved = device.browse('tracks')
+                observed = session.snapshot().playback.track
+                enriched = next(item for item in saved['items'] if item['album'] == 'CI Album'
+                                and item['title'] == observed.title)
+                assert enriched['duration'] == observed.duration_ms / 1000, enriched
+                assert catalogue.state()['enrichment']['count'] >= 1
                 selected = next(item for item in saved['items'] if item['album'] == 'CI Album')
                 result = device.action({'action': 'track', 'selection': selected['selection'], 'generation': generation})
                 assert result['status'] == 'playing', result
@@ -150,7 +157,7 @@ def check():
                 assert device.browse('albums')['items'], 'saved library disappeared offline'
             finally:
                 catalogue.close()
-        print('WEB LIBRARY ACCEPTANCE PASSED: stable sync, cached album selection, fresh-membership rejection and offline browsing', flush=True)
+        print('WEB LIBRARY ACCEPTANCE PASSED: stable sync with observed duration, cached album selection, fresh-membership rejection and offline browsing', flush=True)
     print('WEB SESSION ACCEPTANCE PASSED: indexed album, queue, stale-source rejection playlist edits, catalog/favorite/playlist playback and seek', flush=True)
 
 

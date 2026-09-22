@@ -4,7 +4,7 @@ import {createConnection} from './connection.mjs';
 import {createImporter} from './imports.mjs';
 import {t, initLocale, setLocale, getLocale} from './i18n.mjs';
 await initLocale();
-import {escapeHTML as esc, timeLabel, trackColumns, filterItems, routeHash, parseRoute, trackDuration, playbackIdentity, seekAllowed} from './core.mjs';
+import {escapeHTML as esc, timeLabel, trackColumns, filterItems, routeHash, parseRoute, trackDuration, playbackIdentity, seekAllowed, coverIdentity, artworkSource} from './core.mjs';
 
 const paths = {
  moon:'M20.8 13.3A9 9 0 0 1 10.7 3.2a9 9 0 1 0 10.1 10.1Z',
@@ -45,6 +45,7 @@ const titleKeys = {home:'home',albums:'albums',artists:'artists',tracks:'tracks'
 let state = null, route = parseRoute(location.hash), currentItems = [], homeTracks = [], activeItem = null;
 let requestSequence = 0, busy = false, genre = '', toastTimer, pollTimer, lastTrack = '', libraryLoading = false;
 let artistScope = '', pendingSearch=null, displayedSnapshot=null;
+let lastCoverRequest='';
 const cachedViews=new Set(['home','albums','artists','tracks','album','artist']);
 const canBrowse=()=>state?.connection==='ready'||(state?.catalogue?.available&&cachedViews.has(route.view));
 const albumInfo=createAlbumInfo({api,getState:()=>state,isBusy:()=>busy||libraryLoading,caption:cardCaption});
@@ -119,7 +120,9 @@ function renderCatalogue() {
   let detail=saved.available?t('catalogue_observed',{date,count:saved.track_count}):t('catalogue_intro');
   if(saved.available && state.connection!=='ready') detail+=' · '+t('catalogue_offline');
   else if(saved.available && saved.stale) detail+=' · '+t('catalogue_stale');
+  if(saved.available && saved.enrichment?.count) detail+=' · '+t('catalogue_enriched',{count:saved.enrichment.count});
   if(syncing) detail=t('catalogue_syncing',{count:saved.pages});
+  if(syncing&&saved.stage==='enrichment') detail=t('catalogue_enriching');
   if(['failed','storage_error'].includes(saved.phase)) detail=t('catalogue_failed')+' '+(saved.error?t('catalogue_error_'+saved.error)+' ':'')+detail;
   $('catalogue-description').textContent=detail;
   $('sync-caption').textContent=t(syncing?'catalogue_sync_active':'catalogue_sync');
@@ -133,8 +136,8 @@ $('sync-catalogue').onclick=async()=>{
   finally {busy=false;await refreshState();renderCatalogue();}
 };
 function art(item, css='art') {
-  const src = item?.art;
-  return typeof src === 'string' && /^\/art\/cover-[0-7]\.svg$/.test(src)
+  const src = artworkSource(item?.art);
+  return src
     ? `<img class="${css}" src="${src}" alt="" loading="lazy">`
     : `<div class="card-placeholder" aria-hidden="true">${esc((item?.title || '♪').slice(0,2).toUpperCase())}</div>`;
 }
@@ -273,7 +276,8 @@ function renderView() {
   const empty = `<div class="empty-state">${icon(query ? 'search' : 'music')}<h2>${query ? t('no_matches_yet') : t('a_little_quiet_here')}</h2><p>${query ? t('try_another_title_or_artist_search_looks_within_this_section') : t('your_collection_will_appear_here_after_adding_music_to_your_player')}</p></div>`;
   let heading;
   if (detail) {
-    const item = activeItem?.title === route.name ? activeItem : {title:route.name,art:items[0]?.art};
+    const item = activeItem?.title === route.name ? {...activeItem} : {title:route.name,art:items[0]?.art};
+    if(route.view==='album') item.art=currentItems.find(track=>track.art)?.art||null;
     const artist = route.artist || item.artist || (items.length && items.every(i => i.artist === items[0].artist) ? items[0].artist : '');
     const canPlay = true;
     heading = `<button class="text-button" id="back">${icon('back')} ${route.view === 'album' && route.artist ? esc(route.artist) : t('back_to_collection')}</button><div class="detail-heading"><div class="detail-art">${art(item)}</div><div class="detail-copy"><span class="eyebrow">${esc(t(titleKeys[route.view]))}</span><h1>${esc(route.name)}</h1><p>${esc(artist)}${artist ? ' · ' : ''}${t(isTracks ? 'track_count' : 'album_count',{count:currentItems.length})}${state.demo ? ' · DISC Sessions' : ''}</p><div class="detail-actions"><button id="play-collection" class="primary-button" ${!canPlay || !currentItems.length ? 'disabled' : ''}>${icon('play')} ${route.view === 'album' ? t('play_album') : t('listen')}</button></div></div></div>`;
@@ -315,7 +319,7 @@ async function refreshState() {
     $('output-label').textContent = state.demo ? t('demo_no_audio') : t('on_disc');
     $('connection-label').textContent = state.demo ? t('demo_mode') : ({ready:t('connected'),connecting:t('connecting'),reconnecting:t('reconnecting'),disconnected:t('disconnected')}[state.connection] || state.connection);
     $('status-light').classList.toggle('ready',state.connection==='ready');
-    if (previous && (previous.connection !== state.connection || previous.generation !== state.generation || previous.catalogue?.generation!==state.catalogue?.generation)) {
+    if (previous && (previous.connection !== state.connection || previous.generation !== state.generation || previous.catalogue?.generation!==state.catalogue?.generation || previous.catalogue?.enrichment?.revision!==state.catalogue?.enrichment?.revision)) {
       albumInfo.clear();
       if (canBrowse()) loadView();
       else {++requestSequence; libraryLoading=false; renderDisconnected(); $('queue').hidden=true; $('queue-button').setAttribute('aria-expanded','false');}
@@ -338,16 +342,18 @@ function updatePlayer() {
       if (button) button.innerHTML = icon(selected ? 'music' : 'play');
     }
   }
-  const key = JSON.stringify([track?.title,track?.artist,track?.album,state?.generation,state?.demo]);
+  const key = coverIdentity(state);
   if (key !== lastTrack) {
     lastTrack=key;
     $('now-art').innerHTML = art(track);
     $('large-art').innerHTML = art(track);
-    if (track && !state.demo && ready) {
+  }
+  const coverRequest=JSON.stringify([key,state?.catalogue?.generation]);
+  if (track && !state.demo && ready && !busy && !state.busy && coverRequest!==lastCoverRequest) {
+      lastCoverRequest=coverRequest;
       const img = new Image(); img.alt='';
       img.onload = () => {if (key===lastTrack) {$('now-art').replaceChildren(img); $('large-art').replaceChildren(img.cloneNode());}};
       img.src = '/api/cover?v=' + encodeURIComponent(key);
-    }
   }
   $('now-title').textContent = track?.title || t('your_music_awaits');
   $('now-artist').textContent = track?.artist || (ready ? t('choose_an_album') : t('connect_your_disc'));
@@ -481,7 +487,7 @@ $('large-volume').oninput=()=>$('large-volume-value').textContent=$('large-volum
 $('large-volume').onchange=()=>command('volume',{value:Number($('large-volume').value)});
 $('queue-button').onclick=()=>{const open=$('queue').hidden; $('queue').hidden=!open; $('queue-button').setAttribute('aria-expanded',open); if(open) loadQueue();};
 $('close-queue').onclick=()=>{$('queue').hidden=true; $('queue-button').setAttribute('aria-expanded','false'); $('queue-button').focus();};
-$('refresh').onclick=()=>{if(!busy && !libraryLoading) loadView();};
+$('refresh').onclick=()=>{if(!busy && !libraryLoading) {lastCoverRequest=''; loadView();}};
 $('search').oninput=()=>{
   if(state?.catalogue?.available && $('search').value && route.view!=='tracks') {pendingSearch=$('search').value;navigate('tracks');return;}
   if(canBrowse() && !libraryLoading) {renderView();updatePlayer();}

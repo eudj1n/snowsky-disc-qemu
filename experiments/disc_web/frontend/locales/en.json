@@ -277,5 +277,7 @@
   "catalogue_error_limit": "A catalog response is missing or exceeds the read limit.",
   "catalogue_error_connection": "Reading from the player could not complete.",
   "catalogue_error_unavailable": "The catalog could not be verified. Sync again when the player is idle.",
-  "catalogue_error_identity_timeout": "DISC did not reply to the firmware identity request."
+  "catalogue_error_identity_timeout": "DISC did not reply to the firmware identity request.",
+  "catalogue_enriched": "Track details saved: {count}",
+  "catalogue_enriching": "Saving available artwork and durations…"
 }

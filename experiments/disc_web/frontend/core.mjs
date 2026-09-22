@@ -29,6 +29,15 @@ export function trackDuration(track) {
 export function playbackIdentity(state) {
   return JSON.stringify([state?.generation, state?.playback?.source, state?.playback?.track]);
 }
+export function coverIdentity(state) {
+  const track=state?.playback?.track;
+  return JSON.stringify([track?.title,track?.artist,track?.album,track?.path,
+    track?.queue_position,track?.duration_ms,state?.generation]);
+}
+export function artworkSource(value) {
+  return typeof value==='string' && (/^\/art\/cover-[0-7]\.svg$/.test(value)
+    || /^\/api\/artwork\/[0-9a-f]{64}$/.test(value)) ? value : null;
+}
 export function seekAllowed(state) {
   const duration = trackDuration(state?.playback?.track);
   return state?.connection === 'ready' && ['playing','paused'].includes(state.playback.state)

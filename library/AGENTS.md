@@ -12,3 +12,8 @@ playback commands. Publish complete verified snapshots atomically and preserve
 the previous snapshot on failure. Search/enrichment must not mutate a player.
 Typesense remains optional. Tests use curated synthetic data and temporary stores;
 never commit personal catalogs, artwork or generated databases.
+
+Library owns enrichment association, provenance and the synchronization pipeline;
+applications own admission and pass their existing session lease. Keep enrichment
+separate from raw tags. Never advance playback to collect metadata, silently
+transfer observations across snapshots, or weaken duplicate/scan/identity guards.

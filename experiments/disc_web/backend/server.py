@@ -84,6 +84,9 @@ class Handler(BaseHTTPRequestHandler):
                                    'catalogue': self.server.catalogue.state() if self.server.catalogue else None})
             if url.path == '/api/interfaces':
                 return self.reply({'interfaces': [] if self.server.device.demo else interfaces()})
+            if url.path.startswith('/api/artwork/') and self.server.catalogue:
+                art = self.server.catalogue.metadata.artwork(url.path.removeprefix('/api/artwork/'))
+                return self.reply(art[0], content_type=art[1]) if art else self.reply({'error': 'Artwork unavailable'}, 404)
             if (url.path == '/api/library' and self.server.catalogue
                     and query.get('kind', ['albums'])[0] in CACHED_VIEWS
                     and self.server.catalogue.state()['available']):
@@ -105,7 +108,8 @@ class Handler(BaseHTTPRequestHandler):
             if url.path == '/api/queue':
                 return self.reply(self.server.device.queue())
             if url.path == '/api/cover' and not self.server.device.demo:
-                data = self.server.device.cover()
+                expected = json.loads(query['v'][0]) if 'v' in query else None
+                data = self.server.device.cover(expected)
                 if data.startswith(b'\xff\xd8\xff'):
                     return self.reply(data, content_type='image/jpeg')
                 if data.startswith(b'\x89PNG\r\n\x1a\n'):

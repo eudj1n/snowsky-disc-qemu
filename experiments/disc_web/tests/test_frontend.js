@@ -2,6 +2,20 @@ const {test} = require('node:test');
 const assert = require('node:assert/strict');
 const core = import('../frontend/core.mjs');
 
+test('saved artwork is local and cover identity distinguishes paths, duplicate positions and reconnects', async () => {
+  const {coverIdentity,artworkSource}=await core;
+  const track={title:'Same',artist:'Artist',album:'Album',path:'/tmp/sdcard/one.flac',queue_position:0,duration_ms:5000};
+  const state={generation:1,playback:{track}};
+  for(const change of [{path:'/tmp/sdcard/two.flac'},{queue_position:1},{duration_ms:6000}]) {
+    assert.notEqual(coverIdentity(state),coverIdentity({...state,playback:{track:{...track,...change}}}));
+  }
+  assert.notEqual(coverIdentity(state),coverIdentity({...state,generation:2}));
+  assert.equal(artworkSource('/api/artwork/'+'a'.repeat(64)),'/api/artwork/'+'a'.repeat(64));
+  for(const src of ['https://example.com/cover.jpg','data:image/svg+xml,x','/api/artwork/../state','/api/artwork/not-a-hash']) {
+    assert.equal(artworkSource(src),null);
+  }
+});
+
 test('import rejects unsafe paths, duplicate names and oversized batches before transmission', async () => {
   const {validFiles,jobActive}=await import('../frontend/imports.mjs');
   const file={name:'Музыка — test.wav',size:500};
