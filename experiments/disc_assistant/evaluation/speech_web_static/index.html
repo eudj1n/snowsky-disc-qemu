@@ -1,0 +1,22 @@
+<!doctype html>
+<html lang="ru"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Speech Lab · DISC</title><link rel="stylesheet" href="/static/style.css"><script type="module" src="/static/app.js"></script></head>
+<body><main>
+<header><a class="brand" href="/">DISC <span>/ SPEECH LAB</span></a><span class="badge">Локально · CPU</span></header>
+<section class="intro"><p class="eyebrow">SHERPA × WHISPER</p><h1>Один голос.<br>Две расшифровки.</h1><p>Запишите русскую команду, в том числе с английским названием музыки.<br>Оба движка получат одинаковую запись.</p></section>
+<div id="notice" role="alert" hidden></div>
+<section class="capture panel">
+<div class="section-label"><span>01 / ВАША ЗАПИСЬ</span><span>до 30 секунд</span></div>
+<label for="microphone">Микрофон</label><div class="mic-row"><select id="microphone"><option value="">По умолчанию</option></select><button id="devices">Выбрать микрофон</button></div>
+<div class="record-row"><button id="record" class="primary" disabled>● Записать фразу</button><button id="cancel" hidden>Отменить</button><span id="record-status" role="status">Загрузка стенда…</span></div>
+<meter id="level" min="0" max="1" value="0" aria-label="Уровень микрофона"></meter>
+<div class="file-row"><label class="upload" for="file">или открыть WAV <input id="file" type="file" accept=".wav,audio/wav"></label><span>PCM 16 бит · моно · 16 кГц</span></div>
+<div id="recording" hidden><audio id="playback" controls aria-label="Прослушать запись"></audio><div class="actions"><button id="compare" class="primary">Сравнить модели</button><a id="download-wav" download="speech-lab.wav">Скачать WAV ↓</a><span id="file-name"></span></div></div>
+</section>
+<section class="results" aria-live="polite">
+<article class="panel result"><div class="section-label"><span>02 / SHERPA</span><span id="sherpa-time">—</span></div><h2>Zipformer RU <span>INT8</span></h2><p id="sherpa-text" class="transcript">Здесь появится расшифровка</p><p id="sherpa-meta" class="meta">Потоковая модель · обработка готовой записи</p></article>
+<article class="panel result"><div class="section-label"><span>03 / WHISPER</span><span id="whisper-time">—</span></div><h2>Whisper <span id="whisper-model">…</span></h2><p id="whisper-text" class="transcript">Здесь появится расшифровка</p><p id="whisper-meta" class="meta">Многоязычная модель · русский язык</p></article>
+</section>
+<div class="report-row"><p id="comparison-status" role="status">Сначала запишите фразу или откройте WAV.</p><a id="download-report" download="speech-lab-report.json" hidden>Скачать отчёт ↓</a></div>
+<details><summary>Как читать сравнение</summary><p>Модели обрабатывают запись по очереди. Время включает локальную передачу аудио, но не загрузку модели. Первый запрос может быть медленнее. Здесь измеряется обработка готового аудио, а не задержка живого диалога. Числа на Mac не предсказывают скорость Orange Pi.</p><p>Попробуйте «Пауза», «Следующий трек», «Включи Linkin Park», «Включи Numb группы Linkin Park». Тишина и фоновая музыка тоже полезны: модель может ошибочно распознать в них слова.</p><p>Стенд только распознаёт речь и не управляет плеером. Запись хранится в памяти вкладки, временно обрабатывается локально и не добавляется в историю. Сохранение WAV и отчёта — только по вашей кнопке.</p><pre id="environment"></pre></details>
+<footer>DISC ASSISTANT / EXPERIMENTS <span>Русский язык · без подсказок из медиатеки</span></footer>
+</main></body></html>

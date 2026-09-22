@@ -2,6 +2,8 @@ import {Recorder} from './audio.js';
 import {ReplyPlayer} from './reply.js';
 const $ = id => document.getElementById(id);
 let token, state = {}, localBusy = false, recorder = null, recording = false, stream = null, traces = [];
+let engineInitialized = false;
+let engineStorageKey = null;
 const notice = message => { $('notice').textContent = message; $('notice').hidden = !message; };
 const badge = (id, text) => { $(id).textContent = text; $(id).dataset.state = text; };
 const json = value => JSON.stringify(value, null, 2);
@@ -13,9 +15,15 @@ $('response-mode').onchange = () => send('/api/command', json({action: 'response
 function controls() {
   const busy = localBusy || state.busy || !token;
   const locked = busy || !!recorder;
-  document.querySelectorAll('[data-action], #locale, #response-mode, #mode, #text, #microphone, #refresh-mics').forEach(el => { el.disabled = locked; });
+  document.querySelectorAll('[data-action], #locale, #response-mode, #mode, #text, #microphone, #refresh-mics, #speech-engine').forEach(el => { el.disabled = locked; });
   $('send').disabled = locked || $('mode').value === 'transcribe';
-  $('record').disabled = busy || (!!recorder && !recording);
+  const engine = state.speech?.engines?.find(row => row.id === $('speech-engine').value);
+  const unsupported = engine?.locales && !engine.locales.includes(state.language?.locale);
+  const unavailable = engine?.available === false;
+  $('record').disabled = busy || (!!recorder && !recording) || (!recorder && (unsupported || unavailable));
+  $('engine-hint').textContent = unavailable ? `${engine.label} is unavailable. Check its installation and profile.` :
+    unsupported ? `${engine.label} does not support this command language. Select a compatible provider or language.` :
+    engine ? `${engine.label} · ${engine.vocabulary ? 'catalog hints supported' : 'no catalog hints'} · model details appear with the result.` : 'Select a configured speech provider.';
   $('cancel').hidden = !recorder;
   badge('activity', busy ? 'busy' : recorder ? 'recording' : 'Ready');
 }
@@ -34,6 +42,15 @@ function showState(value) {
     $('locale').replaceChildren(...state.locales.map(locale => new Option(locale.native_name, locale.code)));
   }
   if (state.language) $('locale').value = state.language.locale;
+  if (!engineInitialized && state.speech) {
+    const engines = state.speech.engines || [];
+    $('speech-engine').replaceChildren(...engines.map(engine => new Option(engine.label, engine.id)));
+    engineStorageKey = `disc-stt:${state.device?.key || 'default'}`;
+    let saved;
+    try { saved = localStorage.getItem(engineStorageKey); } catch {}
+    $('speech-engine').value = engines.some(engine => engine.id === saved) ? saved : state.speech.default_engine;
+    engineInitialized = true;
+  }
   if (state.response_preferences) $('response-mode').value = state.response_preferences.mode;
   const library = state.library;
   $('catalog').textContent = library ? `${library.track_count || 0} tracks · index ${library.index_current ? 'current' : 'needs rebuilding'}` : 'Library status unavailable';
@@ -45,6 +62,10 @@ function showResult(envelope) {
   badge('result-status', result.status || 'completed');
   $('reply').textContent = result.response?.text || result.reason || 'Request completed. Details below.';
   $('transcript').textContent = result.transcription?.text || '—';
+  const stt = result.transcription, model = stt?.model || {}, metrics = stt?.runtime;
+  $('actual-provider').textContent = stt ? [stt.provider?.name, model.instance, model.model || model.voice].filter(Boolean).join(' · ') : '—';
+  $('provider-timing').textContent = metrics && Number.isFinite(metrics.prepare_ms) ?
+    `${metrics.cold ? 'First request' : 'Reused adapter'} · prepare ${metrics.prepare_ms.toFixed(0)} ms · inference ${metrics.inference_ms.toFixed(0)} ms` : '—';
   const selected = result.selected || result.candidates?.[0];
   $('selection').textContent = selected ? [selected.artist, selected.title || selected.album || selected.kind].filter(Boolean).join(' — ') : result.action || '—';
   $('timing').textContent = result.timing ? `${result.timing.total_ms.toFixed(0)} ms total${result.transcription ? ` · ${result.transcription.transcription_ms.toFixed(0)} ms STT` : ''}` : '—';
@@ -73,6 +94,9 @@ document.querySelectorAll('[data-action]').forEach(button => {
   button.onclick = () => send('/api/command', json({action: button.dataset.action}));
 });
 $('locale').onchange = () => send('/api/command', json({action: 'language', locale: $('locale').value}));
+$('speech-engine').onchange = () => {
+  try { localStorage.setItem(engineStorageKey, $('speech-engine').value); } catch {}
+  $('mode').value = 'preview'; $('mode').onchange(); controls(); };
 $('mode').onchange = () => {
   $('mode-hint').textContent = ({preview: 'Preview does not change playback or language.', execute: 'Each submitted command will be executed on the selected player.', transcribe: 'Recognize speech only. No interpretation or playback.'})[$('mode').value];
   controls();
@@ -99,13 +123,13 @@ function resetRecording() {
 }
 async function finishRecording() {
   if (!recorder || !recording) return;
-  const current = recorder, mode = $('mode').value;
+  const current = recorder, mode = $('mode').value, engine = $('speech-engine').value;
   recording = false; controls();
   try {
     const audio = await current.stop();
     if (current.cancelled) return;
     resetRecording();
-    await send(`/api/audio?mode=${mode}`, audio, 'audio/wav');
+    await send(`/api/audio?mode=${mode}&engine=${engine}`, audio, 'audio/wav');
   } catch (error) { notice(error.message); }
   finally { if (recorder === current) resetRecording(); }
 }
@@ -114,8 +138,10 @@ $('record').onclick = async () => {
   replies.stop(); notice(''); const current = new Recorder(); recorder = current; controls();
   $('record-status').textContent = 'Waiting for microphone permission…';
   try {
-    await current.start($('microphone').value, state.max_seconds || 30, (level, seconds) => {
-      $('level').value = level; $('record-status').textContent = `Recording ${seconds.toFixed(1)} s · stop to submit · maximum ${state.max_seconds || 30} s`;
+    const engine = state.speech?.engines?.find(row => row.id === $('speech-engine').value);
+    const maxSeconds = Math.min(state.max_seconds || 30, engine?.max_seconds || 120);
+    await current.start($('microphone').value, maxSeconds, (level, seconds) => {
+      $('level').value = level; $('record-status').textContent = `Recording ${seconds.toFixed(1)} s · stop to submit · maximum ${maxSeconds} s`;
     }, finishRecording);
     if (current.cancelled) return;
     recording = true; $('record').textContent = '■ Stop & submit'; $('record').classList.add('is-recording');

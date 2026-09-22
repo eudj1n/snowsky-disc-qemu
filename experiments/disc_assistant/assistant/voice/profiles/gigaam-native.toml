@@ -1,0 +1,16 @@
+# Optional native CPU worker; install/start explicitly using the adapter guide.
+[voice]
+web_choices = ["gigaam"]
+stt = "gigaam"
+web_stt = "gigaam"
+tts = "piper"
+
+[voice.providers.gigaam]
+kind = "stt"
+adapter = "gigaam_server"
+label = "GigaAM v3 CTC · native CPU"
+[voice.providers.gigaam.settings]
+server_url = "http://127.0.0.1:18123/inference"
+model = "~/disc-speech/gigaam-models/v3_ctc.ckpt"
+timeout = 120
+max_seconds = 25

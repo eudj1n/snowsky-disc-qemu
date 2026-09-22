@@ -1,0 +1,57 @@
+# Listening comparison instances; each voice is released before loading the next.
+[voice]
+
+[voice.providers.vosk_0]
+kind = "tts"
+adapter = "vosk_tts"
+label = "Vosk RU · female · 0"
+[voice.providers.vosk_0.settings]
+speaker_id = 0
+threads = 2
+timeout = 120
+[voice.providers.vosk_0.settings.normalization]
+mode = "ru_numbers"
+
+[voice.providers.vosk_1]
+kind = "tts"
+adapter = "vosk_tts"
+label = "Vosk RU · female · 1"
+[voice.providers.vosk_1.settings]
+speaker_id = 1
+threads = 2
+timeout = 120
+[voice.providers.vosk_1.settings.normalization]
+mode = "ru_numbers"
+
+[voice.providers.vosk_2]
+kind = "tts"
+adapter = "vosk_tts"
+label = "Vosk RU · female · 2"
+[voice.providers.vosk_2.settings]
+speaker_id = 2
+threads = 2
+timeout = 120
+[voice.providers.vosk_2.settings.normalization]
+mode = "ru_numbers"
+
+[voice.providers.vosk_3]
+kind = "tts"
+adapter = "vosk_tts"
+label = "Vosk RU · male · 3"
+[voice.providers.vosk_3.settings]
+speaker_id = 3
+threads = 2
+timeout = 120
+[voice.providers.vosk_3.settings.normalization]
+mode = "ru_numbers"
+
+[voice.providers.vosk_4]
+kind = "tts"
+adapter = "vosk_tts"
+label = "Vosk RU · male · 4"
+[voice.providers.vosk_4.settings]
+speaker_id = 4
+threads = 2
+timeout = 120
+[voice.providers.vosk_4.settings.normalization]
+mode = "ru_numbers"

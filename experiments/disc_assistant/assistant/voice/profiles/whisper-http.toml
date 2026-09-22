@@ -1,0 +1,7 @@
+# Reuses the configured speech.model and speech.server_url.
+# Deployment may run the service natively or in a container.
+[voice]
+web_choices = ["whisper"]
+stt = "whisper"
+web_stt = "whisper"
+tts = "piper"

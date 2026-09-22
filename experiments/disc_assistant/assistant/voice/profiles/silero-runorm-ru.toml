@@ -1,0 +1,24 @@
+# Explicit learned normalization experiment, not the default pronunciation policy.
+# Install both silero_setup and runorm_setup before selecting this profile.
+[voice]
+tts = "silero_runorm"
+
+[voice.providers.silero_runorm]
+kind = "tts"
+adapter = "silero"
+label = "Silero RU · Xenia · RUNorm"
+[voice.providers.silero_runorm.settings]
+python = "~/disc-speech/silero/.venv/bin/python"
+model = "~/disc-speech/silero/v5_5_ru.pt"
+model_sha256 = "50081637b602126ee06cb3bc8a744d25651d2da149ee8864b9a379bfdd934437"
+voice = "xenia"
+sample_rate = 24000
+threads = 2
+timeout = 120
+[voice.providers.silero_runorm.settings.normalization]
+mode = "runorm"
+python = "~/disc-speech/runorm/.venv/bin/python"
+models = "~/disc-speech/runorm/models"
+model_sha256 = "361d6f89de21eea29d7ac3f7d026b18feb59da3262475e8256c5bb9eee1ba948"
+threads = 2
+timeout = 120

@@ -1,0 +1,21 @@
+# Model weights have their own CC BY-NC-SA 4.0 license; application code stays MIT.
+# Install via python -m experiments.disc_assistant.assistant.voice.silero_setup
+[voice]
+tts = "silero_ru"
+
+[voice.providers.silero_ru]
+kind = "tts"
+adapter = "silero"
+label = "Silero RU · Xenia"
+[voice.providers.silero_ru.settings]
+python = "~/disc-speech/silero/.venv/bin/python"
+model = "~/disc-speech/silero/v5_5_ru.pt"
+model_sha256 = "50081637b602126ee06cb3bc8a744d25651d2da149ee8864b9a379bfdd934437"
+voice = "xenia"
+sample_rate = 24000
+threads = 2
+timeout = 120
+put_accent = true
+put_yo = true
+[voice.providers.silero_ru.settings.normalization]
+mode = "ru_numbers"

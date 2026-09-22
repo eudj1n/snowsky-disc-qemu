@@ -1,0 +1,3 @@
+# Optional isolated Python 3.12 worker environment; not application requirements.
+torch==2.8.0
+numpy==2.2.6

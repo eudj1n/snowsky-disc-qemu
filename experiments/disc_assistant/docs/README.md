@@ -6,6 +6,7 @@ deferred work; reports below preserve earlier evidence, not current instructions
 
 ## Architecture
 
+- [Multi-STT coordination and speculative retrieval groundwork](architecture/recognition-coordination.md)
 - [Independent interpretation sources and shadow comparison](architecture/interpretation-sources.md)
 - [Assistant interpretation, language and speech boundaries](architecture/pipeline.md)
 - [Assistant playback controls and queue](architecture/playback.md)
@@ -18,8 +19,11 @@ deferred work; reports below preserve earlier evidence, not current instructions
 - [Physical-player baseline: preparation and operator worksheet](evaluation/physical-baseline.md)
 - [Shadow reports and review queues](evaluation/shadow-reports.md)
 - [Fixed-audio Whisper comparison](evaluation/speech-benchmark.md)
+- [Optional sherpa-onnx comparison environment](evaluation/sherpa-onnx.md)
 
 ## Guides
+
+- [Speech adapter contracts, deployment profiles and extensions](guides/voice-adapters.md)
 
 - [Disc Assistant commands](guides/commands.md)
 - [Assistant request and decision journal](guides/history.md)
@@ -40,6 +44,10 @@ deferred work; reports below preserve earlier evidence, not current instructions
 - [Assistant user responses](reference/responses.md)
 
 ## Reports
+
+- [Speech adapter/profile migration](reports/2026-09-21-voice-adapters.md)
+
+- [Preserved native GigaAM pilot](reports/2026-09-19-gigaam-native.md)
 
 - [Review follow-up comparisons, 2026-09-18](reports/2026-09-18-review-evaluation.md)
 - [Emulator acceptance development checkpoints](reports/2026-09-19-emulator-checkpoints.md)

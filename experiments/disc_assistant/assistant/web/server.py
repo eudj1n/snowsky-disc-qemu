@@ -4,6 +4,7 @@ from concurrent.futures import ThreadPoolExecutor
 from contextlib import suppress
 from dataclasses import replace
 import json
+import inspect
 from pathlib import Path
 import secrets
 
@@ -13,6 +14,7 @@ from experiments.disc_assistant.assistant.application import Application
 from experiments.disc_assistant.assistant.responses import exception_result, validate_locales
 from experiments.disc_assistant.assistant.voice.files import MAX_BYTES
 from experiments.disc_assistant.assistant.voice.replies import ReplySynthesizer, delivery_event
+from experiments.disc_assistant.assistant.voice.runtime import SpeechRuntime
 
 STATIC = Path(__file__).with_name('static')
 ACTIONS = {'connect', 'disconnect', 'sync', 'index', 'queue', 'language', 'response'}
@@ -35,6 +37,7 @@ class Runtime:
         self.synthesizer = synthesizer or ReplySynthesizer()
         self.reply_busy = False
         self.reply_id = None
+        self.voice = SpeechRuntime(config)
 
     def publish(self, kind, value):
         event = {'type': kind, 'data': value}
@@ -61,8 +64,10 @@ class Runtime:
         return {**self.service.status(), 'device': self.service.device()['device'],
                 'locales': validate_locales()['locales'],
                 'max_seconds': self.service.config.speech.get('max_seconds', 30),
-                'speech': {'backend': 'server', 'server_url': self.config.speech.get('server_url')},
-                'tts': {'backend': self.config.tts.get('backend', 'none')}}
+                'speech': {'backend': 'server', 'server_url': self.config.speech.get('server_url'),
+                           'default_engine': self.voice.selected['web_stt'],
+                           'engines': self.voice.describe()},
+                'tts': {'backend': self.voice.selected['tts']}}
 
     async def worker(self, fn):
         return await self.loop.run_in_executor(self.pool, fn)
@@ -91,6 +96,9 @@ class Runtime:
             if self.service:
                 await self.worker(lambda: self.service.__exit__(None, None, None))
         finally:
+            await self.voice.aclose()
+            if inspect.iscoroutinefunction(getattr(self.synthesizer, 'aclose', None)):
+                await self.synthesizer.aclose()
             self.pool.shutdown(wait=True)
 
     async def poll(self):
@@ -118,8 +126,15 @@ class Runtime:
                 if action == 'response':
                     suffix = ' mode ' + payload['mode']
                 return self.service.request('/' + action + suffix)
+            provider = None
+            if audio is not None:
+                engine = payload.get('engine', self.voice.selected['web_stt'])
+                if engine not in self.voice.web_choices:
+                    raise ValueError('unknown audio provider')
+                provider = (self.service.transcriber if engine == self.voice.selected['web_stt']
+                            and self.service.transcriber is not None else self.voice.get(engine))
             return self.service.input_request(text=payload.get('text'), audio=audio,
-                                               mode=payload.get('mode', 'preview'))
+                                               mode=payload.get('mode', 'preview'), transcriber=provider)
         except Exception as exc:
             return exception_result(self.service.config, exc, source='web')
 
@@ -175,7 +190,7 @@ class Runtime:
 
 
 def create_app(config, *, port=8090, factory=Application, language=None, bootstrap=False, synthesizer=None):
-    # Web speech always uses the resident server. One-shot CLI retains its explicit backend.
+    # Whisper uses the resident server; Sherpa is an explicit per-audio-request override.
     speech = {**config.speech, 'backend': 'server',
               'server_url': config.speech.get('server_url', 'http://127.0.0.1:18119/inference')}
     config = replace(config, speech=speech)
@@ -257,8 +272,11 @@ def create_app(config, *, port=8090, factory=Application, language=None, bootstr
         mode = request.query.get('mode', 'preview')
         if mode not in ('preview', 'execute', 'transcribe'):
             raise web.HTTPBadRequest(text='Invalid audio mode.')
+        engine = request.query.get('engine', runtime.voice.selected['web_stt'])
+        if engine not in runtime.voice.web_choices or set(request.query) - {'mode', 'engine'}:
+            raise web.HTTPBadRequest(text='Select a configured audio provider.')
         data = await request.read()
-        return web.json_response(await runtime.perform({'mode': mode}, data))
+        return web.json_response(await runtime.perform({'mode': mode, 'engine': engine}, data))
 
     async def events(request):
         if len(runtime.listeners) >= 8:

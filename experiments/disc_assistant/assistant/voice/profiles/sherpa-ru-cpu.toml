@@ -1,0 +1,18 @@
+# Portable CPU example; hardware performance is not certified by this profile.
+# Install the optional pinned Sherpa environment separately.
+[voice]
+web_choices = ["sherpa_ru"]
+stt = "sherpa_ru"
+web_stt = "sherpa_ru"
+# Uses the existing configured Piper service/voices; no download or autostart.
+tts = "piper"
+
+[voice.providers.sherpa_ru]
+kind = "stt"
+adapter = "sherpa_onnx"
+label = "Zipformer RU INT8 · CPU"
+[voice.providers.sherpa_ru.settings]
+sherpa_root = "~/disc-speech/sherpa-onnx"
+sherpa_threads = 2
+timeout = 120
+max_seconds = 30

@@ -40,6 +40,7 @@ class Config:
     tts: dict = field(default_factory=dict)
     services: dict = field(default_factory=dict)
     typesense_io_compat: bool = False
+    voice: dict = field(default_factory=dict)
     volume_up_step: int = 20
     volume_down_step: int = 20
 
@@ -67,7 +68,7 @@ def number(value, label, low, high):
 def load(path):
     with Path(path).open('rb') as stream:
         raw = tomllib.load(stream)
-    allowed = {'services': {'speech'}, 'tts': {'backend', 'server_url', 'models', 'timeout'}, 'interpretation': {'shadow', 'shadow_timeout_ms'}, 'device': {'key', 'host', 'tcp_port', 'http_port'},
+    allowed = {'voice': {'profile', 'stt', 'web_stt', 'tts', 'providers', 'plugins', 'web_choices'}, 'services': {'speech'}, 'tts': {'backend', 'server_url', 'models', 'timeout', 'normalization'}, 'interpretation': {'shadow', 'shadow_timeout_ms'}, 'device': {'key', 'host', 'tcp_port', 'http_port'},
                'storage': {'data_dir'},
                'structured': {'enabled', 'endpoint', 'model', 'model_path', 'timeout'},
                'typesense': {'host', 'port', 'protocol', 'api_key_env', 'io_accounting_compat'},
@@ -79,7 +80,8 @@ def load(path):
                'playback': {'continuous_context'},
                'volume': {'up_step', 'down_step'},
                'journal': {'enabled', 'retention_days', 'max_requests'},
-               'speech': {'backend', 'server_url', 'catalog_hints', 'model', 'whisper_executable', 'timeout', 'max_seconds', 'voices', 'stt_languages', 'rate'},
+               'speech': {'backend', 'server_url', 'catalog_hints', 'model', 'whisper_executable', 'timeout', 'max_seconds', 'voices', 'stt_languages', 'rate',
+                          'web_backend', 'sherpa_root', 'sherpa_python', 'sherpa_threads'},
                'terminal': {'color', 'prompt', 'input', 'result', 'error', 'warning', 'suggestion', 'debug'}}
     if set(raw) - set(allowed):
         raise ValueError('unknown configuration section')
@@ -126,6 +128,8 @@ def load(path):
     if type(services.get('speech', False)) is not bool:
         raise ValueError('services.speech must be a boolean')
     tts = raw.get('tts', {})
+    from experiments.disc_assistant.assistant.voice.text import validate as validate_normalization
+    validate_normalization(tts.get('normalization', {}))
     if tts.get('backend', 'none') not in ('none', 'piper'):
         raise ValueError('tts.backend must be none or piper')
     number(tts.get('timeout', 30), 'tts.timeout', 1, 120)
@@ -142,6 +146,12 @@ def load(path):
     speech = raw.get('speech', {})
     if speech.get('backend', 'cli') not in ('cli', 'server') or type(speech.get('catalog_hints', False)) is not bool:
         raise ValueError('invalid speech backend or catalog_hints')
+    if speech.get('web_backend', 'whisper') not in ('whisper', 'sherpa'):
+        raise ValueError('speech.web_backend must be whisper or sherpa')
+    number(speech.get('sherpa_threads', 2), 'speech.sherpa_threads', 1, 16)
+    for key in ('sherpa_root', 'sherpa_python'):
+        if key in speech and not Path(text(speech[key], f'speech.{key}')).expanduser().is_absolute():
+            raise ValueError(f'speech.{key} must be an absolute path (or start with ~)')
     if speech.get('backend') == 'server' or 'server_url' in speech:
         from experiments.disc_assistant.assistant.local_service import endpoint
         endpoint(speech.get('server_url'), '/inference')
@@ -190,7 +200,9 @@ def load(path):
         raise ValueError('typesense.io_accounting_compat must be a boolean')
     if io_compat and (search.get('host', '127.0.0.1') not in ('localhost', '127.0.0.1') or protocol != 'http'):
         raise ValueError('typesense.io_accounting_compat applies only to managed local HTTP search')
-    return Config(
+    from experiments.disc_assistant.assistant.voice.profiles import load_profile, resolve
+    voice = load_profile(raw.get('voice', {}))
+    result = Config(
         device_key=text(device.get('key'), 'device.key'),
         host=text(device.get('host'), 'device.host'),
         tcp_port=number(device.get('tcp_port', 12100), 'tcp_port', 1, 65535),
@@ -214,6 +226,7 @@ def load(path):
         response_mode=response['mode'],
         dialogue_enabled=dialogue,
         speech=speech,
+        voice=voice,
         shadow=shadow,
         shadow_timeout_ms=shadow_timeout,
         structured=structured,
@@ -223,3 +236,5 @@ def load(path):
         volume_up_step=number(raw.get('volume', {}).get('up_step', 20), 'volume.up_step', 1, 120),
         volume_down_step=number(raw.get('volume', {}).get('down_step', 20), 'volume.down_step', 1, 120),
     )
+    resolve(result)
+    return result

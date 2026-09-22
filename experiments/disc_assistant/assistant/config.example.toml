@@ -53,11 +53,15 @@ warning = "ansiyellow bold"
 debug = "ansibrightblack"
 suggestion = "ansibrightblack italic"
 
-# Speech input. Web always uses Whisper Server; CLI can still use backend="cli".
+# Web selects Whisper Server or optional Sherpa; CLI retains backend="cli"/"server".
 # Optional file-based speech. Install engines/models explicitly; no automatic download.
 # See experiments/disc_assistant/docs/guides/voice.md. Use setup --all for managed Whisper Server and Piper (RU/EN).
 [speech]
 backend = "cli" # opt-in: "server" (model remains loaded in whisper-server)
+web_backend = "whisper" # page default: "whisper" or "sherpa"; switching resets Preview
+# sherpa_root = "~/disc-speech/sherpa-onnx" # installed by the optional evaluation setup
+# sherpa_python = "~/disc-speech/sherpa-onnx/.venv/bin/python"
+# sherpa_threads = 2 # CPU; Russian commands only; no catalog hints or fallback
 catalog_hints = false # bounded names from the active snapshot, never expected transcripts
 # server_url = "http://127.0.0.1:18119/inference"
 # model = "~/disc-speech/ggml-small.bin"
@@ -119,3 +123,17 @@ timeout = 10
 # Relative commands use device units (0..120); each step is 1..120.
 up_step = 20
 down_step = 20
+
+# Optional adapter/profile selection; legacy speech/tts settings above still work.
+# [voice]
+# profile = "/absolute/path/to/speech-profile.toml"
+# stt = "sherpa"
+# web_stt = "sherpa"
+# web_choices = ["whisper", "sherpa"]
+# tts = "piper"
+# See docs/guides/voice-adapters.md for custom models and plugin factories.
+
+# Optional TTS-only normalization for legacy Piper; identity remains the default.
+# [tts.normalization]
+# mode = "ru_numbers"
+# For Silero and learned RUNorm profiles, see docs/guides/tts.md.

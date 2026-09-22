@@ -60,12 +60,50 @@ payload, then uses the same STT/interpretation/ranking/execution pipeline as CLI
 file input. Digital-zero silence is rejected; background-noise or hallucination
 rejection is not a solved speech detector.
 
-Web **always uses Whisper Server**, including when the same configuration selects
+Web uses **Whisper Server by default**, including when the same configuration selects
 CLI STT for one-shot commands. There is no silent CLI fallback. `setup --all`
 configures the multilingual model, server endpoint and optional managed lifecycle.
 `web --bootstrap` starts the managed stack; plain `web` expects it to be running.
 See [speech services and Piper replies](tts.md) for installation,
 RU/EN voices, saved response policy and browser sound opt-in.
+
+### Choose the speech engine
+
+The **Speech recognition** selector lists configured STT instances; the default choices are **Whisper Server** and **Sherpa · Russian**
+for that browser's next recording. [Speech profiles and adapters](voice-adapters.md)
+can add GigaAM or user-defined engines and choose the initial provider. Changing engines restores **Preview**; it never
+resubmits existing audio. Selection is saved per device in browser local storage and is captured with
+the uploaded audio, so another browser cannot change an in-flight request's engine.
+Each result displays its actual provider/model, independently of the current selector.
+The selected engine feeds the same Assistant interpretation/search and guarded
+Controller path in Preview, Transcribe and Execute. TTS remains independent.
+
+Install Sherpa once using the [optional environment installer](../evaluation/sherpa-onnx.md#prepare).
+Its default location is `~/disc-speech/sherpa-onnx`. The ordinary Assistant virtualenv
+does not need ONNX/NumPy: it starts the worker with the optional environment's Python.
+The model is loaded on the first submitted recording and remains resident until
+the web service stops. Paths/threads and the initial page selection can be configured
+under the existing `[speech]` table (do not create a second table):
+
+```toml
+web_backend = "sherpa" # optional; the unchanged default is "whisper"
+sherpa_root = "~/disc-speech/sherpa-onnx"
+sherpa_python = "~/disc-speech/sherpa-onnx/.venv/bin/python"
+sherpa_threads = 2
+```
+
+Use Russian as **Command & reply language** for this model. With another language,
+the page disables Sherpa recording and the server rejects submitted audio before
+inference. Choose Whisper explicitly to use another language; no automatic fallback
+or locale remapping occurs. Names embedded in Russian commands may still be English.
+This greedy model does not receive catalog hints, even when Whisper hints are enabled.
+
+Sherpa verifies its pinned engine version and model hashes in its isolated worker.
+The ordinary speech timeout includes first loading; cancellation or timeout stops
+and reaps the worker without replaying the recording. A later explicit request may
+start a fresh worker. Closing the browser still lets an already accepted application
+request finish, as before; it is not a cancel button for a possibly sent command.
+An unavailable model/engine leaves text input and explicit Whisper selection usable.
 
 Enable **Enable spoken replies on this browser**, then select **All available
 replies** to hear successful controls as well as errors. The default saved policy
@@ -95,7 +133,7 @@ HTTP endpoints:
 | `GET /api/state` | Cached device/library/preferences, per-process page token and last result |
 | `GET /api/events` | SSE observations (about once per second), bounded trace events and results |
 | `POST /api/command` | Natural text + mode, or an allowlisted UI action |
-| `POST /api/audio?mode=…` | Bounded WAV body; never an arbitrary filesystem path |
+| `POST /api/audio?mode=…&engine=whisper\|sherpa` | Bounded WAV body and explicit engine; never an arbitrary filesystem path |
 | `POST /api/reply?request_id=…` | WAV for the current eligible response; no arbitrary text |
 | `POST /api/reply-status?request_id=…&outcome=…` | Browser-reported delivery evidence, separate from execution |
 

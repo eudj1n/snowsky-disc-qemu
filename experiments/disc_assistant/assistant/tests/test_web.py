@@ -4,7 +4,7 @@ import json
 from pathlib import Path
 import tempfile
 import unittest
-from unittest.mock import AsyncMock, Mock
+from unittest.mock import AsyncMock, Mock, patch
 
 from aiohttp.test_utils import TestClient, TestServer
 
@@ -165,6 +165,49 @@ class WebTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(Application(self.config).config.response_mode, 'all')
         response = await self.client.post('/api/command', json={'action': 'response', 'mode': 'invalid'}, headers=self.headers)
         self.assertEqual(response.status, 400)
+
+    async def test_sherpa_selection_preview_execute_and_journal(self):
+        await self.command(action='language', locale='ru')
+        provider = self.app[RUNTIME].voice.get('sherpa')
+        with patch.object(provider, 'transcribe', AsyncMock(return_value=Transcription('Пауза', 'ru'))) as transcribe:
+            for mode in ('transcribe', 'preview', 'execute'):
+                response = await self.client.post('/api/audio?engine=sherpa&mode=' + mode, data=wav(),
+                                                 headers={**self.headers, 'Content-Type': 'audio/wav'})
+                result = (await response.json())['result']
+                self.assertEqual(result['transcription']['provider']['name'], 'sherpa_onnx')
+                self.assertEqual(self.peer.writes, int(mode == 'execute'))
+                self.assertEqual(result['status'], {'transcribe': 'transcribed', 'preview': 'planned', 'execute': 'confirmed'}[mode])
+                record = history_command(self.config, ['show', result['request_id']])
+                self.assertIn('speech_model', [event['phase'] for event in record['events']])
+            self.assertEqual(transcribe.await_count, 3)
+        self.provider.transcribe.assert_not_called()
+        self.assertEqual(self.peer.accepts, 1)
+
+    async def test_sherpa_failure_unknown_engine_and_locale_never_fallback_or_write(self):
+        response = await self.client.post('/api/audio?engine=sherpa&mode=execute', data=wav(),
+                                         headers={**self.headers, 'Content-Type': 'audio/wav'})
+        self.assertEqual((await response.json())['result']['status'], 'error')
+        await self.command(action='language', locale='ru')
+        with patch.object(self.app[RUNTIME].voice.get('sherpa').provider, 'available', return_value=False):
+            response = await self.client.post('/api/audio?engine=sherpa&mode=execute', data=wav(),
+                                             headers={**self.headers, 'Content-Type': 'audio/wav'})
+            self.assertEqual((await response.json())['result']['status'], 'error')
+        response = await self.client.post('/api/audio?engine=unknown&mode=execute', data=wav(),
+                                         headers={**self.headers, 'Content-Type': 'audio/wav'})
+        self.assertEqual(response.status, 400)
+        self.assertEqual(self.peer.writes, 0)
+        self.provider.transcribe.assert_not_called()
+
+    async def test_sherpa_reconnect_during_recognition_prevents_write(self):
+        await self.command(action='language', locale='ru')
+        async def changed(audio, context):
+            self.app[RUNTIME].service.session.disconnect()
+            return Transcription('Пауза', 'ru')
+        with patch.object(self.app[RUNTIME].voice.get('sherpa'), 'transcribe', changed):
+            response = await self.client.post('/api/audio?engine=sherpa&mode=execute', data=wav(),
+                                             headers={**self.headers, 'Content-Type': 'audio/wav'})
+        self.assertEqual((await response.json())['result']['status'], 'not_sent')
+        self.assertEqual(self.peer.writes, 0)
 
     async def test_reply_failure_does_not_change_or_replay_completed_command(self):
         runtime = self.app[RUNTIME]
