@@ -2,6 +2,23 @@ const {test} = require('node:test');
 const assert = require('node:assert/strict');
 const core = import('../frontend/core.mjs');
 
+test('import rejects unsafe paths, duplicate names and oversized batches before transmission', async () => {
+  const {validFiles,jobActive}=await import('../frontend/imports.mjs');
+  const file={name:'Музыка — test.wav',size:500};
+  assert.equal(validFiles([file]),true);
+  assert.equal(validFiles([{...file,size:1024**3}]),true);
+  assert.equal(validFiles([{...file,webkitRelativePath:'Album/Disc 1/Track.wav'},{...file,webkitRelativePath:'Album/Disc 2/Track.wav'}]),true);
+  assert.equal(validFiles([{name:'Album.cue',size:120,webkitRelativePath:'Album/Album.cue'}]),false);
+  assert.equal(validFiles([{...file,webkitRelativePath:'Album/../Track.wav'}]),false);
+  assert.equal(validFiles([{...file,webkitRelativePath:'/Album/Track.wav'}]),false);
+  for(const files of [[],Array(31).fill(file),[file,{...file,name:file.name.toUpperCase()}],
+    [{...file,name:'../Music.wav'}],[{...file,name:'Music.exe'}],[{...file,size:0}],
+    [{...file,size:2**31}],[{...file,name:'x'.repeat(241)+'.wav'}]]) assert.equal(validFiles(files),false);
+  assert.equal(jobActive({phase:'verifying'}),true);
+  assert.equal(jobActive({phase:'scanning'}),true);
+  for(const phase of ['done','uncertain','not_sent']) assert.equal(jobActive({phase}),false);
+});
+
 test('catalog metadata is escaped before HTML insertion', async () => {
   const {escapeHTML} = await core;
   assert.equal(escapeHTML('<img src=x onerror="alert(1)"> &'), '&lt;img src=x onerror=&quot;alert(1)&quot;&gt; &amp;');

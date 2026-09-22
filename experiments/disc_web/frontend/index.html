@@ -28,6 +28,7 @@
   <header class="topbar">
     <div class="breadcrumb">SNOWSKY <span>/</span> <strong id="breadcrumb"><span data-i18n="home">Главная</span></strong></div>
     <label class="search"><span data-icon="search"></span><input id="search" type="search" placeholder="Найти в коллекции" autocomplete="off" aria-label="Поиск в текущем разделе" data-i18n-placeholder="search_your_collection" data-i18n-aria-label="search_this_section"><kbd>/</kbd></label>
+    <button class="import-button" id="open-import" aria-label="Добавить музыку" data-i18n-aria-label="import_music"><span data-icon="upload"></span><span data-i18n="import_music">Добавить музыку</span><i id="import-active" hidden></i></button>
     <button class="icon-button" id="refresh" aria-label="Обновить коллекцию" title="Обновить коллекцию" data-i18n-aria-label="refresh_collection" data-i18n-title="refresh_collection"><span data-icon="refresh"></span></button>
     <button class="icon-button mobile-device" id="mobile-device" aria-label="Подключение к DISC" data-i18n-aria-label="disc_connection"><span data-icon="device"></span></button>
     <button class="icon-button" id="theme-button" aria-label="Оформление" data-i18n-aria-label="appearance"><span data-icon="moon"></span></button>
@@ -74,6 +75,20 @@
   <div class="dialog-heading"><span class="eyebrow" data-i18n="playlists">Плейлисты</span><button id="close-playlist" class="icon-button" aria-label="Закрыть" data-i18n-aria-label="close"><span data-icon="close"></span></button></div>
   <h2 id="playlist-dialog-title"></h2><p id="playlist-track-label"></p>
   <form id="playlist-form"><label id="playlist-name-label" class="form-field"><span data-i18n="playlist_name">Название плейлиста</span><input id="playlist-name" maxlength="100" autocomplete="off"></label><label id="playlist-select-label" class="form-field" hidden><span data-i18n="playlist_choose">Выберите плейлист</span><select id="playlist-select"></select></label><p class="dialog-footnote" data-i18n="playlist_no_files">Меняется только состав плейлиста. Файлы остаются на DISC.</p><p id="playlist-feedback" role="status"></p><button id="playlist-submit" type="submit" class="primary-button"></button></form>
+</dialog>
+<dialog id="import-dialog" class="import-dialog" aria-labelledby="import-title">
+  <div class="dialog-heading"><span class="eyebrow" data-i18n="import_eyebrow"></span><button id="close-import" class="icon-button" aria-label="Закрыть" data-i18n-aria-label="close"><span data-icon="close"></span></button></div>
+  <div class="import-intro"><div><h2 id="import-title" data-i18n="import_title"></h2><p data-i18n="import_description"></p></div><div class="import-art" aria-hidden="true"><span class="import-sleeve"></span><span class="import-record"></span><span class="import-plus">+</span></div></div>
+  <p id="import-notice" class="import-notice"></p>
+  <section class="import-transfer"><span class="eyebrow" data-i18n="import_step_transfer"></span>
+    <div id="import-drop" class="import-drop"><span data-icon="upload"></span><strong data-i18n="import_drop"></strong><small data-i18n="import_formats"></small><div class="import-choices"><button id="choose-import" class="secondary-button" data-i18n="import_choose"></button><button id="choose-folder" class="secondary-button" data-i18n="import_choose_folder"></button></div><input id="import-files" type="file" multiple accept=".flac,.wav,.mp3,.m4a,.aac,.ogg,.ape,.wma,.dsf,.dff" hidden><input id="import-folder" type="file" multiple webkitdirectory hidden></div>
+    <p id="import-folder-summary" class="import-folder-summary"></p>
+    <div id="import-list" class="import-list"></div>
+    <div class="import-destination"><span data-icon="device"></span><div><strong data-i18n="import_destination"></strong><small data-i18n="import_no_overwrite"></small></div></div>
+    <div class="import-actions"><button id="clear-import" class="text-button" data-i18n="import_clear"></button><button id="send-import" class="primary-button" data-i18n="import_send"></button></div>
+    <p id="import-feedback" class="import-feedback" role="status"></p>
+  </section>
+  <section class="import-scan"><div><span class="eyebrow" data-i18n="import_step_scan"></span><h3 data-i18n="import_scan_title"></h3><p data-i18n="import_scan_description"></p></div><button id="scan-import" class="secondary-button" data-i18n="import_scan"></button><div id="scan-status" class="scan-status" role="status"></div></section>
 </dialog>
 </body>
 </html>

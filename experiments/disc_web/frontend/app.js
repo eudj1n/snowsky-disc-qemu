@@ -1,3 +1,4 @@
+import {createImporter} from './imports.mjs';
 import {t, initLocale, setLocale, getLocale} from './i18n.mjs';
 await initLocale();
 import {escapeHTML as esc, timeLabel, filterItems, routeHash, parseRoute, trackDuration, playbackIdentity, seekAllowed} from './core.mjs';
@@ -12,6 +13,7 @@ const paths = {
  playlist:'M4 5h13M4 10h13M4 15h7M17 14v7M13.5 17.5h7',
  queue:'M3 5h18M3 10h18M3 15h10M17 15l4 3-4 3Z',
  search:'M16 10a6 6 0 1 1-12 0 6 6 0 0 1 12 0ZM15 15l6 6',
+ upload:'M12 16V3m-5 5 5-5 5 5M4 14v6h16v-6',
  refresh:'M20 7a9 9 0 1 0 1 8M20 3v5h-5',
  device:'M5 2h14v20H5Z M8 5h8v8H8Z M14 17a2 2 0 1 1-4 0 2 2 0 0 1 4 0Z',
  play:'m9 5 11 7-11 7Z',pause:'M8 5v14M16 5v14',
@@ -40,6 +42,7 @@ const titleKeys = {home:'home',albums:'albums',artists:'artists',tracks:'tracks'
 let state = null, route = parseRoute(location.hash), currentItems = [], homeTracks = [], activeItem = null;
 let requestSequence = 0, busy = false, genre = '', toastTimer, pollTimer, lastTrack = '', libraryLoading = false;
 let artistScope = '';
+const importer = createImporter({getState:()=>state, isBusy:()=>busy||libraryLoading, refreshState, loadView, api, toast});
 let editContext = null, menuContext = null, seekDraft = null, seekFeedback = '', seekIdentity = '', pendingSeek = null, seekRequested = null;
 
 
@@ -267,7 +270,7 @@ async function refreshState() {
   try {
     const previous = state;
     state = await api('/api/state');
-    updatePlayer();
+    updatePlayer(); importer.render();
     $('mode-banner').hidden = !state.demo;
     $('output-label').textContent = state.demo ? t('demo_no_audio') : t('on_disc');
     $('connection-label').textContent = state.demo ? t('demo_mode') : ({ready:t('connected'),connecting:t('connecting'),reconnecting:t('reconnecting'),disconnected:t('disconnected')}[state.connection] || state.connection);
@@ -458,7 +461,7 @@ $('language').value=getLocale();
 $('language').onchange=()=>setLocale($('language').value);
 window.addEventListener('disc-language-change',()=>{
   $('language').value=getLocale();
-  updateThemeChoice(); updateNav(); updatePlayer(); editLabels();
+  updateThemeChoice(); updateNav(); updatePlayer(); editLabels(); importer.render();
   if (state) {
     $('connection-label').textContent = state.demo ? t('demo_mode') : ({ready:t('connected'),connecting:t('connecting'),reconnecting:t('reconnecting'),disconnected:t('disconnected')}[state.connection] || state.connection);
     $('output-label').textContent = state.demo ? t('demo_no_audio') : t('on_disc');

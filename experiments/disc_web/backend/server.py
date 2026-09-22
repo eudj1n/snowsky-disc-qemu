@@ -12,6 +12,7 @@ from urllib.parse import parse_qs, urlsplit
 from controller import DeviceConfig
 from experiments.disc_web.backend.demo import Demo
 from experiments.disc_web.backend.device import BusyError, Device
+from experiments.disc_web.backend.imports import Imports
 
 FRONTEND = Path(__file__).resolve().parents[1] / 'frontend'
 
@@ -22,6 +23,7 @@ class Server(ThreadingHTTPServer):
 
     def __init__(self, address, device):
         self.device = device
+        self.imports = Imports(device)
         self.token = secrets.token_urlsafe(32)
         self.requests = OrderedDict()
         self.request_lock = threading.Lock()
@@ -65,7 +67,20 @@ class Handler(BaseHTTPRequestHandler):
         query = parse_qs(url.query)
         try:
             if url.path == '/api/state':
-                return self.reply({**self.server.device.state(), 'token': self.server.token})
+                job = self.server.imports.state()
+                return self.reply({**self.server.device.state(), 'token': self.server.token,
+                                   'busy': self.server.imports.gate.locked(), 'job': job})
+            if url.path.startswith('/api/'):
+                with self.server.imports.foreground():
+                    return self.get_content(url, query)
+            return self.get_content(url, query)
+        except BusyError as exc:
+            return self.reply({'error': str(exc)}, 409)
+        except (ValueError, OSError, RuntimeError) as exc:
+            return self.reply({'error': str(exc)}, 422)
+
+    def get_content(self, url, query):
+        try:
             if url.path == '/api/library':
                 return self.reply(self.server.device.browse(query.get('kind', ['albums'])[0],
                     query.get('name', [''])[0], query.get('artist', [''])[0]))
@@ -91,7 +106,22 @@ class Handler(BaseHTTPRequestHandler):
     def do_POST(self):
         if (not self.same_origin() or not secrets.compare_digest(self.headers.get('X-Disc-Token', ''), self.server.token)):
             return self.reply({'error': 'Local session token required'}, 403)
-        if self.path != '/api/action':
+        url = urlsplit(self.path)
+        if url.path == '/api/upload':
+            try:
+                if self.headers.get('Content-Type') != 'application/octet-stream' or self.headers.get('Transfer-Encoding'):
+                    return self.reply({'error': 'A raw file with Content-Length is required'}, 415)
+                query = parse_qs(url.query)
+                request_id = self.headers.get('X-Request-ID')
+                self.claim(request_id)
+                return self.reply(self.server.imports.upload(self.rfile,
+                    int(self.headers.get('Content-Length', '0')), query.get('name', [''])[0],
+                    int(self.headers.get('X-Disc-Generation', '0')), request_id), 202)
+            except BusyError as exc:
+                return self.reply({'error': str(exc)}, 409)
+            except (ValueError, OSError, RuntimeError) as exc:
+                return self.reply({'error': str(exc)}, 422)
+        if self.path not in ('/api/action', '/api/scan'):
             return self.reply({'error': 'Not found'}, 404)
         if self.headers.get('Content-Type', '').split(';')[0] != 'application/json':
             return self.reply({'error': 'JSON required'}, 415)
@@ -103,19 +133,25 @@ class Handler(BaseHTTPRequestHandler):
             if not isinstance(body, dict):
                 raise ValueError('Expected an object')
             request_id = body.get('request_id')
-            if not isinstance(request_id, str) or not 8 <= len(request_id) <= 100:
-                raise ValueError('A request ID is required')
-            with self.server.request_lock:
-                if request_id in self.server.requests:
-                    return self.reply({'error': 'Duplicate request was not replayed'}, 409)
-                self.server.requests[request_id] = None
-                if len(self.server.requests) > 4096:
-                    self.server.requests.popitem(last=False)
-            return self.reply(self.server.device.action(body))
+            self.claim(request_id)
+            if self.path == '/api/scan':
+                return self.reply(self.server.imports.scan(body.get('generation'), request_id), 202)
+            with self.server.imports.foreground():
+                return self.reply(self.server.device.action(body))
         except BusyError as exc:
             return self.reply({'error': str(exc)}, 409)
         except (ValueError, OSError, RuntimeError) as exc:
             return self.reply({'error': str(exc)}, 422)
+
+    def claim(self, request_id):
+        if not isinstance(request_id, str) or not 8 <= len(request_id) <= 100:
+            raise ValueError('A request ID is required')
+        with self.server.request_lock:
+            if request_id in self.server.requests:
+                raise BusyError('Duplicate request was not replayed')
+            if len(self.server.requests) >= 4096:
+                raise BusyError('Request budget exhausted; restart the local server')
+            self.server.requests[request_id] = None
 
 
 def main():

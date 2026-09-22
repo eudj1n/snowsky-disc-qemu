@@ -44,20 +44,22 @@ index. Large-library virtualization and paged presentation are future work.
 
 | Endpoint | Behavior |
 | --- | --- |
-| `GET /api/state` | Cached normalized state, application session token, demo/endpoint information; no device query |
+| `GET /api/state` | Latest import/scan job, cached normalized state, application session token, demo/endpoint information; no device query |
 | `GET /api/library?kind=...&name=...&artist=...` | Named category/detail projection; bounded live HTTP reads or fictional demo rows |
 | `GET /api/queue` | Fresh public facade queue result |
 | `GET /api/cover` | Current device JPEG/PNG; no arbitrary proxy URL |
+| `POST /api/upload?name=relative/path.flac` | Raw bounded file body, token, request ID and generation headers; private staging then async facade upload |
+| `POST /api/scan` | JSON request ID/generation, one async observed scan |
 | `POST /api/action` | Explicit allowlisted command, request ID, connection generation and session token |
 
 The process binds to loopback. Host and Origin checks reject cross-site and DNS
-rebinding requests; POST also requires `X-Disc-Token` and bounded JSON. No CORS is
+rebinding requests; POST also requires `X-Disc-Token`; action/scan JSON and raw upload bodies have separate bounds. No CORS is
 enabled. CSP restricts scripts, styles, images and connections to local assets;
 live covers accept only JPEG/PNG. Error messages and names are inserted as text
 or escaped HTML. Requests are not logged with private names or query strings.
 
-The process remembers the last 4,096 request IDs to reject immediate duplicate
-submissions. This is not durable exactly-once delivery. Browsers never retry a
+The process remembers up to 4,096 request IDs and rejects further writes once
+that budget is reached, rather than evicting IDs and allowing replay. This is not durable exactly-once delivery. Browsers never retry a
 write or persist commands for reconnect. Unknown results remain uncertain.
 
 State polling every 1.5 seconds reads cached session state, not the device socket.
@@ -83,6 +85,29 @@ positions by unique names, recheck source/membership and verify readback. A lost
 reply is uncertain and cannot be automatically resubmitted. Removal changes
 membership only; source files are never deleted by this UI.
 
+## Import ownership
+
+`backend/imports.py` owns one foreground job and a nonblocking admission gate
+shared with other API operations. Cached state and static assets remain readable
+during staging, transfer and scanning. `frontend/imports.mjs` owns file/folder
+selection, per-file batch progress and explicit scan presentation. It preserves
+browser `webkitRelativePath`, filters the documented audio extensions and
+shows the skipped-file count. Names are relative, traversal/control characters
+and invalid FAT path characters are rejected, and sizes follow the stock 31-bit
+limit. Only one private temporary file exists per active transfer.
+
+Uploads and scans call `DiscSession.upload_audio()` and `scan_library()` with the
+original connection generation. The generation is checked under the session
+lease as well as before staging/dispatch. A batch stops on any unconfirmed item;
+there is no durable queue, overwrite, automatic scan or resume. Demo consumes
+bytes without staging or device construction and only simulates job progress.
+
+During scans the Controller reader consumes start/count/end events without
+interleaved queries. Cached job progress is separate from playback. Starting a
+scan invalidates displayed source tokens. An observed end triggers a fresh view
+read; a timeout is uncertain, never an automatic restart. The completed job stays
+readable after a page reload until another explicit job replaces it.
+
 ## Frontend
 
 The UI uses local system fonts, original SVG artwork and no frontend framework or
@@ -106,8 +131,7 @@ typography. It does not reuse assets or logos from commercial music services.
 ## Extension boundaries
 
 Add missing persistent operations to Controller with their own typed results and
-fresh identity checks before exposing them here. Upload, scan and settings need operation-specific verification, not success based on HTTP
-200. Maintain the distinction between removing a list member and deleting a file.
+fresh identity checks before exposing them here. Settings and future file operations need their own verification, not success based on HTTP 200. Maintain the distinction between removing a list member and deleting a file.
 
 Assistant can later use a shared application runtime/adapter. The current server
 is not a generic Controller daemon and does not make independent Assistant and

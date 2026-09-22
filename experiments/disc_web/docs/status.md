@@ -80,9 +80,45 @@ coverage or physical-device acceptance.
   rejection. Temporary containers and volume were removed. No physical DISC or
   interactive emulator volume was used.
 
+## Import and scan checkpoint — 2026-09-22
+
+- The import dialog accepts individual files and directory-picker album folders,
+  preserving the root and nested paths. Batches are sequential and stop on an
+  unconfirmed item. Limits: 1,000 audio files, 2 GiB minus one byte each; the
+  maximum file size is a validated bound, not a throughput acceptance result.
+- Transfer has separate receiving/sending/verifying/finished states. The public
+  Controller facade requires completed byte count plus a fresh directory entry;
+  collisions, stale generations and incomplete staging never dispatch a write.
+- Scanning is a separate explicit operation with discovered count. It owns the
+  session without interleaved queries, invalidates displayed source tokens and
+  refreshes the view after the observed end. Timeout/disconnect is uncertain.
+- Demo consumes selected bytes only for presentation: no saved files, changed
+  catalog, audio output or device connection. RU/EN and both palettes cover the
+  import flow, including skipped file types and uncertain results.
+- CUE exploration on a disposable V2.57 stack returned completed byte progress
+  but no confirmable directory entry. The operation correctly remained uncertain;
+  CUE was excluded from the supported importer. Artwork/CUE and other sidecars
+  are explicitly skipped with a count, rather than reported as verified copies.
+- Synthetic tests cover private staging cleanup, partial bodies, foreground
+  admission, reconnect during staging, duplicate requests, path/size bounds,
+  case-insensitive collision and observed scan ownership/no replay.
+
+Validation for this checkpoint: app suite passed 20 Python and 9 JavaScript
+tests; repository firmware-free run passed 450 Python and 46 JavaScript tests,
+shell checks and four shim builds. Ruff, mypy and isolated Controller package
+installation/synthetic-session checks passed. The full disposable V2.57 run
+passed, followed by a focused `queue` run covering the final nested-folder upload,
+byte equality, collision rejection, explicit scan and fresh index membership.
+Both successful stacks were removed. The CUE exploratory run remained a failed
+verification, as recorded above; it is not part of the supported import surface.
+Browser checks cover folder picking, two identical leaf names in separate disc
+folders, skipped sidecars, sequential demo transfer, explicit scan, RU/EN and
+light/dark layouts at desktop and 390 px. No physical DISC or interactive
+emulator volume was used.
+
 ## Next implementation stages
 
-1. Upload, scan/progress and file management with operation-specific verification.
+1. File browsing/management and verified artwork/CUE sidecar handling.
 2. Extend device settings, cover caching, large-catalog presentation and live
    multi-browser invalidation; integrate optional Assistant through one owner.
 

@@ -47,16 +47,47 @@ download firmware or open a physical device during tests.
   known albums/artists; keyboard navigation and mobile bottom-sheet layout.
 - Create/rename custom playlists; add tracks from all tracks or an unscoped
   album and remove playlist members, with fresh identity checks and readback.
+- Import files or an album folder, preserving the selected root and nested paths.
+  Audio files are sent sequentially, with per-file
+  progress and readback. Up to 1,000 files per selection, each at most 2 GiB minus
+  one byte (the stock signed Content-Length bound). Non-music files, including
+  artwork and CUE sheets, are skipped with a count. Folder picking uses the browser directory
+  chooser; drag-and-drop accepts individual files.
+- Explicit library scan with discovered-track count and fresh catalog refresh
+  after its observed end. Transfer and scan are separate user actions.
 - Current-track cover from stock HTTP; other live covers use honest placeholders.
   The stock API here only supplies the currently playing cover.
 - An isolated demo with eight original SVG covers and fictional names, genre
   filtering, track/queue selections, simulated playback and favorites. It has no
-  music files, audible output, persistence or real-device mutations.
+  stored music files, audible output, persistence or real-device mutations.
+  Import consumes selected bytes for a visual simulation, without saving files
+  or changing the fictional catalog.
 
 The interface labels demo mode, including on mobile. Demo actions simulate presentation and do not prove firmware behavior.
-Files/upload, scan and device settings remain future implementation stages. They must use reviewed public
-Controller operations, not raw command forwarding. Browser audio streaming is
+File browsing/deletion, artwork sidecars and device settings remain future
+implementation stages. They must use reviewed public Controller operations. Browser audio streaming is
 outside this implementation; live audio stays on DISC.
+
+## Import behavior
+
+Open **Add music**, choose files or a folder, review the relative paths and press
+**Transfer to DISC**. Files go below `/tmp/sdcard`; a selected `Album/Disc 1/Track.flac`
+keeps that complete structure. Existing names and cached transfers block a file;
+there is no overwrite or automatic rename. Stock has no atomic exclusive-create
+API, so concurrent external HTTP writers can still race the preflight.
+
+The server stages one file privately in the OS temporary directory, removes it
+when the operation finishes and retains only the latest job status in memory.
+A partial browser upload never reaches DISC. A failure stops the remaining batch;
+no command is replayed after timeout or reconnect. A reload can observe the latest
+server job, but does not resume the browser's remaining file list. Closing the
+import dialog lets the current batch continue in the page.
+
+**Start scan** is a separate explicit action, available without an upload.
+Its count measures discoveries, not a percentage. There is no cancel/reset control
+in this UI. An unconfirmed end may mean scanning continues on DISC. The observed
+end does not prove every format/file was indexed. Transfer readback checks a
+fresh directory entry and completed byte count; it is not a device-side hash.
 
 ## Validation and documentation
 

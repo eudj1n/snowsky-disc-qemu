@@ -75,6 +75,18 @@ class WebTests(unittest.TestCase):
         self.assertEqual(self.request('POST', '/api/action', {'action': 'volume', 'value': True, 'request_id': uuid4().hex})[0], 422)
         self.assertEqual(self.request('POST', '/api/action', {'action': 'queue', 'index': -1, 'request_id': uuid4().hex})[0], 422)
 
+    def test_upload_auth_framing_duplicates_and_static_assets_during_scan(self):
+        body = {'generation': 1, 'request_id': uuid4().hex}
+        self.assertEqual(self.request('POST', '/api/scan', body, {'X-Disc-Token': ''})[0], 403)
+        self.assertEqual(self.request('POST', '/api/scan', body)[0], 202)
+        self.assertEqual(self.request('POST', '/api/scan', body)[0], 409)
+        self.assertEqual(self.request('POST', '/api/action', {'action': 'next', 'request_id': uuid4().hex})[0], 409)
+        state = json.loads(self.request('GET', '/api/state')[1])
+        self.assertTrue(state['busy'])
+        self.assertEqual(state['job']['id'], body['request_id'])
+        self.assertEqual(self.request('GET', '/imports.mjs')[0], 200)
+        self.assertEqual(self.request('POST', '/api/upload?name=Test.wav')[0], 415)
+
 
 if __name__ == '__main__':
     unittest.main()
