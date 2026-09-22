@@ -6,6 +6,17 @@ const vm = require('node:vm');
 const frontend = path.join(__dirname,'../frontend');
 const theme = require('../frontend/theme.js');
 
+test('saved connection is only a validated local draft; invalid or unavailable storage is ignored',async()=>{
+  const {normalizeConnection,savedConnection}=await import('../frontend/connection.mjs');
+  const config={host:'192.168.2.10',tcp_port:12100,http_port:12103};
+  assert.deepEqual(savedConnection({getItem:()=>JSON.stringify(config)}),config);
+  assert.equal(savedConnection({getItem:()=>'{broken'}),null);
+  assert.equal(savedConnection({getItem:()=>{throw new Error('blocked');}}),null);
+  for(const host of ['0.0.0.0','224.0.0.255','8.8.8.8','https://192.168.2.10','192.168.02.10','192.168.2.999'])
+    assert.equal(normalizeConnection({...config,host}),null);
+  for(const tcp_port of [true,0,65536,'12100']) assert.equal(normalizeConnection({...config,tcp_port}),null);
+});
+
 test('theme preferences distinguish system appearance from explicit choices',()=>{
   assert.equal(theme.resolve('system',true),'dark');
   assert.equal(theme.resolve('system',false),'light');

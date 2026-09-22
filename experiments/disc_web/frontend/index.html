@@ -56,7 +56,21 @@
   </div>
   <div class="player-tools"><span class="output-label" id="output-label"><span data-i18n="on_disc">НА DISC</span></span><span data-icon="volume"></span><input id="volume" type="range" min="0" max="120" value="0" aria-label="Громкость DISC" disabled data-i18n-aria-label="disc_volume"><output id="volume-value">—</output><span class="tool-divider"></span><button id="queue-button" class="icon-button" aria-label="Открыть очередь" aria-expanded="false" data-i18n-aria-label="open_queue"><span data-icon="queue"></span></button></div>
 </section>
-<dialog id="device-dialog"><div class="dialog-heading"><span class="eyebrow"><span data-i18n="your_player">ВАШ ПЛЕЕР</span></span><button class="icon-button" id="close-dialog" aria-label="Закрыть" data-i18n-aria-label="close"><span data-icon="close"></span></button></div><div class="dialog-disc"></div><h2><span data-i18n="music_on_your_disc">Музыка на вашем DISC</span></h2><p id="device-description"></p><div id="device-endpoint" class="endpoint"></div><button id="connect" class="primary-button"><span data-i18n="connect">Подключить</span></button><p class="dialog-footnote"><span data-i18n="disconnect_assistant_or_fiio_control_first_disc_accepts_one_control_connection">Перед подключением отключите Assistant или FiiO Control: у плеера одно управляющее соединение.</span></p></dialog>
+<dialog id="device-dialog" class="connection-dialog" aria-labelledby="connection-title">
+  <div class="dialog-heading"><span class="eyebrow" data-i18n="your_player"></span><button class="icon-button" id="close-dialog" aria-label="Закрыть" data-i18n-aria-label="close"><span data-icon="close"></span></button></div>
+  <div class="connection-intro"><div class="dialog-disc"></div><div><h2 id="connection-title" data-i18n="connection_title"></h2><p id="device-description"></p></div></div>
+  <div id="device-endpoint" class="connection-status" role="status"></div>
+  <form id="connection-form">
+    <div class="connection-presets"><button type="button" id="preset-player" class="secondary-button" data-i18n="connection_physical"></button><button type="button" id="preset-emulator" class="secondary-button" data-i18n="connection_emulator"></button></div>
+    <label class="connection-field"><span data-i18n="connection_ip"></span><input id="connection-host" type="text" inputmode="decimal" autocomplete="off" spellcheck="false" placeholder="192.168.1.100" required></label>
+    <details id="connection-advanced"><summary data-i18n="connection_advanced"></summary><div class="connection-ports"><label class="connection-field"><span data-i18n="connection_tcp"></span><input id="connection-tcp" type="number" min="1" max="65535" step="1" required></label><label class="connection-field"><span data-i18n="connection_http"></span><input id="connection-http" type="number" min="1" max="65535" step="1" required></label></div></details>
+    <p class="connection-hint" data-i18n="connection_saved"></p>
+    <div class="connection-actions"><button type="button" id="disconnect-player" class="text-button" data-i18n="disconnect"></button><button type="submit" id="connect" class="primary-button" data-i18n="connect"></button></div>
+    <p id="connection-feedback" class="connection-feedback" role="status"></p>
+  </form>
+  <section id="discovery-section" class="discovery-section"><h3 data-i18n="connection_nearby"></h3><p data-i18n="connection_discovery_help"></p><div class="discovery-controls"><label class="connection-field"><span data-i18n="connection_interface"></span><select id="discovery-interface"></select></label><button id="discover-player" class="secondary-button" data-i18n="connection_find"></button></div><p id="discovery-feedback" role="status"></p><div id="discovery-results"></div></section>
+  <p class="dialog-footnote" data-i18n="disconnect_assistant_or_fiio_control_first_disc_accepts_one_control_connection"></p>
+</dialog>
 <dialog id="track-dialog" class="track-dialog" aria-label="Действия с треком" data-i18n-aria-label="track_actions">
   <div class="track-menu-heading"><div id="menu-art"></div><div><strong id="menu-title"></strong><small id="menu-artist"></small></div><button class="icon-button" id="close-track-menu" aria-label="Закрыть" data-i18n-aria-label="close"><span data-icon="close"></span></button></div>
   <div role="menu" id="track-menu">

@@ -1,3 +1,4 @@
+import {createConnection} from './connection.mjs';
 import {createImporter} from './imports.mjs';
 import {t, initLocale, setLocale, getLocale} from './i18n.mjs';
 await initLocale();
@@ -43,6 +44,7 @@ let state = null, route = parseRoute(location.hash), currentItems = [], homeTrac
 let requestSequence = 0, busy = false, genre = '', toastTimer, pollTimer, lastTrack = '', libraryLoading = false;
 let artistScope = '';
 const importer = createImporter({getState:()=>state, isBusy:()=>busy||libraryLoading, refreshState, loadView, api, toast});
+const connection = createConnection({getState:()=>state, isBusy:()=>busy||libraryLoading||state?.busy, refreshState, api, command, setBusy:value=>{busy=value;updatePlayer();}});
 let editContext = null, menuContext = null, seekDraft = null, seekFeedback = '', seekIdentity = '', pendingSeek = null, seekRequested = null;
 
 
@@ -270,7 +272,7 @@ async function refreshState() {
   try {
     const previous = state;
     state = await api('/api/state');
-    updatePlayer(); importer.render();
+    updatePlayer(); importer.render(); connection.render();
     $('mode-banner').hidden = !state.demo;
     $('output-label').textContent = state.demo ? t('demo_no_audio') : t('on_disc');
     $('connection-label').textContent = state.demo ? t('demo_mode') : ({ready:t('connected'),connecting:t('connecting'),reconnecting:t('reconnecting'),disconnected:t('disconnected')}[state.connection] || state.connection);
@@ -282,7 +284,7 @@ async function refreshState() {
     return true;
   } catch {
     if (state) state = {...state,connection:'disconnected',playback:{state:'unknown'}};
-    updatePlayer(); $('connection-label').textContent=t('server_unavailable'); $('status-light').classList.remove('ready');
+    updatePlayer(); connection.render(); $('connection-label').textContent=t('server_unavailable'); $('status-light').classList.remove('ready');
     return false;
   }
 }
@@ -422,18 +424,9 @@ async function loadQueue() {
     bindTracks($('queue-content'),items,true);
   } catch(error) {$('queue-content').innerHTML=`<p class="queue-hint">${esc(error.message)}</p>`;}
 }
-function showDevice() {
-  const demo=state?.demo;
-  $('device-description').textContent=demo ? t('this_interactive_preview_uses_a_fictional_collection_controls_only_change_the_demo_state_no_audio_is_played') : t('control_your_music_over_a_local_connection_audio_stays_on_your_player');
-  $('device-endpoint').textContent=demo ? t('live_mode_experiments_disc_web_run_sh') : `${state?.endpoint || '127.0.0.1'} · TCP ${state?.tcp_port || 12100} / HTTP ${state?.http_port || 12113}`;
-  $('connect').hidden=demo;
-  $('connect').textContent=state?.enabled ? t('disconnect') : t('connect');
-  $('device-dialog').showModal();
-}
+function showDevice() {connection.open();}
 $('device-button').onclick=showDevice; $('about-demo').onclick=showDevice;
 $('mobile-device').onclick=showDevice;
-$('close-dialog').onclick=()=>$('device-dialog').close();
-$('connect').onclick=()=>{const action=state?.enabled?'disconnect':'connect'; $('device-dialog').close(); command(action);};
 $('play').onclick=()=>command(state?.playback?.state==='playing'?'pause':'resume');
 $('next').onclick=()=>command('next'); $('previous').onclick=()=>command('previous');
 $('favorite').onclick=()=>command('favorite',{value:!state?.playback?.favorite});

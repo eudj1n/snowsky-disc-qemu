@@ -13,6 +13,7 @@ from controller import DeviceConfig
 from experiments.disc_web.backend.demo import Demo
 from experiments.disc_web.backend.device import BusyError, Device
 from experiments.disc_web.backend.imports import Imports
+from experiments.disc_web.backend.connections import Discovery, connection_config, interfaces
 
 FRONTEND = Path(__file__).resolve().parents[1] / 'frontend'
 
@@ -24,6 +25,7 @@ class Server(ThreadingHTTPServer):
     def __init__(self, address, device):
         self.device = device
         self.imports = Imports(device)
+        self.discovery = Discovery()
         self.token = secrets.token_urlsafe(32)
         self.requests = OrderedDict()
         self.request_lock = threading.Lock()
@@ -70,6 +72,8 @@ class Handler(BaseHTTPRequestHandler):
                 job = self.server.imports.state()
                 return self.reply({**self.server.device.state(), 'token': self.server.token,
                                    'busy': self.server.imports.gate.locked(), 'job': job})
+            if url.path == '/api/interfaces':
+                return self.reply({'interfaces': [] if self.server.device.demo else interfaces()})
             if url.path.startswith('/api/'):
                 with self.server.imports.foreground():
                     return self.get_content(url, query)
@@ -121,7 +125,7 @@ class Handler(BaseHTTPRequestHandler):
                 return self.reply({'error': str(exc)}, 409)
             except (ValueError, OSError, RuntimeError) as exc:
                 return self.reply({'error': str(exc)}, 422)
-        if self.path not in ('/api/action', '/api/scan'):
+        if self.path not in ('/api/action', '/api/scan', '/api/connection', '/api/discover'):
             return self.reply({'error': 'Not found'}, 404)
         if self.headers.get('Content-Type', '').split(';')[0] != 'application/json':
             return self.reply({'error': 'JSON required'}, 415)
@@ -134,9 +138,19 @@ class Handler(BaseHTTPRequestHandler):
                 raise ValueError('Expected an object')
             request_id = body.get('request_id')
             self.claim(request_id)
+            if self.path in ('/api/connection', '/api/discover') and self.server.device.demo:
+                raise ValueError('Demo mode never connects or discovers devices')
+            if self.path == '/api/discover':
+                return self.reply(self.server.discovery.search(body.get('interface')))
             if self.path == '/api/scan':
                 return self.reply(self.server.imports.scan(body.get('generation'), request_id), 202)
             with self.server.imports.foreground():
+                if self.path == '/api/connection':
+                    config = connection_config(body)
+                    result = self.server.device.configure(config, body.get('generation'))
+                    with self.server.imports.guard:
+                        self.server.imports.job = None
+                    return self.reply(result)
                 return self.reply(self.server.device.action(body))
         except BusyError as exc:
             return self.reply({'error': str(exc)}, 409)

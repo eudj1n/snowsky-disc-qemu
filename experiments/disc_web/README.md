@@ -17,7 +17,7 @@ external fonts, CDNs or frontend build steps to install.
 # Emulator: starts disconnected; click Connect in the device dialog.
 ./experiments/disc_web/run.sh
 
-# Physical DISC: supply its address and stock HTTP port explicitly.
+# Optional initial address; it can also be entered in the browser.
 ./experiments/disc_web/run.sh --device 192.168.1.50 --http-port 12103
 ```
 
@@ -31,6 +31,26 @@ stock TCP owner. Closing a browser tab does not disconnect the server or stop
 device playback. The application does not connect on startup, boot an emulator,
 download firmware or open a physical device during tests.
 
+## Connect your player
+
+Open the DISC connection card, enter the player's local IPv4 address and press
+**Connect**. **Physical player** sets TCP 12100 / HTTP 12103; **Emulator** sets
+127.0.0.1 with TCP 12100 / direct HTTP 12113. Ports are editable under
+**Connection ports**. The last submitted address is saved in this browser as a
+draft; page load never initiates a connection. An already enabled server session
+survives page reload. **Disconnect** stops its automatic connection recovery.
+Changing the target closes the old session and invalidates old library selections.
+
+**Find on network** listens for six seconds on the selected computer interface.
+DISC announces itself using UDP multicast to 224.0.0.255:12101; this is passive
+discovery on the Python server, not UDP in the browser. Select a result, then
+press **Connect**. Discovery never connects automatically. Announcements stop
+while another TCP client owns the player. Wi-Fi client isolation, multicast
+filtering and Docker networking can also prevent discovery; manual IP entry
+remains available. Interface discovery supports macOS and Linux with `iproute2`.
+Use the native host server on the same LAN for physical discovery. No LAN relay
+or exposed control service is started. Demo disables connection and discovery.
+
 ## Available now
 
 - Responsive home, album grid/detail, artist-scoped albums, tracks, favorites
@@ -38,6 +58,7 @@ download firmware or open a physical device during tests.
 - Persistent bottom player, expanded Now Playing with mobile-accessible controls,
   and an explicitly refreshed queue drawer.
 - Light, dark and system appearance; RU/EN interface with saved browser preferences.
+- Browser connection settings, physical/emulator presets and passive LAN discovery.
 - Live whole-album/artist/playlist playback, indexed tracks from albums, the
   catalog, favorites, playlists and queue; pause/resume, previous/next, current-track
   favorite, absolute volume and random/repeat-list controls through `DiscSession`.

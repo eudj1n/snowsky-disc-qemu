@@ -116,6 +116,29 @@ folders, skipped sidecars, sequential demo transfer, explicit scan, RU/EN and
 light/dark layouts at desktop and 390 px. No physical DISC or interactive
 emulator volume was used.
 
+## Connection settings checkpoint — 2026-09-22
+
+- The RU/EN connection dialog supports local IPv4, editable TCP/HTTP ports,
+  physical/emulator presets, a browser-saved draft and explicit connect/disconnect.
+  Target replacement closes the old owner and invalidates displayed selections;
+  active imports and stale requests block replacement. Demo cannot discover or connect.
+- Passive six-second multicast discovery runs on a selected native host network
+  interface. Results require selection and an explicit Connect. No LAN bridge,
+  public binding or automatic device selection was added.
+- With owner authorization, the physical DISC was discovered on both available
+  LAN interfaces. The browser search found the same player; selecting it and
+  connecting with TCP 12100 / HTTP 12103 reached ready state and loaded the live
+  library. Page reload retained the server session. This was a connection and
+  read-only browsing check: no playback, media or settings mutations were tested.
+  Private addresses, catalog contents and physical screenshots are not retained
+  in this report. This does not constitute full physical-feature acceptance.
+- App tests passed 25 Python and 10 JavaScript checks. The repository firmware-free
+  run passed 455 Python and 47 JavaScript tests, shell checks and four shim builds.
+  Synthetic peers verify old-owner closure, no duplicate connection for unchanged
+  settings, monotonic generations and stale/busy rejection without writes.
+  Browser checks cover discovery, connection, reload and RU/dark and EN/light
+  dialogs at desktop and 390 px. No firmware/runtime code changed.
+
 ## Next implementation stages
 
 1. File browsing/management and verified artwork/CUE sidecar handling.

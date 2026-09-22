@@ -22,6 +22,7 @@ def finished(imports):
 class ImportJobTests(unittest.TestCase):
     def device(self):
         device = Mock(demo=False)
+        device.protocol_generation.side_effect = lambda value: value
         device.state.return_value = {'connection': 'ready', 'generation': 7, 'busy': False}
         device.session.upload_audio.return_value.to_dict.return_value = {'status': 'confirmed'}
         return device

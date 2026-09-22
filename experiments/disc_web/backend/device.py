@@ -22,6 +22,8 @@ class Device:
         self.session = session or DiscSession(config)
         self.http = http or HTTPClient(config.host, config.http_port, config.timeout)
         self.lock = threading.Lock()
+        self.state_guard = threading.RLock()
+        self.generation_base = 0
         self.volume = None
         self.sources = OrderedDict()
 
@@ -29,7 +31,7 @@ class Device:
         token = secrets.token_urlsafe(18)
         expected = tuple(QueueItem(row['pos'], row['name'], row['author']) for row in rows)
         self.sources[token] = dict(kind=kind, expected=expected, name=name, artist=artist,
-                                   generation=self.session.snapshot().generation, created=time.monotonic())
+                                   generation=self.session.snapshot().generation + self.generation_base, created=time.monotonic())
         if len(self.sources) > 32:
             self.sources.popitem(last=False)
         return token
@@ -39,7 +41,7 @@ class Device:
             raise ValueError('a displayed selection is required')
         token, number = value.rsplit(':', 1)
         source = self.sources.get(token)
-        if (not source or source['generation'] != self.session.snapshot().generation
+        if (not source or source['generation'] != self.session.snapshot().generation + self.generation_base
                 or time.monotonic() - source['created'] > 600):
             raise ValueError('displayed source expired; refresh before selecting')
         index = int(number)
@@ -55,12 +57,41 @@ class Device:
         self.session.__exit__(*args)
 
     def state(self):
-        value = self.session.snapshot().to_dict()
-        if value['connection'] != 'ready':
-            self.volume = None
-        return {**value, 'demo': False, 'volume': self.volume,
-                'busy': self.lock.locked(), 'endpoint': self.config.host,
-                'tcp_port': self.config.tcp_port, 'http_port': self.config.http_port}
+        with self.state_guard:
+            value = self.session.snapshot().to_dict()
+            value['generation'] += self.generation_base
+            if value['connection'] != 'ready':
+                self.volume = None
+            return {**value, 'demo': False, 'volume': self.volume,
+                    'busy': self.lock.locked(), 'endpoint': self.config.host,
+                    'tcp_port': self.config.tcp_port, 'http_port': self.config.http_port}
+
+    def protocol_generation(self, displayed):
+        with self.state_guard:
+            if type(displayed) is not int or displayed != self.state()['generation']:
+                raise ValueError('Connection changed; refresh before sending')
+            return displayed - self.generation_base
+
+    def configure(self, config, generation):
+        """Explicitly replace the sole owner; old browser selections never carry over."""
+        if not self.lock.acquire(False):
+            raise BusyError('Another operation is in progress. Nothing was queued.')
+        try:
+            self.protocol_generation(generation)
+            if config != self.config:
+                replacement = DiscSession(config)
+                self.session.__exit__(None, None, None)
+                with self.state_guard:
+                    self.generation_base += self.session.snapshot().generation + 1
+                    self.session, self.config = replacement, config
+                    self.http = HTTPClient(config.host, config.http_port, config.timeout)
+                    self.volume = None
+                    self.sources.clear()
+                    self.session.__enter__()
+            self.session.connect()
+            return {'status': 'observed', 'state': self.state()}
+        finally:
+            self.lock.release()
 
     def _rows(self, category, **filters):
         return CatalogReader(self.http, max_tracks=10000, max_requests=60).rows(category, **filters)
@@ -138,6 +169,8 @@ class Device:
             if not isinstance(action, str):
                 raise ValueError('A named action is required')
             if action in ('connect', 'disconnect'):
+                if 'generation' in body:
+                    self.protocol_generation(body['generation'])
                 getattr(self.session, action)()
                 return {'status': 'observed', 'state': self.state()}
             state = self.state()

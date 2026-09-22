@@ -45,6 +45,9 @@ index. Large-library virtualization and paged presentation are future work.
 | Endpoint | Behavior |
 | --- | --- |
 | `GET /api/state` | Latest import/scan job, cached normalized state, application session token, demo/endpoint information; no device query |
+| `GET /api/interfaces` | Local host IPv4 interfaces eligible for passive discovery; empty in demo |
+| `POST /api/discover` | Token/request ID, selected current interface, six-second passive multicast listener; no TCP connection |
+| `POST /api/connection` | Token/request ID/generation, local IPv4 and TCP/HTTP ports; replace the sole owner and enable connection |
 | `GET /api/library?kind=...&name=...&artist=...` | Named category/detail projection; bounded live HTTP reads or fictional demo rows |
 | `GET /api/queue` | Fresh public facade queue result |
 | `GET /api/cover` | Current device JPEG/PNG; no arbitrary proxy URL |
@@ -54,7 +57,7 @@ index. Large-library virtualization and paged presentation are future work.
 
 The process binds to loopback. Host and Origin checks reject cross-site and DNS
 rebinding requests; POST also requires `X-Disc-Token`; action/scan JSON and raw upload bodies have separate bounds. No CORS is
-enabled. CSP restricts scripts, styles, images and connections to local assets;
+enabled. Connection/discovery JSON uses the same 16 KiB bound. CSP restricts scripts, styles, images and connections to local assets;
 live covers accept only JPEG/PNG. Error messages and names are inserted as text
 or escaped HTML. Requests are not logged with private names or query strings.
 
@@ -97,7 +100,7 @@ and invalid FAT path characters are rejected, and sizes follow the stock 31-bit
 limit. Only one private temporary file exists per active transfer.
 
 Uploads and scans call `DiscSession.upload_audio()` and `scan_library()` with the
-original connection generation. The generation is checked under the session
+original connection generation translated to the current Controller session. The generation is checked under the session
 lease as well as before staging/dispatch. A batch stops on any unconfirmed item;
 there is no durable queue, overwrite, automatic scan or resume. Demo consumes
 bytes without staging or device construction and only simulates job progress.
@@ -107,6 +110,25 @@ interleaved queries. Cached job progress is separate from playback. Starting a
 scan invalidates displayed source tokens. An observed end triggers a fresh view
 read; a timeout is uncertain, never an automatic restart. The completed job stays
 readable after a page reload until another explicit job replaces it.
+
+## Connection ownership and discovery
+
+`backend/connections.py` validates local IPv4 targets and inventories eligible
+macOS/Linux interfaces. Its bounded listener uses Controller's reviewed exact
+DISC multicast recognizer. Sender addresses are candidates, not authenticated
+identities; the UI requires explicit selection and connection. TCP/HTTP ports
+are known defaults, not fields supplied by the beacon. Only one discovery job
+runs at a time. Demo performs neither interface inspection nor discovery.
+
+Target replacement shares foreground admission with library operations and
+imports. The old session is stopped before the replacement starts; HTTP always
+uses the same target. An application generation offset stays monotonic across
+session replacements, clears source tokens and prevents old browser/import
+generations from matching a new Controller session. The completed import job is
+cleared on accepted configuration. No operation is replayed onto a new target.
+`frontend/connection.mjs` persists only a validated connection draft, never a
+connect command. Startup remains disconnected; browser reload retains the
+server's existing enabled session.
 
 ## Frontend
 

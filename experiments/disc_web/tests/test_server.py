@@ -87,6 +87,14 @@ class WebTests(unittest.TestCase):
         self.assertEqual(self.request('GET', '/imports.mjs')[0], 200)
         self.assertEqual(self.request('POST', '/api/upload?name=Test.wav')[0], 415)
 
+    def test_demo_never_connects_or_discovers_and_connection_routes_require_token(self):
+        self.assertEqual(json.loads(self.request('GET', '/api/interfaces')[1]), {'interfaces': []})
+        for route in ('/api/connection', '/api/discover'):
+            body = {'host': '192.168.2.10', 'tcp_port': 12100, 'http_port': 12103,
+                    'interface': '192.168.2.11', 'request_id': uuid4().hex, 'generation': 1}
+            self.assertEqual(self.request('POST', route, body, {'X-Disc-Token': ''})[0], 403)
+            self.assertEqual(self.request('POST', route, body)[0], 422)
+
 
 if __name__ == '__main__':
     unittest.main()

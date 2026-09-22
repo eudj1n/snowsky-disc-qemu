@@ -229,5 +229,32 @@
     "other": "{count} files"
   },
   "import_skipped": "other file types skipped: {count}",
-  "import_folder_drop": "Use “Choose folder” to preserve the album’s folder structure."
+  "import_folder_drop": "Use “Choose folder” to preserve the album’s folder structure.",
+  "connection_title": "Connect your DISC",
+  "connection_physical": "Physical player",
+  "connection_emulator": "Emulator",
+  "connection_ip": "Player IP address",
+  "connection_advanced": "Connection ports",
+  "connection_tcp": "Control · TCP",
+  "connection_http": "Library · HTTP",
+  "connection_saved": "The address is saved in this browser. Use the button to connect.",
+  "connection_nearby": "Find nearby",
+  "connection_discovery_help": "Search listens for DISC announcements on this computer’s local network. A player with an active connection may not appear.",
+  "connection_interface": "Computer network",
+  "connection_find": "Find on network",
+  "connection_searching": "Looking for DISC · about 6 seconds…",
+  "connection_none": "No announcements. Check Wi-Fi and disconnect any other player client. You can also enter its IP manually.",
+  "connection_no_interface": "No network interface found. Enter your player’s IP manually.",
+  "connection_search_failed": "Could not listen on this network. Check local-network permission or enter the player IP manually.",
+  "connection_choose": "Select",
+  "connection_invalid": "Enter a local IPv4 address and ports from 1 to 65535.",
+  "connection_starting": "Connecting to your player…",
+  "connection_failed": "Connection not established. Check the address, power and player availability; connection attempts continue until you disconnect.",
+  "connection_changed": "The connection changed. Check the address and press Connect again.",
+  "connection_demo": "Networking is disabled in demo mode. Start DISC Web without --demo to connect.",
+  "connection_candidate": "Address from a network announcement · connect after selecting",
+  "connection_found": {
+    "one": "Found {count} player",
+    "other": "Found {count} players"
+  }
 }
