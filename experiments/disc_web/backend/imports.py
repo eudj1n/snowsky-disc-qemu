@@ -113,13 +113,17 @@ class Imports:
                                    else {'discovered': len(self.device.tracks) * step // 8}))
                 result = dict(status='confirmed', outcome='demo_only')
             elif job['kind'] == 'upload':
+                if getattr(self.device, 'catalogue', None):
+                    self.device.catalogue.invalidate()
                 staged.flush()
                 result = self.device.session.upload_audio(staged.name, '/tmp/sdcard/' + job['name'],
                     expected_generation=self.device.protocol_generation(job['generation']),
                     on_progress=lambda sent, total: self.update(bytes=sent, total=total,
                         phase='verifying' if sent == total else 'sending')).to_dict()
             else:
-                self.device.sources.clear()
+                if getattr(self.device, 'catalogue', None):
+                    self.device.catalogue.invalidate()
+                self.device.clear_sources()
                 result = self.device.session.scan_library(expected_generation=self.device.protocol_generation(job['generation']),
                     on_progress=lambda count: self.update(discovered=count)).to_dict()
             self.update(phase='done' if result['status'] == 'confirmed' else result['status'], result=result)

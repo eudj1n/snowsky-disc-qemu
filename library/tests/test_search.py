@@ -2,9 +2,9 @@ import tempfile
 import unittest
 from unittest.mock import AsyncMock, Mock
 
-from experiments.disc_assistant.library.search.typesense import Search
-from experiments.disc_assistant.library.store import Store, StaleSnapshot
-from experiments.disc_assistant.library.tests.helpers import TRACKS, ALIASES
+from library.search.typesense import Search
+from library.store import Store, StaleSnapshot
+from library.tests.helpers import TRACKS, ALIASES
 
 
 class SearchTests(unittest.IsolatedAsyncioTestCase):
@@ -36,7 +36,7 @@ class SearchTests(unittest.IsolatedAsyncioTestCase):
         self.collection.delete.assert_not_called()
 
     async def test_artist_filter_is_applied_before_top_k_without_raw_query_syntax(self):
-        from experiments.disc_assistant.library.artists import artist_key
+        from library.artists import artist_key
         await self.search.build(self.store, 'test')
         self.collection.documents.search = AsyncMock(return_value={'found': 0, 'hits': []})
         credit = 'Name`],other:=true || artist:[anything'
@@ -129,7 +129,7 @@ class SearchTests(unittest.IsolatedAsyncioTestCase):
                 await self.search.search(self.store, 'test', query)
 
     async def test_member_projection_aliases_and_tamper_rejection(self):
-        from experiments.disc_assistant.library.catalog import Track
+        from library.catalog import Track
         tracks = [Track('Stan', 'Eminem;Dido', 'Album', 0, {})]
         self.head = self.store.publish('test', tracks, {}, expected_generation=self.head['generation'])
         self.search = Search(self.client, {'artists': {'Dido': ['дайдо']}}, ['http', 'localhost', 8108])
@@ -152,8 +152,8 @@ class SearchTests(unittest.IsolatedAsyncioTestCase):
 
     async def test_old_projection_signature_requires_reindex(self):
         from unittest.mock import patch
-        from experiments.disc_assistant.library.search.typesense import signature
-        with patch('experiments.disc_assistant.library.search.typesense.SCHEMA_VERSION', 2):
+        from library.search.typesense import signature
+        with patch('library.search.typesense.SCHEMA_VERSION', 2):
             old = signature(ALIASES, ['http', 'localhost', 8108])
         self.store.publish_index('test', self.head['generation'], 'old-index', old)
         with self.assertRaises(StaleSnapshot):

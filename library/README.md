@@ -1,10 +1,17 @@
-# Library prototype
+# Library
 
-Experimental catalog/search code in `experiments/disc_assistant/library/`.
-See the [prototype guide](../README.md) for commands and limitations.
+Shared catalog observations, SQLite snapshots and optional search for DISC Web
+and Disc Assistant. The component is independent of both applications; its
+root-level location does not imply a stable public package API.
+
+The core uses Python 3.11+ and the standard library. Typesense is optional and
+loaded only by the search adapter. Run `python3 -m unittest discover -s library/tests -t .`.
+Application launchers own connections and storage locations. Existing Assistant
+databases, snapshot IDs and search signatures remain unchanged by the move.
 
 - `catalog.py`: bounded pagination of `all/song`, `album` and `album/song`;
   full membership comparison with duplicate multiplicities; two equal reads.
+- `snapshot.py`: offline artist/album projections and duplicate-preserving selection context.
 - `store.py`: SQLite schema 1, snapshot-scoped internal IDs, literal source
   observations, atomic snapshot/index publication and concurrent-import guards.
 - `search/typesense.py`: official async SDK adapter, versioned search projection,
@@ -28,8 +35,8 @@ lyrics, edition metadata and retention policies remain future work. Do not treat
 these cached positions as playback selectors or a score as calibrated confidence.
 
 Runtime data belongs outside the checkout; this package stores only source code
-and synthetic tests. Production promotion will move reviewed modules and their
-component tests together, with explicit CI registration.
+and synthetic tests. The shared modules and component tests now live at the repository root and run
+in the firmware-free suite; Assistant remains experimental.
 
 
 Recording edition markers live in `version_markers.toml` and `versions.py`.
@@ -80,4 +87,22 @@ Schema 4 / lexical-v5 add a derived SHA-256 `artist_key` for exact raw-credit
 filtering before Typesense top-50 retrieval. This prevents unrelated artist names
 inside titles from crowding out a requested artist. The full original credit and
 semicolon member projection remain unchanged. Run `/index`, not `/sync`. The
-SQLite schema remains version 1. Compare the [measured variants](../docs/reports/2026-09-18-review-evaluation.md).
+SQLite schema remains version 1. Compare the [measured variants](../experiments/disc_assistant/docs/reports/2026-09-18-review-evaluation.md).
+
+
+## Application integration
+
+DISC Web stores an independent, endpoint-scoped catalog and does not require
+Typesense. Its explicit sync borrows the one Controller session. Assistant keeps
+its existing data directory, device key, optional search projection and execution
+policy. Sharing this component does not allow two independent TCP owners.
+
+`Store.snapshot(device)` returns the published head and an offline `Snapshot`.
+Its `tracks()`, `groups()` and `selection()` methods preserve literal credits and
+album memberships, including identical titles and repeated CUE entries. They do
+not promise a live device revision. Applications must retain snapshot provenance
+and pass fresh expected source rows through Controller before playback.
+
+Source tags remain unchanged. Core snapshots do not invent durations, artwork,
+years or genres. Future enrichment needs separately stored provenance and must
+not overwrite raw source observations or treat ambiguous duplicates as one track.

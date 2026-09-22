@@ -265,5 +265,25 @@
     "many": "Найдено {count} плееров",
     "other": "Найдено {count} плеера"
   },
-  "various_artists": "Разные исполнители"
+  "various_artists": "Разные исполнители",
+  "catalogue_label": "Локальная медиатека",
+  "catalogue_start": "Ваша коллекция — всегда рядом",
+  "catalogue_saved": "Коллекция сохранена на компьютере",
+  "catalogue_intro": "Сохраните каталог для быстрого поиска и просмотра без плеера. Музыка остаётся на DISC.",
+  "catalogue_observed": "Синхронизация: {date} · Треков: {count}",
+  "catalogue_offline": "Просмотр без подключения",
+  "catalogue_stale": "Могла измениться — обновите при необходимости",
+  "catalogue_sync": "Синхронизировать",
+  "catalogue_sync_active": "Синхронизация…",
+  "catalogue_syncing": "Читаем и сверяем каталог · страниц: {count}",
+  "catalogue_failed": "Синхронизация недоступна или прервана. Ранее сохранённая коллекция не заменена.",
+  "catalogue_search": "Поиск по всей коллекции",
+  "catalogue_error_membership": "Состав альбомов не совпал с общим списком треков.",
+  "catalogue_error_changed": "Каталог изменился между двумя чтениями.",
+  "catalogue_error_ambiguous": "Плеер вернул неоднозначные названия альбомов.",
+  "catalogue_error_invalid": "Плеер вернул непоследовательные позиции каталога.",
+  "catalogue_error_limit": "Ответ каталога отсутствует или превышен лимит чтения.",
+  "catalogue_error_connection": "Не удалось завершить чтение с плеера.",
+  "catalogue_error_unavailable": "Каталог не прошёл проверку. Повторите синхронизацию, когда плеер будет свободен.",
+  "catalogue_error_identity_timeout": "DISC не ответил на запрос версии прошивки."
 }

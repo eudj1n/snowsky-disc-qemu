@@ -89,7 +89,7 @@ class WebTests(unittest.TestCase):
 
     def test_demo_never_connects_or_discovers_and_connection_routes_require_token(self):
         self.assertEqual(json.loads(self.request('GET', '/api/interfaces')[1]), {'interfaces': []})
-        for route in ('/api/connection', '/api/discover'):
+        for route in ('/api/connection', '/api/discover', '/api/sync'):
             body = {'host': '192.168.2.10', 'tcp_port': 12100, 'http_port': 12103,
                     'interface': '192.168.2.11', 'request_id': uuid4().hex, 'generation': 1}
             self.assertEqual(self.request('POST', route, body, {'X-Disc-Token': ''})[0], 403)

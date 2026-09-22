@@ -1,7 +1,7 @@
 import unittest
 
-from experiments.disc_assistant.library.catalog import CatalogReader, CatalogChanged
-from experiments.disc_assistant.library.tests.helpers import Catalog, TRACKS
+from library.catalog import CatalogReader, CatalogChanged
+from library.tests.helpers import Catalog, TRACKS
 
 
 class CatalogTests(unittest.TestCase):

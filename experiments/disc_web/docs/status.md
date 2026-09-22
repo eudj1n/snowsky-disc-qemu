@@ -154,6 +154,40 @@ frontend suite passed 12 tests including bounded retry for busy reads and zero
 replay for POST/transport failures. This addresses observed cover/catalog
 contention while preserving mutation admission.
 
+## Shared Library checkpoint — 2026-09-22
+
+- Promoted the Assistant's catalog package to root `library/` and updated both
+  consumers and CI. SQLite schema 1 and Assistant search behavior remain unchanged;
+  Web does not require Typesense or import Assistant.
+- Explicit synchronization borrows the existing Controller session and publishes
+  only two matching complete catalog observations with verified album membership.
+  Failed or interrupted synchronization preserves the previous snapshot. The UI
+  reports progress, observation time and stale/offline status in RU/EN.
+- Saved albums, artists and tracks remain browsable after disconnect and process
+  restart. Search covers the entire saved collection, and track rows now have
+  observed album metadata. Cached playback resolves exact album membership and
+  requires Controller's fresh comparison before sending; cached positions are
+  never sent directly. Local views remain available during device cover reads.
+- Authorized physical read-only synchronization completed with 779 tracks and
+  132 successful page reads. Earlier attempts encountered HTTP timeouts; pages
+  are now limited to 100 rows, with one bounded retry of a failed network GET.
+  Both complete observations still have to match. No physical playback, file or
+  settings mutations were performed. Personal catalogs and screenshots remain
+  outside Git.
+- Browser checks verified persisted offline browsing after server restart,
+  global search, album metadata, disabled offline playback/sync controls, EN/light
+  desktop and RU/dark 390 px layouts. The server starts disconnected; the saved
+  snapshot remains available independently of connection admission.
+- Validation: Assistant suite passed 434 tests; Web passed 33 Python and 12
+  JavaScript tests; final firmware-free CI passed 492 Python and 49 JavaScript
+  tests, shell checks and four shim builds. Disposable V2.57 `queue` acceptance
+  also passed the added stable-sync, cached selection, stale membership rejection
+  and offline-view scenarios. Its temporary stack was removed.
+
+This establishes shared catalog storage. Duration extraction, persistent artwork,
+lyrics and external metadata enrichment are subsequent work, not supplied by this
+snapshot schema.
+
 ## Next implementation stages
 
 1. File browsing/management and verified artwork/CUE sidecar handling.

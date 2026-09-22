@@ -3,9 +3,9 @@ import hashlib
 import json
 from uuid import uuid4
 
-from experiments.disc_assistant.library.store import StaleSnapshot
-from experiments.disc_assistant.library.transliteration import projected_aliases, fingerprint
-from experiments.disc_assistant.library.artists import artist_names, split_artists, artist_key
+from library.store import StaleSnapshot
+from library.transliteration import projected_aliases, fingerprint
+from library.artists import artist_names, split_artists, artist_key
 
 SCHEMA_VERSION = 4
 FIELDS = ['title', 'artist', 'album', 'title_aliases', 'artist_aliases', 'album_aliases', 'artists']

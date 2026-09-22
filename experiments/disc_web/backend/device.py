@@ -26,25 +26,45 @@ class Device:
         self.generation_base = 0
         self.volume = None
         self.sources = OrderedDict()
+        self.source_guard = threading.RLock()
+        self.catalogue = None
 
     def _source(self, kind, rows, name='', artist=''):
-        token = secrets.token_urlsafe(18)
         expected = tuple(QueueItem(row['pos'], row['name'], row['author']) for row in rows)
-        self.sources[token] = dict(kind=kind, expected=expected, name=name, artist=artist,
-                                   generation=self.session.snapshot().generation + self.generation_base, created=time.monotonic())
-        if len(self.sources) > 32:
-            self.sources.popitem(last=False)
+        return self._remember(dict(kind=kind, expected=expected, name=name, artist=artist,
+            generation=self.session.snapshot().generation + self.generation_base, created=time.monotonic()))
+
+    def _remember(self, source):
+        token = secrets.token_urlsafe(18)
+        with self.source_guard:
+            self.sources[token] = source
+            if len(self.sources) > 32:
+                self.sources.popitem(last=False)
         return token
+
+    def clear_sources(self):
+        with self.source_guard:
+            self.sources.clear()
 
     def _selection(self, value):
         if not isinstance(value, str) or ':' not in value:
             raise ValueError('a displayed selection is required')
         token, number = value.rsplit(':', 1)
-        source = self.sources.get(token)
+        with self.source_guard:
+            source = self.sources.get(token)
         if (not source or source['generation'] != self.session.snapshot().generation + self.generation_base
                 or time.monotonic() - source['created'] > 600):
             raise ValueError('displayed source expired; refresh before selecting')
         index = int(number)
+        if source.get('kind') == 'snapshot':
+            if not 0 <= index < len(source['ordinals']):
+                raise ValueError('position outside displayed snapshot')
+            head, snapshot = self.catalogue.snapshot()
+            if head['generation'] != source['snapshot']:
+                raise ValueError('saved collection changed; refresh before selecting')
+            album, rows, position = snapshot.selection(source['ordinals'][index], artist=source['artist'] or None)
+            return {'kind': 'album', 'name': album, 'artist': source['artist'],
+                    'expected': tuple(QueueItem(r['pos'], r['name'], r['author']) for r in rows)}, position
         if not 0 <= index < len(source['expected']):
             raise ValueError('position outside the displayed source')
         return source, index
@@ -86,7 +106,7 @@ class Device:
                     self.session, self.config = replacement, config
                     self.http = HTTPClient(config.host, config.http_port, config.timeout)
                     self.volume = None
-                    self.sources.clear()
+                    self.clear_sources()
                     self.session.__enter__()
             self.session.connect()
             return {'status': 'observed', 'state': self.state()}
@@ -97,6 +117,11 @@ class Device:
         return CatalogReader(self.http, max_tracks=10000, max_requests=60).rows(category, **filters)
 
     def browse(self, kind, name='', artist=''):
+        if self.catalogue:
+            with self.state_guard:
+                cached = self.browse_snapshot(kind, name, artist)
+            if cached is not None:
+                return cached
         if not self.lock.acquire(False):
             raise BusyError('Another operation is in progress. Nothing was queued.')
         try:
@@ -143,6 +168,32 @@ class Device:
                      'art': None, 'duration': None} for r in rows]}
         finally:
             self.lock.release()
+
+    def browse_snapshot(self, kind, name, artist):
+        from experiments.disc_web.backend.catalogue import CACHED_VIEWS
+        if kind not in CACHED_VIEWS:
+            return None
+        head, snapshot = self.catalogue.snapshot()
+        if snapshot is None:
+            return None
+        token = None
+        if kind in ('tracks', 'album'):
+            rows = snapshot.tracks(album=name if kind == 'album' else None,
+                                   artist=artist or None)
+            token = self._remember(dict(kind='snapshot', snapshot=head['generation'],
+                ordinals=tuple(row['ordinal'] for row in rows), artist=artist,
+                generation=self.state()['generation'], created=time.monotonic()))
+            items = [dict(id=row['id'], title=row['title'], artist=row['artist'], album=row['album'],
+                type='track', selection=f'{token}:{i}', playable=True, editable=not artist,
+                duration=None, art=None) for i, row in enumerate(rows)]
+        else:
+            rows = snapshot.groups('artist' if kind == 'artists' else 'album',
+                                   artist=name if kind == 'artist' else None)
+            items = [dict(id=str(i), title=row['name'], count=row['count'], artists=row['artists'],
+                artist=row['artists'][0] if len(row['artists']) == 1 else '',
+                type='artist' if kind == 'artists' else 'album', art=None,
+                scope_artist=name if kind == 'artist' else None) for i, row in enumerate(rows)]
+        return dict(kind=kind, name=name, items=items, snapshot=head['generation'])
 
     def queue(self):
         if not self.lock.acquire(False):
@@ -199,8 +250,18 @@ class Device:
                 if not isinstance(album, str) or not album or len(album) > 1024:
                     raise ValueError('An album name is required')
                 artist = body.get('artist')
-                result = (self.session.play_artist(artist, album=album) if artist is not None
-                          else self.session.play_album(album))
+                options = {}
+                if body.get('snapshot') is not None:
+                    if not self.catalogue:
+                        raise ValueError('Saved collection is unavailable')
+                    head, snapshot = self.catalogue.snapshot()
+                    if not snapshot or head['generation'] != body['snapshot']:
+                        raise ValueError('Saved collection changed; refresh before playing')
+                    tracks = snapshot.tracks(album=album, artist=artist)
+                    options['expected'] = tuple(QueueItem(i, row['title'], row['artist'])
+                                                for i, row in enumerate(tracks))
+                result = (self.session.play_artist(artist, album=album, **options) if artist is not None
+                          else self.session.play_album(album, **options))
             elif action == 'playlist':
                 source, _ = self._selection(body.get('selection'))
                 if source['kind'] != 'playlist' or source['name'] != body.get('name'):

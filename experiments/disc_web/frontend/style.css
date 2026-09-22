@@ -2019,3 +2019,10 @@ main .track-row.no-album.no-duration { grid-template-columns:28px 40px minmax(10
 }
 
 .album-card p span { display:block; overflow:hidden; text-overflow:ellipsis; line-height:1.6; }
+
+.catalogue-banner { margin:24px 42px 0; padding:18px 22px; border:1px solid var(--line); border-radius:16px; background:var(--raised); display:flex; align-items:center; justify-content:space-between; gap:24px; }
+.catalogue-banner strong { font-size:13px; font-weight:650; }
+.catalogue-banner p { color:var(--secondary); font-size:11px; line-height:1.6; margin:5px 0 0; }
+.catalogue-banner button { flex-shrink:0; font-size:11px; }
+@media(max-width:800px) { .catalogue-banner { margin:20px 24px 0; gap:16px; } }
+@media(max-width:540px) { .catalogue-banner { margin:16px 16px 0; padding:16px; align-items:flex-start; flex-direction:column; } .catalogue-banner button { width:100%; } }

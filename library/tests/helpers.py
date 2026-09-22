@@ -1,6 +1,6 @@
 """Synthetic metadata only; no user catalog or firmware input."""
 from collections import Counter
-from experiments.disc_assistant.library.catalog import Track
+from library.catalog import Track
 
 
 TRACKS = [

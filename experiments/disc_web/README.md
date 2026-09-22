@@ -1,7 +1,8 @@
 # DISC Web
 
 An experimental music remote with its own application server, interface and
-launcher. It uses the public [Controller](../../controller/README.md) and has no
+launcher. It uses the public [Controller](../../controller/README.md) and shared
+[Library](../../library/README.md), and has no
 Assistant, viewer, emulator or speech dependencies. It stays under `experiments/`
 until a separately agreed promotion.
 
@@ -55,7 +56,7 @@ or exposed control service is started. Demo disables connection and discovery.
 
 - Responsive home, album grid/detail, artist-scoped albums, tracks, favorites
   and custom playlist browsing; search within the current view.
-- Visible album cards read their track credits and count on demand. Multiple
+- Before synchronization, visible album cards read their track credits and count on demand. Multiple
   distinct credits are labelled Various artists. Completely unknown album/time
   columns are omitted: stock catalog rows supply neither per-track album nor
   duration; duration in Now Playing comes from its separate observed state.
@@ -92,6 +93,41 @@ The interface labels demo mode, including on mobile. Demo actions simulate prese
 File browsing/deletion, artwork sidecars and device settings remain future
 implementation stages. They must use reviewed public Controller operations. Browser audio streaming is
 outside this implementation; live audio stays on DISC.
+
+## Saved library
+
+Press **Sync library** to read and verify the current DISC catalog, then publish
+one complete local snapshot. This does not scan the SD card, upload files or
+change playback. First scan newly added media on DISC when needed, then sync.
+There is no automatic sync or restart after failure. A failed network GET may be
+repeated once within the request budget; two complete equal reads are still required.
+
+Albums, artists and tracks (including album membership) then load from SQLite.
+Search searches the whole saved collection. Disconnecting leaves those views
+available, with playback disabled; favorites, custom playlists and the current
+queue still need a live player. Sync date, track count and offline/stale status
+remain visible. A failed sync preserves the previous snapshot. Refresh reloads
+the saved view; **Sync library** updates it from DISC.
+
+Storage defaults to `~/.local/share/disc-web`; `--data-dir PATH` selects another
+private directory. It is separate from Assistant storage. Snapshots are namespaced
+by host and TCP/HTTP ports: this is an endpoint identity, not a hardware serial.
+After a restart, use the same `--device` / port settings to browse that endpoint's
+saved library without connecting. Moving a player to another IP creates a separate
+namespace; reassigning an IP to another player requires a fresh sync.
+
+Library keeps original metadata and duplicate recordings. Playback from a saved
+track uses its album scope and compares the complete expected membership with a
+fresh Controller read; old snapshot positions are never dispatched directly.
+Offline metadata does not imply the player still contains those files. Known
+imports/scans and new connection generations mark the snapshot as possibly stale;
+external changes are not continuously detected. Sync is bounded to 10,000 tracks,
+1,000 catalog requests and a 300-second observation deadline (an in-flight HTTP
+request may use its socket timeout). Browsing the previous snapshot remains possible
+while sync owns the connection. Other device operations fail busy rather than queue.
+
+Core sync does not add duration or artwork absent from the source. Enrichment,
+external metadata services and shared Assistant/Web TCP ownership are later stages.
 
 ## Import behavior
 

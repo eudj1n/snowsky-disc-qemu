@@ -14,6 +14,7 @@ from experiments.disc_web.backend.demo import Demo
 from experiments.disc_web.backend.device import BusyError, Device
 from experiments.disc_web.backend.imports import Imports
 from experiments.disc_web.backend.connections import Discovery, connection_config, interfaces
+from experiments.disc_web.backend.catalogue import Catalogue, CACHED_VIEWS
 
 FRONTEND = Path(__file__).resolve().parents[1] / 'frontend'
 
@@ -22,14 +23,22 @@ class Server(ThreadingHTTPServer):
     daemon_threads = True
     block_on_close = False
 
-    def __init__(self, address, device):
+    def __init__(self, address, device, data_dir=None):
         self.device = device
         self.imports = Imports(device)
+        self.catalogue = Catalogue(device, self.imports.gate, data_dir) if data_dir and not device.demo else None
+        if self.catalogue:
+            device.catalogue = self.catalogue
         self.discovery = Discovery()
         self.token = secrets.token_urlsafe(32)
         self.requests = OrderedDict()
         self.request_lock = threading.Lock()
         super().__init__(address, Handler)
+
+    def server_close(self):
+        if self.catalogue:
+            self.catalogue.close()
+        super().server_close()
 
 
 class Handler(BaseHTTPRequestHandler):
@@ -71,9 +80,14 @@ class Handler(BaseHTTPRequestHandler):
             if url.path == '/api/state':
                 job = self.server.imports.state()
                 return self.reply({**self.server.device.state(), 'token': self.server.token,
-                                   'busy': self.server.imports.gate.locked(), 'job': job})
+                                   'busy': self.server.imports.gate.locked(), 'job': job,
+                                   'catalogue': self.server.catalogue.state() if self.server.catalogue else None})
             if url.path == '/api/interfaces':
                 return self.reply({'interfaces': [] if self.server.device.demo else interfaces()})
+            if (url.path == '/api/library' and self.server.catalogue
+                    and query.get('kind', ['albums'])[0] in CACHED_VIEWS
+                    and self.server.catalogue.state()['available']):
+                return self.get_content(url, query)
             if url.path.startswith('/api/'):
                 with self.server.imports.foreground():
                     return self.get_content(url, query)
@@ -125,7 +139,7 @@ class Handler(BaseHTTPRequestHandler):
                 return self.reply({'error': str(exc)}, 409)
             except (ValueError, OSError, RuntimeError) as exc:
                 return self.reply({'error': str(exc)}, 422)
-        if self.path not in ('/api/action', '/api/scan', '/api/connection', '/api/discover'):
+        if self.path not in ('/api/action', '/api/scan', '/api/connection', '/api/discover', '/api/sync'):
             return self.reply({'error': 'Not found'}, 404)
         if self.headers.get('Content-Type', '').split(';')[0] != 'application/json':
             return self.reply({'error': 'JSON required'}, 415)
@@ -138,6 +152,10 @@ class Handler(BaseHTTPRequestHandler):
                 raise ValueError('Expected an object')
             request_id = body.get('request_id')
             self.claim(request_id)
+            if self.path == '/api/sync':
+                if not self.server.catalogue:
+                    raise ValueError('Local library is unavailable in this mode')
+                return self.reply(self.server.catalogue.start(body.get('generation'), request_id), 202)
             if self.path in ('/api/connection', '/api/discover') and self.server.device.demo:
                 raise ValueError('Demo mode never connects or discovers devices')
             if self.path == '/api/discover':
@@ -175,9 +193,11 @@ def main():
     parser.add_argument('--device', default='127.0.0.1')
     parser.add_argument('--tcp-port', type=int, default=12100)
     parser.add_argument('--http-port', type=int, default=12113, help='12113 for emulator; set 12103 for physical DISC')
+    parser.add_argument('--data-dir', type=Path, default=Path.home() / '.local/share/disc-web',
+                        help='Private local Library directory, separate from Assistant storage')
     args = parser.parse_args()
     device = Demo() if args.demo else Device(DeviceConfig(args.device, args.tcp_port, args.http_port))
-    with device, Server(('127.0.0.1', args.port), device) as server:
+    with device, Server(('127.0.0.1', args.port), device, args.data_dir.expanduser()) as server:
         print(f'DISC Web: http://127.0.0.1:{server.server_port} · {"isolated demo" if args.demo else "disconnected; connect in browser"}', flush=True)
         try:
             server.serve_forever()

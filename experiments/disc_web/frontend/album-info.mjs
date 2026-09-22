@@ -31,7 +31,7 @@ export function createAlbumInfo({api,getState,isBusy,caption}) {
   }
   function observe(root,items) {
     observer?.disconnect(); queue=[]; version++;
-    if(getState()?.demo) return;
+    if(getState()?.demo || getState()?.catalogue?.available) return;
     const generation=getState()?.generation, current=version;
     observer=new IntersectionObserver(entries=>{
       for(const entry of entries) {

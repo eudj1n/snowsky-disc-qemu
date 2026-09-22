@@ -113,6 +113,44 @@ def check():
             with session.operation():
                 assert not any(r['name'] == 'Web import — тест.wav' for r in CatalogReader(http).rows('all/song'))
         print('WEB IMPORT ACCEPTANCE PASSED: nested album folder bytes, collision rejection, scan lifecycle and fresh index', flush=True)
+        # Borrow the existing owner. Library positions are never dispatched directly.
+        import threading
+        from experiments.disc_web.backend.device import Device
+        from experiments.disc_web.backend.catalogue import Catalogue
+        from library.catalog import Track as LibraryTrack
+        from library.store import Store
+        with tempfile.TemporaryDirectory() as directory:
+            device = Device(session.config, session=session, http=http)
+            catalogue = device.catalogue = Catalogue(device, threading.Lock(), directory)
+            try:
+                generation = device.state()['generation']
+                catalogue.start(generation, 'web-library-acceptance')
+                catalogue.worker.join(60)
+                assert catalogue.state()['phase'] == 'done', catalogue.state()
+                saved = device.browse('tracks')
+                selected = next(item for item in saved['items'] if item['album'] == 'CI Album')
+                result = device.action({'action': 'track', 'selection': selected['selection'], 'generation': generation})
+                assert result['status'] == 'playing', result
+                assert session.pause().status in ('confirmed', 'already_satisfied')
+                with Store(directory) as store:
+                    head, snapshot = store.snapshot(catalogue.key())
+                    changed = [LibraryTrack('Stale fixture title' if row['id'] == selected['id'] else row['title'],
+                        row['artist'], row['album'], snapshot.selection(row['ordinal'])[2], {}) for row in snapshot.entries]
+                    store.publish(catalogue.key(), changed, {}, expected_generation=head['generation'])
+                try:
+                    device.action({'action': 'track', 'selection': selected['selection'], 'generation': generation})
+                except ValueError:
+                    pass
+                else:
+                    raise AssertionError('old snapshot selection survived publication')
+                stale = next(item for item in device.browse('tracks')['items'] if item['title'] == 'Stale fixture title')
+                rejected = device.action({'action': 'track', 'selection': stale['selection'], 'generation': generation})
+                assert rejected['status'] == 'not_sent' and not rejected['mutation_attempted'], rejected
+                session.disconnect()
+                assert device.browse('albums')['items'], 'saved library disappeared offline'
+            finally:
+                catalogue.close()
+        print('WEB LIBRARY ACCEPTANCE PASSED: stable sync, cached album selection, fresh-membership rejection and offline browsing', flush=True)
     print('WEB SESSION ACCEPTANCE PASSED: indexed album, queue, stale-source rejection playlist edits, catalog/favorite/playlist playback and seek', flush=True)
 
 

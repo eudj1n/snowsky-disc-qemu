@@ -1,6 +1,6 @@
 # Application architecture
 
-`disc_web` is an independent experimental consumer of the public Controller API.
+`disc_web` is an independent experimental consumer of the public Controller API and shared root Library.
 It can move with its backend, frontend, tests and documentation after acceptance.
 No path mutation or Assistant storage is needed.
 
@@ -9,7 +9,7 @@ Browser (HTML / CSS / JavaScript modules)
     | same-origin JSON requests, cached-state polling
 Loopback HTTP server (backend/server.py)
     | token / request ID / operation admission
-Device projection (backend/device.py)
+Device projection (backend/device.py) <-> Library snapshots / SQLite
     | one DiscSession + same-target HTTPClient
 Controller
     | reviewed TCP and stock HTTP
@@ -21,7 +21,7 @@ Physical DISC or emulator
 ## Ownership
 
 The server starts a session lifetime without enabling its connection. An explicit
-Connect enables it. Each backend operation takes a nonblocking application lock:
+Connect enables it. Each device operation takes a nonblocking application lock:
 conflicting requests fail rather than waiting to execute later. Public session
 methods retain their own serialization, mutation pacing, fresh preflight,
 confirmation and observation-only recovery. Disconnect disables recovery.
@@ -36,17 +36,22 @@ actually supplies the album name; generic HTTP track rows do not. Unsupported
 playlist-add sources remain disabled rather than being widened implicitly. The backend does not turn those
 albums into generic whole albums.
 
-Views currently load a bounded complete category (at most 10,000 records and 60
-HTTP requests); browser search filters that view. This is not a persistent search
-index. Large-library virtualization and paged presentation are future work.
+Without a saved Library snapshot, views load a bounded complete live category
+(at most 10,000 records and 60 HTTP requests), and search filters that view. After
+synchronization, albums/artists/tracks use SQLite and search switches to the full
+saved track collection. Favorites/playlists remain live. Virtualization and paged
+presentation are future work.
+Cached browsing uses a separate short source-token lock, so device cover reads or
+an active synchronization cannot block reading the previous local snapshot.
 
-Visible album cards optionally request `kind=album_info` through the same library
+Before a snapshot exists, visible album cards optionally request `kind=album_info` through the same library
 endpoint. This reads the scoped album rows and returns distinct literal credits,
 count and connection generation, without allocating playback selection tokens.
 The browser serializes these reads, discards old-view/connection results and keeps
 at most 256 summaries for 60 seconds within the view. Refresh/navigation clears
-them. Failures retain the known group count. No persistent Library snapshot,
-Assistant import or guessed title/artist-to-album join is introduced. Empty
+them. Failures retain the known group count. Once a saved snapshot exists, these
+requests stop and its observed album memberships supply the summaries. There is
+no Assistant import or guessed title/artist-to-album join. Empty
 album/duration columns are hidden per view; the album detail retains its known
 scope. A current-track duration is not applied to other catalog rows by name.
 
@@ -58,10 +63,11 @@ scope. A current-track duration is not applied to other catalog rows by name.
 | `GET /api/interfaces` | Local host IPv4 interfaces eligible for passive discovery; empty in demo |
 | `POST /api/discover` | Token/request ID, selected current interface, six-second passive multicast listener; no TCP connection |
 | `POST /api/connection` | Token/request ID/generation, local IPv4 and TCP/HTTP ports; replace the sole owner and enable connection |
-| `GET /api/library?kind=...&name=...&artist=...` | Named category/detail projection; bounded live HTTP reads or fictional demo rows |
+| `GET /api/library?kind=...&name=...&artist=...` | Named category/detail projection; saved Library snapshot, bounded live HTTP reads or fictional demo rows |
 | `GET /api/queue` | Fresh public facade queue result |
 | `GET /api/cover` | Current device JPEG/PNG; no arbitrary proxy URL |
 | `POST /api/upload?name=relative/path.flac` | Raw bounded file body, token, request ID and generation headers; private staging then async facade upload |
+| `POST /api/sync` | Token/request ID/connection generation, asynchronous read-only Library synchronization |
 | `POST /api/scan` | JSON request ID/generation, one async observed scan |
 | `POST /api/action` | Explicit allowlisted command, request ID, connection generation and session token |
 
@@ -100,6 +106,39 @@ Playlist edits run under the same session lease/pacer, resolve fresh list
 positions by unique names, recheck source/membership and verify readback. A lost
 reply is uncertain and cannot be automatically resubmitted. Removal changes
 membership only; source files are never deleted by this UI.
+
+## Shared Library
+
+`backend/catalogue.py` owns application storage selection and sync admission.
+Root `library/catalog.py` retains its two-equal-read and membership-multiplicity
+checks. `library/store.py` atomically publishes complete immutable snapshots;
+`library/snapshot.py` provides offline group/track projections. Core storage uses
+SQLite schema 1, unchanged for Assistant; Typesense is not imported by Web.
+
+The default directory is separate from Assistant's. Endpoint keys include host
+and both ports; they are not device serials. No old Assistant data is copied or
+migrated. Demo never constructs Library storage. A snapshot timestamp reports an
+observation, not continuing freshness. Upload/scan attempts invalidate the local
+freshness marker. Reconnect and process restart also require explicit sync to
+revalidate. External changes remain unknown until sync or fresh playback checks.
+
+A sync job holds the same foreground gate as imports, configuration and commands,
+then borrows the existing Controller operation lease. It has a 300-second deadline,
+10,000-track bound and 1,000-request budget. Scan events, lost generations,
+inconsistent reads and storage failures retain the previous head. Catalog pages
+contain at most 100 rows. A failed HTTP GET may be repeated once within the total
+request budget; the worker never automatically restarts a failed sync or retries a mutation. State/static assets and old cached views
+remain readable while the job runs. Shutdown requests interruption before the
+next page/publication; the current HTTP call remains socket-timeout bounded.
+
+Cached views allocate a bounded display token recording snapshot ID, connection
+generation, original ordinals and literal artist scope. A command verifies the
+current head, resolves the exact stored album membership (including duplicates),
+then passes immutable expected rows to Controller. Controller reads the fresh
+scoped source before sending. Whole saved albums also supply expected membership.
+No cached index is sent straight to the wire. Artist groups retain the existing
+named-scope Controller path. Offline controls are disabled, and the server still
+rejects commands without a ready connection. New publication clears display tokens.
 
 ## Import ownership
 

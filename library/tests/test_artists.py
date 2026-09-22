@@ -1,9 +1,9 @@
 import tempfile
 import unittest
 
-from experiments.disc_assistant.library.artists import split_artists
-from experiments.disc_assistant.library.catalog import Track
-from experiments.disc_assistant.library.store import Store
+from library.artists import split_artists
+from library.catalog import Track
+from library.store import Store
 
 
 class ArtistTests(unittest.TestCase):

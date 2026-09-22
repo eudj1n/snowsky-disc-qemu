@@ -257,5 +257,25 @@
     "one": "Found {count} player",
     "other": "Found {count} players"
   },
-  "various_artists": "Various artists"
+  "various_artists": "Various artists",
+  "catalogue_label": "Local library",
+  "catalogue_start": "Your collection, always close",
+  "catalogue_saved": "Collection saved on this computer",
+  "catalogue_intro": "Save the catalog for fast search and browsing offline. Music stays on DISC.",
+  "catalogue_observed": "Synced {date} · Tracks: {count}",
+  "catalogue_offline": "Browsing offline",
+  "catalogue_stale": "May have changed — sync when needed",
+  "catalogue_sync": "Sync library",
+  "catalogue_sync_active": "Syncing…",
+  "catalogue_syncing": "Reading and verifying the catalog · pages: {count}",
+  "catalogue_failed": "Sync is unavailable or interrupted. The previous saved collection has not been replaced.",
+  "catalogue_search": "Search the whole collection",
+  "catalogue_error_membership": "Album membership did not match the full track list.",
+  "catalogue_error_changed": "The catalog changed between reads.",
+  "catalogue_error_ambiguous": "The player returned ambiguous album names.",
+  "catalogue_error_invalid": "The player returned inconsistent catalog positions.",
+  "catalogue_error_limit": "A catalog response is missing or exceeds the read limit.",
+  "catalogue_error_connection": "Reading from the player could not complete.",
+  "catalogue_error_unavailable": "The catalog could not be verified. Sync again when the player is idle.",
+  "catalogue_error_identity_timeout": "DISC did not reply to the firmware identity request."
 }

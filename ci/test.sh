@@ -3,7 +3,7 @@
 set -euo pipefail
 cd /repo
 while IFS= read -r -d '' script; do bash -n "$script"; done < <(
-  find emulator viewer controller firmware research experiments tests ci -type d \
+  find emulator viewer controller library firmware research experiments tests ci -type d \
     \( -name sdcard -o -name rootfs -o -name work -o -name .venv -o -name __pycache__ \) -prune -o \
     -type f -name '*.sh' -print0
 )

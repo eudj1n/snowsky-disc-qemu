@@ -4,8 +4,8 @@ import sqlite3
 import tempfile
 import unittest
 
-from experiments.disc_assistant.library.store import Store, StaleSnapshot
-from experiments.disc_assistant.library.tests.helpers import TRACKS
+from library.store import Store, StaleSnapshot
+from library.tests.helpers import TRACKS
 
 
 class StoreTests(unittest.TestCase):

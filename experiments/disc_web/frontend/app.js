@@ -44,7 +44,9 @@ document.querySelector('.skip-link').onclick = event => {event.preventDefault();
 const titleKeys = {home:'home',albums:'albums',artists:'artists',tracks:'tracks',favorites:'favorites',playlists:'playlists',album:'album',artist:'artist',playlist:'playlist'};
 let state = null, route = parseRoute(location.hash), currentItems = [], homeTracks = [], activeItem = null;
 let requestSequence = 0, busy = false, genre = '', toastTimer, pollTimer, lastTrack = '', libraryLoading = false;
-let artistScope = '';
+let artistScope = '', pendingSearch=null, displayedSnapshot=null;
+const cachedViews=new Set(['home','albums','artists','tracks','album','artist']);
+const canBrowse=()=>state?.connection==='ready'||(state?.catalogue?.available&&cachedViews.has(route.view));
 const albumInfo=createAlbumInfo({api,getState:()=>state,isBusy:()=>busy||libraryLoading,caption:cardCaption});
 const importer = createImporter({getState:()=>state, isBusy:()=>busy||libraryLoading, refreshState, loadView, api, toast});
 const connection = createConnection({getState:()=>state, isBusy:()=>busy||libraryLoading||state?.busy, refreshState, api, command, setBusy:value=>{busy=value;updatePlayer();}});
@@ -107,6 +109,29 @@ async function api(path, body) {
   try {return await requestJSON(path,{body,token:state?.token});}
   catch {throw new Error(t('request_failed'));}
 }
+function renderCatalogue() {
+  const saved=state?.catalogue;
+  $('catalogue-banner').hidden=!saved||state?.demo;
+  if(!saved) return;
+  const syncing=saved.phase==='syncing';
+  $('catalogue-title').textContent=t(saved.available?'catalogue_saved':'catalogue_start');
+  const date=saved.observed_at?new Date(saved.observed_at).toLocaleString(getLocale()==='ru'?'ru-RU':'en-US',{dateStyle:'medium',timeStyle:'short'}):'';
+  let detail=saved.available?t('catalogue_observed',{date,count:saved.track_count}):t('catalogue_intro');
+  if(saved.available && state.connection!=='ready') detail+=' · '+t('catalogue_offline');
+  else if(saved.available && saved.stale) detail+=' · '+t('catalogue_stale');
+  if(syncing) detail=t('catalogue_syncing',{count:saved.pages});
+  if(['failed','storage_error'].includes(saved.phase)) detail=t('catalogue_failed')+' '+(saved.error?t('catalogue_error_'+saved.error)+' ':'')+detail;
+  $('catalogue-description').textContent=detail;
+  $('sync-caption').textContent=t(syncing?'catalogue_sync_active':'catalogue_sync');
+  $('sync-catalogue').disabled=state.connection!=='ready'||busy||state.busy||libraryLoading||syncing;
+}
+$('sync-catalogue').onclick=async()=>{
+  if(state?.connection!=='ready'||busy||state.busy||libraryLoading) return;
+  busy=true;updatePlayer();renderCatalogue();
+  try {await api('/api/sync',{generation:state.generation,request_id:crypto.randomUUID()});}
+  catch {toast(t('catalogue_failed'),true);}
+  finally {busy=false;await refreshState();renderCatalogue();}
+};
 function art(item, css='art') {
   const src = item?.art;
   return typeof src === 'string' && /^\/art\/cover-[0-7]\.svg$/.test(src)
@@ -122,7 +147,7 @@ function navigate(view, item=null) {
 }
 window.addEventListener('hashchange', () => {
   route = parseRoute(location.hash); artistScope = route.artist;
-  $('search').value = ''; genre = ''; window.scrollTo(0,0); loadView();
+  $('search').value = pendingSearch??''; pendingSearch=null; genre = ''; window.scrollTo(0,0); loadView();
 });
 for (const button of document.querySelectorAll('[data-view]')) button.addEventListener('click', () => navigate(button.dataset.view));
 function updateNav() {
@@ -132,14 +157,15 @@ function updateNav() {
     button.classList.toggle('active', active);
     if (active) button.setAttribute('aria-current', 'page'); else button.removeAttribute('aria-current');
   }
-  $('search').placeholder = t('find_section',{name:route.name || t(titleKeys[route.view]).toLowerCase()});
+  $('search').placeholder = state?.catalogue?.available?t('catalogue_search'):t('find_section',{name:route.name || t(titleKeys[route.view]).toLowerCase()});
+  $('search').setAttribute('aria-label',t(state?.catalogue?.available?'catalogue_search':'search_this_section'));
 }
 async function loadView() {
   albumInfo.clear();
   updateNav();
   const sequence = ++requestSequence;
   if ($('track-dialog').open) $('track-dialog').close();
-  if (!state || state.connection !== 'ready') {
+  if (!canBrowse()) {
     currentItems=[]; renderDisconnected(); return;
   }
   libraryLoading = true;
@@ -148,7 +174,7 @@ async function loadView() {
     const params = new URLSearchParams({kind:route.view === 'home' ? 'albums' : route.view, name:route.name,artist:route.artist});
     const data = await api(`/api/library?${params}`);
     if (sequence !== requestSequence) return;
-    currentItems = data.items;
+    currentItems = data.items; displayedSnapshot=data.snapshot||null;
     if (route.view === 'home') {
       const tracks = await api('/api/library?kind=tracks');
       if (sequence !== requestSequence) return;
@@ -159,7 +185,7 @@ async function loadView() {
     if (sequence !== requestSequence) return;
     $('main').innerHTML = `<div class="empty-state">${icon('info')}<h2>${t('collection_unavailable')}</h2><p>${esc(error.message)}</p><button class="secondary-button" id="retry-library">${t('refresh')}</button></div>`;
     $('retry-library').onclick = () => loadView();
-  } finally { if (sequence === requestSequence) libraryLoading=false; }
+  } finally { if (sequence === requestSequence) {libraryLoading=false;updatePlayer();renderCatalogue();} }
 }
 function renderDisconnected() {
   $('main').innerHTML = `<div class="intro"><div><span class="eyebrow">${t('your_music_your_space')}</span><h1>${t('welcome_back')}</h1></div></div><div class="empty-state">${icon('device')}<h2>${t('it_starts_with_your_disc')}</h2><p>${t('connect_your_player_to_explore_your_collection_choose_an_album_and_take_control_of_your_music')}</p><button id="empty-connect" class="primary-button">${icon('device')} ${t('connect_your_player')}</button></div>`;
@@ -205,7 +231,8 @@ function openTrackMenu(item, origin, anchor) {
   menuContext={item,origin};
   $('menu-title').textContent=item.title; $('menu-artist').textContent=item.artist || '';
   $('menu-art').innerHTML=art(item);
-  const enabled={play:state.demo||item.playable,add:state.demo||(item.editable&&origin.view!=='playlist'),album:!!item.album,artist:!!item.artist,remove:origin.view==='playlist'&&(state.demo||item.editable)};
+  const connected=state.connection==='ready'&&!state.busy;
+  const enabled={play:connected&&(state.demo||item.playable),add:connected&&(state.demo||(item.editable&&origin.view!=='playlist')),album:!!item.album,artist:!!item.artist,remove:connected&&origin.view==='playlist'&&(state.demo||item.editable)};
   for (const button of $('track-menu').querySelectorAll('button')) {
     const action=button.dataset.trackAction;
     button.disabled=!enabled[action]; button.hidden=action==='remove'&&!enabled.remove;
@@ -283,14 +310,14 @@ async function refreshState() {
   try {
     const previous = state;
     state = await api('/api/state');
-    updatePlayer(); importer.render(); connection.render();
+    updatePlayer(); importer.render(); connection.render(); renderCatalogue();
     $('mode-banner').hidden = !state.demo;
     $('output-label').textContent = state.demo ? t('demo_no_audio') : t('on_disc');
     $('connection-label').textContent = state.demo ? t('demo_mode') : ({ready:t('connected'),connecting:t('connecting'),reconnecting:t('reconnecting'),disconnected:t('disconnected')}[state.connection] || state.connection);
     $('status-light').classList.toggle('ready',state.connection==='ready');
-    if (previous && (previous.connection !== state.connection || previous.generation !== state.generation)) {
+    if (previous && (previous.connection !== state.connection || previous.generation !== state.generation || previous.catalogue?.generation!==state.catalogue?.generation)) {
       albumInfo.clear();
-      if (state.connection === 'ready') loadView();
+      if (canBrowse()) loadView();
       else {++requestSequence; libraryLoading=false; renderDisconnected(); $('queue').hidden=true; $('queue-button').setAttribute('aria-expanded','false');}
     }
     return true;
@@ -302,6 +329,7 @@ async function refreshState() {
 }
 function updatePlayer() {
   const p = state?.playback || {}, track = p.track, ready = state?.connection === 'ready';
+  for(const button of document.querySelectorAll('[data-track],#play-collection,#hero-play')) button.disabled=!ready||busy||state?.busy||libraryLoading||!currentItems.length;
   for (const row of document.querySelectorAll('[data-track-id]')) {
     const selected = state?.demo && row.dataset.trackId === track?.id;
     if (row.classList.contains('is-current') !== selected) {
@@ -405,7 +433,7 @@ async function command(action, extras={}) {
   busy = true; updatePlayer();
   let success=false;
   try {
-    const result = await api('/api/action',{action,...extras,generation:state?.generation,request_id:crypto.randomUUID()});
+    const result = await api('/api/action',{action,...extras,...(action==='album'&&displayedSnapshot?{snapshot:displayedSnapshot}:{}),generation:state?.generation,request_id:crypto.randomUUID()});
     if (action==='seek') {
       if(result.outcome==='seek_waiting_for_playback') pendingSeek={target:result.confirmation.rounded_ms,resumedAt:null};
       seekFeedback=result.outcome==='seek_waiting_for_playback'?'seek_paused':result.status==='confirmed'?'seek_confirmed':'seek_unconfirmed';
@@ -454,7 +482,10 @@ $('large-volume').onchange=()=>command('volume',{value:Number($('large-volume').
 $('queue-button').onclick=()=>{const open=$('queue').hidden; $('queue').hidden=!open; $('queue-button').setAttribute('aria-expanded',open); if(open) loadQueue();};
 $('close-queue').onclick=()=>{$('queue').hidden=true; $('queue-button').setAttribute('aria-expanded','false'); $('queue-button').focus();};
 $('refresh').onclick=()=>{if(!busy && !libraryLoading) loadView();};
-$('search').oninput=()=>{if(state?.connection==='ready' && !libraryLoading) renderView();};
+$('search').oninput=()=>{
+  if(state?.catalogue?.available && $('search').value && route.view!=='tracks') {pendingSearch=$('search').value;navigate('tracks');return;}
+  if(canBrowse() && !libraryLoading) {renderView();updatePlayer();}
+};
 document.addEventListener('keydown',event=>{
   if(event.key==='Escape' && !$('queue').hidden) $('close-queue').click();
   if(event.key==='/' && !['INPUT','TEXTAREA','SELECT'].includes(document.activeElement.tagName) && !document.querySelector('dialog[open]')) {event.preventDefault(); $('search').focus();}
@@ -471,7 +502,8 @@ window.addEventListener('disc-language-change',()=>{
     $('connection-label').textContent = state.demo ? t('demo_mode') : ({ready:t('connected'),connecting:t('connecting'),reconnecting:t('reconnecting'),disconnected:t('disconnected')}[state.connection] || state.connection);
     $('output-label').textContent = state.demo ? t('demo_no_audio') : t('on_disc');
   }
-  if (!libraryLoading && state?.connection==='ready') renderView(); else if(!libraryLoading) renderDisconnected();
+  if (!libraryLoading && canBrowse()) renderView(); else if(!libraryLoading) renderDisconnected();
+  renderCatalogue(); updatePlayer();
   if (!$('queue').hidden) loadQueue();
   if ($('device-dialog').open) showDevice();
 });

@@ -7,6 +7,7 @@ shared protocol, architecture and development documentation.
 | --- | --- | --- |
 | Emulator | [Current status](../emulator/docs/status.md) | [Boot, audio, controls, network and settings](../emulator/docs/README.md) |
 | Viewer | [Usage](../viewer/docs/usage.md) | [Browser interaction](../viewer/docs/README.md) |
+| Library | [Shared catalog and storage](../library/README.md) | Offline projections, snapshot identity and optional search |
 | Controller | [Package setup](../controller/README.md) | [Session API, discovery and bridges](../controller/docs/README.md) |
 | Firmware | [Preparation](../firmware/README.md) | [Profiles, porting and version reports](../firmware/docs/README.md) |
 | Disc Assistant | [Quick command guide](../experiments/disc_assistant/docs/guides/quick-guide.md) | [Guides, contracts, evaluation and reports](../experiments/disc_assistant/docs/README.md) |

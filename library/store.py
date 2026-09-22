@@ -3,7 +3,7 @@ import json
 from pathlib import Path
 import sqlite3
 from uuid import uuid4
-from experiments.disc_assistant.library.artists import split_artists, artist_key
+from library.artists import split_artists, artist_key
 
 
 class StaleSnapshot(ValueError):
@@ -77,6 +77,17 @@ class Store:
         return [dict(row, artists=split_artists(row['artist']), artist_key=artist_key(row['artist'])) for row in self.db.execute(
             'SELECT id,generation,title,artist,album FROM tracks WHERE generation=? ORDER BY ordinal',
             (generation,))]
+
+    def snapshot(self, device):
+        """Read one published head and its immutable rows on the same connection."""
+        from library.snapshot import Snapshot
+        head = self.head(device)
+        if not head['generation']:
+            return head, None
+        rows = [dict(row) for row in self.db.execute(
+            'SELECT id,ordinal,title,artist,album FROM tracks WHERE generation=? ORDER BY ordinal',
+            (head['generation'],))]
+        return head, Snapshot(head['generation'], rows)
 
     def matches_tracks(self, generation, tracks):
         """Exact snapshot content/order, including source rows; not identity reconciliation."""
