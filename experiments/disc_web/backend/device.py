@@ -4,7 +4,8 @@ from collections import OrderedDict
 import secrets
 import time
 
-from controller import DeviceConfig, DiscSession, QueueItem
+from controller import DeviceConfig, DiscSession, QueueItem, Track
+from controller.models import PlaybackSource
 from controller.catalog import CatalogReader
 from controller.fiio_http import HTTPClient
 
@@ -99,7 +100,8 @@ class Device:
                      'count': r.get('count'), 'type': item_type,
                      'scope_artist': name if kind == 'artist' else None,
                      'selection': f"{token}:{r['pos']}" if token else None,
-                     'playable': kind == 'album',
+                     'playable': kind in ('album', 'tracks', 'favorites', 'playlist'),
+                     'album': name if kind == 'album' else None,
                      'editable': kind in ('tracks', 'playlist') or (kind == 'album' and not artist),
                      'art': None, 'duration': None} for r in rows]}
         finally:
@@ -160,6 +162,18 @@ class Device:
                 artist = body.get('artist')
                 result = (self.session.play_artist(artist, album=album) if artist is not None
                           else self.session.play_album(album))
+            elif action == 'playlist':
+                source, _ = self._selection(body.get('selection'))
+                if source['kind'] != 'playlist' or source['name'] != body.get('name'):
+                    raise ValueError('playlist selection scope changed')
+                result = self.session.play_playlist(source['name'], expected=source['expected'])
+            elif action == 'seek':
+                expected = body.get('expected')
+                fields = {'title', 'artist', 'album', 'queue_position', 'path', 'duration_ms'}
+                if not isinstance(expected, dict) or set(expected) != fields or type(body.get('source')) is not int:
+                    raise ValueError('displayed track and source are required')
+                result = self.session.seek(body.get('position_ms'), expected=Track(**expected),
+                                           source=PlaybackSource(body['source']))
             elif action == 'artist':
                 result = self.session.play_artist(body.get('name'))
             elif action in ('track', 'queue', 'playlist_add', 'playlist_remove'):
@@ -170,6 +184,10 @@ class Device:
                 elif action == 'track' and source['kind'] == 'album':
                     result = (self.session.play_artist(source['artist'], album=source['name'], index=index, expected=expected)
                               if source['artist'] else self.session.play_album(source['name'], index=index, expected=expected))
+                elif action == 'track' and source['kind'] in ('tracks', 'favorites'):
+                    result = self.session.play_catalog_track(index, favorites=source['kind'] == 'favorites', expected=expected)
+                elif action == 'track' and source['kind'] == 'playlist':
+                    result = self.session.play_playlist(source['name'], index=index, expected=expected)
                 elif action == 'playlist_add' and (source['kind'] == 'tracks' or (source['kind'] == 'album' and not source['artist'])):
                     result = self.session.add_playlist_track(body.get('name'), index, expected=expected,
                         album=source['name'] if source['kind'] == 'album' else None)

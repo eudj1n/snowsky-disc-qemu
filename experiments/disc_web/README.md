@@ -38,8 +38,13 @@ download firmware or open a physical device during tests.
 - Persistent bottom player, expanded Now Playing with mobile-accessible controls,
   and an explicitly refreshed queue drawer.
 - Light, dark and system appearance; RU/EN interface with saved browser preferences.
-- Live whole-album/artist playback, indexed album/queue selection, pause/resume, previous/next, current-track
+- Live whole-album/artist/playlist playback, indexed tracks from albums, the
+  catalog, favorites, playlists and queue; pause/resume, previous/next, current-track
   favorite, absolute volume and random/repeat-list controls through `DiscSession`.
+- Seek with time preview in both players, exact displayed-track protection and
+  explicit pending/uncertain status for paused or unconfirmed device seeks.
+- Track action menus with playback, supported playlist edits and navigation to
+  known albums/artists; keyboard navigation and mobile bottom-sheet layout.
 - Create/rename custom playlists; add tracks from all tracks or an unscoped
   album and remove playlist members, with fresh identity checks and readback.
 - Current-track cover from stock HTTP; other live covers use honest placeholders.
@@ -48,9 +53,8 @@ download firmware or open a physical device during tests.
   filtering, track/queue selections, simulated playback and favorites. It has no
   music files, audible output, persistence or real-device mutations.
 
-The interface labels demo mode, including on mobile. Its additional simulated
-playlist playback is not a claim of live facade support. Seek, playlist playback,
-files/upload, scan and device settings remain future implementation stages. They must use reviewed public
+The interface labels demo mode, including on mobile. Demo actions simulate presentation and do not prove firmware behavior.
+Files/upload, scan and device settings remain future implementation stages. They must use reviewed public
 Controller operations, not raw command forwarding. Browser audio streaming is
 outside this implementation; live audio stays on DISC.
 

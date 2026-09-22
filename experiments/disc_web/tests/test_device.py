@@ -71,6 +71,21 @@ class DeviceTests(unittest.TestCase):
         self.assertEqual(len(device.sources), 32)
         session.play_album.assert_not_called()
 
+    def test_catalog_favorites_and_playlist_selections_use_displayed_scope(self):
+        for kind in ('tracks', 'favorites', 'playlist'):
+            device, session, http, _ = self.fixture()
+            def catalog(category, **kwargs):
+                return {'total': 1, 'items': [dict(pos=0, name='Mix' if category == 'custom' else 'Track', author='Artist')]}
+            http.catalog.side_effect = catalog
+            item = device.browse(kind, 'Mix')['items'][0]
+            self.assertTrue(item['playable'])
+            device.action({'action': 'track', 'selection': item['selection'], 'generation': 5})
+            expected = (QueueItem(0, 'Track', 'Artist'),)
+            if kind == 'playlist':
+                session.play_playlist.assert_called_once_with('Mix', index=0, expected=expected)
+            else:
+                session.play_catalog_track.assert_called_once_with(0, favorites=kind == 'favorites', expected=expected)
+
     def test_missing_page_is_not_reported_as_empty_catalog(self):
         device, _, http, _ = self.fixture()
         http.catalog.return_value = {'total': 1, 'items': []}

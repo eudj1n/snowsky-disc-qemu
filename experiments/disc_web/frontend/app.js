@@ -1,6 +1,6 @@
-import {t, initLocale, setLocale, getLocale, translateStatic} from './i18n.mjs';
+import {t, initLocale, setLocale, getLocale} from './i18n.mjs';
 await initLocale();
-import {escapeHTML as esc, timeLabel, filterItems, routeHash, parseRoute} from './core.mjs';
+import {escapeHTML as esc, timeLabel, filterItems, routeHash, parseRoute, trackDuration, playbackIdentity, seekAllowed} from './core.mjs';
 
 const paths = {
  moon:'M20.8 13.3A9 9 0 0 1 10.7 3.2a9 9 0 1 0 10.1 10.1Z',
@@ -40,7 +40,8 @@ const titleKeys = {home:'home',albums:'albums',artists:'artists',tracks:'tracks'
 let state = null, route = parseRoute(location.hash), currentItems = [], homeTracks = [], activeItem = null;
 let requestSequence = 0, busy = false, genre = '', toastTimer, pollTimer, lastTrack = '', libraryLoading = false;
 let artistScope = '';
-let editContext = null;
+let editContext = null, menuContext = null, seekDraft = null, seekFeedback = '', seekIdentity = '', pendingSeek = null, seekRequested = null;
+
 
 function editLabels() {
   if (!editContext) return;
@@ -48,9 +49,9 @@ function editLabels() {
   $('playlist-dialog-title').textContent=t(keys[editContext.action]);
   $('playlist-submit').textContent=t(editContext.action==='create'?'create':editContext.action==='rename'?'save':keys[editContext.action]);
 }
-async function openPlaylistEditor(action, item=null) {
+async function openPlaylistEditor(action, item=null, origin=route) {
   if (busy || libraryLoading) return toast(t('please_wait_for_the_current_request'));
-  editContext={action,item,name:route.name,generation:state.generation};
+  editContext={action,item,name:origin.name,generation:state.generation};
   editLabels();
   $('playlist-track-label').textContent=item?.title || '';
   $('playlist-name').value=action==='rename' ? route.name : '';
@@ -130,6 +131,7 @@ function updateNav() {
 async function loadView() {
   updateNav();
   const sequence = ++requestSequence;
+  if ($('track-dialog').open) $('track-dialog').close();
   if (!state || state.connection !== 'ready') {
     currentItems=[]; renderDisconnected(); return;
   }
@@ -161,8 +163,8 @@ function cards(items, extra='') {
 }
 function rows(items, queue=false) {
   return `<div class="track-list">${items.map((item,i) => {
-    const selected = queue ? i === state?.playback?.track?.queue_position : item.id === state?.playback?.track?.id && state?.demo;
-    return `<div class="track-row ${selected ? 'is-current' : ''}" ${state?.demo ? `data-track-id="${esc(item.id)}"` : ''}><span class="track-number">${state?.demo || item.playable ? `<button data-track="${i}" aria-label="${queue ? t('select_in_queue') : t('play_label')} ${esc(item.title)}">${selected ? icon('music') : icon('play')}</button>` : i+1}</span><span class="track-thumb">${art(item)}</span><div class="track-meta"><strong>${esc(item.title)}</strong><small>${esc(item.artist || '—')}</small></div><span class="track-album">${esc(item.album || '')}</span><span class="track-duration">${timeLabel(item.duration)}</span>${!queue && (state.demo || item.editable) ? `<button class="icon-button track-edit" data-edit-track="${i}" aria-label="${t(route.view==='playlist' ? 'remove_from_playlist' : 'add_to_playlist')}">${route.view==='playlist' ? '−' : '+'}</button>` : ''}</div>`;
+    const selected = queue ? item.position === state?.playback?.track?.queue_position : item.id === state?.playback?.track?.id && state?.demo;
+    return `<div data-track-row="${i}" class="track-row ${selected ? 'is-current' : ''}" ${state?.demo ? `data-track-id="${esc(item.id)}"` : ''}><span class="track-number">${state?.demo || item.playable ? `<button data-track="${i}" aria-label="${queue ? t('select_in_queue') : t('play_label')} ${esc(item.title)}">${selected ? icon('music') : icon('play')}</button>` : i+1}</span><span class="track-thumb">${art(item)}</span><div class="track-meta"><strong>${esc(item.title)}</strong><small>${esc(item.artist || '—')}</small></div><span class="track-album">${esc(item.album || '')}</span><span class="track-duration">${timeLabel(item.duration)}</span>${!queue ? `<button class="icon-button track-edit" data-track-menu="${i}" aria-label="${t('track_actions')}: ${esc(item.title)}" aria-haspopup="menu">⋯</button>` : ''}</div>`;
   }).join('')}</div>`;
 }
 function bindCards(items) {
@@ -171,13 +173,52 @@ function bindCards(items) {
     navigate(item.type, item);
   };
 }
-function bindTracks(root, items, queue=false) {
-  for (const button of root.querySelectorAll('[data-edit-track]')) button.onclick=()=>openPlaylistEditor(route.view==='playlist' ? 'remove' : 'add',items[Number(button.dataset.editTrack)]);
-  for (const button of root.querySelectorAll('[data-track]')) button.onclick = () => {
-    const index = Number(button.dataset.track);
-    command(queue ? 'queue' : 'track', state.demo ? (queue ? {index} : {name:items[index].id}) : {selection:items[index].selection});
-  };
+function playItem(item, origin, queue=false) {
+  if (origin.generation!==state?.generation) return toast(t('track_changed'),true);
+  const extras=state.demo ? (queue ? {index:item.position} : {name:item.id,source_view:origin.view==='home'?'tracks':origin.view,source_name:origin.name}) : {selection:item.selection};
+  return command(queue ? 'queue' : 'track',extras);
 }
+function bindTracks(root, items, queue=false) {
+  const origin={...route,generation:state.generation};
+  if(!queue) for(const row of root.querySelectorAll('[data-track-row]')) row.oncontextmenu=event=>{
+    event.preventDefault(); openTrackMenu(items[Number(row.dataset.trackRow)],origin,row.querySelector('[data-track-menu]'));
+  };
+  for (const button of root.querySelectorAll('[data-track-menu]')) button.onclick=()=>openTrackMenu(items[Number(button.dataset.trackMenu)],origin,button);
+  for (const button of root.querySelectorAll('[data-track]')) button.onclick=()=>playItem(items[Number(button.dataset.track)],origin,queue);
+}
+function openTrackMenu(item, origin, anchor) {
+  menuContext={item,origin};
+  $('menu-title').textContent=item.title; $('menu-artist').textContent=item.artist || '';
+  $('menu-art').innerHTML=art(item);
+  const enabled={play:state.demo||item.playable,add:state.demo||(item.editable&&origin.view!=='playlist'),album:!!item.album,artist:!!item.artist,remove:origin.view==='playlist'&&(state.demo||item.editable)};
+  for (const button of $('track-menu').querySelectorAll('button')) {
+    const action=button.dataset.trackAction;
+    button.disabled=!enabled[action]; button.hidden=action==='remove'&&!enabled.remove;
+    button.title=button.disabled?t(action==='album'?'album_unavailable':'source_action_unavailable'):'';
+  }
+  const rect=anchor.getBoundingClientRect(), dialog=$('track-dialog');
+  dialog.style.setProperty('--menu-x',`${Math.max(12,Math.min(innerWidth-332,rect.right-320))}px`);
+  dialog.style.setProperty('--menu-y',`${Math.max(12,Math.min(innerHeight-370,rect.bottom+6))}px`);
+  dialog.showModal();
+  $('track-menu').querySelector('button:not(:disabled)').focus();
+}
+$('close-track-menu').onclick=()=>$('track-dialog').close();
+$('track-dialog').onclick=event=>{if(event.target===$('track-dialog')) $('track-dialog').close();};
+$('track-menu').onkeydown=event=>{
+  const keys=['ArrowDown','ArrowUp','Home','End']; if(!keys.includes(event.key)) return;
+  event.preventDefault();
+  const buttons=[...$('track-menu').querySelectorAll('button:not(:disabled):not([hidden])')], index=buttons.indexOf(document.activeElement);
+  buttons[event.key==='Home'?0:event.key==='End'?buttons.length-1:(index+(event.key==='ArrowDown'?1:-1)+buttons.length)%buttons.length].focus();
+};
+for (const button of $('track-menu').querySelectorAll('button')) button.onclick=()=>{
+  const {item,origin}=menuContext, action=button.dataset.trackAction;
+  $('track-dialog').close();
+  if(origin.generation!==state.generation) return toast(t('track_changed'),true);
+  if(action==='play') playItem(item,origin);
+  if(action==='add'||action==='remove') openPlaylistEditor(action,item,origin);
+  if(action==='album') navigate('album',{title:item.album,art:item.art,scope_artist:origin.artist||''});
+  if(action==='artist') navigate('artist',{title:item.artist});
+};
 function renderView() {
   const query = $('search').value;
   let items = filterItems(currentItems, query);
@@ -191,16 +232,16 @@ function renderView() {
   if (detail) {
     const item = activeItem?.title === route.name ? activeItem : {title:route.name,art:items[0]?.art};
     const artist = route.artist || item.artist || (items.length && items.every(i => i.artist === items[0].artist) ? items[0].artist : '');
-    const canPlay = state.demo || route.view !== 'playlist';
+    const canPlay = true;
     heading = `<button class="text-button" id="back">${icon('back')} ${route.view === 'album' && route.artist ? esc(route.artist) : t('back_to_collection')}</button><div class="detail-heading"><div class="detail-art">${art(item)}</div><div class="detail-copy"><span class="eyebrow">${esc(t(titleKeys[route.view]))}</span><h1>${esc(route.name)}</h1><p>${esc(artist)}${artist ? ' · ' : ''}${t(isTracks ? 'track_count' : 'album_count',{count:currentItems.length})}${state.demo ? ' · DISC Sessions' : ''}</p><div class="detail-actions"><button id="play-collection" class="primary-button" ${!canPlay || !currentItems.length ? 'disabled' : ''}>${icon('play')} ${route.view === 'album' ? t('play_album') : t('listen')}</button></div></div></div>`;
-    if (!state.demo && route.view==='playlist') heading += `<p class="read-only-note">${icon('info')}${t('playlist_playback_later')}</p>`;
+
   } else {
     heading = `<div class="view-heading"><div><span class="eyebrow">${t('my_collection')}</span><h1>${esc(t(titleKeys[route.view]))}</h1><p>${query ? t('found') : t('in_this_section')}: ${count}${state.demo ? t('demo_collection') : ''}</p></div></div>`;
     if (!isTracks && state.demo && route.view === 'albums') {
       const genres = [...new Set(currentItems.map(i=>i.genre).filter(Boolean))];
       heading += `<div class="filter-chips"><button class="chip ${!genre ? 'active' : ''}" data-genre="">${t('all_albums')}</button>${genres.map(g=>`<button class="chip ${genre===g ? 'active' : ''}" data-genre="${esc(g)}">${esc(g)}</button>`).join('')}</div>`;
     }
-    if (!state.demo && isTracks) heading += `<p class="read-only-note">${icon('info')}${t('browse_the_collection_open_an_album_or_artist_to_start_playback')}</p>`;
+
   }
   if (route.view==='playlists') heading+=`<button id="create-playlist" class="secondary-button playlist-create">+ ${t('new_playlist')}</button>`;
   if (route.view==='playlist') heading+=`<button id="rename-playlist" class="secondary-button playlist-create">${t('rename')}</button>`;
@@ -210,7 +251,7 @@ function renderView() {
   if ($('rename-playlist')) $('rename-playlist').onclick=()=>openPlaylistEditor('rename');
   for (const chip of $('main').querySelectorAll('[data-genre]')) chip.onclick = () => {genre=chip.dataset.genre; renderView();};
   if ($('back')) $('back').onclick = () => route.artist ? navigate('artist',{title:route.artist}) : navigate(`${route.view}s`);
-  if ($('play-collection')) $('play-collection').onclick = () => command(route.view, {name:route.name,...(route.artist ? {artist:route.artist} : {})});
+  if ($('play-collection')) $('play-collection').onclick = () => command(route.view, {name:route.name,...(route.artist ? {artist:route.artist} : {}),...(route.view==='playlist'&&!state.demo?{selection:currentItems[0]?.selection}:{})});
 }
 function renderHome(items) {
   const albumItems = items.slice(0,4), tracks = homeTracks.slice(0,3), featured = items[0];
@@ -231,7 +272,7 @@ async function refreshState() {
     $('output-label').textContent = state.demo ? t('demo_no_audio') : t('on_disc');
     $('connection-label').textContent = state.demo ? t('demo_mode') : ({ready:t('connected'),connecting:t('connecting'),reconnecting:t('reconnecting'),disconnected:t('disconnected')}[state.connection] || state.connection);
     $('status-light').classList.toggle('ready',state.connection==='ready');
-    if (previous && previous.connection !== state.connection) {
+    if (previous && (previous.connection !== state.connection || previous.generation !== state.generation)) {
       if (state.connection === 'ready') loadView();
       else {++requestSequence; libraryLoading=false; renderDisconnected(); $('queue').hidden=true; $('queue-button').setAttribute('aria-expanded','false');}
     }
@@ -274,9 +315,8 @@ function updatePlayer() {
   for (const id of ['play','next','previous','favorite','shuffle','repeat','volume']) $(id).disabled = !ready || busy || state?.busy || (['play','next','previous','favorite'].includes(id) && !track);
   $('queue-button').disabled = !ready;
   $('position').textContent = timeLabel(Number.isFinite(p.position_ms) ? p.position_ms/1000 : null);
-  $('duration').textContent = timeLabel(track?.duration);
-  $('progress').max = track?.duration || 100;
-  $('progress').value = track?.duration && Number.isFinite(p.position_ms) ? p.position_ms/1000 : 0;
+  $('duration').textContent = timeLabel(trackDuration(track));
+  updateSeek();
   if (Number.isFinite(state?.volume) && document.activeElement !== $('volume')) $('volume').value=state.volume;
   $('volume-value').textContent = state?.volume ?? '—';
   $('volume').title = Number.isFinite(state?.volume) ? t('volume_value',{value:state.volume}) : t('current_volume_is_unknown_choose_a_value_from_0_120');
@@ -295,13 +335,65 @@ function updatePlayer() {
   if (document.activeElement!==$('large-volume')) $('large-volume').value=$('volume').value;
   $('large-volume-value').textContent=$('volume-value').textContent;
 }
+function updateSeek() {
+  const identity=playbackIdentity(state);
+  if (seekIdentity && seekIdentity!==identity) {seekFeedback=''; pendingSeek=null; seekRequested=null;}
+  if (pendingSeek && state?.playback?.state==='playing') {
+    pendingSeek.resumedAt ??= Date.now();
+    const elapsed=Date.now()-pendingSeek.resumedAt, position=state.playback.position_ms;
+    if(Number.isFinite(position) && position>=pendingSeek.target && position<=pendingSeek.target+elapsed+2000) {
+      seekFeedback='seek_confirmed'; pendingSeek=null;
+    } else if(elapsed>8000) {seekFeedback='seek_unconfirmed'; pendingSeek=null;}
+  }
+  seekIdentity=identity;
+  const duration=trackDuration(state?.playback?.track);
+  for (const id of ['progress','large-progress']) {
+    const slider=$(id);
+    slider.max=Number.isFinite(duration)?Math.max(0,Math.ceil(duration)-1):100;
+    slider.disabled=!seekAllowed(state)||busy||state?.busy||libraryLoading;
+    if(!seekDraft) slider.value=Math.min(Number(slider.max),Math.max(0,(state?.playback?.position_ms||0)/1000));
+    slider.style.setProperty('--seek-fill',`${100*Number(slider.value)/Math.max(1,Number(slider.max))}%`);
+    slider.setAttribute('aria-valuetext',timeLabel(Number(slider.value))+' / '+timeLabel(duration));
+  }
+  if(seekDraft) $('position').textContent=timeLabel(seekDraft.seconds);
+  $('seek-feedback').textContent=seekFeedback?t(seekFeedback,{position:timeLabel(seekRequested)}):'';
+}
+function captureSeek() {
+  if(!seekDraft) seekDraft={identity:playbackIdentity(state),expected:structuredClone(state.playback.track),source:state.playback.source,seconds:Math.floor((state.playback.position_ms||0)/1000),moved:false};
+}
+for (const id of ['progress','large-progress']) {
+  const slider=$(id);
+  slider.onpointerdown=()=>{if(!slider.disabled) captureSeek();};
+  slider.oninput=()=>{
+    captureSeek(); seekDraft.moved=true; seekDraft.seconds=Number(slider.value);
+    $('position').textContent=$('large-position').textContent=timeLabel(seekDraft.seconds);
+    for(const other of ['progress','large-progress']) {
+      $(other).value=slider.value;
+      $(other).style.setProperty('--seek-fill',`${100*Number(slider.value)/Math.max(1,Number(slider.max))}%`);
+    }
+  };
+  slider.onchange=async()=>{
+    const draft=seekDraft; seekDraft=null;
+    if(!draft||draft.identity!==playbackIdentity(state)) {updateSeek();return toast(t('track_changed'),true);}
+    if(busy||state?.busy||libraryLoading) {updateSeek();return toast(t('please_wait_for_the_current_request'));}
+    pendingSeek=null; seekRequested=Number(slider.value); seekFeedback='seek_sending';
+    await command('seek',{position_ms:Math.round(Number(slider.value)*1000),expected:draft.expected,source:draft.source});
+  };
+  slider.onpointerup=()=>{if(seekDraft&&!seekDraft.moved){seekDraft=null;updateSeek();}};
+  slider.onpointercancel=()=>{seekDraft=null;updateSeek();};
+  slider.onblur=()=>{if(seekDraft){seekDraft=null;updateSeek();}};
+}
 async function command(action, extras={}) {
   if (busy || state?.busy || libraryLoading) return toast(t('please_wait_for_the_current_request'));
   busy = true; updatePlayer();
   let success=false;
   try {
     const result = await api('/api/action',{action,...extras,generation:state?.generation,request_id:crypto.randomUUID()});
-    if (['uncertain','not_sent','unavailable'].includes(result.status)) toast(t('result_unconfirmed_the_command_was_not_retried'),true);
+    if (action==='seek') {
+      if(result.outcome==='seek_waiting_for_playback') pendingSeek={target:result.confirmation.rounded_ms,resumedAt:null};
+      seekFeedback=result.outcome==='seek_waiting_for_playback'?'seek_paused':result.status==='confirmed'?'seek_confirmed':'seek_unconfirmed';
+      toast(t(seekFeedback,{position:timeLabel(seekRequested)}),result.status!=='confirmed');
+    } else if (['uncertain','not_sent','unavailable'].includes(result.status)) toast(t('result_unconfirmed_the_command_was_not_retried'),true);
     else if (state?.demo) toast(t('demo_updated_no_device_playback_was_changed'));
     else if (action==='connect') toast(t('connecting_to_disc'));
     else if (action==='disconnect') toast(t('disconnected_label'));
@@ -311,6 +403,7 @@ async function command(action, extras={}) {
     if (route.view==='favorites' && action==='favorite') await loadView();
     if (!$('queue').hidden) await loadQueue();
   } catch (error) {
+    if(action==='seek') seekFeedback='seek_unconfirmed';
     toast(`${error.message || t('connection_lost')}. ${t('the_request_is_not_automatically_retried')}`,true);
     await refreshState();
   } finally {busy=false; updatePlayer();}

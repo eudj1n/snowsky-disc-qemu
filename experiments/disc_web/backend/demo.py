@@ -106,6 +106,13 @@ class Demo:
                     self.position = 0
                 self.playing = True
                 self.updated = time.monotonic()
+            elif action == 'seek':
+                value = body.get('position_ms')
+                if type(value) is not int or not 0 <= value < current['playback']['track']['duration'] * 1000:
+                    raise ValueError('seek outside track duration')
+                if body.get('expected') != current['playback']['track']:
+                    raise ValueError('displayed demo track changed')
+                self.position, self.updated = value // 1000, time.monotonic()
             elif action in ('next', 'previous'):
                 self.selected = (self.selected + (1 if action == 'next' else -1)) % len(self.queue_items)
                 self.position, self.updated = 0, time.monotonic()
@@ -134,7 +141,13 @@ class Demo:
                               else [t for t in self.tracks if t[field] == body.get('name')])
                     if not tracks:
                         raise ValueError('Selection is empty')
-                    self.queue_items, self.selected = deepcopy(tracks), 0
+                    index = 0
+                    if action == 'track' and body.get('source_view') in ('album', 'tracks', 'favorites', 'playlist'):
+                        tracks = self.browse(body['source_view'], body.get('source_name', ''))['items']
+                        index = next((i for i, row in enumerate(tracks) if row['id'] == body.get('name')), None)
+                        if index is None:
+                            raise ValueError('track left displayed source')
+                    self.queue_items, self.selected = deepcopy(tracks), index
                 self.position, self.updated, self.playing = 0, time.monotonic(), True
             elif action in ('connect', 'disconnect'):
                 raise ValueError('Demo is isolated. Start without --demo to connect a DISC.')

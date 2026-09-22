@@ -30,7 +30,10 @@ All playback and playlist writes use facade methods. Library HTTP reads occur in
 operation with scan checks before/after, bounded `CatalogReader` pagination and
 literal scopes. A playlist name must resolve uniquely; list rows are checked again
 after its tracks are read. Artist-album navigation retains the artist filter in
-both the URL and subsequent playback command. The backend does not turn those
+both the URL and subsequent playback command. Action menus retain their opening
+scope and original row token. Album navigation is enabled only when that source
+actually supplies the album name; generic HTTP track rows do not. Unsupported
+playlist-add sources remain disabled rather than being widened implicitly. The backend does not turn those
 albums into generic whole albums.
 
 Views currently load a bounded complete category (at most 10,000 records and 60
@@ -58,8 +61,12 @@ submissions. This is not durable exactly-once delivery. Browsers never retry a
 write or persist commands for reconnect. Unknown results remain uncertain.
 
 State polling every 1.5 seconds reads cached session state, not the device socket.
-The browser disables control after a server/connection loss. Timing is observed
-only: absent duration stays unknown, and the progress bar is not a seek control.
+The browser disables control after a server/connection loss. Duration comes from
+validated stock milliseconds; absent duration keeps seek disabled. Dragging or
+keyboard adjustment previews a requested position and sends once on change. The
+draft retains its original track/source/generation, so a track change during a
+drag rejects the selection. A paused seek is explicitly pending observation;
+it does not trigger resume, optimistic progress or retries.
 Volume is the last value read back after this server's volume operation, or
 unknown. Changes made using physical buttons are not yet tracked by this field.
 The queue is a snapshot refreshed on opening or after this browser's commands;

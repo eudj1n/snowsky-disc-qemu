@@ -37,8 +37,8 @@ coverage or physical-device acceptance.
   scope and expected rows, including after browser filtering. Expired, evicted
   or previous-generation source tokens are rejected.
 - Custom playlists support create, rename, track add and member removal through
-  public Controller operations. Source-file deletion is not exposed. Live custom
-  playlist playback, seek and all-tracks/favorite indexed playback remain gated.
+  public Controller operations. Source-file deletion is not exposed. At this earlier checkpoint, live custom
+  playlist playback, seek and all-tracks/favorite indexed playback were gated.
 - App checks: 14 Python boundary tests and 7 JavaScript tests passed. Controller
   focused selection/edit checks passed (22 tests). Repository firmware-free run
   passed 428 Python tests, its then-current 41 JavaScript checks and shim builds;
@@ -54,12 +54,36 @@ coverage or physical-device acceptance.
   reload, 390 px home and expanded player, and demo playlist
   create/add/rename/remove with membership readback.
 
+## Everyday playback checkpoint — 2026-09-22
+
+- Public Controller selection now covers complete/indexed custom playlists and
+  indexed all-tracks/favorites, with fresh displayed-source and queue checks.
+- Seek uses validated duration and the exact displayed track/source. A paused
+  device seek remains explicitly unconfirmed until playback yields fresh
+  position evidence. No implicit resume or retry is performed.
+- Track menus offer play, supported playlist edits, known-album and artist links.
+  They retain original source positions after filtering and support keyboard
+  navigation. On mobile they appear as a bottom sheet.
+- Demo indexed playback retains the complete selected source as its queue;
+  demo seek preserves paused/playing state and remains silent.
+- New synthetic Controller tests cover final playlist shifts, stale catalogs,
+  unknown versions, seek bounds, paused seek and lost-connection no-replay.
+  UI checks cover menu navigation, right-click/keyboard access, playlist member
+  edits and pointer/keyboard seeking on desktop and at 390 px, in RU/EN and both
+  palettes. The current app suite passed 15 Python and 8 JavaScript tests.
+- Repository firmware-free validation passed 439 Python tests, 45 JavaScript
+  tests, shell checks and all four shim builds. Ruff, mypy and isolated
+  Controller wheel installation/synthetic-session checks passed.
+- The complete disposable V2.57 `full` run passed (exit 0), including the expanded
+  web-session acceptance for catalog/favorites/custom-playlist playback, playing
+  seek, paused seek without resume, explicit resume observation and stale-track
+  rejection. Temporary containers and volume were removed. No physical DISC or
+  interactive emulator volume was used.
+
 ## Next implementation stages
 
-1. Add reviewed persistent seek and playlist playback with honest
-   pending/uncertain UI; extend scoped track selection where supported.
-2. Upload, scan/progress and file management with operation-specific verification.
-3. Extend device settings, cover caching, large-catalog presentation and live
+1. Upload, scan/progress and file management with operation-specific verification.
+2. Extend device settings, cover caching, large-catalog presentation and live
    multi-browser invalidation; integrate optional Assistant through one owner.
 
 Do not expose placeholder settings as functioning controls or use diagnostic

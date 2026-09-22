@@ -1860,3 +1860,39 @@ html[lang="en"] .hero h2 { font-size:39px; }
   main .track-row { grid-template-columns:19px 34px minmax(0,1fr) 30px 25px; }
   html[lang="en"] .hero h2 { font-size:32px; }
 }
+
+/* Track actions share the palette and become a bottom sheet on small screens. */
+.track-edit { font-size:24px; letter-spacing:1px; }
+.track-dialog { width:320px; padding:12px; margin:0; inset:var(--menu-y) auto auto var(--menu-x); border-radius:18px; box-shadow:0 18px 70px #0004; }
+.track-dialog::backdrop { background:#0002; backdrop-filter:none; }
+.track-menu-heading { display:flex; align-items:center; gap:12px; padding:8px 3px 15px; }
+.track-menu-heading #menu-art { width:44px; height:44px; flex-shrink:0; overflow:hidden; border-radius:8px; }
+.track-menu-heading #menu-art img, .track-menu-heading .card-placeholder { width:100%; height:100%; object-fit:cover; }
+.track-menu-heading > div:nth-child(2) { min-width:0; flex:1; }
+.track-menu-heading strong, .track-menu-heading small { display:block; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.track-menu-heading small { margin-top:5px; color:var(--muted); }
+#track-menu button { width:100%; padding:12px; display:flex; align-items:center; gap:13px; background:none; border:0; border-radius:9px; text-align:left; color:var(--ink); }
+#track-menu button:hover, #track-menu button:focus-visible { background:var(--hover); }
+#track-menu button:disabled { opacity:.35; cursor:not-allowed; }
+#track-menu .menu-remove { color:var(--accent); }
+#track-menu svg { width:18px; height:18px; }
+.menu-divider { height:1px; background:var(--line); margin:7px 10px; }
+.seek-slider { appearance:none; width:100%; height:18px; margin:0; padding:6px 0; cursor:pointer; background:transparent; accent-color:var(--progress-fill); }
+.seek-slider::-webkit-slider-runnable-track { height:3px; border-radius:5px; background:var(--progress-bg); }
+.seek-slider::-webkit-slider-thumb { appearance:none; width:11px; height:11px; border-radius:50%; background:var(--progress-fill); margin-top:-4px; }
+.seek-slider::-moz-range-track { height:3px; background:var(--progress-bg); }
+.seek-slider::-moz-range-progress { background:var(--progress-fill); }
+.seek-slider::-moz-range-thumb { border:0; width:11px; height:11px; background:var(--progress-fill); }
+.seek-slider:disabled { opacity:.45; cursor:default; }
+.seek-feedback { font-size:11px; line-height:1.5; color:var(--secondary); margin:4px 0; }
+.seek-feedback:empty { display:none; }
+#large-progress { margin-top:12px; }
+.large-timeline { border-top:0; }
+@media(max-width:700px) {
+  .track-dialog { inset:auto 10px 12px; width:calc(100% - 20px); max-width:none; padding:16px; border-radius:22px; }
+  .timeline .seek-slider { height:12px; padding:4px 0; }
+  .timeline .seek-slider::-webkit-slider-thumb { width:9px; height:9px; margin-top:-3px; }
+}
+#track-menu button[hidden] { display:none; }
+.track-menu-heading { text-align:left; }
+.seek-slider::-webkit-slider-runnable-track { background:linear-gradient(to right,var(--progress-fill) var(--seek-fill,0%),var(--progress-bg) var(--seek-fill,0%)); }

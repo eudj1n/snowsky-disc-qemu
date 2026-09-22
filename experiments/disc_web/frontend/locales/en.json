@@ -174,5 +174,16 @@
   "album_count": {
     "one": "{count} album",
     "other": "{count} albums"
-  }
+  },
+  "seek_position": "Seek position",
+  "track_actions": "Track actions",
+  "go_to_album": "Go to album",
+  "go_to_artist": "Go to artist",
+  "seek_sending": "Seeking to {position}…",
+  "seek_paused": "Seek to {position} sent. Waiting for a position update after playback resumes.",
+  "seek_unconfirmed": "Position unconfirmed. The command was not repeated.",
+  "seek_confirmed": "Position confirmed",
+  "track_changed": "The track changed. Choose the position again.",
+  "album_unavailable": "DISC did not supply an album for this row",
+  "source_action_unavailable": "This action is not yet available for this source"
 }

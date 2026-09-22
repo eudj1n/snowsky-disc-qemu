@@ -17,3 +17,16 @@ export function parseRoute(hash) {
   const view = params.get('view') || 'home';
   return {view:['home','albums','artists','tracks','favorites','playlists','album','artist','playlist'].includes(view) ? view : 'home', name:params.get('name') || '', artist:params.get('artist') || ''};
 }
+
+export function trackDuration(track) {
+  return Number.isFinite(track?.duration_ms) ? track.duration_ms / 1000
+    : Number.isFinite(track?.duration) ? track.duration : null;
+}
+export function playbackIdentity(state) {
+  return JSON.stringify([state?.generation, state?.playback?.source, state?.playback?.track]);
+}
+export function seekAllowed(state) {
+  const duration = trackDuration(state?.playback?.track);
+  return state?.connection === 'ready' && ['playing','paused'].includes(state.playback.state)
+    && Number.isFinite(duration) && duration >= 1;
+}
