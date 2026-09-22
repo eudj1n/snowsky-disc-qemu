@@ -30,7 +30,7 @@ class PlaylistTests(unittest.TestCase):
         self.client.settings.return_value = {'soc_version': 257}
         self.client.closed.is_set.return_value = False
         self.session = DiscSession(DeviceConfig('127.0.0.1'))
-        self.session.operation = lambda: nullcontext(self.client)
+        self.session.operation = lambda **kwargs: nullcontext(self.client)
         self.expected = (QueueItem(0, 'One', 'Artist'),)
 
     def call(self, name, *args, **kwargs):

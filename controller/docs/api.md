@@ -157,8 +157,8 @@ existing output and fresh catalog-selection workflow. The operation lease pins a
 client/generation and serializes work; callers must not retain the client beyond
 the lease, nest operations, read its socket or construct an unreviewed mutation.
 Its outbound persistent surface admits the reviewed reads and playback/mode,
-favorite and volume mutation tags only. `LiveClient` inherits a narrow shared
-command implementation, not the raw `Client`; reset/scan/settings writes are
+favorite, volume and exact scan-start mutation tags only. `LiveClient` inherits a narrow shared
+command implementation, not the raw `Client`; reset/cancel and unrelated settings writes remain
 absent. `PlaybackReader`, `ControlClient` and `SelectionClient` describe the
 capabilities required by guarded operations. Use facade methods for new application features; do not
 expose arbitrary tag forwarding through a web endpoint.
@@ -261,6 +261,45 @@ A later explicit resume may produce the first useful position tick.
 
 Generated V2.57 FLAC acceptance covers both seek states and stale-track rejection.
 This does not extend validation to SACD/CUE seek or hardware audio output.
+
+## Audio import and explicit scan
+
+`DiscSession.upload_audio(source, destination, *, on_progress=None,
+expected_generation=None)` streams one local audio file to a child of
+`/tmp/sdcard`. The reviewed V2.57 operation waits for mutation pacing, checks
+current compatibility, rejects a cached transfer or case-insensitive name
+collision, then checks scan/connection state immediately before its single HTTP
+write. There is no overwrite option. Directory preflight/readback is bounded
+at 100 pages. File size follows the stock 31-bit positive Content-Length limit.
+
+The optional callback receives `(bytes_read, total_bytes)` while HTTP consumes
+the source; this is transfer progress, not device acknowledgement. A confirmed
+result additionally requires completed stock progress with the exact size and a
+fresh directory entry. Empty HTTP 200 or cached progress alone is insufficient.
+`outcome=destination_exists` is a non-sent collision. Interrupted writes or failed
+readback are uncertain and never retried. Stock has no exclusive-create operation;
+an external writer can race the best-effort preflight. No device hash is claimed.
+
+`DiscSession.scan_library(*, timeout=300, on_progress=None,
+expected_generation=None)` starts one scan and consumes start/count/end events
+under the session lease, without interleaved catalog or health queries. The
+callback receives the discovered count; the confirmed `scan_ended` result keeps
+it in `confirmation.discovered`. An end signal is not proof that every source
+file was indexed, and the firmware uses the same end event for cancellation.
+Timeout/disconnect stays uncertain; no cancel, reset, reconnect replay or implicit
+scan-after-upload is performed. Applications explicitly refresh their catalog
+after an observed end.
+
+Both methods optionally require the original connection generation under the
+operation lease, so staged work cannot dispatch on a replacement connection.
+Progress callbacks must be short and must not invoke session operations.
+Folder import belongs to the caller's serialized sequence of relative audio
+paths; the stock upload handler creates missing parents. Artwork/CUE sidecars
+are outside this facade's confirmable directory-readback surface.
+
+Disposable V2.57 acceptance covers streamed byte equality, duplicate rejection,
+nested audio paths, scan lifecycle and fresh index membership. Large-file limits
+are validated as bounds, not a maximum-size or physical throughput benchmark.
 
 ## Current-state operations
 

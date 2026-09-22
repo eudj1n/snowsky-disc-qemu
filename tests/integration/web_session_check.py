@@ -82,6 +82,37 @@ def check():
             assert all(r['name'] != 'Web CI renamed' for r in CatalogReader(http).rows('custom'))
         paused = session.pause()
         assert paused.status in ('confirmed', 'already_satisfied'), paused
+        from pathlib import Path
+        import tempfile
+        import wave
+        target = '/tmp/sdcard/Web Import Album/Disc 1/Web import — тест.wav'
+        with tempfile.NamedTemporaryFile(suffix='.wav') as source:
+            with wave.open(source.name, 'wb') as audio:
+                audio.setnchannels(2)
+                audio.setsampwidth(2)
+                audio.setframerate(44100)
+                audio.writeframes(b'\0' * 44100 * 4 * 2)
+            ticks = []
+            result = session.upload_audio(source.name, target, on_progress=lambda sent, total: ticks.append((sent, total)))
+            assert result.status == 'confirmed', result
+            assert ticks and ticks[-1][0] == Path(source.name).stat().st_size, ticks[-1:]
+            assert Path('/work/rootfs' + target).read_bytes() == Path(source.name).read_bytes()
+            result = session.upload_audio(source.name, target)
+            assert result.status == 'not_sent' and not result.mutation_attempted, result
+            counts = []
+            result = session.scan_library(timeout=45, on_progress=counts.append)
+            assert result.status == 'confirmed' and counts, result
+            with session.operation():
+                rows = CatalogReader(http).rows('all/song')
+                assert any(r['name'] == 'Web import — тест.wav' for r in rows), rows
+                http.delete_file(target)
+                http.delete_file('/tmp/sdcard/Web Import Album/Disc 1')
+                http.delete_file('/tmp/sdcard/Web Import Album')
+            result = session.scan_library(timeout=45)
+            assert result.status == 'confirmed', result
+            with session.operation():
+                assert not any(r['name'] == 'Web import — тест.wav' for r in CatalogReader(http).rows('all/song'))
+        print('WEB IMPORT ACCEPTANCE PASSED: nested album folder bytes, collision rejection, scan lifecycle and fresh index', flush=True)
     print('WEB SESSION ACCEPTANCE PASSED: indexed album, queue, stale-source rejection playlist edits, catalog/favorite/playlist playback and seek', flush=True)
 
 

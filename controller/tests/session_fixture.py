@@ -28,6 +28,16 @@ class Handler(socketserver.BaseRequestHandler):
                         server.mode = int(payload, 16)
                         server.writes += 1
                         result, body = 'a102', payload
+                    elif tag == '0622':
+                        server.writes += 1
+                        if server.drop_write:
+                            self.request.shutdown(socket.SHUT_RDWR)
+                            return
+                        self.request.sendall(frame('a60a', '000F'))
+                        self.request.sendall(frame('a622', '0003'))
+                        if server.delay_tag == '0622':
+                            server.release_reply.wait(2)
+                        result, body = 'a60a', b'0005'
                     elif tag == '0202':
                         if server.silent_now:
                             continue

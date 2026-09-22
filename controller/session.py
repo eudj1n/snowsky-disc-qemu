@@ -26,6 +26,7 @@ from controller.wire import WireState
 class LiveSocket(ObservedSocket):
     def sendall(self, data: bytes) -> None:
         mutation = data[:4] in (b'0100', b'0101', b'0102', b'0103', b'0201', b'0104', b'0502')
+        mutation = mutation or data == frame('0622', '0000')
         if not mutation and data[:4] not in (b'0599', b'0501', b'0105', b'0202'):
             raise ValueError('command is outside the reviewed persistent-session surface')
         if self.session.closed.is_set():
@@ -293,11 +294,11 @@ class DiscSession:
         """Immutable normalized observations; no network request or device mutation."""
         return DeviceSnapshot.from_status(self.status())
 
-    def _perform(self, action: str, callback: Callable[[LiveClient], Any]) -> CommandResult:
+    def _perform(self, action: str, callback: Callable[[LiveClient], Any], *, expected_generation: int | None = None) -> CommandResult:
         client = None
         operation_id = uuid4().hex
         try:
-            with self.operation() as client:
+            with self.operation(expected_generation=expected_generation) as client:
                 result = callback(client)
                 if isinstance(result, CommandResult):
                     from dataclasses import replace
@@ -484,6 +485,22 @@ class DiscSession:
     def create_playlist(self, name: str) -> CommandResult:
         return self._playlist_edit('create', name)
 
+    def upload_audio(self, source: str, destination: str, *,
+                     on_progress: Callable[[int, int], None] | None = None,
+                     expected_generation: int | None = None) -> CommandResult:
+        """Stream one new audio file; verify listing and completed byte count."""
+        from controller.importing import upload
+        return self._perform('upload_audio', lambda client: upload(
+            self.config, client, source, destination, on_progress=on_progress), expected_generation=expected_generation)
+
+    def scan_library(self, *, timeout: float = 300,
+                     on_progress: Callable[[int], None] | None = None,
+                     expected_generation: int | None = None) -> CommandResult:
+        """Start once and observe the scan lifecycle without interleaved queries."""
+        from controller.importing import scan
+        return self._perform('scan_library', lambda client: scan(
+            client, timeout=timeout, on_progress=on_progress), expected_generation=expected_generation)
+
     def rename_playlist(self, name: str, new_name: str) -> CommandResult:
         return self._playlist_edit('rename', name, new_name=new_name)
 
@@ -502,9 +519,11 @@ class DiscSession:
             HTTPClient(self.config.host, self.config.http_port, self.config.timeout), action, name, **kwargs))
 
     @contextmanager
-    def operation(self) -> Iterator[LiveClient]:
+    def operation(self, *, expected_generation: int | None = None) -> Iterator[LiveClient]:
         with self.guard:
             requested_generation = self.generation
+            if expected_generation is not None and (type(expected_generation) is not int or expected_generation != requested_generation):
+                raise ConnectionError('displayed connection expired; no command was sent')
             if self.connection != 'ready' or self.client is None or self.client.closed.is_set():
                 raise ConnectionError('device is not ready; command was not queued or replayed')
         with self.operations:
