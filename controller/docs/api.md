@@ -201,7 +201,7 @@ healthy final-stop silence. It never uses personal media or the interactive volu
 
 ## Complete named albums
 
-`DiscSession.play_album(album)` selects the complete native album across raw
+`DiscSession.play_album(album, *, index=None, expected=None)` selects the complete native album across raw
 artist credits and verifies fresh source membership and playback queue. Existing
 `play_artist(artist, album=...)` selects only that artist's album scope. Shared
 TCP/WS `play_album(album, index=None, http=...)` helpers use reviewed V2.57 type 3
@@ -209,6 +209,31 @@ with fresh source bounds, reject empty/reserved names and never retry mutations.
 The session helper adds two equal source reads and final row identity protection.
 The stock catalog has no release identifier or atomic revision token.
 
+
+## Displayed selections and playlist editing
+
+`play_album`, `play_artist` and `play_queue_index(index, *, expected=None)` accept
+an immutable tuple of `QueueItem` rows from a previously displayed source.
+Positions, titles and artists must still match the complete fresh source.
+Indexed album selection verifies both the queue and selected track. Queue
+selection also checks current identity and mode; ambiguous/stale state fails
+before mutation. A missing expected snapshot retains the existing fresh-read
+behavior for non-UI callers. Stock has no atomic revision token.
+
+The V2.57 `playlist_edit` capability enables these session methods:
+
+- `create_playlist(name)` and `rename_playlist(name, new_name)`.
+- `add_playlist_track(name, index, *, expected, album=None)`, using all/song or
+  a complete unscoped album source.
+- `remove_playlist_track(name, index, *, expected)`, removing membership only.
+
+Edits share the serialized session, pacing and scan guard. They re-resolve unique
+names to fresh playlist positions, compare source/membership, send once and
+verify readback. Duplicate/ambiguous tracks are rejected conservatively. Empty
+HTTP 200 responses do not establish success; lost replies remain uncertain with
+no replay. There is no public source-file deletion or playlist deletion here.
+`tests/integration/web_session_check.py` exercises these operations on generated
+media in disposable V2.57 `queue` and `full` CI scenarios.
 
 ## Current-state operations
 

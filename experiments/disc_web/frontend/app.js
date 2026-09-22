@@ -1,0 +1,377 @@
+import {t, initLocale, setLocale, getLocale, translateStatic} from './i18n.mjs';
+await initLocale();
+import {escapeHTML as esc, timeLabel, filterItems, routeHash, parseRoute} from './core.mjs';
+
+const paths = {
+ moon:'M20.8 13.3A9 9 0 0 1 10.7 3.2a9 9 0 1 0 10.1 10.1Z',
+ home:'M3 10 12 3l9 7v10a1 1 0 0 1-1 1h-5v-7H9v7H4a1 1 0 0 1-1-1Z',
+ album:'M4 3h16v18H4Z M8 8h8v8H8Z M10 12h4',
+ artist:'M16 7a4 4 0 1 1-8 0 4 4 0 0 1 8 0ZM4 21v-2a8 8 0 0 1 16 0v2',
+ music:'M9 18V5l11-2v13 M9 7l11-2 M9 18a3 3 0 1 1-3-3 3 3 0 0 1 3 3ZM20 16a3 3 0 1 1-3-3 3 3 0 0 1 3 3Z',
+ heart:'M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.7l-1.1-1.1a5.5 5.5 0 0 0-7.8 7.8L12 21l8.8-8.6a5.5 5.5 0 0 0 0-7.8Z',
+ playlist:'M4 5h13M4 10h13M4 15h7M17 14v7M13.5 17.5h7',
+ queue:'M3 5h18M3 10h18M3 15h10M17 15l4 3-4 3Z',
+ search:'M16 10a6 6 0 1 1-12 0 6 6 0 0 1 12 0ZM15 15l6 6',
+ refresh:'M20 7a9 9 0 1 0 1 8M20 3v5h-5',
+ device:'M5 2h14v20H5Z M8 5h8v8H8Z M14 17a2 2 0 1 1-4 0 2 2 0 0 1 4 0Z',
+ play:'m9 5 11 7-11 7Z',pause:'M8 5v14M16 5v14',
+ previous:'M5 5v14M19 5 8 12l11 7Z',next:'M19 5v14M5 5l11 7L5 19Z',
+ shuffle:'M3 6h3c5 0 7 12 12 12h3M17 14l4 4-4 4M3 18h3c2 0 4-3 6-6s4-6 6-6h3M17 2l4 4-4 4',
+ repeat:'m17 2 4 4-4 4M3 11V8a2 2 0 0 1 2-2h16M7 22l-4-4 4-4M21 13v3a2 2 0 0 1-2 2H3',
+ volume:'M11 4 6 8H2v8h4l5 4ZM15 8a6 6 0 0 1 0 8M18 4a11 11 0 0 1 0 16',
+ close:'M6 6l12 12M6 18 18 6',arrow:'M5 12h14m-5-5 5 5-5 5',back:'M19 12H5m5-5-5 5 5 5',
+ clock:'M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0ZM12 7v5l3 2',info:'M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0ZM12 11v6M12 7h.01'
+};
+const icon = name => `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="${paths[name] || paths.music}"/></svg>`;
+for (const node of document.querySelectorAll('[data-icon]')) node.innerHTML = icon(node.dataset.icon);
+const $ = id => document.getElementById(id);
+function updateThemeChoice() {
+  const preference=window.DiscTheme.get();
+  for (const choice of document.querySelectorAll('[data-theme-choice]')) choice.setAttribute('aria-pressed',choice.dataset.themeChoice===preference);
+  $('theme-button').title=t('appearance_label')+({light:t('light_label'),dark:t('dark_label'),system:t('system_label')}[preference]);
+}
+$('theme-button').onclick=()=>$('theme-dialog').showModal();
+$('close-theme').onclick=()=>$('theme-dialog').close();
+for (const choice of document.querySelectorAll('[data-theme-choice]')) choice.onclick=()=>window.DiscTheme.set(choice.dataset.themeChoice);
+window.addEventListener('disc-theme-change', updateThemeChoice);
+updateThemeChoice();
+document.querySelector('.skip-link').onclick = event => {event.preventDefault(); $('main').focus();};
+const titleKeys = {home:'home',albums:'albums',artists:'artists',tracks:'tracks',favorites:'favorites',playlists:'playlists',album:'album',artist:'artist',playlist:'playlist'};
+let state = null, route = parseRoute(location.hash), currentItems = [], homeTracks = [], activeItem = null;
+let requestSequence = 0, busy = false, genre = '', toastTimer, pollTimer, lastTrack = '', libraryLoading = false;
+let artistScope = '';
+let editContext = null;
+
+function editLabels() {
+  if (!editContext) return;
+  const keys={create:'new_playlist',rename:'rename',add:'add_to_playlist',remove:'remove_from_playlist'};
+  $('playlist-dialog-title').textContent=t(keys[editContext.action]);
+  $('playlist-submit').textContent=t(editContext.action==='create'?'create':editContext.action==='rename'?'save':keys[editContext.action]);
+}
+async function openPlaylistEditor(action, item=null) {
+  if (busy || libraryLoading) return toast(t('please_wait_for_the_current_request'));
+  editContext={action,item,name:route.name,generation:state.generation};
+  editLabels();
+  $('playlist-track-label').textContent=item?.title || '';
+  $('playlist-name').value=action==='rename' ? route.name : '';
+  $('playlist-name').required=['create','rename'].includes(action);
+  $('playlist-name-label').hidden=!['create','rename'].includes(action);
+  $('playlist-select-label').hidden=action!=='add';
+  $('playlist-feedback').textContent='';
+  $('playlist-submit').disabled=false;
+  if (action==='add') {
+    try {
+      const data=await api('/api/library?kind=playlists');
+      $('playlist-select').replaceChildren(...data.items.map(item=>new Option(item.title,item.title)));
+      if (!data.items.length) {$('playlist-feedback').textContent=t('playlist_empty'); $('playlist-submit').disabled=true;}
+    } catch {return toast(t('request_failed'),true);}
+  }
+  $('playlist-dialog').showModal();
+  if (['create','rename'].includes(action)) $('playlist-name').focus();
+}
+$('close-playlist').onclick=()=>$('playlist-dialog').close();
+$('playlist-form').onsubmit=async event=>{
+  event.preventDefault();
+  if (!editContext || busy) return;
+  if (state.generation!==editContext.generation) {
+    $('playlist-feedback').textContent=t('request_failed'); $('playlist-submit').disabled=true; return;
+  }
+  const {action,item,name}=editContext;
+  const newName=$('playlist-name').value.trim();
+  const extras=action==='create' ? {name:newName} : action==='rename' ? {name,new_name:newName}
+    : {name:action==='add' ? $('playlist-select').value : name, ...(state.demo ? {track:item.id} : {selection:item.selection})};
+  $('playlist-submit').disabled=true;
+  const success=await command('playlist_'+action,extras);
+  if (success) {
+    $('playlist-dialog').close();
+    if (action==='rename') navigate('playlist',{title:newName});
+    else await loadView();
+  } else $('playlist-feedback').textContent=t('result_unconfirmed_the_command_was_not_retried');
+};
+
+function toast(message, error=false) {
+  clearTimeout(toastTimer); $('toast').textContent = message; $('toast').hidden = false;
+  $('toast').classList.toggle('error', error);
+  toastTimer = setTimeout(() => $('toast').hidden = true, error ? 11000 : 4500);
+}
+async function api(path, body) {
+  const response = await fetch(path, body ? {method:'POST', headers:{'Content-Type':'application/json','X-Disc-Token':state?.token || ''}, body:JSON.stringify(body)} : {});
+  const data = await response.json();
+  if (!response.ok) throw new Error(t('request_failed'));
+  return data;
+}
+function art(item, css='art') {
+  const src = item?.art;
+  return typeof src === 'string' && /^\/art\/cover-[0-7]\.svg$/.test(src)
+    ? `<img class="${css}" src="${src}" alt="" loading="lazy">`
+    : `<div class="card-placeholder" aria-hidden="true">${esc((item?.title || '♪').slice(0,2).toUpperCase())}</div>`;
+}
+function navigate(view, item=null) {
+  activeItem = item;
+  artistScope = item?.scope_artist || '';
+  const next = {view,name:item?.title || '',artist:artistScope};
+  if (location.hash === routeHash(next)) {route=next; loadView();}
+  else location.hash = routeHash(next);
+}
+window.addEventListener('hashchange', () => {
+  route = parseRoute(location.hash); artistScope = route.artist;
+  $('search').value = ''; genre = ''; window.scrollTo(0,0); loadView();
+});
+for (const button of document.querySelectorAll('[data-view]')) button.addEventListener('click', () => navigate(button.dataset.view));
+function updateNav() {
+  $('breadcrumb').textContent = route.name || t(titleKeys[route.view]);
+  for (const button of document.querySelectorAll('[data-view]')) {
+    const active = button.dataset.view === route.view || `${button.dataset.view}` === `${route.view}s`;
+    button.classList.toggle('active', active);
+    if (active) button.setAttribute('aria-current', 'page'); else button.removeAttribute('aria-current');
+  }
+  $('search').placeholder = t('find_section',{name:route.name || t(titleKeys[route.view]).toLowerCase()});
+}
+async function loadView() {
+  updateNav();
+  const sequence = ++requestSequence;
+  if (!state || state.connection !== 'ready') {
+    currentItems=[]; renderDisconnected(); return;
+  }
+  libraryLoading = true;
+  $('main').innerHTML = `<div class="loading-shell" role="status">${t('gathering_your_collection')}</div>`;
+  try {
+    const params = new URLSearchParams({kind:route.view === 'home' ? 'albums' : route.view, name:route.name,artist:route.artist});
+    const data = await api(`/api/library?${params}`);
+    if (sequence !== requestSequence) return;
+    currentItems = data.items;
+    if (route.view === 'home') {
+      const tracks = await api('/api/library?kind=tracks');
+      if (sequence !== requestSequence) return;
+      homeTracks = tracks.items;
+    }
+    renderView();
+  } catch (error) {
+    if (sequence !== requestSequence) return;
+    $('main').innerHTML = `<div class="empty-state">${icon('info')}<h2>${t('collection_unavailable')}</h2><p>${esc(error.message)}</p><button class="secondary-button" id="retry-library">${t('refresh')}</button></div>`;
+    $('retry-library').onclick = () => loadView();
+  } finally { if (sequence === requestSequence) libraryLoading=false; }
+}
+function renderDisconnected() {
+  $('main').innerHTML = `<div class="intro"><div><span class="eyebrow">${t('your_music_your_space')}</span><h1>${t('welcome_back')}</h1></div></div><div class="empty-state">${icon('device')}<h2>${t('it_starts_with_your_disc')}</h2><p>${t('connect_your_player_to_explore_your_collection_choose_an_album_and_take_control_of_your_music')}</p><button id="empty-connect" class="primary-button">${icon('device')} ${t('connect_your_player')}</button></div>`;
+  $('empty-connect').onclick = showDevice;
+}
+function cards(items, extra='') {
+  return `<div class="album-grid ${extra}">${items.map((item, i) => `<article class="album-card ${item.type === 'artist' ? 'artist-card' : ''}"><button class="album-cover-button" data-card="${i}" aria-label="${esc(t('open_item',{name:item.title}))}">${art(item)}</button><h3>${esc(item.title)}</h3><p>${esc(item.type==='artist' ? t('browse_albums') : item.artist || (item.type==='playlist' ? t('playlist_on_disc') : t('album_on_disc')))}</p>${item.genre ? `<div class="album-sub"><span>${esc(item.genre)}</span><span>${esc(item.year)}</span></div>` : ''}</article>`).join('')}</div>`;
+}
+function rows(items, queue=false) {
+  return `<div class="track-list">${items.map((item,i) => {
+    const selected = queue ? i === state?.playback?.track?.queue_position : item.id === state?.playback?.track?.id && state?.demo;
+    return `<div class="track-row ${selected ? 'is-current' : ''}" ${state?.demo ? `data-track-id="${esc(item.id)}"` : ''}><span class="track-number">${state?.demo || item.playable ? `<button data-track="${i}" aria-label="${queue ? t('select_in_queue') : t('play_label')} ${esc(item.title)}">${selected ? icon('music') : icon('play')}</button>` : i+1}</span><span class="track-thumb">${art(item)}</span><div class="track-meta"><strong>${esc(item.title)}</strong><small>${esc(item.artist || '—')}</small></div><span class="track-album">${esc(item.album || '')}</span><span class="track-duration">${timeLabel(item.duration)}</span>${!queue && (state.demo || item.editable) ? `<button class="icon-button track-edit" data-edit-track="${i}" aria-label="${t(route.view==='playlist' ? 'remove_from_playlist' : 'add_to_playlist')}">${route.view==='playlist' ? '−' : '+'}</button>` : ''}</div>`;
+  }).join('')}</div>`;
+}
+function bindCards(items) {
+  for (const button of $('main').querySelectorAll('[data-card]')) button.onclick = () => {
+    const item = items[Number(button.dataset.card)];
+    navigate(item.type, item);
+  };
+}
+function bindTracks(root, items, queue=false) {
+  for (const button of root.querySelectorAll('[data-edit-track]')) button.onclick=()=>openPlaylistEditor(route.view==='playlist' ? 'remove' : 'add',items[Number(button.dataset.editTrack)]);
+  for (const button of root.querySelectorAll('[data-track]')) button.onclick = () => {
+    const index = Number(button.dataset.track);
+    command(queue ? 'queue' : 'track', state.demo ? (queue ? {index} : {name:items[index].id}) : {selection:items[index].selection});
+  };
+}
+function renderView() {
+  const query = $('search').value;
+  let items = filterItems(currentItems, query);
+  if (genre) items = items.filter(item => item.genre === genre);
+  if (route.view === 'home' && !query) return renderHome(items);
+  const detail = ['album','artist','playlist'].includes(route.view);
+  const isTracks = ['tracks','favorites','album','playlist'].includes(route.view);
+  const count = items.length;
+  const empty = `<div class="empty-state">${icon(query ? 'search' : 'music')}<h2>${query ? t('no_matches_yet') : t('a_little_quiet_here')}</h2><p>${query ? t('try_another_title_or_artist_search_looks_within_this_section') : t('your_collection_will_appear_here_after_adding_music_to_your_player')}</p></div>`;
+  let heading;
+  if (detail) {
+    const item = activeItem?.title === route.name ? activeItem : {title:route.name,art:items[0]?.art};
+    const artist = route.artist || item.artist || (items.length && items.every(i => i.artist === items[0].artist) ? items[0].artist : '');
+    const canPlay = state.demo || route.view !== 'playlist';
+    heading = `<button class="text-button" id="back">${icon('back')} ${route.view === 'album' && route.artist ? esc(route.artist) : t('back_to_collection')}</button><div class="detail-heading"><div class="detail-art">${art(item)}</div><div class="detail-copy"><span class="eyebrow">${esc(t(titleKeys[route.view]))}</span><h1>${esc(route.name)}</h1><p>${esc(artist)}${artist ? ' · ' : ''}${t(isTracks ? 'track_count' : 'album_count',{count:currentItems.length})}${state.demo ? ' · DISC Sessions' : ''}</p><div class="detail-actions"><button id="play-collection" class="primary-button" ${!canPlay || !currentItems.length ? 'disabled' : ''}>${icon('play')} ${route.view === 'album' ? t('play_album') : t('listen')}</button></div></div></div>`;
+    if (!state.demo && route.view==='playlist') heading += `<p class="read-only-note">${icon('info')}${t('playlist_playback_later')}</p>`;
+  } else {
+    heading = `<div class="view-heading"><div><span class="eyebrow">${t('my_collection')}</span><h1>${esc(t(titleKeys[route.view]))}</h1><p>${query ? t('found') : t('in_this_section')}: ${count}${state.demo ? t('demo_collection') : ''}</p></div></div>`;
+    if (!isTracks && state.demo && route.view === 'albums') {
+      const genres = [...new Set(currentItems.map(i=>i.genre).filter(Boolean))];
+      heading += `<div class="filter-chips"><button class="chip ${!genre ? 'active' : ''}" data-genre="">${t('all_albums')}</button>${genres.map(g=>`<button class="chip ${genre===g ? 'active' : ''}" data-genre="${esc(g)}">${esc(g)}</button>`).join('')}</div>`;
+    }
+    if (!state.demo && isTracks) heading += `<p class="read-only-note">${icon('info')}${t('browse_the_collection_open_an_album_or_artist_to_start_playback')}</p>`;
+  }
+  if (route.view==='playlists') heading+=`<button id="create-playlist" class="secondary-button playlist-create">+ ${t('new_playlist')}</button>`;
+  if (route.view==='playlist') heading+=`<button id="rename-playlist" class="secondary-button playlist-create">${t('rename')}</button>`;
+  $('main').innerHTML = heading + (!count ? empty : isTracks ? `<div class="track-row track-header"><span>#</span><span></span><span>${t('title')}</span><span class="track-album">${t('album_label')}</span><span>${icon('clock')}</span></div>${rows(items)}` : cards(items));
+  bindCards(items); bindTracks($('main'), items);
+  if ($('create-playlist')) $('create-playlist').onclick=()=>openPlaylistEditor('create');
+  if ($('rename-playlist')) $('rename-playlist').onclick=()=>openPlaylistEditor('rename');
+  for (const chip of $('main').querySelectorAll('[data-genre]')) chip.onclick = () => {genre=chip.dataset.genre; renderView();};
+  if ($('back')) $('back').onclick = () => route.artist ? navigate('artist',{title:route.artist}) : navigate(`${route.view}s`);
+  if ($('play-collection')) $('play-collection').onclick = () => command(route.view, {name:route.name,...(route.artist ? {artist:route.artist} : {})});
+}
+function renderHome(items) {
+  const albumItems = items.slice(0,4), tracks = homeTracks.slice(0,3), featured = items[0];
+  $('main').innerHTML = `<div class="intro"><div><span class="eyebrow">${t('a_good_day_for_music')}</span><h1>${t('on_your_wavelength')}</h1></div><span class="intro-note">${icon('music')} ${t('just_your_collection')}</span></div>
+    <section class="hero" aria-label="${t('album_from_your_collection')}">${featured?.art ? `<img class="hero-art" src="${esc(featured.art)}" alt="">` : ''}<div class="hero-content"><span class="eyebrow">${state.demo ? t('disc_sessions_in_focus') : t('your_personal_collection')}</span><h2>${t('your_collection')}<br>${t('your_rhythm')}</h2><p>${featured ? `${esc(featured.title)}${featured.artist ? ` — ${esc(featured.artist)}` : ''}.<br>${t('press_play_everything_else_can_wait')}` : `${t('your_favorite_records_all_in_one_place')}<br>${t('let_music_into_your_day')}`}</p><button class="primary-button" id="hero-play" ${!featured ? 'disabled' : ''}>${icon('play')} ${t('play_album')}</button></div><span class="hero-caption">MADE FOR LISTENING</span></section>
+    <section><div class="section-heading"><h2>${t('your_albums')}<small>${t('the_music_you_always_come_back_to')}</small></h2><button class="text-button" id="all-albums">${t('all_albums')} ${icon('arrow')}</button></div>${albumItems.length ? cards(albumItems,'home-albums') : `<p class="scope-note">${t('no_albums_in_your_library_yet')}</p>`}</section>
+    <div class="home-bottom"><section><div class="section-heading"><h2>${t('from_your_collection')}</h2><button class="text-button" id="all-tracks">${t('all_tracks')} ${icon('arrow')}</button></div>${rows(tracks)}</section><section><div class="section-heading"><h2>${t('room_for_music')}</h2></div><div class="listening-note"><span class="eyebrow">${t('just_listen')}</span><h3>${t('less_noise')}<br>${t('more_music')}</h3><p>${t('your_player_your_records')}<br>${t('everything_that_matters_right_here')}</p><span class="note-ring"></span></div></section></div>`;
+  bindCards(albumItems); bindTracks($('main'),tracks);
+  $('all-albums').onclick = () => navigate('albums'); $('all-tracks').onclick = () => navigate('tracks');
+  $('hero-play').onclick = () => command('album',{name:featured.title});
+}
+async function refreshState() {
+  try {
+    const previous = state;
+    state = await api('/api/state');
+    updatePlayer();
+    $('mode-banner').hidden = !state.demo;
+    $('output-label').textContent = state.demo ? t('demo_no_audio') : t('on_disc');
+    $('connection-label').textContent = state.demo ? t('demo_mode') : ({ready:t('connected'),connecting:t('connecting'),reconnecting:t('reconnecting'),disconnected:t('disconnected')}[state.connection] || state.connection);
+    $('status-light').classList.toggle('ready',state.connection==='ready');
+    if (previous && previous.connection !== state.connection) {
+      if (state.connection === 'ready') loadView();
+      else {++requestSequence; libraryLoading=false; renderDisconnected(); $('queue').hidden=true; $('queue-button').setAttribute('aria-expanded','false');}
+    }
+    return true;
+  } catch {
+    if (state) state = {...state,connection:'disconnected',playback:{state:'unknown'}};
+    updatePlayer(); $('connection-label').textContent=t('server_unavailable'); $('status-light').classList.remove('ready');
+    return false;
+  }
+}
+function updatePlayer() {
+  const p = state?.playback || {}, track = p.track, ready = state?.connection === 'ready';
+  for (const row of document.querySelectorAll('[data-track-id]')) {
+    const selected = state?.demo && row.dataset.trackId === track?.id;
+    if (row.classList.contains('is-current') !== selected) {
+      row.classList.toggle('is-current', selected);
+      const button = row.querySelector('[data-track]');
+      if (button) button.innerHTML = icon(selected ? 'music' : 'play');
+    }
+  }
+  const key = JSON.stringify([track?.title,track?.artist,track?.album,state?.generation,state?.demo]);
+  if (key !== lastTrack) {
+    lastTrack=key;
+    $('now-art').innerHTML = art(track);
+    $('large-art').innerHTML = art(track);
+    if (track && !state.demo && ready) {
+      const img = new Image(); img.alt='';
+      img.onload = () => {if (key===lastTrack) {$('now-art').replaceChildren(img); $('large-art').replaceChildren(img.cloneNode());}};
+      img.src = '/api/cover?v=' + encodeURIComponent(key);
+    }
+  }
+  $('now-title').textContent = track?.title || t('your_music_awaits');
+  $('now-artist').textContent = track?.artist || (ready ? t('choose_an_album') : t('connect_your_disc'));
+  $('play').innerHTML = icon(p.state === 'playing' ? 'pause' : 'play');
+  $('play').setAttribute('aria-label',p.state === 'playing' ? t('pause') : t('play'));
+  $('favorite').setAttribute('aria-pressed',p.favorite === true);
+  $('favorite').setAttribute('aria-label',p.favorite ? t('unfavorite_the_current_track') : t('favorite_the_current_track'));
+  $('shuffle').setAttribute('aria-pressed',p.mode==='random');
+  $('repeat').setAttribute('aria-pressed',p.mode==='repeat_list');
+  for (const id of ['play','next','previous','favorite','shuffle','repeat','volume']) $(id).disabled = !ready || busy || state?.busy || (['play','next','previous','favorite'].includes(id) && !track);
+  $('queue-button').disabled = !ready;
+  $('position').textContent = timeLabel(Number.isFinite(p.position_ms) ? p.position_ms/1000 : null);
+  $('duration').textContent = timeLabel(track?.duration);
+  $('progress').max = track?.duration || 100;
+  $('progress').value = track?.duration && Number.isFinite(p.position_ms) ? p.position_ms/1000 : 0;
+  if (Number.isFinite(state?.volume) && document.activeElement !== $('volume')) $('volume').value=state.volume;
+  $('volume-value').textContent = state?.volume ?? '—';
+  $('volume').title = Number.isFinite(state?.volume) ? t('volume_value',{value:state.volume}) : t('current_volume_is_unknown_choose_a_value_from_0_120');
+  $('large-title').textContent = $('now-title').textContent;
+  $('large-artist').textContent = $('now-artist').textContent;
+  $('large-position').textContent = $('position').textContent;
+  $('large-duration').textContent = $('duration').textContent;
+  $('large-output').textContent = state?.demo ? t('demo_mode_no_audio') : t('audio_plays_on_your_disc');
+  for (const id of ['play','next','previous','favorite','shuffle','repeat']) {
+    const large=$('large-'+id), small=$(id);
+    large.disabled=small.disabled;
+    if (id==='play') {large.innerHTML=small.innerHTML; large.setAttribute('aria-label',small.getAttribute('aria-label'));}
+    if (small.hasAttribute('aria-pressed')) large.setAttribute('aria-pressed',small.getAttribute('aria-pressed'));
+  }
+  $('large-volume').disabled=$('volume').disabled;
+  if (document.activeElement!==$('large-volume')) $('large-volume').value=$('volume').value;
+  $('large-volume-value').textContent=$('volume-value').textContent;
+}
+async function command(action, extras={}) {
+  if (busy || state?.busy || libraryLoading) return toast(t('please_wait_for_the_current_request'));
+  busy = true; updatePlayer();
+  let success=false;
+  try {
+    const result = await api('/api/action',{action,...extras,generation:state?.generation,request_id:crypto.randomUUID()});
+    if (['uncertain','not_sent','unavailable'].includes(result.status)) toast(t('result_unconfirmed_the_command_was_not_retried'),true);
+    else if (state?.demo) toast(t('demo_updated_no_device_playback_was_changed'));
+    else if (action==='connect') toast(t('connecting_to_disc'));
+    else if (action==='disconnect') toast(t('disconnected_label'));
+    else toast(result.status==='already_satisfied' ? t('already_set') : t('done_verified_on_disc'));
+    success=!['uncertain','not_sent','unavailable'].includes(result.status);
+    await refreshState();
+    if (route.view==='favorites' && action==='favorite') await loadView();
+    if (!$('queue').hidden) await loadQueue();
+  } catch (error) {
+    toast(`${error.message || t('connection_lost')}. ${t('the_request_is_not_automatically_retried')}`,true);
+    await refreshState();
+  } finally {busy=false; updatePlayer();}
+  return success;
+}
+async function loadQueue() {
+  $('queue-content').innerHTML=`<p class="queue-hint">${t('reading_the_queue')}</p>`;
+  try {
+    const data=await api('/api/queue');
+    if (!data.queue) throw new Error(t('queue_unavailable'));
+    const items=data.queue.items;
+    $('queue-content').innerHTML=`<p class="queue-hint">${t('track_count',{count:items.length})} · ${state.demo ? t('demo_with_no_audio') : t('fresh_disc_queue_snapshot')}</p>${items.length ? rows(items,true) : `<p class="queue-hint">${t('choose_an_album_to_get_started')}</p>`}`;
+    bindTracks($('queue-content'),items,true);
+  } catch(error) {$('queue-content').innerHTML=`<p class="queue-hint">${esc(error.message)}</p>`;}
+}
+function showDevice() {
+  const demo=state?.demo;
+  $('device-description').textContent=demo ? t('this_interactive_preview_uses_a_fictional_collection_controls_only_change_the_demo_state_no_audio_is_played') : t('control_your_music_over_a_local_connection_audio_stays_on_your_player');
+  $('device-endpoint').textContent=demo ? t('live_mode_experiments_disc_web_run_sh') : `${state?.endpoint || '127.0.0.1'} · TCP ${state?.tcp_port || 12100} / HTTP ${state?.http_port || 12113}`;
+  $('connect').hidden=demo;
+  $('connect').textContent=state?.enabled ? t('disconnect') : t('connect');
+  $('device-dialog').showModal();
+}
+$('device-button').onclick=showDevice; $('about-demo').onclick=showDevice;
+$('mobile-device').onclick=showDevice;
+$('close-dialog').onclick=()=>$('device-dialog').close();
+$('connect').onclick=()=>{const action=state?.enabled?'disconnect':'connect'; $('device-dialog').close(); command(action);};
+$('play').onclick=()=>command(state?.playback?.state==='playing'?'pause':'resume');
+$('next').onclick=()=>command('next'); $('previous').onclick=()=>command('previous');
+$('favorite').onclick=()=>command('favorite',{value:!state?.playback?.favorite});
+$('shuffle').onclick=()=>command('mode',{value:state?.playback?.mode==='random'?'list_once':'random'});
+$('repeat').onclick=()=>command('mode',{value:state?.playback?.mode==='repeat_list'?'list_once':'repeat_list'});
+$('volume').oninput=()=>$('volume-value').textContent=$('volume').value;
+$('volume').onchange=()=>command('volume',{value:Number($('volume').value)});
+$('now-open').onclick=()=>$('now-dialog').showModal();
+$('close-now').onclick=()=>$('now-dialog').close();
+for (const id of ['play','next','previous','favorite','shuffle','repeat']) $('large-'+id).onclick=()=>$(id).click();
+$('large-volume').oninput=()=>$('large-volume-value').textContent=$('large-volume').value;
+$('large-volume').onchange=()=>command('volume',{value:Number($('large-volume').value)});
+$('queue-button').onclick=()=>{const open=$('queue').hidden; $('queue').hidden=!open; $('queue-button').setAttribute('aria-expanded',open); if(open) loadQueue();};
+$('close-queue').onclick=()=>{$('queue').hidden=true; $('queue-button').setAttribute('aria-expanded','false'); $('queue-button').focus();};
+$('refresh').onclick=()=>{if(!busy && !libraryLoading) loadView();};
+$('search').oninput=()=>{if(state?.connection==='ready' && !libraryLoading) renderView();};
+document.addEventListener('keydown',event=>{
+  if(event.key==='Escape' && !$('queue').hidden) $('close-queue').click();
+  if(event.key==='/' && !['INPUT','TEXTAREA','SELECT'].includes(document.activeElement.tagName) && !document.querySelector('dialog[open]')) {event.preventDefault(); $('search').focus();}
+});
+async function poll() {await refreshState(); pollTimer=setTimeout(poll,1500);}
+window.addEventListener('pagehide',()=>clearTimeout(pollTimer));
+window.addEventListener('pageshow',event=>{if(event.persisted) poll();});
+$('language').value=getLocale();
+$('language').onchange=()=>setLocale($('language').value);
+window.addEventListener('disc-language-change',()=>{
+  $('language').value=getLocale();
+  updateThemeChoice(); updateNav(); updatePlayer(); editLabels();
+  if (state) {
+    $('connection-label').textContent = state.demo ? t('demo_mode') : ({ready:t('connected'),connecting:t('connecting'),reconnecting:t('reconnecting'),disconnected:t('disconnected')}[state.connection] || state.connection);
+    $('output-label').textContent = state.demo ? t('demo_no_audio') : t('on_disc');
+  }
+  if (!libraryLoading && state?.connection==='ready') renderView(); else if(!libraryLoading) renderDisconnected();
+  if (!$('queue').hidden) loadQueue();
+  if ($('device-dialog').open) showDevice();
+});
+await refreshState(); await loadView(); pollTimer=setTimeout(poll,1500);

@@ -63,6 +63,8 @@ def matches(state, selected, rows, *, album_verified=False):
         return False
     if selected['kind'] == 'track':
         return title == selected['title']
+    if selected.get('selected_index') is not None:
+        return title == selected['title'] and artist == selected['target_artist']
     return any(r['author'] == artist and r['name'] == title for r in rows)
 
 

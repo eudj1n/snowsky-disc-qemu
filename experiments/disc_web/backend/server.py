@@ -1,0 +1,139 @@
+"""Dependency-free loopback HTTP adapter. A browser never owns a device socket."""
+import argparse
+from collections import OrderedDict
+import json
+import mimetypes
+from pathlib import Path
+import secrets
+from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
+import threading
+from urllib.parse import parse_qs, urlsplit
+
+from controller import DeviceConfig
+from experiments.disc_web.backend.demo import Demo
+from experiments.disc_web.backend.device import BusyError, Device
+
+FRONTEND = Path(__file__).resolve().parents[1] / 'frontend'
+
+
+class Server(ThreadingHTTPServer):
+    daemon_threads = True
+    block_on_close = False
+
+    def __init__(self, address, device):
+        self.device = device
+        self.token = secrets.token_urlsafe(32)
+        self.requests = OrderedDict()
+        self.request_lock = threading.Lock()
+        super().__init__(address, Handler)
+
+
+class Handler(BaseHTTPRequestHandler):
+    server_version = 'DiscWeb/0.1'
+
+    def setup(self):
+        super().setup()
+        self.connection.settimeout(10)
+
+    def log_message(self, *_args):
+        # Device names, queries and private catalog data do not belong in logs.
+        pass
+
+    def reply(self, value, status=200, content_type='application/json; charset=utf-8'):
+        body = json.dumps(value, ensure_ascii=False).encode() if not isinstance(value, bytes) else value
+        self.send_response(status)
+        self.send_header('Content-Type', content_type)
+        self.send_header('Content-Length', str(len(body)))
+        self.send_header('Cache-Control', 'no-store')
+        self.send_header('X-Content-Type-Options', 'nosniff')
+        self.send_header('Referrer-Policy', 'no-referrer')
+        self.send_header('Content-Security-Policy', "default-src 'self'; img-src 'self' data:; style-src 'self'; script-src 'self'; connect-src 'self'; frame-ancestors 'none'; base-uri 'none'; form-action 'self'")
+        self.end_headers()
+        self.wfile.write(body)
+
+    def same_origin(self):
+        allowed = {f'127.0.0.1:{self.server.server_port}', f'localhost:{self.server.server_port}'}
+        host = self.headers.get('Host')
+        origin = self.headers.get('Origin')
+        return (host in allowed and (origin is None or origin == f'http://{host}')
+                and self.headers.get('Sec-Fetch-Site') not in ('cross-site',))
+
+    def do_GET(self):
+        if not self.same_origin():
+            return self.reply({'error': 'Local same-origin access required'}, 403)
+        url = urlsplit(self.path)
+        query = parse_qs(url.query)
+        try:
+            if url.path == '/api/state':
+                return self.reply({**self.server.device.state(), 'token': self.server.token})
+            if url.path == '/api/library':
+                return self.reply(self.server.device.browse(query.get('kind', ['albums'])[0],
+                    query.get('name', [''])[0], query.get('artist', [''])[0]))
+            if url.path == '/api/queue':
+                return self.reply(self.server.device.queue())
+            if url.path == '/api/cover' and not self.server.device.demo:
+                data = self.server.device.cover()
+                if data.startswith(b'\xff\xd8\xff'):
+                    return self.reply(data, content_type='image/jpeg')
+                if data.startswith(b'\x89PNG\r\n\x1a\n'):
+                    return self.reply(data, content_type='image/png')
+                return self.reply({'error': 'No current cover'}, 404)
+            relative = 'index.html' if url.path == '/' else url.path.removeprefix('/')
+            path = (FRONTEND / relative).resolve()
+            if not path.is_relative_to(FRONTEND) or not path.is_file():
+                return self.reply({'error': 'Not found'}, 404)
+            return self.reply(path.read_bytes(), content_type=mimetypes.guess_type(path.name)[0] or 'application/octet-stream')
+        except BusyError as exc:
+            return self.reply({'error': str(exc)}, 409)
+        except (ValueError, OSError, RuntimeError) as exc:
+            return self.reply({'error': str(exc)}, 422)
+
+    def do_POST(self):
+        if (not self.same_origin() or not secrets.compare_digest(self.headers.get('X-Disc-Token', ''), self.server.token)):
+            return self.reply({'error': 'Local session token required'}, 403)
+        if self.path != '/api/action':
+            return self.reply({'error': 'Not found'}, 404)
+        if self.headers.get('Content-Type', '').split(';')[0] != 'application/json':
+            return self.reply({'error': 'JSON required'}, 415)
+        try:
+            length = int(self.headers.get('Content-Length', '0'))
+            if not 0 < length <= 16384:
+                return self.reply({'error': 'Request size outside limit'}, 413)
+            body = json.loads(self.rfile.read(length))
+            if not isinstance(body, dict):
+                raise ValueError('Expected an object')
+            request_id = body.get('request_id')
+            if not isinstance(request_id, str) or not 8 <= len(request_id) <= 100:
+                raise ValueError('A request ID is required')
+            with self.server.request_lock:
+                if request_id in self.server.requests:
+                    return self.reply({'error': 'Duplicate request was not replayed'}, 409)
+                self.server.requests[request_id] = None
+                if len(self.server.requests) > 4096:
+                    self.server.requests.popitem(last=False)
+            return self.reply(self.server.device.action(body))
+        except BusyError as exc:
+            return self.reply({'error': str(exc)}, 409)
+        except (ValueError, OSError, RuntimeError) as exc:
+            return self.reply({'error': str(exc)}, 422)
+
+
+def main():
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument('--demo', action='store_true', help='Isolated fictional collection, no device connection')
+    parser.add_argument('--port', type=int, default=8091)
+    parser.add_argument('--device', default='127.0.0.1')
+    parser.add_argument('--tcp-port', type=int, default=12100)
+    parser.add_argument('--http-port', type=int, default=12113, help='12113 for emulator; set 12103 for physical DISC')
+    args = parser.parse_args()
+    device = Demo() if args.demo else Device(DeviceConfig(args.device, args.tcp_port, args.http_port))
+    with device, Server(('127.0.0.1', args.port), device) as server:
+        print(f'DISC Web: http://127.0.0.1:{server.server_port} · {"isolated demo" if args.demo else "disconnected; connect in browser"}', flush=True)
+        try:
+            server.serve_forever()
+        except KeyboardInterrupt:
+            pass
+
+
+if __name__ == '__main__':
+    main()

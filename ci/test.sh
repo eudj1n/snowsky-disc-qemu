@@ -8,7 +8,7 @@ while IFS= read -r -d '' script; do bash -n "$script"; done < <(
     -type f -name '*.sh' -print0
 )
 python3 -B -m ci.unit
-mapfile -d '' js_tests < <(find emulator/tests viewer/tests controller/tests firmware/tests research/diagnostics/tests experiments/browser/tests tests -type f -name 'test_*.js' -print0 | sort -z)
+mapfile -d '' js_tests < <(find emulator/tests viewer/tests controller/tests firmware/tests research/diagnostics/tests experiments/browser/tests experiments/disc_web/tests tests -type f -name 'test_*.js' -print0 | sort -z)
 [ "${#js_tests[@]}" -gt 0 ]
 node --test "${js_tests[@]}"
 bash emulator/shims/build_shims.sh
