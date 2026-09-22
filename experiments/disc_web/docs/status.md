@@ -228,6 +228,11 @@ outside an album, and the 390 px layout. Web passed 36 Python / 13 JavaScript
 tests; firmware-free CI passed 502 Python / 50 JavaScript tests and four shim
 builds. No backend or device protocol changes were required.
 
+The disconnected-view connection action now shares the sidebar device card's
+neutral surface and border, with a compact device label and arrow. RU/dark desktop
+and EN/light 390 px checks passed; the action still opens connection settings.
+Existing Web and firmware-free checks pass; no connection behavior changed.
+
 ## Next implementation stages
 
 1. Local-file metadata enrichment and verified artwork/CUE sidecar handling.

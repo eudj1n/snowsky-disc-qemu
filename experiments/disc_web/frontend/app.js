@@ -193,7 +193,7 @@ async function loadView() {
   } finally { if (sequence === requestSequence) {libraryLoading=false;updatePlayer();renderCatalogue();} }
 }
 function renderDisconnected() {
-  $('main').innerHTML = `<div class="intro"><div><span class="eyebrow">${t('your_music_your_space')}</span><h1>${t('welcome_back')}</h1></div></div><div class="empty-state">${icon('device')}<h2>${t('it_starts_with_your_disc')}</h2><p>${t('connect_your_player_to_explore_your_collection_choose_an_album_and_take_control_of_your_music')}</p><button id="empty-connect" class="primary-button">${icon('device')} ${t('connect_your_player')}</button></div>`;
+  $('main').innerHTML = `<div class="intro"><div><span class="eyebrow">${t('your_music_your_space')}</span><h1>${t('welcome_back')}</h1></div></div><div class="empty-state">${icon('device')}<h2>${t('it_starts_with_your_disc')}</h2><p>${t('connect_your_player_to_explore_your_collection_choose_an_album_and_take_control_of_your_music')}</p><button id="empty-connect" class="connect-card" aria-label="${t('connect_your_player')}"><span class="device-glyph">${icon('device')}</span><span><strong>SNOWSKY DISC</strong><small>${t('connect_your_player')}</small></span><span class="connect-arrow">${icon('arrow')}</span></button></div>`;
   $('empty-connect').onclick = showDevice;
 }
 function cardCaption(item) {
