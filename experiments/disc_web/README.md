@@ -60,8 +60,11 @@ or exposed control service is started. Demo disables connection and discovery.
   distinct credits are labelled Various artists. Completely unknown album/time
   columns are omitted: stock catalog rows supply neither per-track album nor
   duration; duration in Now Playing comes from its separate observed state.
-- Persistent bottom player, expanded Now Playing with mobile-accessible controls,
-  and an explicitly refreshed queue drawer.
+- Persistent bottom player and a spacious Now Playing screen with artwork,
+  album/artist navigation, playback status and an adjacent queue. On mobile,
+  switch between player and queue. Both queue views offer explicit refresh.
+  A format badge uses the observed file extension only; it does not claim
+  bit depth, sample rate or output-device identity.
 - Light, dark and system appearance; RU/EN interface with saved browser preferences.
 - Browser connection settings, physical/emulator presets and passive LAN discovery.
 - Live whole-album/artist/playlist playback, indexed tracks from albums, the

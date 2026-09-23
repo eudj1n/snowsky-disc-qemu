@@ -100,6 +100,12 @@ Volume is the last value read back after this server's volume operation, or
 unknown. Changes made using physical buttons are not yet tracked by this field.
 The queue is a snapshot refreshed on opening or after this browser's commands;
 continuous multi-browser queue invalidation is not implemented yet.
+The expanded player and drawer share one queue snapshot and explicit refresh.
+Late responses from an older request/connection generation are discarded, and
+disconnect invalidates the displayed queue. Current-row highlighting requires
+both the observed position and matching title/artist; it does not predict the next
+track in random mode. The expanded player's format badge comes only from a
+recognized observed filename extension, without codec-quality inference.
 
 Displayed track/queue rows carry opaque source tokens. The server keeps up to
 32 source snapshots for ten minutes, tied to the connection generation. Commands

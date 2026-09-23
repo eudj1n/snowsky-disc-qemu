@@ -114,3 +114,14 @@ test('busy reads wait within a bound; mutations and transport failures are never
   assert.deepEqual(result,{items:[]});
   assert.equal(calls,2);
 });
+
+test('queue highlighting requires position and metadata; formats never imply audio quality', async () => {
+  const {queueTrackMatches,mediaFormat}=await core;
+  const track={title:'Same title',artist:'Artist',queue_position:1,path:'/tmp/sdcard/Album/Track.FLAC'};
+  assert.equal(queueTrackMatches({position:1,title:'Same title',artist:'Artist'},track),true);
+  for(const item of [{position:0,title:'Same title',artist:'Artist'},{position:1,title:'Replaced',artist:'Artist'},{position:1,title:'Same title',artist:'Other'}]) assert.equal(queueTrackMatches(item,track),false);
+  assert.equal(queueTrackMatches({position:null,title:'Same title',artist:'Artist'},{...track,queue_position:null}),false);
+  assert.equal(mediaFormat(track),'FLAC');
+  assert.equal(mediaFormat({path:'/tmp/sdcard/Album/Track.m4a'}),'M4A');
+  for(const value of [null,{}, {title:'Track.flac'}, {path:'/tmp/sdcard/Track'}, {path:'/tmp/sdcard/Track.xyz'}]) assert.equal(mediaFormat(value),null);
+});

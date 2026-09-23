@@ -4,7 +4,7 @@ import {createConnection} from './connection.mjs';
 import {createImporter} from './imports.mjs';
 import {t, initLocale, setLocale, getLocale} from './i18n.mjs';
 await initLocale();
-import {escapeHTML as esc, timeLabel, trackColumns, filterItems, searchKind, routeHash, parseRoute, trackDuration, playbackIdentity, seekAllowed, coverIdentity, artworkSource} from './core.mjs';
+import {escapeHTML as esc, timeLabel, trackColumns, mediaFormat, queueTrackMatches, filterItems, searchKind, routeHash, parseRoute, trackDuration, playbackIdentity, seekAllowed, coverIdentity, artworkSource} from './core.mjs';
 
 const paths = {
  moon:'M20.8 13.3A9 9 0 0 1 10.7 3.2a9 9 0 1 0 10.1 10.1Z',
@@ -46,6 +46,7 @@ let state = null, route = parseRoute(location.hash), currentItems = [], homeTrac
 let requestSequence = 0, busy = false, genre = '', toastTimer, pollTimer, lastTrack = '', libraryLoading = false;
 let artistScope = '', displayedSnapshot=null;
 let lastCoverRequest='';
+let queueItems=null, queueGeneration=null, queueRequest=0, queueLoading=false, queueError='';
 const cachedViews=new Set(['home','albums','artists','tracks','album','artist']);
 const canBrowse=()=>state?.connection==='ready'||(state?.catalogue?.available&&cachedViews.has(route.view));
 const albumInfo=createAlbumInfo({api,getState:()=>state,isBusy:()=>busy||libraryLoading,caption:cardCaption});
@@ -208,8 +209,8 @@ function cards(items, extra='') {
 function rows(items, queue=false) {
   const columns=trackColumns(items);
   return `<div class="track-list">${items.map((item,i) => {
-    const selected = queue ? item.position === state?.playback?.track?.queue_position : item.id === state?.playback?.track?.id && state?.demo;
-    return `<div data-track-row="${i}" class="track-row ${!columns.album ? 'no-album' : ''} ${!columns.duration ? 'no-duration' : ''} ${selected ? 'is-current' : ''}" ${state?.demo ? `data-track-id="${esc(item.id)}"` : ''}><span class="track-number">${state?.demo || item.playable ? `<button data-track="${i}" aria-label="${queue ? t('select_in_queue') : t('play_label')} ${esc(item.title)}">${selected ? icon('music') : icon('play')}</button>` : i+1}</span><span class="track-thumb">${art(item)}</span><div class="track-meta"><strong>${esc(item.title)}</strong><small>${esc(item.artist || '—')}</small></div><span class="track-album">${esc(item.album || '—')}</span><span class="track-duration">${timeLabel(item.duration)}</span>${!queue ? `<button class="icon-button track-edit" data-track-menu="${i}" aria-label="${t('track_actions')}: ${esc(item.title)}" aria-haspopup="menu">⋯</button>` : ''}</div>`;
+    const selected = queue ? queueTrackMatches(item,state?.playback?.track) : item.id === state?.playback?.track?.id && state?.demo;
+    return `<div data-track-row="${i}" class="track-row ${!columns.album ? 'no-album' : ''} ${!columns.duration ? 'no-duration' : ''} ${selected ? 'is-current' : ''}" ${queue ? `data-queue-position="${item.position}"` : ''} ${state?.demo && !queue ? `data-track-id="${esc(item.id)}"` : ''}><span class="track-number">${state?.demo || item.playable ? `<button data-track="${i}" aria-label="${queue ? t('select_in_queue') : t('play_label')} ${esc(item.title)}">${selected ? icon('music') : icon('play')}</button>` : i+1}</span><span class="track-thumb">${art(item)}</span><div class="track-meta"><strong>${esc(item.title)}</strong><small>${esc(item.artist || '—')}</small></div><span class="track-album">${esc(item.album || '—')}</span><span class="track-duration">${timeLabel(item.duration)}</span>${!queue ? `<button class="icon-button track-edit" data-track-menu="${i}" aria-label="${t('track_actions')}: ${esc(item.title)}" aria-haspopup="menu">⋯</button>` : ''}</div>`;
   }).join('')}</div>`;
 }
 function bindCards(items) {
@@ -335,7 +336,7 @@ async function refreshState() {
 }
 function updatePlayer() {
   const p = state?.playback || {}, track = p.track, ready = state?.connection === 'ready';
-  for(const button of document.querySelectorAll('[data-track],#play-collection,#hero-play')) button.disabled=!ready||busy||state?.busy||libraryLoading||!currentItems.length;
+  for(const button of document.querySelectorAll('main [data-track],#play-collection,#hero-play')) button.disabled=!ready||busy||state?.busy||libraryLoading||!currentItems.length;
   for (const row of document.querySelectorAll('[data-track-id]')) {
     const selected = state?.demo && row.dataset.trackId === track?.id;
     if (row.classList.contains('is-current') !== selected) {
@@ -374,7 +375,16 @@ function updatePlayer() {
   $('volume-value').textContent = state?.volume ?? '—';
   $('volume').title = Number.isFinite(state?.volume) ? t('volume_value',{value:state.volume}) : t('current_volume_is_unknown_choose_a_value_from_0_120');
   $('large-title').textContent = $('now-title').textContent;
-  $('large-artist').textContent = $('now-artist').textContent;
+  $('large-artist').textContent = track?.artist || '';
+  $('large-artist').disabled = !track?.artist;
+  $('large-album').textContent = track?.album || '';
+  $('large-album').disabled = !track?.album;
+  $('large-album').hidden = !track?.album;
+  $('large-status').textContent = !ready ? t('disconnected') : t('playback_'+(['playing','paused','stopped','loading'].includes(p.state)?p.state:'unknown'));
+  const format=mediaFormat(track);
+  $('large-format').hidden=!format;
+  $('large-format').textContent=format || '';
+  $('large-format').title=t('format_from_filename');
   $('large-position').textContent = $('position').textContent;
   $('large-duration').textContent = $('duration').textContent;
   $('large-output').textContent = state?.demo ? t('demo_mode_no_audio') : t('audio_plays_on_your_disc');
@@ -387,6 +397,7 @@ function updatePlayer() {
   $('large-volume').disabled=$('volume').disabled;
   if (document.activeElement!==$('large-volume')) $('large-volume').value=$('volume').value;
   $('large-volume-value').textContent=$('volume-value').textContent;
+  updateQueueControls();
 }
 function updateSeek() {
   const identity=playbackIdentity(state);
@@ -454,7 +465,7 @@ async function command(action, extras={}) {
     success=!['uncertain','not_sent','unavailable'].includes(result.status);
     await refreshState();
     if (route.view==='favorites' && action==='favorite') await loadView();
-    if (!$('queue').hidden) await loadQueue();
+    if (queueVisible()) await loadQueue();
   } catch (error) {
     if(action==='seek') seekFeedback='seek_unconfirmed';
     toast(`${error.message || t('connection_lost')}. ${t('the_request_is_not_automatically_retried')}`,true);
@@ -462,16 +473,66 @@ async function command(action, extras={}) {
   } finally {busy=false; updatePlayer();}
   return success;
 }
+function queueVisible() {return !$('queue').hidden || $('now-dialog').open;}
+function updateQueueControls() {
+  if (queueGeneration!==state?.generation || state?.connection!=='ready') {
+    if (queueItems || queueLoading) {++queueRequest; queueLoading=false; queueItems=null; queueError=''; renderQueue();}
+    queueGeneration=state?.generation;
+  }
+  const blocked=state?.connection!=='ready'||busy||state?.busy||queueLoading;
+  for(const id of ['refresh-queue','large-refresh-queue']) $(id).disabled=blocked;
+  for(const root of [$('queue-content'),$('large-queue-content')]) {
+    for(const row of root.querySelectorAll('[data-queue-position]')) {
+      const item=queueItems?.find(item=>item.position===Number(row.dataset.queuePosition));
+      const selected=Boolean(item && queueTrackMatches(item,state?.playback?.track));
+      row.classList.toggle('is-current',selected);
+      const button=row.querySelector('[data-track]');
+      if(button) {
+        button.disabled=blocked||libraryLoading;
+        button.setAttribute('aria-current',selected?'true':'false');
+        const glyph=selected?'music':'play';
+        if(button.dataset.glyph!==glyph) {button.innerHTML=icon(glyph);button.dataset.glyph=glyph;}
+      }
+    }
+  }
+}
+function renderQueue() {
+  let html;
+  if(state?.connection!=='ready') html=`<p class="queue-hint">${t('connect_your_disc')}</p>`;
+  else if(queueLoading) html=`<p class="queue-hint" role="status">${t('reading_the_queue')}</p>`;
+  else if(queueError) html=`<p class="queue-hint" role="status">${esc(queueError)}</p>`;
+  else if(queueItems) html=`<p class="queue-hint">${t('track_count',{count:queueItems.length})} · ${state.demo?t('demo_with_no_audio'):t('fresh_disc_queue_snapshot')}</p>${queueItems.length?rows(queueItems,true):`<p class="queue-hint">${t('choose_an_album_to_get_started')}</p>`}<p class="queue-hint queue-footnote">${t('queue_snapshot_note')}</p>`;
+  else html=`<p class="queue-hint">${t('refresh_queue')}</p>`;
+  for(const id of ['queue-content','large-queue-content']) {
+    $(id).innerHTML=html;
+    if(queueItems && !queueLoading && !queueError && state?.connection==='ready') bindTracks($(id),queueItems,true);
+  }
+}
 async function loadQueue() {
-  $('queue-content').innerHTML=`<p class="queue-hint">${t('reading_the_queue')}</p>`;
+  const request=++queueRequest, generation=state?.generation;
+  queueGeneration=generation; queueItems=null;queueError='';
+  queueLoading=state?.connection==='ready';renderQueue();updateQueueControls();
+  if(!queueLoading) return;
   try {
     const data=await api('/api/queue');
+    if(request!==queueRequest || generation!==state?.generation || state?.connection!=='ready') return;
     if (!data.queue) throw new Error(t('queue_unavailable'));
-    const items=data.queue.items;
-    $('queue-content').innerHTML=`<p class="queue-hint">${t('track_count',{count:items.length})} · ${state.demo ? t('demo_with_no_audio') : t('fresh_disc_queue_snapshot')}</p>${items.length ? rows(items,true) : `<p class="queue-hint">${t('choose_an_album_to_get_started')}</p>`}`;
-    bindTracks($('queue-content'),items,true);
-  } catch(error) {$('queue-content').innerHTML=`<p class="queue-hint">${esc(error.message)}</p>`;}
+    queueItems=data.queue.items;
+  } catch(error) {if(request===queueRequest) queueError=error.message;}
+  finally {if(request===queueRequest) {queueLoading=false;renderQueue();updateQueueControls();}}
 }
+function listeningView(queue=false) {
+  $('now-dialog').classList.toggle('show-queue',queue);
+  $('listening-tab').setAttribute('aria-pressed',!queue);
+  $('listening-queue-tab').setAttribute('aria-pressed',queue);
+}
+$('listening-tab').onclick=()=>listeningView(false);
+$('listening-queue-tab').onclick=()=>listeningView(true);
+$('refresh-queue').onclick=$('large-refresh-queue').onclick=()=>loadQueue();
+for(const kind of ['artist','album']) $('large-'+kind).onclick=()=>{
+  const name=state?.playback?.track?.[kind];
+  if(name) {$('now-dialog').close();navigate(kind,{title:name});}
+};
 function showDevice() {connection.open();}
 $('device-button').onclick=showDevice; $('about-demo').onclick=showDevice;
 $('mobile-device').onclick=showDevice;
@@ -482,7 +543,7 @@ $('shuffle').onclick=()=>command('mode',{value:state?.playback?.mode==='random'?
 $('repeat').onclick=()=>command('mode',{value:state?.playback?.mode==='repeat_list'?'list_once':'repeat_list'});
 $('volume').oninput=()=>$('volume-value').textContent=$('volume').value;
 $('volume').onchange=()=>command('volume',{value:Number($('volume').value)});
-$('now-open').onclick=()=>$('now-dialog').showModal();
+$('now-open').onclick=()=>{listeningView(false);$('now-dialog').showModal();loadQueue();};
 $('close-now').onclick=()=>$('now-dialog').close();
 for (const id of ['play','next','previous','favorite','shuffle','repeat']) $('large-'+id).onclick=()=>$(id).click();
 $('large-volume').oninput=()=>$('large-volume-value').textContent=$('large-volume').value;
@@ -511,7 +572,7 @@ window.addEventListener('disc-language-change',()=>{
   }
   if (!libraryLoading && canBrowse()) renderView(); else if(!libraryLoading) renderDisconnected();
   renderCatalogue(); updatePlayer();
-  if (!$('queue').hidden) loadQueue();
+  renderQueue();updateQueueControls();
   if ($('device-dialog').open) showDevice();
 });
 await refreshState(); await loadView(); pollTimer=setTimeout(poll,1500);

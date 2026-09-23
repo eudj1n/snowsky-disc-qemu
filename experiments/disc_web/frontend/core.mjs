@@ -52,3 +52,13 @@ export function seekAllowed(state) {
   return state?.connection === 'ready' && ['playing','paused'].includes(state.playback.state)
     && Number.isFinite(duration) && duration >= 1;
 }
+
+export function mediaFormat(track) {
+  const extension = track?.path?.split('.').pop()?.toLowerCase();
+  return ['flac','wav','aiff','aif','alac','mp3','aac','m4a','ogg','opus','dsf','dff','iso','ape','wma'].includes(extension)
+    ? extension.toUpperCase() : null;
+}
+export function queueTrackMatches(item, track) {
+  return Number.isInteger(track?.queue_position) && item.position === track.queue_position
+    && item.title === track.title && (item.artist || '') === (track.artist || '');
+}

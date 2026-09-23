@@ -11,6 +11,23 @@ capabilities and launch commands.
 The product remains experimental. This checkpoint is not full Controller feature
 coverage or physical-device acceptance.
 
+## Now Playing and queue — 2026-09-23
+
+- Expanded player places artwork, transport controls and the queue together on
+  desktop; mobile provides player/queue views. Both palettes and RU/EN are covered.
+- Album and artist credits link to their library views. Playback status and an
+  optional filename-format badge use available state, with no fabricated quality
+  or hardware-output information.
+- Drawer and expanded queue share refresh, loading/error/empty handling and
+  current-row highlighting. Requests are guarded against late results from an
+  older connection or refresh. Queue controls no longer depend on a nonempty
+  background library page; Controller's source-token preflight remains unchanged.
+- App checks passed 36 Python and 14 JavaScript tests. Repository firmware-free
+  checks passed 502 Python and 51 JavaScript tests, including four shim builds.
+  Browser demo checks covered desktop dark RU and mobile light EN at 390 px,
+  queue selection, pause, album navigation and the mobile queue switch. No
+  physical player connection or firmware run was made for this UI change.
+
 ## Initial validation
 
 - Repository firmware-free suite passed in the existing CI Docker image with no

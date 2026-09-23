@@ -286,5 +286,15 @@
   "search_empty_albums": "Try another album title or artist. Search stays in this section.",
   "search_empty_artists": "Try another artist name. Search stays in this section.",
   "search_empty_tracks": "Try another track title, album or artist. Search stays in this list.",
-  "search_empty_playlists": "Try another playlist name."
+  "search_empty_playlists": "Try another playlist name.",
+  "player_view": "Player view",
+  "your_selection": "YOUR SELECTION",
+  "refresh_queue": "Refresh queue",
+  "playback_playing": "Playing",
+  "playback_paused": "Paused",
+  "playback_stopped": "Playback ended",
+  "playback_loading": "Loading track",
+  "playback_unknown": "Playback unavailable",
+  "queue_snapshot_note": "Order at refresh time. In shuffle mode, the player chooses the next track.",
+  "format_from_filename": "Format from filename"
 }
