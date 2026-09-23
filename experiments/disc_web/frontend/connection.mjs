@@ -19,6 +19,7 @@ export function savedConnection(storage) {
 export function createConnection({getState,isBusy,refreshState,api,command,setBusy}) {
   const $=id=>document.getElementById(id);
   let generation=null, pending=false, searching=false, feedback='', searchFeedback='', candidates=[], requestVersion=0;
+  let connectionAttempt=null;
   const values=()=>({host:$('connection-host').value,tcp_port:Number($('connection-tcp').value),http_port:Number($('connection-http').value)});
   function fill(value) {
     $('connection-host').value=value.host;
@@ -28,6 +29,16 @@ export function createConnection({getState,isBusy,refreshState,api,command,setBu
   function render() {
     if(!$('device-dialog').open) return;
     const state=getState(), demo=state?.demo, locked=pending||isBusy();
+    if(connectionAttempt?.accepted) {
+      const target=connectionAttempt.config;
+      const matches=state?.endpoint===target.host&&state?.tcp_port===target.tcp_port&&state?.http_port===target.http_port;
+      if(!matches||!state?.enabled) connectionAttempt=null;
+      else if(state.connection==='ready') {
+        connectionAttempt=null;
+        $('device-dialog').close();
+        return;
+      }
+    }
     $('device-description').textContent=t(demo?'connection_demo':'control_your_music_over_a_local_connection_audio_stays_on_your_player');
     const statusKey={ready:'connected',disconnected:'disconnected',connecting:'connecting',reconnecting:'reconnecting'}[state?.connection]||'disconnected';
     $('device-endpoint').textContent=demo?t('demo_mode'):t(statusKey)+(state?.endpoint?' · '+state.endpoint:'');
@@ -42,12 +53,14 @@ export function createConnection({getState,isBusy,refreshState,api,command,setBu
     $('discovery-feedback').textContent=searchFeedback?t(searchFeedback,{count:candidates.length}):'';
     $('discovery-results').innerHTML=candidates.map((item,index)=>`<button class="discovered-player" data-candidate="${index}"><span><strong>SNOWSKY DISC</strong><small>${esc(item.host)}</small></span><span>${t('connection_choose')} ↗</span></button>`).join('');
     for(const button of $('discovery-results').querySelectorAll('[data-candidate]')) button.onclick=()=>{
+      connectionAttempt=null;
       fill(candidates[Number(button.dataset.candidate)]); feedback=''; generation=getState()?.generation;
       $('connection-host').focus(); render();
     };
   }
   async function open() {
     if($('device-dialog').open) {render();return;}
+    connectionAttempt=null;
     const state=getState();
     let saved=null;
     try {saved=savedConnection(localStorage);} catch { /* Storage may be unavailable. */ }
@@ -64,9 +77,12 @@ export function createConnection({getState,isBusy,refreshState,api,command,setBu
     render();
   }
   $('close-dialog').onclick=()=>$('device-dialog').close();
-  $('preset-player').onclick=()=>{fill({host:'',tcp_port:12100,http_port:12103});$('connection-host').focus();};
-  $('preset-emulator').onclick=()=>fill({host:'127.0.0.1',tcp_port:12100,http_port:12113});
+  $('device-dialog').addEventListener('close',()=>{connectionAttempt=null;});
+  $('connection-form').addEventListener('input',()=>{connectionAttempt=null;});
+  $('preset-player').onclick=()=>{connectionAttempt=null;fill({host:'',tcp_port:12100,http_port:12103});$('connection-host').focus();};
+  $('preset-emulator').onclick=()=>{connectionAttempt=null;fill({host:'127.0.0.1',tcp_port:12100,http_port:12113});};
   $('disconnect-player').onclick=async()=>{
+    connectionAttempt=null;
     await command('disconnect'); generation=getState()?.generation; feedback='';render();
   };
   $('connection-form').onsubmit=async event=>{
@@ -75,12 +91,15 @@ export function createConnection({getState,isBusy,refreshState,api,command,setBu
     const config=normalizeConnection(values());
     if(!config) {feedback='connection_invalid';render();return;}
     if(generation!==getState()?.generation) {generation=getState()?.generation;feedback='connection_changed';render();return;}
+    const attempt={config,accepted:false};
+    connectionAttempt=attempt;
     pending=true;feedback='connection_starting';setBusy(true);render();
     try {
       await api('/api/connection',{...config,generation,request_id:crypto.randomUUID()});
+      attempt.accepted=true;
       try {localStorage.setItem(storageKey,JSON.stringify(config));} catch { /* Session-only connection still works. */ }
       feedback='';
-    } catch {feedback='connection_changed';}
+    } catch {if(connectionAttempt===attempt) connectionAttempt=null;feedback='connection_changed';}
     finally {pending=false;setBusy(false);await refreshState();generation=getState()?.generation;render();}
   };
   $('discover-player').onclick=async()=>{

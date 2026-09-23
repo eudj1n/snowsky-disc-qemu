@@ -41,6 +41,8 @@ Open the DISC connection card, enter the player's local IPv4 address and press
 draft; page load never initiates a connection. An already enabled server session
 survives page reload. **Disconnect** stops its automatic connection recovery.
 Changing the target closes the old session and invalidates old library selections.
+The dialog closes after the submitted target reaches connected state. Failed
+connections remain visible; reopening connection settings keeps the dialog open.
 
 **Find on network** listens for six seconds on the selected computer interface.
 DISC announces itself using UDP multicast to 224.0.0.255:12101; this is passive
