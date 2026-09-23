@@ -71,3 +71,14 @@ UI sequence and is not a prerequisite for it.
 
 All stages retain one Controller owner, explicit connection, guarded selections,
 no replay of uncertain mutations, paired RU/EN and light/dark/system appearance.
+
+## Metadata capability investigation — 2026-09-23
+
+The [stock capability audit](../../../research/docs/reports/2026-09-23-library-metadata.md)
+found additional current-track audio properties already retained by raw
+Controller clients but omitted from the public Track model. Exposing those is
+the proposed next implementation; local-file enrichment belongs in Library sync
+for mounted SD/USB Storage/source folders as well as Web imports. Stock local
+lyric support does not establish a remote lyric-text API. Full catalog tags,
+artwork and lyrics cannot be promised over the verified stock network surface.
+These are proposed follow-ups, not completed or independently accepted stages.
