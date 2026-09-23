@@ -48,6 +48,13 @@ presentation are future work.
 Cached browsing uses a separate short source-token lock, so device cover reads or
 an active synchronization cannot block reading the previous local snapshot.
 
+The top-bar sync icon opens a dedicated dialog; opening it never starts sync.
+It renders actual server stages/page counts with indeterminate progress, preserves
+errors and offline coverage, and can be dismissed while the server continues.
+The import flow shares the same sync command. Refreshing the current list is a
+separate secondary action in the dialog. Decorative missing-artwork sleeves use
+title-derived palettes and escaped initials only; they are never stored as metadata.
+
 Before a snapshot exists, visible album cards optionally request `kind=album_info` through the same library
 endpoint. This reads the scoped album rows and returns distinct literal credits,
 count and connection generation, without allocating playback selection tokens.

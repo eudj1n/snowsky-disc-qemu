@@ -319,6 +319,24 @@ neutral surface and border, with a compact device label and arrow. RU/dark deskt
 and EN/light 390 px checks passed; the action still opens connection settings.
 Existing Web and firmware-free checks pass; no connection behavior changed.
 
+## Collection UI refinement — 2026-09-23
+
+- Replaced the persistent saved-collection banner with a sync dialog opened from
+  the top-bar icon. It shows four actual server stages, received-page counts,
+  indeterminate progress, last observation, coverage and retained error details.
+  Closing/reopening does not restart or cancel the job. Refreshing the current
+  list remains a separate secondary action; demo cannot synchronize.
+- Missing album and artist artwork now uses stable title-derived palettes,
+  oversized escaped initials and subtle hover/keyboard-focus effects, respecting
+  reduced motion. Real artwork takes precedence and decorative placeholders never
+  enter Library metadata. Artist cards no longer repeat “Browse albums”.
+- Browser checks used a synthetic TCP peer and catalog: sync completion, dismissal
+  and reopening during work, failed reads preserving the saved collection, demo
+  isolation and unchanged demo covers. RU/dark and EN/light layouts were inspected
+  at desktop and 390/320 px; final console checks were clear. No physical device
+  was used. Web tests passed 38 Python / 18 JavaScript checks; firmware-free CI
+  passed 509 Python / 55 JavaScript tests and four shim builds.
+
 ## Next implementation stages
 
 The [saved implementation plan](plan.md) owns the agreed stage order and

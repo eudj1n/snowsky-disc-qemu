@@ -67,6 +67,8 @@ or exposed control service is started. Demo disables connection and discovery.
   switch between player and queue. Both queue views offer explicit refresh.
   A format badge uses the observed file extension only; it does not claim
   bit depth, sample rate or output-device identity.
+- Missing album/artist artwork uses stable colored typographic placeholders with
+  subtle hover/focus motion. These decorations never count as observed covers.
 - Light, dark and system appearance; RU/EN interface with saved browser preferences.
 - Browser connection settings, physical/emulator presets and passive LAN discovery.
 - Sound panel with observed gain, L20..R20 channel balance, six DAC filters and DRE;
@@ -116,8 +118,8 @@ device selection/output identity and PEQ are not included.
 
 ## Saved library
 
-Press **Sync library** to read and verify the current DISC catalog, then publish
-one complete local snapshot. This does not scan the SD card, upload files or
+Open the sync icon in the top bar, then press **Sync library** to read and verify
+the current DISC catalog and publish one complete local snapshot. This does not scan the SD card, upload files or
 change playback. First scan newly added media on DISC when needed, then sync.
 There is no automatic sync or restart after failure. A failed network GET may be
 repeated once within the request budget; two complete equal reads are still required.
@@ -129,12 +131,14 @@ search filters only its tracks; artist detail filters that artist's albums. Home
 search filters its albums. Typing never changes the page, including offline;
 navigating to another page clears the query. Disconnecting leaves those views
 available, with playback disabled; favorites, custom playlists and the current
-queue still need a live player. Sync date, track count and offline/stale status
-remain visible. **Library details** shows separate artwork and duration coverage
+queue still need a live player. The sync dialog shows the last observation, track
+count and offline/stale status. **Library details** explains artwork and duration coverage
 for the saved collection. During sync, real stages and received page counts are
 shown separately from the last successful observation, without an estimated
-percentage. A failed sync preserves the previous snapshot. Refresh reloads
-the saved view; **Sync library** updates it from DISC.
+percentage. Closing the dialog leaves the server operation running; the top-bar
+icon shows activity and completion/failure produces a brief notice. A failed sync
+preserves the previous snapshot. **Refresh current list** inside the dialog reloads
+the current view; **Sync library** updates the saved collection from DISC.
 
 Storage defaults to `~/.local/share/disc-web`; `--data-dir PATH` selects another
 private directory. It is separate from Assistant storage. Snapshots are namespaced
@@ -194,7 +198,7 @@ fresh directory entry and completed byte count; it is not a device-side hash.
 The import dialog follows three separate steps: memory card, DISC library, saved
 collection. It shows confirmed/waiting file counts and prompts for **Sync library**
 after a confirmed scan on the same connection. This uses the same explicit sync
-operation as the library card; neither scan nor sync starts automatically.
+operation as the sync dialog; neither scan nor sync starts automatically.
 After successful publication, **Open collection** opens the saved albums.
 Catalog totals are not proof that every selected file was imported: remaining or
 unconfirmed files keep a separate message even after a successful sync.

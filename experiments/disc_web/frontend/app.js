@@ -117,30 +117,41 @@ async function api(path, body) {
 }
 function renderCatalogue() {
   const saved=state?.catalogue;
-  $('catalogue-banner').hidden=!saved||state?.demo;
-  if(!saved) return;
+  const demo=state?.demo;
+  $('sync-catalogue').disabled=demo||!saved||state.connection!=='ready'||busy||state.busy||libraryLoading||saved.phase==='syncing';
+  $('reload-catalogue-view').disabled=busy||libraryLoading||state?.busy;
+  if(!saved||demo) {
+    $('catalogue-status').textContent=t(demo?'demo_mode':'disconnected');
+    $('catalogue-description').textContent=t(demo?'catalogue_demo':'catalogue_intro');
+    $('catalogue-activity').textContent=t(demo?'demo_collection_no_audio':'catalogue_connect_first');
+    for(const id of ['catalogue-coverage','catalogue-error','catalogue-progress','catalogue-metadata-error']) $(id).hidden=true;
+    $('sync-caption').textContent=t('catalogue_sync');
+    return;
+  }
   const syncing=saved.phase==='syncing';
   const failed=['failed','storage_error'].includes(saved.phase);
-  const status=syncing?'active':failed?'failed':!saved.available?'empty':state.connection!=='ready'?'offline':saved.stale?'stale':'ready';
-  $('catalogue-title').textContent=t(saved.available?'catalogue_saved':'catalogue_start');
+  const status=syncing?'active':failed?'failed':state.connection!=='ready'?'offline':!saved.available?'empty':saved.stale?'stale':'ready';
   const date=saved.observed_at?new Date(saved.observed_at).toLocaleString(getLocale()==='ru'?'ru-RU':'en-US',{dateStyle:'medium',timeStyle:'short'}):'';
   $('catalogue-description').textContent=saved.available?t('catalogue_observed',{date,count:saved.track_count}):t('catalogue_intro');
   $('catalogue-status').textContent=t('catalogue_status_'+status);
-  $('catalogue-banner').dataset.status=status;
+  $('catalogue-dialog').dataset.status=status;
+  $('refresh').dataset.status=status;
+  $('refresh').title=t('catalogue_dialog_title')+' · '+t('catalogue_status_'+status);
   const stages=['identity','catalog','enrichment','verification'];
   const stage=stages.includes(saved.stage)?saved.stage:'identity';
-  $('catalogue-activity').hidden=!syncing;
-  $('catalogue-activity').textContent=syncing?t('catalogue_activity_'+stage,{count:saved.pages||0}):'';
+  $('catalogue-progress').hidden=!syncing;
+  $('catalogue-activity').textContent=syncing?t('catalogue_activity_'+stage,{count:saved.pages||0})
+    :t(status==='ready'?'catalogue_complete':status==='offline'?'catalogue_connect_first':failed?'catalogue_retry_note':'catalogue_waiting');
   $('catalogue-error').hidden=!failed;
   const errorKey='catalogue_error_'+saved.error;
   const knownErrors=['membership','changed','ambiguous','invalid','limit','connection','unavailable','identity_timeout'];
   $('catalogue-error').textContent=failed?[t(saved.phase==='storage_error'?'catalogue_storage_error':'catalogue_sync_failed'),
     ...(knownErrors.includes(saved.error)?[t(errorKey)]:[]),
     t(saved.available?'catalogue_kept':'catalogue_no_snapshot')].join(' '):'';
-  $('catalogue-stages').hidden=!syncing;
   for(const node of $('catalogue-stages').children) {
     if(syncing&&node.dataset.stage===stage) node.setAttribute('aria-current','step');
     else node.removeAttribute('aria-current');
+    node.classList.toggle('is-complete',status==='ready'||(syncing&&stages.indexOf(node.dataset.stage)<stages.indexOf(stage)));
   }
   $('catalogue-coverage').hidden=!saved.available;
   $('catalogue-track-count').textContent=new Intl.NumberFormat(getLocale()).format(saved.track_count||0);
@@ -150,21 +161,29 @@ function renderCatalogue() {
   }
   $('catalogue-metadata-error').hidden=!saved.available||!saved.enrichment?.unavailable;
   $('sync-caption').textContent=t(syncing?'catalogue_sync_active':'catalogue_sync');
-  $('sync-catalogue').disabled=state.connection!=='ready'||busy||state.busy||libraryLoading||syncing;
 }
 async function startCatalogueSync() {
-  if(state?.connection!=='ready'||busy||state.busy||libraryLoading) return;
+  if(state?.demo||state?.connection!=='ready'||busy||state.busy||libraryLoading||state.catalogue?.phase==='syncing') return;
   busy=true;updatePlayer();renderCatalogue();
   try {await api('/api/sync',{generation:state.generation,request_id:crypto.randomUUID()});}
   catch {toast(t('catalogue_failed'),true);}
   finally {busy=false;await refreshState();renderCatalogue();}
 }
 $('sync-catalogue').onclick=startCatalogueSync;
+$('close-catalogue').onclick=()=>$('catalogue-dialog').close();
+$('reload-catalogue-view').onclick=()=>{
+  if(busy||libraryLoading||state?.busy) return;
+  $('catalogue-dialog').close();lastCoverRequest='';loadView();
+};
 function art(item, css='art') {
   const src = artworkSource(item?.art);
+  const title=item?.title?.trim()||'♪';
+  let hash=0;
+  for(const char of title) hash=(Math.imul(hash,31)+char.codePointAt(0))>>>0;
+  const letters=esc(Array.from(title.trim()).slice(0,2).join('').toUpperCase());
   return src
     ? `<img class="${css}" src="${src}" alt="" loading="lazy">`
-    : `<div class="card-placeholder" aria-hidden="true">${esc((item?.title || '♪').slice(0,2).toUpperCase())}</div>`;
+    : `<div class="card-placeholder sleeve-${hash%6} ${item?.type==='artist'?'artist-placeholder':''}" aria-hidden="true"><span class="sleeve-orbit"></span><span class="sleeve-type">${letters}</span><span class="sleeve-label">${letters}</span></div>`;
 }
 function navigate(view, item=null) {
   activeItem = item;
@@ -222,13 +241,13 @@ function renderDisconnected() {
   $('empty-connect').onclick = showDevice;
 }
 function cardCaption(item) {
-  if(item.type==='artist') return t('browse_albums');
+  if(item.type==='artist') return '';
   const artist=item.artists?.length>1?t('various_artists'):item.artist;
   const count=Number.isInteger(item.count)&&item.count>=0?t('track_count',{count:item.count}):'';
   return [artist,count].filter(Boolean).join('\n') || t(item.type==='playlist'?'playlist_on_disc':'album_on_disc');
 }
 function cards(items, extra='') {
-  return `<div class="album-grid ${extra}">${items.map((item, i) => `<article class="album-card ${item.type === 'artist' ? 'artist-card' : ''}"><button class="album-cover-button" data-card="${i}" aria-label="${esc(t('open_item',{name:item.title}))}">${art(item)}</button><h3>${esc(item.title)}</h3><p><span>${esc(cardCaption(item)).replaceAll('\n','</span><span>')}</span></p>${item.genre ? `<div class="album-sub"><span>${esc(item.genre)}</span><span>${esc(item.year)}</span></div>` : ''}</article>`).join('')}</div>`;
+  return `<div class="album-grid ${extra}">${items.map((item, i) => `<article class="album-card ${item.type === 'artist' ? 'artist-card' : ''}"><button class="album-cover-button" data-card="${i}" aria-label="${esc(t('open_item',{name:item.title}))}">${art(item)}</button><h3>${esc(item.title)}</h3>${cardCaption(item)?`<p><span>${esc(cardCaption(item)).replaceAll('\n','</span><span>')}</span></p>`:''}${item.genre ? `<div class="album-sub"><span>${esc(item.genre)}</span><span>${esc(item.year)}</span></div>` : ''}</article>`).join('')}</div>`;
 }
 function rows(items, queue=false) {
   const columns=trackColumns(items);
@@ -342,6 +361,10 @@ async function refreshState() {
     const previous = state;
     state = await api('/api/state');
     updatePlayer(); importer.render(); connection.render(); sound.render(); renderCatalogue();
+    if(previous?.catalogue?.phase==='syncing'&&previous.generation===state.generation&&!$('catalogue-dialog').open) {
+      if(state.catalogue?.phase==='done') toast(t('catalogue_complete'));
+      else if(state.catalogue?.phase==='failed') toast(t('catalogue_sync_failed'),true);
+    }
     $('mode-banner').hidden = !state.demo;
     $('output-label').textContent = state.demo ? t('demo_no_audio') : t('on_disc');
     $('connection-label').textContent = state.demo ? t('demo_mode') : ({ready:t('connected'),connecting:t('connecting'),reconnecting:t('reconnecting'),disconnected:t('disconnected')}[state.connection] || state.connection);
@@ -574,7 +597,7 @@ $('large-volume').oninput=()=>$('large-volume-value').textContent=$('large-volum
 $('large-volume').onchange=()=>command('volume',{value:Number($('large-volume').value)});
 $('queue-button').onclick=()=>{const open=$('queue').hidden; $('queue').hidden=!open; $('queue-button').setAttribute('aria-expanded',open); if(open) loadQueue();};
 $('close-queue').onclick=()=>{$('queue').hidden=true; $('queue-button').setAttribute('aria-expanded','false'); $('queue-button').focus();};
-$('refresh').onclick=()=>{if(!busy && !libraryLoading) {lastCoverRequest=''; loadView();}};
+$('refresh').onclick=()=>{renderCatalogue();$('catalogue-dialog').showModal();};
 $('search').oninput=()=>{
   if(canBrowse() && !libraryLoading) {renderView();updatePlayer();}
 };

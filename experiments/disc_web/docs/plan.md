@@ -27,6 +27,10 @@ percentage, automatic sync, playback cycling or new physical connection.
 Implemented the status badge, separate active/error messages, expandable stages
 and saved field coverage. Validation is recorded in [status](status.md).
 
+UI refinement on 2026-09-23 moved sync into a dedicated top-bar dialog and removed
+the persistent banner. Album/artist placeholders now use decorative typography;
+see [status](status.md#collection-ui-refinement--2026-09-23) for validation.
+
 ## 3. Folder import to a browsable collection — complete
 
 Finish the existing folder upload → explicit device scan → Library sync flow.

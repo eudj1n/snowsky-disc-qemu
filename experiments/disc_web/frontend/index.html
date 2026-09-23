@@ -29,35 +29,13 @@
     <div class="breadcrumb">SNOWSKY <span>/</span> <strong id="breadcrumb"><span data-i18n="home">Главная</span></strong></div>
     <label class="search"><span data-icon="search"></span><input id="search" type="search" placeholder="Найти в коллекции" autocomplete="off" aria-label="Поиск в текущем разделе" data-i18n-placeholder="search_your_collection" data-i18n-aria-label="search_this_section"><kbd>/</kbd></label>
     <button class="import-button" id="open-import" aria-label="Добавить музыку" data-i18n-aria-label="import_music"><span data-icon="upload"></span><span data-i18n="import_music">Добавить музыку</span><i id="import-active" hidden></i></button>
-    <button class="icon-button" id="refresh" aria-label="Обновить коллекцию" title="Обновить коллекцию" data-i18n-aria-label="refresh_collection" data-i18n-title="refresh_collection"><span data-icon="refresh"></span></button>
+    <button class="icon-button" id="refresh" aria-label="Синхронизация коллекции" title="Синхронизация коллекции" data-i18n-aria-label="catalogue_dialog_title" data-i18n-title="catalogue_dialog_title"><span data-icon="refresh"></span></button>
     <button class="icon-button mobile-device" id="mobile-device" aria-label="Подключение к DISC" data-i18n-aria-label="disc_connection"><span data-icon="device"></span></button>
     <button class="icon-button" id="theme-button" aria-label="Оформление" data-i18n-aria-label="appearance"><span data-icon="moon"></span></button>
     <button class="icon-button" id="open-sound" aria-label="Настройки звука" title="Настройки звука" data-i18n-aria-label="sound_title" data-i18n-title="sound_title"><span data-icon="sliders"></span></button>
     <label class="language-control"><select id="language" aria-label="Язык интерфейса" data-i18n-aria-label="language"><option value="ru">RU</option><option value="en">EN</option></select></label><span class="edition">WEB <span class="edition-dot"></span> PREVIEW</span>
   </header>
   <div class="mode-banner" id="mode-banner" hidden><span><span class="demo-dot"></span> <span data-i18n="demo_collection_no_audio">Демо-коллекция · без звука</span> <span class="banner-detail"><span data-i18n="fictional_artists">· вымышленные исполнители</span></span></span><button id="about-demo"><span data-i18n="about_demo">О демо</span> <span>↗</span></button></div>
-  <section id="catalogue-banner" class="catalogue-banner" aria-label="Локальная медиатека" data-i18n-aria-label="catalogue_label" hidden>
-    <div class="catalogue-overview">
-      <div class="catalogue-copy"><div class="catalogue-heading"><strong id="catalogue-title"></strong><span id="catalogue-status" class="catalogue-status"></span></div><p id="catalogue-description"></p></div>
-      <button id="sync-catalogue" class="secondary-button"><span data-icon="refresh"></span><span id="sync-caption"></span></button>
-    </div>
-    <p id="catalogue-activity" role="status" aria-live="polite" hidden></p>
-    <p id="catalogue-error" role="status" hidden></p>
-    <details class="catalogue-details">
-      <summary data-i18n="catalogue_details">О медиатеке</summary>
-      <ol id="catalogue-stages" class="catalogue-stages" aria-label="Этапы синхронизации" data-i18n-aria-label="catalogue_stages" hidden>
-        <li data-stage="identity" data-i18n="catalogue_stage_identity"></li><li data-stage="catalog" data-i18n="catalogue_stage_catalog"></li><li data-stage="enrichment" data-i18n="catalogue_stage_enrichment"></li><li data-stage="verification" data-i18n="catalogue_stage_verification"></li>
-      </ol>
-      <dl id="catalogue-coverage" class="catalogue-coverage" hidden>
-        <div><dt data-i18n="catalogue_tracks"></dt><dd id="catalogue-track-count"></dd></div>
-        <div><dt data-i18n="catalogue_artwork"></dt><dd id="catalogue-artwork-count"></dd></div>
-        <div><dt data-i18n="catalogue_durations"></dt><dd id="catalogue-duration-count"></dd></div>
-      </dl>
-      <p id="catalogue-metadata-error" data-i18n="catalogue_metadata_unavailable" hidden></p>
-      <p data-i18n="catalogue_metadata_note"></p>
-      <p data-i18n="catalogue_workflow_note"></p>
-    </details>
-  </section>
   <main id="main" tabindex="-1"><div class="loading-shell"><span data-i18n="loading_your_collection">Загружаем вашу коллекцию…</span></div></main>
   <footer class="page-footer"><span><span data-i18n="collected_by_you_played_your_way">Собрано вами. Звучит по-вашему.</span></span><span>DISC WEB · EXPERIMENTAL</span></footer>
 </div>
@@ -135,6 +113,30 @@
   <div class="dialog-heading"><span class="eyebrow" data-i18n="playlists">Плейлисты</span><button id="close-playlist" class="icon-button" aria-label="Закрыть" data-i18n-aria-label="close"><span data-icon="close"></span></button></div>
   <h2 id="playlist-dialog-title"></h2><p id="playlist-track-label"></p>
   <form id="playlist-form"><label id="playlist-name-label" class="form-field"><span data-i18n="playlist_name">Название плейлиста</span><input id="playlist-name" maxlength="100" autocomplete="off"></label><label id="playlist-select-label" class="form-field" hidden><span data-i18n="playlist_choose">Выберите плейлист</span><select id="playlist-select"></select></label><p class="dialog-footnote" data-i18n="playlist_no_files">Меняется только состав плейлиста. Файлы остаются на DISC.</p><p id="playlist-feedback" role="status"></p><button id="playlist-submit" type="submit" class="primary-button"></button></form>
+</dialog>
+<dialog id="catalogue-dialog" class="catalogue-dialog" aria-labelledby="catalogue-dialog-title">
+  <div class="dialog-heading"><span class="eyebrow" data-i18n="my_collection"></span><button id="close-catalogue" class="icon-button" data-i18n-aria-label="close"><span data-icon="close"></span></button></div>
+  <div class="import-intro"><div><h2 id="catalogue-dialog-title" data-i18n="catalogue_dialog_title"></h2><p data-i18n="catalogue_dialog_description"></p></div><div class="sync-art" aria-hidden="true"><span></span><span></span><span data-icon="refresh"></span></div></div>
+  <div id="catalogue-overview" class="catalogue-overview"><span id="catalogue-status" class="catalogue-status" role="status"></span><p id="catalogue-description"></p></div>
+  <div class="catalogue-workflow">
+    <ol id="catalogue-stages" class="catalogue-stages" data-i18n-aria-label="catalogue_stages">
+      <li data-stage="identity"><strong data-i18n="catalogue_stage_identity"></strong><small data-i18n="catalogue_step_identity_note"></small></li>
+      <li data-stage="catalog"><strong data-i18n="catalogue_stage_catalog"></strong><small data-i18n="catalogue_step_catalog_note"></small></li>
+      <li data-stage="enrichment"><strong data-i18n="catalogue_stage_enrichment"></strong><small data-i18n="catalogue_step_enrichment_note"></small></li>
+      <li data-stage="verification"><strong data-i18n="catalogue_stage_verification"></strong><small data-i18n="catalogue_step_verification_note"></small></li>
+    </ol>
+    <div id="catalogue-progress" class="catalogue-progress" role="progressbar" data-i18n-aria-label="catalogue_stages" hidden></div>
+    <p id="catalogue-activity" role="status" aria-live="polite"></p>
+    <p id="catalogue-error" role="status" hidden></p>
+  </div>
+  <dl id="catalogue-coverage" class="catalogue-coverage" hidden>
+    <div><dt data-i18n="catalogue_tracks"></dt><dd id="catalogue-track-count"></dd></div>
+    <div><dt data-i18n="catalogue_artwork"></dt><dd id="catalogue-artwork-count"></dd></div>
+    <div><dt data-i18n="catalogue_durations"></dt><dd id="catalogue-duration-count"></dd></div>
+  </dl>
+  <p id="catalogue-metadata-error" data-i18n="catalogue_metadata_unavailable" hidden></p>
+  <div class="catalogue-actions"><button id="reload-catalogue-view" class="text-button" data-i18n="catalogue_reload_view"></button><button id="sync-catalogue" class="primary-button"><span data-icon="refresh"></span><span id="sync-caption"></span></button></div>
+  <details class="catalogue-details"><summary data-i18n="catalogue_details"></summary><p data-i18n="catalogue_metadata_note"></p><p data-i18n="catalogue_workflow_note"></p></details>
 </dialog>
 <dialog id="import-dialog" class="import-dialog" aria-labelledby="import-title">
   <div class="dialog-heading"><span class="eyebrow" data-i18n="import_eyebrow"></span><button id="close-import" class="icon-button" aria-label="Закрыть" data-i18n-aria-label="close"><span data-icon="close"></span></button></div>
