@@ -93,6 +93,10 @@ properties in Now Playing and saved-track menus in RU/EN and both themes. Preser
 selection identity, duplicate and scan guards; do not add device reads or cycle
 playback. Implementation and validation are recorded in [status](status.md).
 
-Next candidate: optional Library enrichment from mounted SD/USB Storage or an
-explicit source folder. Path mapping, duplicate/CUE identity and local-file
-provenance need their own design; it is not limited to files imported through Web.
+## Local-file enrichment — deferred by owner, 2026-09-23
+
+Optional Library enrichment from mounted SD/USB Storage or an explicit source
+folder is deferred, not the next implementation stage. Resume only on an explicit
+owner request. Path mapping, duplicate/CUE identity and local-file provenance
+remain design considerations for that future work. Existing current-track
+enrichment through Controller remains available.

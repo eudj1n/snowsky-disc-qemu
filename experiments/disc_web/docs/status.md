@@ -444,6 +444,6 @@ clients to bypass the persistent facade.
   390/320 px layouts, dark RU and light EN, Now Playing and track menus; no console
   errors or horizontal overflow were observed. No new physical connection or
   firmware execution was performed; device command semantics are unchanged.
-- The current-track stage is complete in [the plan](plan.md). Mounted SD/USB/source
-  folder enrichment remains the next candidate, with separate mapping/provenance
-  work. This implementation does not promise complete metadata over stock Wi-Fi.
+- The current-track stage is complete in [the plan](plan.md). The owner deferred
+  mounted SD/USB/source-folder enrichment on 2026-09-23; it is not the next stage.
+  This implementation does not promise complete metadata over stock Wi-Fi.
