@@ -43,13 +43,20 @@ same-connection scan-to-sync admission and an open-collection action after a
 fresh publication. Partial/uncertain transfers and reload limits remain visible;
 demo does not fabricate a saved catalog. Controller operations are unchanged.
 
-## 4. Sound settings — next
+## 4. Sound settings — complete
 
 Expose only reviewed Controller capabilities with fresh readback and clear
 unsupported states. Start with volume-related settings and supported DAC options;
 choose the exact controls against the public facade before implementation.
 Unknown firmware must not inherit support. Bluetooth output identity/control and
 paused PEQ research are not assumed available.
+
+Implemented gain, L20..R20 balance, six DAC filters and DRE through a narrow
+Controller facade with fresh firmware/value checks and one guarded setter.
+Web requires explicit Apply and handles unavailable, stale and uncertain results.
+Synthetic tests, browser checks, package/type checks and the complete disposable
+V2.57 regression passed, including the new persistent settings scenario. See
+[status](status.md) for the validation scope; physical audio remains unmeasured.
 
 ## Separate decisions
 

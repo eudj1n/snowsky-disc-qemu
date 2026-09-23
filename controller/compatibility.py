@@ -17,6 +17,7 @@ class Capability(str, Enum):
     CURRENT_TRACK = 'current_track'
     CURRENT_FAVORITE = 'current_favorite'
     VOLUME = 'volume'
+    SOUND_SETTINGS = 'sound_settings'
 
 
 DISC_HANDSHAKE = '0306'
@@ -33,7 +34,7 @@ CONTRACTS = {
                     'artist_playback', 'album_playback', 'folder_playback', 'network_check',
                     Capability.PERSISTENT_SESSION, Capability.PLAYBACK_CONTROL,
                     Capability.QUEUE_READ, Capability.QUEUE_NAVIGATION, Capability.CATALOG_SNAPSHOT,
-                    Capability.CURRENT_TRACK, Capability.CURRENT_FAVORITE, Capability.VOLUME}),
+                    Capability.CURRENT_TRACK, Capability.CURRENT_FAVORITE, Capability.VOLUME, Capability.SOUND_SETTINGS}),
 }
 
 

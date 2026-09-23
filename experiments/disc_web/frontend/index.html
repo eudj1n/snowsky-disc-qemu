@@ -32,6 +32,7 @@
     <button class="icon-button" id="refresh" aria-label="Обновить коллекцию" title="Обновить коллекцию" data-i18n-aria-label="refresh_collection" data-i18n-title="refresh_collection"><span data-icon="refresh"></span></button>
     <button class="icon-button mobile-device" id="mobile-device" aria-label="Подключение к DISC" data-i18n-aria-label="disc_connection"><span data-icon="device"></span></button>
     <button class="icon-button" id="theme-button" aria-label="Оформление" data-i18n-aria-label="appearance"><span data-icon="moon"></span></button>
+    <button class="icon-button" id="open-sound" aria-label="Настройки звука" title="Настройки звука" data-i18n-aria-label="sound_title" data-i18n-title="sound_title"><span data-icon="sliders"></span></button>
     <label class="language-control"><select id="language" aria-label="Язык интерфейса" data-i18n-aria-label="language"><option value="ru">RU</option><option value="en">EN</option></select></label><span class="edition">WEB <span class="edition-dot"></span> PREVIEW</span>
   </header>
   <div class="mode-banner" id="mode-banner" hidden><span><span class="demo-dot"></span> <span data-i18n="demo_collection_no_audio">Демо-коллекция · без звука</span> <span class="banner-detail"><span data-i18n="fictional_artists">· вымышленные исполнители</span></span></span><button id="about-demo"><span data-i18n="about_demo">О демо</span> <span>↗</span></button></div>
@@ -158,6 +159,19 @@
   </section>
   <section class="import-scan"><div><span class="eyebrow" data-i18n="import_step_scan"></span><h3 data-i18n="import_scan_title"></h3><p data-i18n="import_scan_description"></p></div><button id="scan-import" class="secondary-button" data-i18n="import_scan"></button><div id="scan-status" class="scan-status" role="status"></div></section>
   <section class="import-scan import-sync"><div><span class="eyebrow" data-i18n="import_step_sync"></span><h3 data-i18n="import_sync_title"></h3><p data-i18n="import_sync_description"></p></div><button id="sync-import" class="secondary-button" data-i18n="catalogue_sync"></button><div id="import-sync-status" class="scan-status" role="status"></div></section>
+</dialog>
+<dialog id="sound-dialog" class="sound-dialog" aria-labelledby="sound-title">
+  <div class="dialog-heading"><span class="eyebrow">SNOWSKY DISC</span><button id="close-sound" class="icon-button" aria-label="Закрыть" data-i18n-aria-label="close"><span data-icon="close"></span></button></div>
+  <h2 id="sound-title" data-i18n="sound_title"></h2>
+  <p class="sound-description" data-i18n="sound_description"></p>
+  <p id="sound-notice" class="sound-notice" role="status"></p>
+  <button id="sound-refresh" class="text-button" data-i18n="sound_refresh"></button>
+  <div id="sound-fields" hidden>
+    <section class="sound-setting"><div><label for="sound-gain" data-i18n="sound_gain"></label><p data-i18n="sound_gain_note"></p></div><div class="sound-input"><select id="sound-gain"><option value="0" data-i18n="sound_low"></option><option value="1" data-i18n="sound_high"></option></select><button id="sound-apply-gain" class="secondary-button" data-i18n="sound_apply" data-i18n-aria-label="sound_apply_gain"></button></div></section>
+    <section class="sound-setting"><div><label for="sound-balance" data-i18n="sound_balance"></label><p data-i18n="sound_balance_note"></p></div><div class="sound-input"><div class="sound-balance"><output id="sound-balance-value" for="sound-balance">0</output><input id="sound-balance" type="range" min="-20" max="20" step="1" value="0" aria-label="Баланс каналов" data-i18n-aria-label="sound_balance"><div class="sound-range-labels"><span>L20</span><span>0</span><span>R20</span></div></div><button id="sound-apply-balance" class="secondary-button" data-i18n="sound_apply" data-i18n-aria-label="sound_apply_balance"></button></div></section>
+    <section class="sound-setting"><div><label for="sound-filter" data-i18n="sound_filter"></label><p data-i18n="sound_filter_note"></p></div><div class="sound-input"><select id="sound-filter"><option value="0">1 · FAST_LL</option><option value="1">2 · SLOW_LL</option><option value="2">3 · SLOW_PC</option><option value="3">4 · FAST_PC</option><option value="4">5 · NON_OS</option><option value="5">6 · Wideband_FF</option></select><button id="sound-apply-filter" class="secondary-button" data-i18n="sound_apply" data-i18n-aria-label="sound_apply_filter"></button></div></section>
+    <section class="sound-setting"><div><label for="sound-dre">DRE</label><p data-i18n="sound_dre_note"></p></div><div class="sound-input"><select id="sound-dre"><option value="0" data-i18n="sound_off"></option><option value="1" data-i18n="sound_on"></option></select><button id="sound-apply-dre" class="secondary-button" data-i18n="sound_apply" data-i18n-aria-label="sound_apply_dre"></button></div></section>
+  </div>
 </dialog>
 </body>
 </html>

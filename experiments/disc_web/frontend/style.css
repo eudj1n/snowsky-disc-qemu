@@ -2138,3 +2138,22 @@ main .track-row.no-album.no-duration { grid-template-columns:28px 40px minmax(10
   #large-queue-content { max-height:none; overflow:visible; }
   .now-dialog .large-controls { margin:16px 0; }
 }
+
+/* Sound values are read on demand; each draft has one explicit apply action. */
+.sound-dialog { text-align:left; width:min(620px,calc(100vw - 24px)); max-width:620px; max-height:calc(100dvh - 28px); overflow:auto; padding:28px 32px; background:var(--paper); }
+.sound-dialog h2 { font-size:30px; letter-spacing:-1px; margin:18px 0 8px; }
+.sound-description,.sound-notice { font-size:12px; line-height:1.6; color:var(--secondary); }
+.sound-notice { padding:12px 14px; background:var(--raised); border:1px solid var(--line); border-radius:10px; }
+.sound-dialog .text-button { font-size:12px; }
+.sound-setting { padding:22px 0; border-bottom:1px solid var(--line); }
+.sound-setting:last-child { border:0; padding-bottom:0; }
+.sound-setting label { font-size:15px; font-weight:650; }
+.sound-setting p { font-size:11px; line-height:1.5; color:var(--secondary); margin:6px 0 14px; }
+.sound-input { display:flex; gap:16px; align-items:center; }
+.sound-input select { flex:1; min-width:0; padding:11px 12px; border:1px solid var(--line); border-radius:9px; color:var(--ink); background:var(--raised); font:inherit; font-size:13px; }
+.sound-input button { font-size:12px; flex-shrink:0; }
+.sound-balance { flex:1; min-width:0; }
+.sound-balance output { display:block; text-align:center; color:var(--ink); font-size:13px; font-variant-numeric:tabular-nums; margin-bottom:8px; }
+.sound-balance input { width:100%; accent-color:var(--accent); }
+.sound-range-labels { display:flex; justify-content:space-between; color:var(--secondary); font-size:10px; margin-top:4px; }
+@media(max-width:540px) { .sound-dialog { padding:20px; } .sound-input { gap:10px; } .sound-input button { padding:10px; font-size:11px; } .topbar .search { min-width:0; } }

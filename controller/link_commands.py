@@ -1,6 +1,6 @@
 """Shared reviewed commands for sequential and persistent TCP transports.
 
-The persistent transport inherits only this surface, not raw settings/reset/scan.
+The persistent transport adds narrow sound commands separately, never raw reset/PEQ.
 """
 from typing import Any, Protocol
 from controller.compatibility import require

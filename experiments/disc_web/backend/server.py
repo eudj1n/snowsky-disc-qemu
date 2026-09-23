@@ -102,6 +102,8 @@ class Handler(BaseHTTPRequestHandler):
 
     def get_content(self, url, query):
         try:
+            if url.path == '/api/sound' and not self.server.device.demo:
+                return self.reply(self.server.device.sound_settings())
             if url.path == '/api/library':
                 return self.reply(self.server.device.browse(query.get('kind', ['albums'])[0],
                     query.get('name', [''])[0], query.get('artist', [''])[0]))

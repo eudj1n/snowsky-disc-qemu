@@ -2,6 +2,7 @@ import {createAlbumInfo} from './album-info.mjs';
 import {requestJSON} from './request.mjs';
 import {createConnection} from './connection.mjs';
 import {createImporter} from './imports.mjs';
+import {createSound} from './sound.mjs';
 import {t, initLocale, setLocale, getLocale} from './i18n.mjs';
 await initLocale();
 import {escapeHTML as esc, timeLabel, trackColumns, mediaFormat, queueTrackMatches, filterItems, searchKind, routeHash, parseRoute, trackDuration, playbackIdentity, seekAllowed, coverIdentity, artworkSource} from './core.mjs';
@@ -25,7 +26,8 @@ const paths = {
  repeat:'m17 2 4 4-4 4M3 11V8a2 2 0 0 1 2-2h16M7 22l-4-4 4-4M21 13v3a2 2 0 0 1-2 2H3',
  volume:'M11 4 6 8H2v8h4l5 4ZM15 8a6 6 0 0 1 0 8M18 4a11 11 0 0 1 0 16',
  close:'M6 6l12 12M6 18 18 6',arrow:'M5 12h14m-5-5 5 5-5 5',back:'M19 12H5m5-5-5 5 5 5',
- clock:'M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0ZM12 7v5l3 2',info:'M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0ZM12 11v6M12 7h.01'
+ clock:'M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0ZM12 7v5l3 2',info:'M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0ZM12 11v6M12 7h.01',
+ sliders:'M5 3v6m0 4v8M12 3v10m0 4v4M19 3v2m0 4v12M2 9h6M9 13h6M16 5h6'
 };
 const icon = name => `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="${paths[name] || paths.music}"/></svg>`;
 for (const node of document.querySelectorAll('[data-icon]')) node.innerHTML = icon(node.dataset.icon);
@@ -53,6 +55,7 @@ const albumInfo=createAlbumInfo({api,getState:()=>state,isBusy:()=>busy||library
 const importer = createImporter({getState:()=>state, isBusy:()=>busy||libraryLoading, refreshState, loadView, api, toast,
   syncCatalogue:startCatalogueSync, showLibrary:()=>navigate('albums')});
 const connection = createConnection({getState:()=>state, isBusy:()=>busy||libraryLoading||state?.busy, refreshState, api, command, setBusy:value=>{busy=value;updatePlayer();}});
+const sound = createSound({getState:()=>state,isBusy:()=>busy||libraryLoading,api,refreshState});
 let editContext = null, menuContext = null, seekDraft = null, seekFeedback = '', seekIdentity = '', pendingSeek = null, seekRequested = null;
 
 
@@ -338,7 +341,7 @@ async function refreshState() {
   try {
     const previous = state;
     state = await api('/api/state');
-    updatePlayer(); importer.render(); connection.render(); renderCatalogue();
+    updatePlayer(); importer.render(); connection.render(); sound.render(); renderCatalogue();
     $('mode-banner').hidden = !state.demo;
     $('output-label').textContent = state.demo ? t('demo_no_audio') : t('on_disc');
     $('connection-label').textContent = state.demo ? t('demo_mode') : ({ready:t('connected'),connecting:t('connecting'),reconnecting:t('reconnecting'),disconnected:t('disconnected')}[state.connection] || state.connection);
@@ -351,7 +354,7 @@ async function refreshState() {
     return true;
   } catch {
     if (state) state = {...state,connection:'disconnected',playback:{state:'unknown'}};
-    updatePlayer(); importer.render(); connection.render(); renderCatalogue(); $('connection-label').textContent=t('server_unavailable'); $('status-light').classList.remove('ready');
+    updatePlayer(); importer.render(); connection.render(); sound.render(); renderCatalogue(); $('connection-label').textContent=t('server_unavailable'); $('status-light').classList.remove('ready');
     return false;
   }
 }
@@ -586,7 +589,7 @@ $('language').value=getLocale();
 $('language').onchange=()=>setLocale($('language').value);
 window.addEventListener('disc-language-change',()=>{
   $('language').value=getLocale();
-  updateThemeChoice(); updateNav(); updatePlayer(); editLabels(); importer.render();
+  updateThemeChoice(); updateNav(); updatePlayer(); editLabels(); importer.render(); sound.render();
   if (state) {
     $('connection-label').textContent = state.demo ? t('demo_mode') : ({ready:t('connected'),connecting:t('connecting'),reconnecting:t('reconnecting'),disconnected:t('disconnected')}[state.connection] || state.connection);
     $('output-label').textContent = state.demo ? t('demo_no_audio') : t('on_disc');

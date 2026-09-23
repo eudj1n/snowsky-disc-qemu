@@ -21,13 +21,14 @@ from typing import Any, Callable, Iterator, Self
 from types import TracebackType
 from contextlib import AbstractContextManager
 from controller.wire import WireState
+from controller.sound import SoundCommands, SOUND_READ_TAGS, SOUND_WRITE_TAGS
 
 
 class LiveSocket(ObservedSocket):
     def sendall(self, data: bytes) -> None:
         mutation = data[:4] in (b'0100', b'0101', b'0102', b'0103', b'0201', b'0104', b'0502')
-        mutation = mutation or data == frame('0622', '0000')
-        if not mutation and data[:4] not in (b'0599', b'0501', b'0105', b'0202'):
+        mutation = mutation or data == frame('0622', '0000') or data[:4] in SOUND_WRITE_TAGS
+        if not mutation and data[:4] not in (b'0599', b'0501', b'0105', b'0202', *SOUND_READ_TAGS):
             raise ValueError('command is outside the reviewed persistent-session surface')
         if self.session.closed.is_set():
             raise ConnectionError('session ended; request was not replayed')
@@ -38,7 +39,7 @@ class LiveSocket(ObservedSocket):
             raise
 
 
-class LiveClient(MutationGuard, ReviewedCommands):
+class LiveClient(MutationGuard, ReviewedCommands, SoundCommands):
     """Only _receive touches recv; request callers wait on a condition variable."""
     def __init__(self, host: str, port: int, timeout: float) -> None:
         raw = socket.create_connection((host, port), timeout)
@@ -338,6 +339,20 @@ class DiscSession:
 
     def adjust_volume(self, delta: int) -> CommandResult:
         return self._current('volume', delta=delta)
+
+    def sound_settings(self, *, expected_generation: int | None = None) -> CommandResult:
+        """Fresh reviewed sound values. Unknown firmware has no inherited support."""
+        from controller.sound import read_settings
+        return self._perform('sound_settings', read_settings, expected_generation=expected_generation)
+
+    def set_sound_setting(self, name: str, value: int, *, expected: int,
+                          expected_generation: int | None = None) -> CommandResult:
+        """One validated setting change, fresh displayed-value check and readback."""
+        from controller.sound import validate, change_setting
+        validate(name, value)
+        validate(name, expected)
+        return self._perform('sound_setting', lambda client: change_setting(
+            client, name, value, expected, self.config.timeout), expected_generation=expected_generation)
 
     def _current(self, action: CurrentAction, *, value: int | None = None,
                  delta: int | None = None) -> CommandResult:

@@ -64,6 +64,7 @@ scope. A current-track duration is not applied to other catalog rows by name.
 | Endpoint | Behavior |
 | --- | --- |
 | `GET /api/state` | Latest import/scan job, cached normalized state, application session token, demo/endpoint information; no device query |
+| `GET /api/sound` | Fresh reviewed gain/balance/filter/DRE through the existing Controller owner; foreground admission, no demo fallback |
 | `GET /api/interfaces` | Local host IPv4 interfaces eligible for passive discovery; empty in demo |
 | `POST /api/discover` | Token/request ID, selected current interface, six-second passive multicast listener; no TCP connection |
 | `POST /api/connection` | Token/request ID/generation, local IPv4 and TCP/HTTP ports; replace the sole owner and enable connection |
@@ -241,6 +242,14 @@ remain independent of scan/catalog totals. The projection dispatches no commands
 and never restores an in-memory selection after reload.
 
 ## Extension boundaries
+
+The sound panel reads on opening or explicit refresh and applies one draft at a
+time through `sound_setting`. Web passes the displayed value and connection
+generation to Controller. Only a confirmed/already-satisfied result with matching
+name/value updates the observed UI; stale, failed or uncertain results require a
+new read. The panel invalidates observations on connection changes and ignores
+late responses from an old request. It never forwards tags, caches guessed sound
+defaults, automatically restores settings or retries a write.
 
 Add missing persistent operations to Controller with their own typed results and
 fresh identity checks before exposing them here. Settings and future file operations need their own verification, not success based on HTTP 200. Maintain the distinction between removing a list member and deleting a file.

@@ -86,6 +86,11 @@ class Device:
                     'busy': self.lock.locked(), 'endpoint': self.config.host,
                     'tcp_port': self.config.tcp_port, 'http_port': self.config.http_port}
 
+    def sound_settings(self):
+        generation = self.state()['generation']
+        result = self.session.sound_settings(expected_generation=self.protocol_generation(generation))
+        return {**result.to_dict(), 'generation': generation}
+
     def protocol_generation(self, displayed):
         with self.state_guard:
             if type(displayed) is not int or displayed != self.state()['generation']:
@@ -260,6 +265,9 @@ class Device:
                 if type(value) is not int or not 0 <= value <= 120:
                     raise ValueError('Volume must be an integer in 0..120')
                 result = self.session.set_volume(value)
+            elif action == 'sound_setting':
+                result = self.session.set_sound_setting(body.get('name'), body.get('value'),
+                    expected=body.get('expected'), expected_generation=self.protocol_generation(body['generation']))
             elif action == 'mode':
                 result = self.session.set_play_mode(body.get('value'))
             elif action == 'album':

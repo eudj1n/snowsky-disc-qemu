@@ -157,8 +157,8 @@ existing output and fresh catalog-selection workflow. The operation lease pins a
 client/generation and serializes work; callers must not retain the client beyond
 the lease, nest operations, read its socket or construct an unreviewed mutation.
 Its outbound persistent surface admits the reviewed reads and playback/mode,
-favorite, volume and exact scan-start mutation tags only. `LiveClient` inherits a narrow shared
-command implementation, not the raw `Client`; reset/cancel and unrelated settings writes remain
+favorite, volume, four sound settings and exact scan-start mutation tags only. `LiveClient` inherits narrow shared
+command implementations, not the raw `Client`; reset/cancel and unrelated settings writes remain
 absent. `PlaybackReader`, `ControlClient` and `SelectionClient` describe the
 capabilities required by guarded operations. Use facade methods for new application features; do not
 expose arbitrary tag forwarding through a web endpoint.
@@ -167,6 +167,29 @@ There is no native `stop()` in this API. Assistant maps its Stop intent to pause
 while preserving position/queue. Repeat-list opt-in is likewise Assistant policy;
 Controller only executes an explicitly requested named mode. History, preferences,
 search results and automatic recommendation launches are not Controller features.
+
+## Sound settings
+
+`sound_settings(expected_generation=None)` returns an observed `CommandResult`
+with `confirmation.settings` containing `gain`, `balance`, `filter` and `dre`,
+and `confirmation.soc_version` from fresh identity readback. Values are strictly
+validated: gain/DRE 0 or 1, balance -20..20 (L20..center..R20), filter 0..5.
+Filter names are `FAST_LL`, `SLOW_LL`, `SLOW_PC`, `FAST_PC`, `NON_OS`, `Wideband_FF`.
+The reviewed capability is explicitly enabled for V2.57 only.
+
+`set_sound_setting(name, value, expected=current_value, expected_generation=None)`
+waits for remaining mutation pacing, then checks identity, scan state and a fresh
+setting value. A changed expected value returns `not_sent` / `sound_changed`.
+An equal requested/current value returns `already_satisfied` without a write.
+Otherwise one setter is sent and bounded fresh reads confirm the requested value;
+the confirmation contains `name` and `value`. Missing/mismatched readback or loss
+after dispatch is `uncertain`, never replayed. Invalid names/values are rejected
+before I/O. No settings are automatically restored on disconnect.
+
+These methods borrow the existing owner and do not enumerate Bluetooth devices,
+identify a hardware output, expose PEQ or establish physical audio performance.
+The wire mappings and earlier independent persistence evidence remain in
+[remote settings](../../docs/protocol/remote-settings.md).
 
 ## Validation
 

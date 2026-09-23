@@ -71,6 +71,32 @@ coverage or physical-device acceptance.
   batch history. No horizontal overflow or console errors were observed. This is
   application-flow evidence, not new physical or firmware acceptance.
 
+## Sound settings — 2026-09-23
+
+- A RU/EN sound panel exposes observed gain, L20..R20 balance, all six stock-named
+  DAC filters and DRE. Each draft requires its own Apply; opening/refresh reads
+  values, and ordinary state polling does not query settings. Demo/disconnected
+  modes do not expose functioning controls.
+- Controller's new narrow facade checks reviewed firmware, fresh displayed value,
+  scan state, connection generation and mutation pacing. It sends once, confirms
+  through readback, and never retries an uncertain change. Unknown firmware,
+  invalid values and stale drafts cannot dispatch a write. UI results invalidate
+  on reconnect and reject late responses.
+- Web checks passed 38 Python / 18 JavaScript tests. Firmware-free repository
+  checks passed 509 Python / 55 JavaScript tests and four shim builds. Ruff, strict
+  mypy (12 boundary files) and the isolated Controller sdist/wheel installation
+  and synthetic-session checks passed.
+- Browser checks used a local synthetic TCP peer: gain/filter/DRE apply, keyboard
+  balance, unsent-draft feedback, stale-value rejection followed by refresh, and
+  clearing fields after disconnect. Desktop dark RU, mobile light EN at 390 px
+  and dark RU at 320 px showed no horizontal overflow. The final preview had no
+  console errors. No physical player connection was made.
+- The complete disposable V2.57 `full` regression passed (exit 0), including the
+  new persistent sound scenario for gain, balance extremes, all six filters,
+  DRE, stale-value rejection and restoration. Temporary containers and volume
+  were removed. This verifies remote state control, not physical analog/DSP
+  performance.
+
 ## Initial validation
 
 - Repository firmware-free suite passed in the existing CI Docker image with no

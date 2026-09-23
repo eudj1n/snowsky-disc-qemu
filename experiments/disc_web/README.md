@@ -67,6 +67,8 @@ or exposed control service is started. Demo disables connection and discovery.
   bit depth, sample rate or output-device identity.
 - Light, dark and system appearance; RU/EN interface with saved browser preferences.
 - Browser connection settings, physical/emulator presets and passive LAN discovery.
+- Sound panel with observed gain, L20..R20 channel balance, six DAC filters and DRE;
+  each change requires an explicit Apply and fresh device confirmation.
 - Live whole-album/artist/playlist playback, indexed tracks from albums, the
   catalog, favorites, playlists and queue; pause/resume, previous/next, current-track
   favorite, absolute volume and random/repeat-list controls through `DiscSession`.
@@ -94,9 +96,21 @@ or exposed control service is started. Demo disables connection and discovery.
   or changing the fictional catalog.
 
 The interface labels demo mode, including on mobile. Demo actions simulate presentation and do not prove firmware behavior.
-File browsing/deletion, artwork sidecars and device settings remain future
+File browsing/deletion, artwork sidecars and additional device settings remain future
 implementation stages. They must use reviewed public Controller operations. Browser audio streaming is
 outside this implementation; live audio stays on DISC.
+
+## Sound settings
+
+Open the sliders button in the top bar. The panel reads the current player values
+on opening or explicit refresh; it does not poll settings continuously. Choose a
+value and press its **Apply** button. If that value changed on DISC in the meantime,
+the edit is rejected and the panel asks for a new read. Connection changes clear
+the displayed settings; uncertain writes are never repeated automatically.
+Demo, disconnected and unsupported states expose no functioning setting controls.
+Only reviewed V2.57 gain, balance, filter and DRE are supported. Filter names use
+stock device labels, and balance units are steps, not percentages. Bluetooth
+device selection/output identity and PEQ are not included.
 
 ## Saved library
 

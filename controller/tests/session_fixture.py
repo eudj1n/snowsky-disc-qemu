@@ -5,6 +5,7 @@ import socketserver
 import threading
 import time
 from controller.fiio_link import Frames, frame
+from controller.fiio_settings import SETTINGS, setting_command, setting_value
 
 
 class Handler(socketserver.BaseRequestHandler):
@@ -21,7 +22,19 @@ class Handler(socketserver.BaseRequestHandler):
                     if tag == '0599':
                         result, body = 'a599', b'0306'
                     elif tag == '0501':
-                        result, body = 'a501', json.dumps({'soc_version': 257, 'currentVolume': server.volume}).encode()
+                        result, body = 'a501', json.dumps({'soc_version': server.version, 'currentVolume': server.volume}).encode()
+                    elif tag in ('064a', '0712', '0603', '0813'):
+                        name = next(name for name in server.sound if SETTINGS[name][0] == tag)
+                        result, body = 'a' + tag[1:], setting_command(name, server.sound[name])[1].encode()
+                    elif tag in ('0649', '0713', '0653', '0812'):
+                        server.writes += 1
+                        if server.drop_write:
+                            self.request.shutdown(socket.SHUT_RDWR)
+                            return
+                        name = next(name for name in server.sound if SETTINGS[name][1] == tag)
+                        if not server.ignore_sound_write:
+                            server.sound[name] = setting_value(name, payload)
+                        continue
                     elif tag == '0105':
                         result, body = 'a102', f'{server.mode:04X}'.encode()
                     elif tag == '0102':
@@ -91,6 +104,9 @@ class Server(socketserver.ThreadingTCPServer):
         self.accepts, self.writes = 0, 0
         self.mode = 0
         self.volume = 30
+        self.version = 257
+        self.sound = {'gain': 0, 'balance': 0, 'filter': 0, 'dre': 0}
+        self.ignore_sound_write = False
         self.tags = []
         self.state = {'love': False, 'state': 0, 'playerflag': 7, 'song': {'song_name': 'Track',
                       'song_artist_name': 'Artist', 'song_album_name': 'Album', 'pos_id': 1}}
