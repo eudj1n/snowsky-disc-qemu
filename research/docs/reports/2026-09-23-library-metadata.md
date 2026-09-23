@@ -11,6 +11,12 @@ Static findings below are fresh; referenced integration/physical results are
 existing evidence, not a new acceptance run. Firmware, decompiled code and raw
 app artifacts remain untracked.
 
+The subsequent [runtime application-data inspection](2026-09-23-fiio-control-runtime-disc.md)
+confirms a DISC Link connection without a universal product/function profile,
+received current-track audio fields and current-cover requests. It found no
+additional bulk metadata or lyric API in the supplied activity log; absence from
+that log is not proof of service absence.
+
 ## Capability matrix
 
 | Data | Verified stock surface | Current application boundary |
