@@ -232,6 +232,14 @@ The visual direction is an original music-library interface: warm paper surfaces
 quiet green neutrals, coral primary actions, generous cover art and restrained
 typography. It does not reuse assets or logos from commercial music services.
 
+The import dialog uses `frontend/import-flow.mjs` to project separate transfer,
+scan and saved-catalog states. A confirmed scan must belong to the displayed
+connection and follow the current file selection before its sync action is
+enabled. Sync uses the existing foreground request helper; publication must be
+available and freshly verified before offering the saved collection. Batch counts
+remain independent of scan/catalog totals. The projection dispatches no commands
+and never restores an in-memory selection after reload.
+
 ## Extension boundaries
 
 Add missing persistent operations to Controller with their own typed results and

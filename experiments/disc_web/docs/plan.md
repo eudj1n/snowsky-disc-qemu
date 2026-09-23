@@ -27,7 +27,7 @@ percentage, automatic sync, playback cycling or new physical connection.
 Implemented the status badge, separate active/error messages, expandable stages
 and saved field coverage. Validation is recorded in [status](status.md).
 
-## 3. Folder import to a browsable collection — next
+## 3. Folder import to a browsable collection — complete
 
 Finish the existing folder upload → explicit device scan → Library sync flow.
 Retain nested paths, skipped-file reporting and per-file confirmation. Make the
@@ -38,7 +38,12 @@ exists; verified CUE/artwork sidecar transfer is a separate capability decision.
 Acceptance: synthetic end-to-end transitions and narrow-screen review, plus the
 relevant disposable firmware scenario if device-operation behavior changes.
 
-## 4. Sound settings — later
+Implemented three explicit steps in the import dialog, confirmed-file counts,
+same-connection scan-to-sync admission and an open-collection action after a
+fresh publication. Partial/uncertain transfers and reload limits remain visible;
+demo does not fabricate a saved catalog. Controller operations are unchanged.
+
+## 4. Sound settings — next
 
 Expose only reviewed Controller capabilities with fresh readback and clear
 unsupported states. Start with volume-related settings and supported DAC options;

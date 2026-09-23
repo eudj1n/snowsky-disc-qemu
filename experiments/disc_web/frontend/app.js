@@ -50,7 +50,8 @@ let queueItems=null, queueGeneration=null, queueRequest=0, queueLoading=false, q
 const cachedViews=new Set(['home','albums','artists','tracks','album','artist']);
 const canBrowse=()=>state?.connection==='ready'||(state?.catalogue?.available&&cachedViews.has(route.view));
 const albumInfo=createAlbumInfo({api,getState:()=>state,isBusy:()=>busy||libraryLoading,caption:cardCaption});
-const importer = createImporter({getState:()=>state, isBusy:()=>busy||libraryLoading, refreshState, loadView, api, toast});
+const importer = createImporter({getState:()=>state, isBusy:()=>busy||libraryLoading, refreshState, loadView, api, toast,
+  syncCatalogue:startCatalogueSync, showLibrary:()=>navigate('albums')});
 const connection = createConnection({getState:()=>state, isBusy:()=>busy||libraryLoading||state?.busy, refreshState, api, command, setBusy:value=>{busy=value;updatePlayer();}});
 let editContext = null, menuContext = null, seekDraft = null, seekFeedback = '', seekIdentity = '', pendingSeek = null, seekRequested = null;
 
@@ -148,13 +149,14 @@ function renderCatalogue() {
   $('sync-caption').textContent=t(syncing?'catalogue_sync_active':'catalogue_sync');
   $('sync-catalogue').disabled=state.connection!=='ready'||busy||state.busy||libraryLoading||syncing;
 }
-$('sync-catalogue').onclick=async()=>{
+async function startCatalogueSync() {
   if(state?.connection!=='ready'||busy||state.busy||libraryLoading) return;
   busy=true;updatePlayer();renderCatalogue();
   try {await api('/api/sync',{generation:state.generation,request_id:crypto.randomUUID()});}
   catch {toast(t('catalogue_failed'),true);}
   finally {busy=false;await refreshState();renderCatalogue();}
-};
+}
+$('sync-catalogue').onclick=startCatalogueSync;
 function art(item, css='art') {
   const src = artworkSource(item?.art);
   return src
@@ -349,7 +351,7 @@ async function refreshState() {
     return true;
   } catch {
     if (state) state = {...state,connection:'disconnected',playback:{state:'unknown'}};
-    updatePlayer(); connection.render(); $('connection-label').textContent=t('server_unavailable'); $('status-light').classList.remove('ready');
+    updatePlayer(); importer.render(); connection.render(); renderCatalogue(); $('connection-label').textContent=t('server_unavailable'); $('status-light').classList.remove('ready');
     return false;
   }
 }

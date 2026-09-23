@@ -139,15 +139,25 @@
   <div class="dialog-heading"><span class="eyebrow" data-i18n="import_eyebrow"></span><button id="close-import" class="icon-button" aria-label="Закрыть" data-i18n-aria-label="close"><span data-icon="close"></span></button></div>
   <div class="import-intro"><div><h2 id="import-title" data-i18n="import_title"></h2><p data-i18n="import_description"></p></div><div class="import-art" aria-hidden="true"><span class="import-sleeve"></span><span class="import-record"></span><span class="import-plus">+</span></div></div>
   <p id="import-notice" class="import-notice"></p>
+  <div class="import-workflow">
+    <ol id="import-steps" aria-label="Добавление музыки" data-i18n-aria-label="import_workflow">
+      <li data-i18n="import_step_card"></li><li data-i18n="import_step_index"></li><li data-i18n="import_step_saved"></li>
+    </ol>
+    <p id="import-flow-message" role="status"></p>
+    <p id="import-batch-count"></p>
+    <button id="import-open-library" class="primary-button" data-i18n="import_open_library" hidden></button>
+  </div>
   <section class="import-transfer"><span class="eyebrow" data-i18n="import_step_transfer"></span>
     <div id="import-drop" class="import-drop"><span data-icon="upload"></span><strong data-i18n="import_drop"></strong><small data-i18n="import_formats"></small><div class="import-choices"><button id="choose-import" class="secondary-button" data-i18n="import_choose"></button><button id="choose-folder" class="secondary-button" data-i18n="import_choose_folder"></button></div><input id="import-files" type="file" multiple accept=".flac,.wav,.mp3,.m4a,.aac,.ogg,.ape,.wma,.dsf,.dff" hidden><input id="import-folder" type="file" multiple webkitdirectory hidden></div>
     <p id="import-folder-summary" class="import-folder-summary"></p>
     <div id="import-list" class="import-list"></div>
+    <p id="import-restored" class="import-feedback" data-i18n="import_restored_job" hidden></p>
     <div class="import-destination"><span data-icon="device"></span><div><strong data-i18n="import_destination"></strong><small data-i18n="import_no_overwrite"></small></div></div>
     <div class="import-actions"><button id="clear-import" class="text-button" data-i18n="import_clear"></button><button id="send-import" class="primary-button" data-i18n="import_send"></button></div>
     <p id="import-feedback" class="import-feedback" role="status"></p>
   </section>
   <section class="import-scan"><div><span class="eyebrow" data-i18n="import_step_scan"></span><h3 data-i18n="import_scan_title"></h3><p data-i18n="import_scan_description"></p></div><button id="scan-import" class="secondary-button" data-i18n="import_scan"></button><div id="scan-status" class="scan-status" role="status"></div></section>
+  <section class="import-scan import-sync"><div><span class="eyebrow" data-i18n="import_step_sync"></span><h3 data-i18n="import_sync_title"></h3><p data-i18n="import_sync_description"></p></div><button id="sync-import" class="secondary-button" data-i18n="catalogue_sync"></button><div id="import-sync-status" class="scan-status" role="status"></div></section>
 </dialog>
 </body>
 </html>

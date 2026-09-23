@@ -48,6 +48,29 @@ coverage or physical-device acceptance.
   horizontal overflow were observed. No physical connection or firmware run.
 - The agreed continuation order is saved in [the implementation plan](plan.md).
 
+## Folder import through synchronization — 2026-09-23
+
+- The import dialog presents memory-card transfer, DISC scanning and local
+  catalog publication as three explicit actions. File confirmation counts remain
+  separate from the discovered/catalog totals, including partial transfers.
+- A same-generation confirmed scan enables the existing sync operation. A fresh
+  saved snapshot offers Open collection; uncertain scans cannot advance the flow.
+  A connection change blocks continuation of an old file selection. Reload shows
+  only known server results, and demo stops at its scan preview without saving a
+  fictional catalog. No Controller command behavior or device API changed.
+- App validation passed 37 Python / 17 JavaScript tests. New synthetic checks
+  exercise separate upload/scan/sync starts, nested paths, old snapshot retention
+  until publication, uncertain results, partial batches and connection changes.
+  Repository firmware-free checks passed 504 Python / 54 JavaScript tests and
+  four shim builds.
+- Browser verification used mocked device transports with real local application
+  handlers and Library storage: selected a folder with two generated WAVs in
+  different disc folders and a skipped sidecar, explicitly transferred/scanned/
+  synchronized, then opened the saved albums. RU/dark and EN/light covered desktop,
+  390 px and 320 px; reload retained the known scan/sync result without fabricating
+  batch history. No horizontal overflow or console errors were observed. This is
+  application-flow evidence, not new physical or firmware acceptance.
+
 ## Initial validation
 
 - Repository firmware-free suite passed in the existing CI Docker image with no

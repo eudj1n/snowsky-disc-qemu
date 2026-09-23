@@ -175,6 +175,19 @@ in this UI. An unconfirmed end may mean scanning continues on DISC. The observed
 end does not prove every format/file was indexed. Transfer readback checks a
 fresh directory entry and completed byte count; it is not a device-side hash.
 
+The import dialog follows three separate steps: memory card, DISC library, saved
+collection. It shows confirmed/waiting file counts and prompts for **Sync library**
+after a confirmed scan on the same connection. This uses the same explicit sync
+operation as the library card; neither scan nor sync starts automatically.
+After successful publication, **Open collection** opens the saved albums.
+Catalog totals are not proof that every selected file was imported: remaining or
+unconfirmed files keep a separate message even after a successful sync.
+
+Changing connections blocks continuation of a previously started selection until
+it is cleared or selected again. On page reload only the latest server job is
+available; the UI does not claim to restore the complete batch. Demo finishes
+with its scan preview and never enables catalog synchronization.
+
 ## Validation and documentation
 
 ```sh

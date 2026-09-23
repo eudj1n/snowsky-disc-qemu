@@ -1,5 +1,6 @@
 import {t, getLocale} from './i18n.mjs';
 import {escapeHTML as esc} from './core.mjs';
+import {importFlow} from './import-flow.mjs';
 
 const activePhases = new Set(['receiving','sending','verifying','scanning']);
 export const jobActive = job => Boolean(job && activePhases.has(job.phase));
@@ -20,11 +21,13 @@ const sizeLabel = size => {
   return new Intl.NumberFormat(getLocale(),{style:'unit',unit:['byte','kilobyte','megabyte','gigabyte'][power],maximumFractionDigits:1}).format(size/1024**power);
 };
 
-export function createImporter({getState,isBusy,refreshState,loadView,api,toast}) {
+export function createImporter({getState,isBusy,refreshState,loadView,api,toast,syncCatalogue,showLibrary}) {
   const $=id=>document.getElementById(id);
   let files=[], transferring=false, feedback='', refreshedJob=null, dismissedJob=null, folderName='', skipped=0;
+  let batchGeneration=null, selectionJob=null;
   function render() {
     const state=getState(), job=state?.job, active=jobActive(job), locked=transferring||active||state?.busy||isBusy();
+    const flow=importFlow(state,{files,batchGeneration,selectionJob,transferring});
     $('import-active').hidden=!active&&!transferring;
     $('open-import').title=active?t(job.kind==='scan'?'import_scanning':'import_in_progress'):t('import_music');
     $('import-notice').textContent=state?.demo?t('import_demo_notice'):state?.connection!=='ready'?t('import_connect'):'';
@@ -32,8 +35,20 @@ export function createImporter({getState,isBusy,refreshState,loadView,api,toast}
     $('choose-import').disabled=locked; $('choose-folder').disabled=locked;
     $('import-folder-summary').textContent=folderName?folderName+' · '+t('import_file_count',{count:files.length})+' · '+sizeLabel(files.reduce((sum,item)=>sum+item.size,0))+(skipped?' · '+t('import_skipped',{count:skipped}):''):'';
     $('clear-import').disabled=locked||(!files.length && (job?.kind!=='upload'||job.id===dismissedJob));
-    $('send-import').disabled=locked||state?.connection!=='ready'||!files.some(item=>item.phase==='waiting');
+    $('send-import').disabled=locked||flow.changed||state?.connection!=='ready'||!files.some(item=>item.phase==='waiting');
     $('scan-import').disabled=locked||state?.connection!=='ready';
+    $('sync-import').disabled=locked||!flow.canSync||state?.connection!=='ready'||state?.demo;
+    $('sync-import').textContent=t(state?.catalogue?.phase==='syncing'?'catalogue_sync_active':'catalogue_sync');
+    $('import-open-library').hidden=!flow.complete;
+    $('import-flow-message').textContent=t(flow.message);
+    $('import-batch-count').textContent=files.length?t('import_batch_count',flow.counts):'';
+    $('import-restored').hidden=Boolean(files.length)||!job||job.kind!=='upload'||job.id===dismissedJob;
+    for(const [index,node] of [...$('import-steps').children].entries()) {
+      if(index===flow.step) node.setAttribute('aria-current','step');
+      else node.removeAttribute('aria-current');
+    }
+    $('import-sync-status').textContent=flow.complete?t('import_sync_saved',{count:state.catalogue.track_count}):
+      state?.demo?t('import_sync_demo'):state?.catalogue?.phase==='syncing'?t('import_flow_syncing'):'';
     $('import-feedback').textContent=feedback?t(feedback):'';
     const displayed=files.length?files:(job?.kind==='upload'&&job.id!==dismissedJob?[{name:job.name,size:job.total,phase:job.phase,id:job.id}]:[]);
     $('import-list').innerHTML=displayed.map(item=>{
@@ -43,7 +58,7 @@ export function createImporter({getState,isBusy,refreshState,loadView,api,toast}
       return `<div class="import-file ${phase==='done'?'complete':''}"><span class="file-note" aria-hidden="true">♪</span><div class="file-info"><strong title="${esc(item.name)}">${esc(item.name.split('/').at(-1))}</strong>${item.name.includes('/')?`<span class="file-path">${esc(item.name.slice(0,item.name.lastIndexOf('/')))}</span>`:''}<small>${esc(sizeLabel(item.size))} · ${esc(t(label))}</small>${['receiving','sending','verifying'].includes(phase)?`<progress max="100" value="${percent}" aria-label="${esc(t(label))}"></progress>`:''}</div><span class="file-state">${phase==='done'?'✓':current&&jobActive(current)?percent+'%':''}</span></div>`;
     }).join('');
     $('import-drop').classList.toggle('compact',Boolean(displayed.length));
-    const scan=job?.kind==='scan'?job:null;
+    const scan=job?.kind==='scan'&&job.generation===state?.generation&&job.id!==selectionJob?job:null;
     $('scan-status').innerHTML=scan?`${jobActive(scan)?'<span class="scan-pulse" aria-hidden="true"></span>':''}<strong>${t(scan.phase==='done'?(state?.demo?'import_demo_done':'import_scan_done'):scan.phase==='scanning'?'import_scanning':scan.phase==='not_sent'?'import_scan_not_sent':'import_scan_uncertain')}</strong><small>${t('import_discovered',{count:scan.discovered})}</small>`:'';
     if(scan?.phase==='done'&&refreshedJob!==scan.id&&!locked) {refreshedJob=scan.id;loadView();}
   }
@@ -56,6 +71,7 @@ export function createImporter({getState,isBusy,refreshState,loadView,api,toast}
     folderName=folder?filePath(incoming[0]).split('/')[0]:''; skipped=all.length-incoming.length;
     incoming.sort((a,b)=>filePath(a).localeCompare(filePath(b)));
     files=incoming.map(file=>({file,name:filePath(file),size:file.size,phase:'waiting',id:null}));
+    batchGeneration=null; selectionJob=getState()?.job?.id??null;
     feedback=''; render();
   }
   $('open-import').onclick=()=>{render();$('import-dialog').showModal();};
@@ -64,7 +80,7 @@ export function createImporter({getState,isBusy,refreshState,loadView,api,toast}
   $('choose-folder').onclick=()=>$('import-folder').click();
   $('import-folder').onchange=()=>{choose($('import-folder').files,true);$('import-folder').value='';};
   $('import-files').onchange=()=>{choose($('import-files').files);$('import-files').value='';};
-  $('clear-import').onclick=()=>{files=[];feedback='';folderName='';skipped=0;dismissedJob=getState()?.job?.id;render();};
+  $('clear-import').onclick=()=>{files=[];feedback='';folderName='';skipped=0;batchGeneration=null;selectionJob=getState()?.job?.id??null;dismissedJob=selectionJob;render();};
   for(const name of ['dragenter','dragover']) $('import-drop').addEventListener(name,event=>{
     event.preventDefault(); $('import-drop').classList.add('dragging');
   });
@@ -100,6 +116,7 @@ export function createImporter({getState,isBusy,refreshState,loadView,api,toast}
     if($('send-import').disabled) return;
     transferring=true; feedback='';
     const original=getState();
+    batchGeneration=original.generation;
     try {
       for(const item of files.filter(item=>item.phase==='waiting')) {
         if(getState()?.generation!==original.generation||getState()?.connection!=='ready') throw new Error('Connection changed');
@@ -123,5 +140,10 @@ export function createImporter({getState,isBusy,refreshState,loadView,api,toast}
     } catch {toast(t('import_scan_uncertain'),true);}
     finally {transferring=false;await refreshState();render();}
   };
+  $('sync-import').onclick=async()=>{
+    if($('sync-import').disabled) return;
+    await syncCatalogue(); render();
+  };
+  $('import-open-library').onclick=()=>{$('import-dialog').close();showLibrary();};
   return {render};
 }

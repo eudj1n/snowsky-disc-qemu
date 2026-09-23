@@ -1957,6 +1957,14 @@ html[lang="en"] .hero h2 { font-size:39px; }
 .import-actions { display:flex; align-items:center; justify-content:space-between; gap:10px; }
 .import-actions .primary-button { font-size:12px; padding:12px 20px; }
 .import-feedback { font-size:12px; line-height:1.5; color:var(--secondary); margin:12px 0 0; }
+.import-workflow { background:var(--paper); border:1px solid var(--line); border-radius:12px; padding:16px; margin:18px 0 24px; }
+.import-workflow ol { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:12px; counter-reset:import-step; list-style:none; padding:0; margin:0 0 14px; }
+.import-workflow li { counter-increment:import-step; font-size:11px; line-height:1.5; color:var(--secondary); border-top:2px solid var(--line); padding-top:8px; }
+.import-workflow li::before { content:counter(import-step) '. '; }
+.import-workflow [aria-current="step"] { border-color:var(--accent); color:var(--ink); font-weight:650; }
+.import-workflow p { font-size:12px; line-height:1.6; margin:6px 0 0; }
+.import-workflow #import-batch-count { font-size:11px; color:var(--secondary); font-variant-numeric:tabular-nums; }
+.import-workflow .primary-button { width:100%; margin-top:14px; }
 .import-scan { display:flex; flex-wrap:wrap; gap:16px; align-items:center; justify-content:space-between; margin-top:26px; padding-top:24px; border-top:1px solid var(--line); }
 .import-scan>div:first-child { flex:1; min-width:190px; }
 .import-scan h3 { font-size:17px; font-weight:500; margin:10px 0 8px; letter-spacing:-.4px; }
