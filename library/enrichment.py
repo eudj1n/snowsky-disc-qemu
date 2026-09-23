@@ -82,7 +82,9 @@ class Enrichment:
     def state(self, device, generation):
         rows = self.rows(device, generation)
         revision = hashlib.sha256(''.join(sorted(r['revision'] for r in rows.values())).encode()).hexdigest()
-        return {'count': len(rows), 'revision': revision}
+        return {'count': len(rows), 'revision': revision,
+                'artwork_count': sum(r['artwork'] is not None for r in rows.values()),
+                'duration_count': sum(r['duration_ms'] is not None for r in rows.values())}
 
     def artwork(self, device, generation, digest):
         if not re.fullmatch('[0-9a-f]{64}', digest):

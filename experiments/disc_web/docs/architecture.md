@@ -90,6 +90,9 @@ backoff, so cover/catalog overlap need not become a failed collection screen.
 Transport failures, other HTTP errors and every POST fail without replay.
 
 State polling every 1.5 seconds reads cached session state, not the device socket.
+The catalogue projection includes saved observation time, active job stage/pages
+and snapshot-scoped artwork/duration track counts. Presentation keeps the saved
+result separate from in-progress work; these counts are coverage, not sync progress.
 The browser disables control after a server/connection loss. Duration comes from
 validated stock milliseconds; absent duration keeps seek disabled. Dragging or
 keyboard adjustment previews a requested position and sends once on change. The

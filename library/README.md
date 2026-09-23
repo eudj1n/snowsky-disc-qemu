@@ -135,6 +135,10 @@ deduplicated, with an 8 MiB per-image and 256 MiB total-body budget; a full artw
 budget still permits duration observations. Offline consumers can display the
 stored fields. Missing or unsupported fields remain unknown.
 
+`Enrichment.state()` reports snapshot-scoped track counts separately for any
+observation, artwork and duration. Shared image bodies count once per associated
+track; these are field-availability counts, not unique images or album coverage.
+
 Local-file tag extraction and external providers can extend this Library stage
 later; neither is implemented or contacted by this source. Full-collection
 durations/artwork are therefore not promised by a stock-only synchronization.

@@ -116,16 +116,35 @@ function renderCatalogue() {
   $('catalogue-banner').hidden=!saved||state?.demo;
   if(!saved) return;
   const syncing=saved.phase==='syncing';
+  const failed=['failed','storage_error'].includes(saved.phase);
+  const status=syncing?'active':failed?'failed':!saved.available?'empty':state.connection!=='ready'?'offline':saved.stale?'stale':'ready';
   $('catalogue-title').textContent=t(saved.available?'catalogue_saved':'catalogue_start');
   const date=saved.observed_at?new Date(saved.observed_at).toLocaleString(getLocale()==='ru'?'ru-RU':'en-US',{dateStyle:'medium',timeStyle:'short'}):'';
-  let detail=saved.available?t('catalogue_observed',{date,count:saved.track_count}):t('catalogue_intro');
-  if(saved.available && state.connection!=='ready') detail+=' · '+t('catalogue_offline');
-  else if(saved.available && saved.stale) detail+=' · '+t('catalogue_stale');
-  if(saved.available && saved.enrichment?.count) detail+=' · '+t('catalogue_enriched',{count:saved.enrichment.count});
-  if(syncing) detail=t('catalogue_syncing',{count:saved.pages});
-  if(syncing&&saved.stage==='enrichment') detail=t('catalogue_enriching');
-  if(['failed','storage_error'].includes(saved.phase)) detail=t('catalogue_failed')+' '+(saved.error?t('catalogue_error_'+saved.error)+' ':'')+detail;
-  $('catalogue-description').textContent=detail;
+  $('catalogue-description').textContent=saved.available?t('catalogue_observed',{date,count:saved.track_count}):t('catalogue_intro');
+  $('catalogue-status').textContent=t('catalogue_status_'+status);
+  $('catalogue-banner').dataset.status=status;
+  const stages=['identity','catalog','enrichment','verification'];
+  const stage=stages.includes(saved.stage)?saved.stage:'identity';
+  $('catalogue-activity').hidden=!syncing;
+  $('catalogue-activity').textContent=syncing?t('catalogue_activity_'+stage,{count:saved.pages||0}):'';
+  $('catalogue-error').hidden=!failed;
+  const errorKey='catalogue_error_'+saved.error;
+  const knownErrors=['membership','changed','ambiguous','invalid','limit','connection','unavailable','identity_timeout'];
+  $('catalogue-error').textContent=failed?[t(saved.phase==='storage_error'?'catalogue_storage_error':'catalogue_sync_failed'),
+    ...(knownErrors.includes(saved.error)?[t(errorKey)]:[]),
+    t(saved.available?'catalogue_kept':'catalogue_no_snapshot')].join(' '):'';
+  $('catalogue-stages').hidden=!syncing;
+  for(const node of $('catalogue-stages').children) {
+    if(syncing&&node.dataset.stage===stage) node.setAttribute('aria-current','step');
+    else node.removeAttribute('aria-current');
+  }
+  $('catalogue-coverage').hidden=!saved.available;
+  $('catalogue-track-count').textContent=new Intl.NumberFormat(getLocale()).format(saved.track_count||0);
+  for(const [field,id] of [['artwork_count','catalogue-artwork-count'],['duration_count','catalogue-duration-count']]) {
+    const count=saved.enrichment?.[field];
+    $(id).textContent=!saved.enrichment?.unavailable&&Number.isInteger(count)?t('catalogue_coverage',{count,total:saved.track_count}):'—';
+  }
+  $('catalogue-metadata-error').hidden=!saved.available||!saved.enrichment?.unavailable;
   $('sync-caption').textContent=t(syncing?'catalogue_sync_active':'catalogue_sync');
   $('sync-catalogue').disabled=state.connection!=='ready'||busy||state.busy||libraryLoading||syncing;
 }

@@ -38,7 +38,8 @@ class WebEnrichmentTests(unittest.TestCase):
         albums = self.device.browse('albums')['items']
         self.assertEqual(albums[0]['art'], tracks[0]['art'])
         self.assertIsNone(albums[1]['art'])
-        self.assertEqual(self.device.catalogue.state()['enrichment']['count'], 1)
+        coverage = self.device.catalogue.state()['enrichment']
+        self.assertEqual((coverage['count'], coverage['artwork_count'], coverage['duration_count']), (1, 1, 1))
         with Store(self.device.catalogue.directory) as store:
             store.publish(self.device.catalogue.key(), TRACKS, {}, expected_generation=self.head['generation'])
         self.assertIsNone(self.device.browse('tracks')['items'][0]['duration'])

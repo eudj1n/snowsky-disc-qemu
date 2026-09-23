@@ -114,7 +114,10 @@ search filters its albums. Typing never changes the page, including offline;
 navigating to another page clears the query. Disconnecting leaves those views
 available, with playback disabled; favorites, custom playlists and the current
 queue still need a live player. Sync date, track count and offline/stale status
-remain visible. A failed sync preserves the previous snapshot. Refresh reloads
+remain visible. **Library details** shows separate artwork and duration coverage
+for the saved collection. During sync, real stages and received page counts are
+shown separately from the last successful observation, without an estimated
+percentage. A failed sync preserves the previous snapshot. Refresh reloads
 the saved view; **Sync library** updates it from DISC.
 
 Storage defaults to `~/.local/share/disc-web`; `--data-dir PATH` selects another
@@ -142,8 +145,10 @@ not guessed. This does not fill every track or cycle playback. New catalog
 snapshots do not inherit observations by name.
 
 Observations and source provenance live in `observations.sqlite3` beside the
-catalog; catalog schema 1 and Assistant storage are unchanged. The banner reports
-the number of enriched tracks. Cached artwork and durations survive disconnect
+catalog; catalog schema 1 and Assistant storage are unchanged. Coverage counts
+tracks with each observed field, not unique images or fully enriched albums.
+Unavailable metadata storage is shown as unknown coverage, not zero.
+Cached artwork and durations survive disconnect
 and restart. Artwork is restricted to JPEG/PNG, 8 MiB per image and 256 MiB total
 body storage. The stock image endpoint has no atomic track identity, so guarded
 reads remain observations. Local-file extraction, external metadata services and
@@ -181,5 +186,6 @@ the repository's firmware-free runner. Node is only needed for the frontend
 utility and preference tests, not to run the application.
 
 - [Architecture and API](docs/architecture.md)
+- [Saved implementation plan](docs/plan.md)
 - [Current status and next stages](docs/status.md)
 - [Contributor instructions](AGENTS.md)

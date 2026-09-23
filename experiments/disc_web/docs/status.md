@@ -28,6 +28,26 @@ coverage or physical-device acceptance.
   queue selection, pause, album navigation and the mobile queue switch. No
   physical player connection or firmware run was made for this UI change.
 
+## Synchronization visibility — 2026-09-23
+
+- The library card separates saved timestamp/counts from current work and errors.
+  An expandable detail view shows actual connection/catalog/enrichment/verification
+  stages, with received pages rather than a percentage or estimated completion.
+- Library supplies independent per-track artwork and duration counts for the
+  current endpoint/snapshot. Shared images count for each associated track;
+  storage errors show unknown coverage. Missing snapshots hide coverage entirely.
+- Offline/stale states remain explicit. A failed sync does not replace the saved
+  collection; UI text explains partial enrichment and scan-before-sync without
+  adding automatic operations or changing playback.
+- Web checks passed 36 Python / 14 JavaScript tests; focused Library enrichment
+  checks passed eight tests. The firmware-free repository suite passed 503 Python
+  / 51 JavaScript tests and four shim builds. Browser checks used mocked transports
+  and a synthetic local catalog: desktop dark RU, mobile light EN at 390 px and
+  dark RU at 320 px, active catalog reading, preserved data after failure, unknown
+  metadata coverage and unavailable storage. No browser console errors or
+  horizontal overflow were observed. No physical connection or firmware run.
+- The agreed continuation order is saved in [the implementation plan](plan.md).
+
 ## Initial validation
 
 - Repository firmware-free suite passed in the existing CI Docker image with no
@@ -252,9 +272,9 @@ Existing Web and firmware-free checks pass; no connection behavior changed.
 
 ## Next implementation stages
 
-1. Local-file metadata enrichment and verified artwork/CUE sidecar handling.
-2. Extend device settings, file management, large-catalog presentation and live
-   multi-browser invalidation; integrate optional Assistant through one owner.
+The [saved implementation plan](plan.md) owns the agreed stage order and
+completion checkpoint: Now Playing/queue, synchronization visibility, folder
+import through synchronization, then reviewed sound settings.
 
 Do not expose placeholder settings as functioning controls or use diagnostic
 clients to bypass the persistent facade.

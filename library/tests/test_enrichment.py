@@ -144,3 +144,23 @@ class EnrichmentTests(unittest.TestCase):
                 self.assertFalse(enrichment.record('device', generation, 'invalid',
                     duration_ms=duration, cover=b'<svg/>', provenance={}))
             self.assertIsNone(enrichment.artwork('device', generation, '../../file'))
+
+    def test_coverage_counts_fields_per_track_with_snapshot_and_device_isolation(self):
+        with Enrichment(self.directory) as enrichment:
+            generation = self.head['generation']
+            self.assertEqual(enrichment.state('device', generation)['count'], 0)
+            for track, duration, cover in [('duration', 1000, None),
+                                           ('artwork', None, PNG), ('both', 2000, PNG)]:
+                enrichment.record('device', generation, track,
+                                  duration_ms=duration, cover=cover, provenance={})
+            # Two tracks sharing one image still each have observed artwork.
+            state = enrichment.state('device', generation)
+            self.assertEqual((state['count'], state['artwork_count'], state['duration_count']), (3, 2, 2))
+            for device, snapshot in [('other-device', generation), ('device', 'new-snapshot')]:
+                empty = enrichment.state(device, snapshot)
+                self.assertEqual((empty['count'], empty['artwork_count'], empty['duration_count']), (0, 0, 0))
+            # An absent cover on a fresh observation must lower coverage too.
+            enrichment.record('device', generation, 'both', duration_ms=2000, cover=None, provenance={})
+            updated = enrichment.state('device', generation)
+            self.assertEqual(updated['artwork_count'], 1)
+            self.assertNotEqual(updated['revision'], state['revision'])

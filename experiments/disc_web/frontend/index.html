@@ -36,8 +36,26 @@
   </header>
   <div class="mode-banner" id="mode-banner" hidden><span><span class="demo-dot"></span> <span data-i18n="demo_collection_no_audio">Демо-коллекция · без звука</span> <span class="banner-detail"><span data-i18n="fictional_artists">· вымышленные исполнители</span></span></span><button id="about-demo"><span data-i18n="about_demo">О демо</span> <span>↗</span></button></div>
   <section id="catalogue-banner" class="catalogue-banner" aria-label="Локальная медиатека" data-i18n-aria-label="catalogue_label" hidden>
-    <div><strong id="catalogue-title"></strong><p id="catalogue-description" role="status"></p></div>
-    <button id="sync-catalogue" class="secondary-button"><span data-icon="refresh"></span><span id="sync-caption"></span></button>
+    <div class="catalogue-overview">
+      <div class="catalogue-copy"><div class="catalogue-heading"><strong id="catalogue-title"></strong><span id="catalogue-status" class="catalogue-status"></span></div><p id="catalogue-description"></p></div>
+      <button id="sync-catalogue" class="secondary-button"><span data-icon="refresh"></span><span id="sync-caption"></span></button>
+    </div>
+    <p id="catalogue-activity" role="status" aria-live="polite" hidden></p>
+    <p id="catalogue-error" role="status" hidden></p>
+    <details class="catalogue-details">
+      <summary data-i18n="catalogue_details">О медиатеке</summary>
+      <ol id="catalogue-stages" class="catalogue-stages" aria-label="Этапы синхронизации" data-i18n-aria-label="catalogue_stages" hidden>
+        <li data-stage="identity" data-i18n="catalogue_stage_identity"></li><li data-stage="catalog" data-i18n="catalogue_stage_catalog"></li><li data-stage="enrichment" data-i18n="catalogue_stage_enrichment"></li><li data-stage="verification" data-i18n="catalogue_stage_verification"></li>
+      </ol>
+      <dl id="catalogue-coverage" class="catalogue-coverage" hidden>
+        <div><dt data-i18n="catalogue_tracks"></dt><dd id="catalogue-track-count"></dd></div>
+        <div><dt data-i18n="catalogue_artwork"></dt><dd id="catalogue-artwork-count"></dd></div>
+        <div><dt data-i18n="catalogue_durations"></dt><dd id="catalogue-duration-count"></dd></div>
+      </dl>
+      <p id="catalogue-metadata-error" data-i18n="catalogue_metadata_unavailable" hidden></p>
+      <p data-i18n="catalogue_metadata_note"></p>
+      <p data-i18n="catalogue_workflow_note"></p>
+    </details>
   </section>
   <main id="main" tabindex="-1"><div class="loading-shell"><span data-i18n="loading_your_collection">Загружаем вашу коллекцию…</span></div></main>
   <footer class="page-footer"><span><span data-i18n="collected_by_you_played_your_way">Собрано вами. Звучит по-вашему.</span></span><span>DISC WEB · EXPERIMENTAL</span></footer>
