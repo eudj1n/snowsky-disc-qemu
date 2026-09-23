@@ -309,3 +309,22 @@ The seek adapter accepts the extended public Track while preserving all existing
 identity/source/generation checks. No new endpoint, device query or mutation was
 introduced. Enrichment migration adds a default-empty JSON column without
 changing catalog schema 1 or discarding previous observations.
+
+## Native genre scopes
+
+Web opts into Library's native genre facets during sync. They publish with the
+same snapshot and budgets, without converting genre positions to catalog IDs.
+`GET /api/library` accepts `genre` for `albums`, `tracks` and `album`; combined
+artist/genre scopes are rejected. Responses include observed genre availability
+and an opaque source token for whole-genre/genre-album playback. Older snapshots
+return unknown genre coverage and require explicit sync; no fallback to a broader
+album or live query is made while reading a saved scope.
+
+Genre source tokens bind snapshot and connection generation, exact expected rows,
+genre and optional album. `action=genre` consumes that token for Play all; indexed
+`action=track` uses the same scope through `DiscSession.play_genre`. Expired or
+replaced snapshots fail before dispatch. Native genre rows are separate positional
+observations: duplicates retain multiplicity, ambiguous album navigation remains
+absent and no main-catalog artwork association is guessed. Artist navigation
+explicitly leaves the genre scope; album links retain it. Search filters only
+rows already in the selected genre. Offline controls remain disabled.

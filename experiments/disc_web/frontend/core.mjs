@@ -24,20 +24,22 @@ export function searchKind(view) {
 }
 // A track artist scopes a selection; it is not an inferred album-artist tag.
 export function albumScope(item) {
+  if(item?.scope_genre) return '';
   if(item?.scope_artist) return item.scope_artist;
   if(item?.artists?.length>1) return '';
   return item?.artist || item?.artists?.[0] || '';
 }
 export function navigationRoute(view,item=null) {
-  return {view,name:item?.title || '',artist:view==='album'?albumScope(item):''};
+  return {view,name:item?.title || '',artist:view==='album'?albumScope(item):'',
+    ...(['album','albums','tracks'].includes(view)&&item?.scope_genre?{genre:item.scope_genre}:{})};
 }
 export function routeHash(route) {
-  return '#' + new URLSearchParams({view:route.view, ...(route.name ? {name:route.name} : {}), ...(route.artist ? {artist:route.artist} : {})});
+  return '#' + new URLSearchParams({view:route.view, ...(route.name ? {name:route.name} : {}), ...(route.artist ? {artist:route.artist} : {}), ...(route.genre ? {genre:route.genre} : {})});
 }
 export function parseRoute(hash) {
   const params = new URLSearchParams(hash.replace(/^#/, ''));
   const view = params.get('view') || 'home';
-  return {view:['home','albums','artists','tracks','favorites','playlists','album','artist','playlist'].includes(view) ? view : 'home', name:params.get('name') || '', artist:params.get('artist') || ''};
+  return {view:['home','albums','artists','tracks','favorites','playlists','album','artist','playlist'].includes(view) ? view : 'home', name:params.get('name') || '', artist:params.get('artist') || '', ...(['albums','album','tracks'].includes(view)&&params.get('genre')?{genre:params.get('genre')}:{})};
 }
 
 export function trackDuration(track) {

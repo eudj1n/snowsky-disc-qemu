@@ -64,7 +64,7 @@ class Demo:
                                  'position_ms': int(elapsed * 1000), 'mode': self.mode,
                                  'favorite': track['id'] in self.likes}}
 
-    def browse(self, kind, name='', artist=''):
+    def browse(self, kind, name='', artist='', genre=''):
         with self.lock:
             if kind == 'albums':
                 items = self.albums
@@ -86,7 +86,24 @@ class Demo:
                 items = self.members[name]
             else:
                 raise ValueError('Unsupported library view')
-            return deepcopy({'kind': kind, 'name': name, 'items': items})
+            if genre:
+                if artist or kind not in ('albums', 'album', 'tracks'):
+                    raise ValueError('Unsupported combined genre scope')
+                if kind == 'albums':
+                    scoped = []
+                    for item in items:
+                        members = [t for t in self.tracks if t['album'] == item['title']
+                                   and t['artist'] == item['artist'] and t['metadata']['genre'] == genre]
+                        if members:
+                            scoped.append(dict(item, count=len(members), genre=genre, scope_genre=genre))
+                    items = scoped
+                else:
+                    items = [dict(item, scope_genre=genre) for item in items
+                             if item.get('metadata', {}).get('genre') == genre]
+            genres = [dict(name=g, available=True, count=sum(t['metadata']['genre'] == g for t in self.tracks))
+                      for g in dict.fromkeys(t['metadata']['genre'] for t in self.tracks)]
+            return deepcopy({'kind': kind, 'name': name, 'items': items, 'genres': genres,
+                             'genre_selection': 'demo:0' if genre and items else None})
 
     def queue(self):
         with self.lock:
@@ -130,7 +147,7 @@ class Demo:
                     raise ValueError('Favorite must be boolean')
                 track_id = self.queue_items[self.selected]['id']
                 self.likes.add(track_id) if body['value'] else self.likes.discard(track_id)
-            elif action in ('album', 'artist', 'track', 'queue', 'playlist'):
+            elif action in ('album', 'artist', 'track', 'queue', 'playlist', 'genre'):
                 if action == 'queue':
                     index = body.get('index')
                     if type(index) is not int or not 0 <= index < len(self.queue_items):
@@ -138,14 +155,15 @@ class Demo:
                     self.selected = index
                 else:
                     field = {'album': 'album', 'artist': 'artist', 'track': 'id'}.get(action)
-                    tracks = (self.browse('playlist', body.get('name'))['items'] if action == 'playlist'
+                    tracks = (self.browse('album' if body.get('album') else 'tracks', body.get('album', ''), genre=body.get('genre', ''))['items'] if action == 'genre'
+                              else self.browse('playlist', body.get('name'))['items'] if action == 'playlist'
                               else self.browse('album', body.get('name'), body.get('artist', ''))['items'] if action == 'album'
                               else [t for t in self.tracks if t[field] == body.get('name')])
                     if not tracks:
                         raise ValueError('Selection is empty')
                     index = 0
                     if action == 'track' and body.get('source_view') in ('album', 'tracks', 'favorites', 'playlist'):
-                        tracks = self.browse(body['source_view'], body.get('source_name', ''), body.get('source_artist', ''))['items']
+                        tracks = self.browse(body['source_view'], body.get('source_name', ''), body.get('source_artist', ''), body.get('source_genre', ''))['items']
                         index = next((i for i, row in enumerate(tracks) if row['id'] == body.get('name')), None)
                         if index is None:
                             raise ValueError('track left displayed source')

@@ -10,7 +10,7 @@ from library.snapshot import Snapshot
 
 
 def synchronize(store, device, reader, client, http, *, enrichment=None,
-                before_publish=lambda: None, on_stage=lambda stage: None):
+                include_genres=False, before_publish=lambda: None, on_stage=lambda stage: None):
     """Caller owns connection, budgets and cancellation; Library owns data flow.
 
     Enrichment is optional and partial. Its failure cannot suppress a complete
@@ -22,7 +22,7 @@ def synchronize(store, device, reader, client, http, *, enrichment=None,
     client.scan_guard()
     check_events(client)
     on_stage('catalog')
-    tracks = reader.read_stable()
+    tracks = reader.read_stable(include_genres=True) if include_genres else reader.read_stable()
     observation = None
     if enrichment:
         on_stage('enrichment')
@@ -39,7 +39,8 @@ def synchronize(store, device, reader, client, http, *, enrichment=None,
     client.scan_guard()
     before_publish()
     head = store.publish(device, tracks, {'soc_version': version,
-        'consistency': 'two-equal-reads-not-atomic', 'identity': 'snapshot-only'},
+        'consistency': 'two-equal-reads-not-atomic', 'identity': 'snapshot-only',
+        **({'genres': reader.genres} if include_genres else {})},
         expected_generation=expected)
     enriched = False
     if enrichment and observation and observation.ordinal is not None:

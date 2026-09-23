@@ -6,6 +6,11 @@ Issues remain the home for individual actionable follow-ups. DISC Web stays in
 `experiments/disc_web`; Controller owns device operations and Library owns catalog
 observations and enrichment.
 
+Product direction, confirmed 2026-09-23: expose as much of the reviewed DISC and
+Controller capability surface as practical in a coherent music interface. Prefer
+stock network capabilities; a completed visual prototype is not the endpoint.
+Keep firmware support, API availability and UI coverage explicit.
+
 ## 1. Now Playing and queue — complete
 
 Expanded artwork and playback controls, album/artist navigation, adjacent desktop
@@ -100,3 +105,34 @@ folder is deferred, not the next implementation stage. Resume only on an explici
 owner request. Path mapping, duplicate/CUE identity and local-file provenance
 remain design considerations for that future work. Existing current-track
 enrichment through Controller remains available.
+
+## 6. Native genre browsing and playback — complete
+
+Include stock genre → album → track membership in Web's explicit Library sync,
+with two complete equal reads and atomic publication. Keep native genre positions
+separate from main catalog identities, preserving mixed-genre albums and duplicate
+tracks. Expose filters on Albums and Tracks, offline browsing, deep links and a
+whole-genre action. Fresh Controller checks must preserve the exact genre source
+for indexed and album playback. Old snapshots require one new sync.
+
+Implemented and validated with synthetic fixtures, responsive browser checks and
+the disposable V2.57 library scenario; see [status](status.md).
+
+## Capability coverage candidates
+
+Use the [reviewed protocol matrix](../../../docs/protocol/disc-capabilities.md)
+as the source of supported behavior, not APK/cloud descriptors alone. The next
+bounded stage will be chosen separately; this list does not authorize destructive
+operations against a personal collection.
+
+| Area | Next useful Web work | Boundary |
+| --- | --- | --- |
+| Folders | Native SD folder browsing and scoped playback | Preserve directory-inclusive positions; Play all is nonrecursive |
+| Playlists | Multiple selection, guarded batch additions and list management | Preserve source filters and fresh destination identity |
+| Playback | Present all five reviewed play modes clearly | Do not guess root-tab Play all selectors |
+| Audio/settings | Expose remaining reviewed settings through the shared owner | No unsupported remote preference setters or invented output identity |
+| Device presentation | Reviewed work modes and lock-screen settings | Capability-specific validation; hardware audio is not inferred from readback |
+
+PEQ investigation remains paused. Remote lyrics and Bluetooth device management
+need separate evidence. Local SD/USB/source-folder enrichment remains explicitly
+deferred above. These boundaries remain in effect while pursuing broader coverage.

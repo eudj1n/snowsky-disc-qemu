@@ -250,3 +250,21 @@ associated saved rows, including offline. Unknown values are hidden; source DSD
 suppresses the PCM bit-depth presentation. Device-reported bitrate is retained by
 Library but not displayed as compressed-file bitrate. Demo properties are explicit
 fictional examples and never substitute for missing device observations.
+
+## Genre filters
+
+After updating Web, run **Sync library** once to save the player's native genre
+catalog. **Albums** and **Tracks** then offer genre filters, which work offline.
+The selected genre is retained in the URL, album navigation and the switch between
+albums and tracks. **Play genre** selects that complete native genre; album Play
+and individual rows select only their displayed genre scope. A mixed-genre album
+can therefore show different track counts under different filters.
+
+Genres are literal device labels; they are not inferred from the current track
+or translated. A group the stock API cannot resolve is disabled. Old snapshots
+remain browsable and show a sync hint. Genre rows retain separate positions and
+do not inherit catalog artwork/durations by title. Playlist edits from genre rows
+remain disabled until their batch-source workflow has its own facade. Playback
+requires a ready player and fresh source verification; browsing does not connect,
+scan the card or start playback. Demo follows the same genre navigation using
+explicit fictional data.

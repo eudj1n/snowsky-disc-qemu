@@ -66,6 +66,10 @@ class Device:
             album, rows, position = snapshot.selection(source['ordinals'][index], artist=source['artist'] or None)
             return {'kind': 'album', 'name': album, 'artist': source['artist'],
                     'expected': tuple(QueueItem(r['pos'], r['name'], r['author']) for r in rows)}, position
+        if source.get('kind') == 'genre':
+            head, _ = self.catalogue.snapshot()
+            if source['snapshot'] != head['generation']:
+                raise ValueError('Saved genre changed; refresh before selecting')
         if not 0 <= index < len(source['expected']):
             raise ValueError('position outside the displayed source')
         return source, index
@@ -124,12 +128,14 @@ class Device:
     def _rows(self, category, **filters):
         return CatalogReader(self.http, max_tracks=10000, max_requests=60).rows(category, **filters)
 
-    def browse(self, kind, name='', artist=''):
+    def browse(self, kind, name='', artist='', genre=''):
         if self.catalogue:
             with self.state_guard:
-                cached = self.browse_snapshot(kind, name, artist)
+                cached = self.browse_snapshot(kind, name, artist, genre)
             if cached is not None:
                 return cached
+        if genre:
+            raise ValueError('Synchronize the collection before browsing genres')
         if not self.lock.acquire(False):
             raise BusyError('Another operation is in progress. Nothing was queued.')
         try:
@@ -177,13 +183,17 @@ class Device:
         finally:
             self.lock.release()
 
-    def browse_snapshot(self, kind, name, artist):
+    def browse_snapshot(self, kind, name, artist, genre=''):
         from experiments.disc_web.backend.catalogue import CACHED_VIEWS
         if kind not in CACHED_VIEWS:
             return None
         head, snapshot = self.catalogue.snapshot()
         if snapshot is None:
             return None
+        if genre:
+            if artist or kind not in ('albums', 'tracks', 'album'):
+                raise ValueError('Unsupported combined genre scope')
+            return self.browse_genre(snapshot, kind, name, genre)
         metadata = self.catalogue.metadata.rows(head['generation'])
         def observed(row):
             fields = metadata.get(row['id'], {})
@@ -216,7 +226,45 @@ class Device:
                         artwork.setdefault(row['album'], image)
                 for item in items:
                     item['art'] = artwork.get(item['title'])
-        return dict(kind=kind, name=name, items=items, snapshot=head['generation'])
+        return dict(kind=kind, name=name, items=items, snapshot=head['generation'],
+                    genres=self.genre_groups(snapshot))
+
+    @staticmethod
+    def genre_groups(snapshot):
+        return None if snapshot.genres is None else [
+            {key: group[key] for key in ('name', 'count', 'available')} for group in snapshot.genres]
+
+    def browse_genre(self, snapshot, kind, name, genre):
+        group = snapshot.genre(genre)
+        album = name if kind == 'album' else None
+        rows = snapshot.genre_rows(genre, album)
+        token = self._remember(dict(kind='genre', name=genre, album=album,
+            expected=tuple(QueueItem(r['pos'], r['name'], r['author']) for r in rows),
+            snapshot=snapshot.generation, generation=self.state()['generation'], created=time.monotonic()))
+        if kind == 'albums':
+            items = []
+            for i, entry in enumerate(group['albums']):
+                artists = list(dict.fromkeys(r['author'] for r in entry['tracks'] if r['author']))
+                items.append(dict(id=str(i), type='album', title=entry['name'], artists=artists,
+                    artist=artists[0] if len(artists) == 1 else '', count=len(entry['tracks']),
+                    scope_genre=genre, art=None))
+        else:
+            items = []
+            memberships = {}
+            for entry in group['albums']:
+                for member in entry['tracks']:
+                    memberships.setdefault((member['name'], member['author']), []).append(entry['name'])
+            for row in rows:
+                # A genre row is a separate positional observation, not a catalog ID.
+                # Only a unique album membership supplies navigation; no artwork join.
+                albums = memberships.get((row['name'], row['author']), [])
+                observed_album = album if album is not None else albums[0] if len(albums) == 1 else None
+                items.append(dict(id=f"genre:{row['pos']}", type='track', title=row['name'],
+                    artist=row['author'], album=observed_album, scope_genre=genre,
+                    selection=f"{token}:{row['pos']}", playable=True, editable=False,
+                    art=None, duration=None))
+        return dict(kind=kind, name=name, items=items, snapshot=snapshot.generation,
+                    genres=self.genre_groups(snapshot), genre_selection=f'{token}:0' if rows else None)
 
     def queue(self):
         if not self.lock.acquire(False):
@@ -275,6 +323,11 @@ class Device:
                     expected=body.get('expected'), expected_generation=self.protocol_generation(body['generation']))
             elif action == 'mode':
                 result = self.session.set_play_mode(body.get('value'))
+            elif action == 'genre':
+                source, _ = self._selection(body.get('selection'))
+                if source['kind'] != 'genre':
+                    raise ValueError('A displayed genre selection is required')
+                result = self.session.play_genre(source['name'], album=source['album'], expected=source['expected'])
             elif action == 'album':
                 album = body.get('name')
                 if not isinstance(album, str) or not album or len(album) > 1024:
@@ -310,7 +363,10 @@ class Device:
             elif action in ('track', 'queue', 'playlist_add', 'playlist_remove'):
                 source, index = self._selection(body.get('selection'))
                 expected = source['expected']
-                if action == 'queue' and source['kind'] == 'queue':
+                if action == 'track' and source['kind'] == 'genre':
+                    result = self.session.play_genre(source['name'], album=source['album'], index=index,
+                                                    expected=source['expected'])
+                elif action == 'queue' and source['kind'] == 'queue':
                     result = self.session.play_queue_index(index, expected=expected)
                 elif action == 'track' and source['kind'] == 'album':
                     result = (self.session.play_artist(source['artist'], album=source['name'], index=index, expected=expected)

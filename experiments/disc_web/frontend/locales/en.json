@@ -399,5 +399,10 @@
   "metadata_channels": "Channels",
   "metadata_genre": "Genre",
   "metadata_track_number": "Track number",
-  "metadata_source": "Source"
+  "metadata_source": "Source",
+  "genre_filter": "Filter by genre",
+  "all_genres": "All genres",
+  "play_genre": "Play genre",
+  "genre_unavailable": "The player did not provide an accessible list for this genre",
+  "genres_need_sync": "Sync your collection to add genre filters."
 }

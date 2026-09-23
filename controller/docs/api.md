@@ -382,3 +382,15 @@ scale. These properties describe the current source, not the active DAC, Bluetoo
 route, negotiated output format or measured audio quality. No album-artist identity
 is inferred. The six-field `Track.identity` preserves existing seek selection
 checks independently of newly available descriptive fields.
+
+## Genre playback
+
+`DiscSession.play_genre(genre, album=None, index=None, expected=None)` selects a
+reviewed V2.57 genre source through the existing owner. Optional immutable
+`QueueItem` rows pin the displayed membership. Two fresh complete scoped reads,
+capability/scan checks and a final HTTP position/identity check precede one write.
+Whole genres and genre albums use type 8; indexed whole-genre tracks use type 10.
+Confirmation checks native queue membership, source and selected position. A
+shortened album is resolved only within that genre. Invalid/reserved selectors,
+stale sources and unsupported versions fail without a playback write; uncertain
+results are never replayed. This does not combine artist and genre selectors.

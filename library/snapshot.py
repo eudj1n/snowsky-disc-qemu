@@ -3,9 +3,10 @@ from collections import OrderedDict
 
 
 class Snapshot:
-    def __init__(self, generation, entries):
+    def __init__(self, generation, entries, *, genres=None):
         self.generation = generation
         self.entries = entries
+        self.genres = genres
 
     def tracks(self, album=None, artist=None):
         return [row for row in self.entries
@@ -31,3 +32,18 @@ class Snapshot:
         index = next(i for i, row in enumerate(tracks) if row['ordinal'] == ordinal)
         rows = [dict(pos=i, name=row['title'], author=row['artist']) for i, row in enumerate(tracks)]
         return selected['album'], rows, index
+
+    def genre(self, name):
+        matches = [g for g in self.genres or [] if g['name'] == name]
+        if len(matches) != 1 or not matches[0]['available']:
+            raise ValueError('Genre is unavailable; synchronize the collection')
+        return matches[0]
+
+    def genre_rows(self, name, album=None):
+        group = self.genre(name)
+        if album is None:
+            return group['tracks']
+        matches = [a for a in group['albums'] if a['name'] == album]
+        if len(matches) != 1:
+            raise ValueError('Album is absent from the saved genre')
+        return matches[0]['tracks']

@@ -135,7 +135,7 @@ class Catalogue:
                     with enrichment_context as enrichment:
                         synchronize(store, key,
                             CatalogReader(http, page_size=100, max_tracks=10000, max_requests=1000),
-                            client, http, enrichment=enrichment, before_publish=before_publish,
+                            client, http, enrichment=enrichment, include_genres=True, before_publish=before_publish,
                             on_stage=lambda stage: self.update(stage=stage))
                 with self.guard:
                     self.verified = (key, generation)

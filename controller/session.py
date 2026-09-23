@@ -471,6 +471,13 @@ class DiscSession:
             return result
         return self._perform('play_album', select)
 
+    def play_genre(self, genre: str, *, album: str | None = None, index: int | None = None,
+                   expected: tuple[QueueItem, ...] | None = None) -> CommandResult:
+        """Select only the displayed genre/album membership after fresh checks."""
+        from controller.genre_playback import select
+        return self._perform('play_genre', lambda client: select(self.config, client, genre,
+            album=album, index=index, expected=expected))
+
     def play_queue_index(self, index: int, *, expected: tuple[QueueItem, ...] | None = None) -> CommandResult:
         """Select a fresh queue row; optional expected rows pin the displayed source."""
         from controller.fiio_http import HTTPClient

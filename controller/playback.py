@@ -42,6 +42,8 @@ def album_matches(state, selected, *, config=None, http=None):
                            max_requests=config.max_requests)
     category = 'artist/album' if selected.get('artist') is not None else 'album'
     filters = {'artist': selected['artist']} if selected.get('artist') is not None else {}
+    if selected.get('genre') is not None:
+        category, filters = 'style/album', {'style': selected['genre']}
     albums = reader.rows(category, **filters)
     if albums != reader.rows(category, **filters):
         raise CatalogChanged('artist albums changed during playback confirmation')

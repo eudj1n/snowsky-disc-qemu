@@ -2172,3 +2172,9 @@ main .track-row.no-album.no-duration { grid-template-columns:28px 40px minmax(10
 .track-metadata dt { color:var(--muted); font-size:10px; line-height:1.4; }
 .track-metadata dd { margin:5px 0 0; color:var(--ink); font-size:12px; line-height:1.4; overflow-wrap:anywhere; }
 #menu-metadata { margin:0 3px 8px; }
+
+.genre-filters { flex-wrap:nowrap; overflow-x:auto; padding-block:4px 12px; }
+.genre-filters .chip { flex-shrink:0; }
+.genre-filters .chip:disabled { opacity:.45; cursor:not-allowed; }
+.genre-heading { display:flex; align-items:center; gap:16px; flex-wrap:wrap; margin-bottom:24px; }
+.genre-heading > span { color:var(--muted); font-size:13px; }

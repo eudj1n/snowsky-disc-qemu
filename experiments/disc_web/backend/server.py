@@ -118,7 +118,7 @@ class Handler(BaseHTTPRequestHandler):
                 return self.reply(self.server.device.sound_settings())
             if url.path == '/api/library':
                 return self.reply(self.server.device.browse(query.get('kind', ['albums'])[0],
-                    query.get('name', [''])[0], query.get('artist', [''])[0]))
+                    query.get('name', [''])[0], query.get('artist', [''])[0], query.get('genre', [''])[0]))
             if url.path == '/api/queue':
                 return self.reply(self.server.device.queue())
             if url.path == '/api/cover' and not self.server.device.demo:

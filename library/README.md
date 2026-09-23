@@ -151,3 +151,22 @@ not filled from a previous observation. A valid metadata-only observation may be
 stored when duration and artwork are unavailable. `reported_bit_rate` remains a
 literal device report, not a measured compressed bitrate. Original tags and
 catalog schema 1 are unchanged; duplicate, scan and snapshot guards still apply.
+
+## Optional native genre facets
+
+`CatalogReader.read_stable(include_genres=True)` reads `style`, `style/song`,
+`style/album` and `style/album/song` within the same page/request budget as the
+base catalog. Both complete observations must agree, including genre membership.
+Album memberships within each genre must match its track multiset, and their
+combined multiplicities must fit the base catalog. Unresolvable literal groups
+are retained as unavailable; reserved tokens are never translated into guessed
+localized labels. Network, inconsistent-read and budget failures retain the
+previous snapshot.
+
+`synchronize(..., include_genres=True)` publishes these facets atomically inside
+snapshot metadata without altering catalog schema 1 or track identities. This is
+opt-in for consumers; DISC Web enables it, while Assistant's existing sync is
+unchanged. `Snapshot.genres is None` means no genre observation (older snapshot),
+whereas an empty list is an observed empty genre list. `genre_rows(name, album)`
+returns the native scoped rows; their positions must not be used as main catalog
+ordinals. No genre is inferred for duplicate main catalog rows or entire albums.

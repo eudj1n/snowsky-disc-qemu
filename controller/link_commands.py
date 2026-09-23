@@ -76,6 +76,13 @@ class ReviewedCommands:
         verify_artist(http, artist, index, album)
         self.socket.sendall(frame(*command))
 
+    def play_genre(self, genre: str, index: int | None = None, *, album: str | None = None, http: Any) -> None:
+        from controller.fiio_library import genre_command, verify_genre
+        command = genre_command(genre, index, album)
+        require(self.settings().get('soc_version'), 'genre_playback')
+        verify_genre(http, genre, index, album)
+        self.socket.sendall(frame(*command))
+
     def play_album(self, album: str, index: int | None = None, *, http: Any) -> None:
         """Play a complete named album after fresh source bounds verification."""
         command = album_command(album, index)

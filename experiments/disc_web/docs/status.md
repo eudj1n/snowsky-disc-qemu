@@ -447,3 +447,35 @@ clients to bypass the persistent facade.
 - The current-track stage is complete in [the plan](plan.md). The owner deferred
   mounted SD/USB/source-folder enrichment on 2026-09-23; it is not the next stage.
   This implementation does not promise complete metadata over stock Wi-Fi.
+
+## Native genre filters and playback — 2026-09-23
+
+- Albums and Tracks now expose stock genre filters after one new Library sync.
+  Facets, genre tracks and genre-album memberships publish atomically after two
+  matching observations. Saved filters work offline; mixed-genre albums keep the
+  correct subset and duplicate multiplicities. Genre deep links, back navigation,
+  album/track switching and contextual search retain the selected scope.
+- Whole-genre, genre-album and indexed playback use the new public
+  `DiscSession.play_genre` with snapshot/connection tokens, expected membership,
+  fresh preflight and queue confirmation. Artist/genre combinations are rejected,
+  not broadened. Ambiguous metadata/artwork joins and genre playlist edits remain
+  unavailable. Old snapshots retain ordinary browsing and display a sync hint;
+  unresolved literal genre groups are disabled without alias guessing.
+- Firmware-free checks passed 531 Python / 62 JavaScript tests and four shim
+  builds. Web checks passed 50 Python / 25 JavaScript tests; focused genre checks
+  cover stale snapshots, changing membership, duplicates, missing genre facets,
+  unsupported firmware, final preflight races and no retry after uncertainty.
+  Ruff, strict mypy (12 files), isolated Controller sdist/wheel and extras passed.
+- The disposable V2.57 `library` scenario passed on TCP/WS. Its added persistent
+  facade check synchronized native facets and confirmed whole genre (type 8),
+  indexed genre (type 10), genre album and indexed genre album (type 8), exact
+  queue sizes/positions and rejection of a stale expected source. Generated media
+  was restored/removed and the disposable stack was cleaned up. No physical
+  player or interactive emulator volume was used.
+- Browser verification used a synthetic ordinary-mode offline collection with
+  duplicate names and split-genre albums, plus the isolated demo for Play genre.
+  Desktop dark RU and mobile light EN/dark RU at 390/320 px covered filtering,
+  scoped navigation, search, queue contents and disabled offline controls. No
+  horizontal overflow or browser console errors were observed.
+- The [plan](plan.md) now records the owner's broader Controller coverage goal and
+  bounded candidates. Local-file enrichment and PEQ investigation remain deferred.

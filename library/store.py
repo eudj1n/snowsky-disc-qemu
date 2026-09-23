@@ -87,7 +87,9 @@ class Store:
         rows = [dict(row) for row in self.db.execute(
             'SELECT id,ordinal,title,artist,album FROM tracks WHERE generation=? ORDER BY ordinal',
             (head['generation'],))]
-        return head, Snapshot(head['generation'], rows)
+        metadata = json.loads(self.db.execute('SELECT metadata FROM snapshots WHERE generation=?',
+                                              (head['generation'],)).fetchone()[0])
+        return head, Snapshot(head['generation'], rows, genres=metadata.get('genres'))
 
     def matches_tracks(self, generation, tracks):
         """Exact snapshot content/order, including source rows; not identity reconciliation."""

@@ -47,7 +47,7 @@ updateThemeChoice();
 document.querySelector('.skip-link').onclick = event => {event.preventDefault(); $('main').focus();};
 const titleKeys = {home:'home',albums:'albums',artists:'artists',tracks:'tracks',favorites:'favorites',playlists:'playlists',album:'album',artist:'artist',playlist:'playlist'};
 let state = null, route = parseRoute(location.hash), currentItems = [], homeTracks = [], activeItem = null;
-let requestSequence = 0, busy = false, genre = '', toastTimer, pollTimer, lastTrack = '', libraryLoading = false;
+let requestSequence = 0, busy = false, genres = null, genreSelection = null, toastTimer, pollTimer, lastTrack = '', libraryLoading = false;
 let displayedSnapshot=null;
 let lastCoverRequest='';
 let queueItems=null, queueGeneration=null, queueRequest=0, queueLoading=false, queueError='';
@@ -195,7 +195,7 @@ function navigate(view, item=null) {
 }
 window.addEventListener('hashchange', () => {
   route = parseRoute(location.hash);
-  $('search').value = ''; genre = ''; window.scrollTo(0,0); loadView();
+  $('search').value = ''; window.scrollTo(0,0); loadView();
 });
 for (const button of document.querySelectorAll('[data-view]')) button.addEventListener('click', () => navigate(button.dataset.view));
 function updateNav() {
@@ -221,10 +221,11 @@ async function loadView() {
   libraryLoading = true;
   $('main').innerHTML = `<div class="loading-shell" role="status">${t('gathering_your_collection')}</div>`;
   try {
-    const params = new URLSearchParams({kind:route.view === 'home' ? 'albums' : route.view, name:route.name,artist:route.artist});
+    const params = new URLSearchParams({kind:route.view === 'home' ? 'albums' : route.view, name:route.name,artist:route.artist,genre:route.genre||''});
     const data = await api(`/api/library?${params}`);
     if (sequence !== requestSequence) return;
     currentItems = data.items; displayedSnapshot=data.snapshot||null;
+    genres=data.genres??null; genreSelection=data.genre_selection||null;
     if (route.view === 'home') {
       const tracks = await api('/api/library?kind=tracks');
       if (sequence !== requestSequence) return;
@@ -266,7 +267,7 @@ function bindCards(items) {
 }
 function playItem(item, origin, queue=false) {
   if (origin.generation!==state?.generation) return toast(t('track_changed'),true);
-  const extras=state.demo ? (queue ? {index:item.position} : {name:item.id,source_view:origin.view==='home'?'tracks':origin.view,source_name:origin.name,source_artist:origin.artist}) : {selection:item.selection};
+  const extras=state.demo ? (queue ? {index:item.position} : {name:item.id,source_view:origin.view==='home'?'tracks':origin.view,source_name:origin.name,source_artist:origin.artist,source_genre:origin.genre||''}) : {selection:item.selection};
   return command(queue ? 'queue' : 'track',extras);
 }
 function bindTracks(root, items, queue=false) {
@@ -314,13 +315,12 @@ for (const button of $('track-menu').querySelectorAll('button')) button.onclick=
   if(origin.generation!==state.generation) return toast(t('track_changed'),true);
   if(action==='play') playItem(item,origin);
   if(action==='add'||action==='remove') openPlaylistEditor(action,item,origin);
-  if(action==='album') navigate('album',{title:item.album,art:item.art,scope_artist:origin.artist||item.artist||''});
+  if(action==='album') navigate('album',{title:item.album,art:item.art,scope_artist:origin.artist||item.artist||'',scope_genre:origin.genre||item.scope_genre||''});
   if(action==='artist') navigate('artist',{title:item.artist});
 };
 function renderView() {
   const query = $('search').value;
   let items = filterItems(currentItems, query);
-  if (genre) items = items.filter(item => item.genre === genre);
   if (route.view === 'home' && !query) return renderHome(items);
   const detail = ['album','artist','playlist'].includes(route.view);
   const isTracks = ['tracks','favorites','album','playlist'].includes(route.view);
@@ -333,17 +333,18 @@ function renderView() {
     if(route.view==='album') item.art=currentItems.find(track=>track.art)?.art||null;
     const artists=route.view==='album' ? (route.artist ? [route.artist] : [...new Set(currentItems.map(track=>track.artist).filter(Boolean))]) : [];
     const artistLinks=artists.map(name=>`<a class="detail-artist-link" href="${esc(routeHash({view:'artist',name}))}">${esc(name)}</a>`).join(' · ');
-    const canPlay = true;
-    heading = `<button class="text-button" id="back">${icon('back')} ${route.view === 'album' && route.artist ? esc(route.artist) : t('back_to_collection')}</button><div class="detail-heading"><div class="detail-art">${art(item)}</div><div class="detail-copy"><span class="eyebrow">${esc(t(titleKeys[route.view]))}</span><h1>${esc(route.name)}</h1><p>${artistLinks}${artistLinks ? ' · ' : ''}${t(isTracks ? 'track_count' : 'album_count',{count:currentItems.length})}${state.demo ? ' · DISC Sessions' : ''}</p><div class="detail-actions"><button id="play-collection" class="primary-button" ${!canPlay || !currentItems.length ? 'disabled' : ''}>${icon('play')} ${route.view === 'album' ? t('play_album') : t('listen')}</button></div></div></div>`;
-    if(route.view==='album' && !route.artist && artists.length>1) {
+    const canPlay = state.connection==='ready'&&!state.busy&&!busy&&(!route.genre || !!genreSelection);
+    heading = `<button class="text-button" id="back">${icon('back')} ${route.view === 'album' && route.artist ? esc(route.artist) : t('back_to_collection')}</button><div class="detail-heading"><div class="detail-art">${art(item)}</div><div class="detail-copy"><span class="eyebrow">${esc(t(titleKeys[route.view]))}</span><h1>${esc(route.name)}</h1><p>${artistLinks}${artistLinks ? ' · ' : ''}${t(isTracks ? 'track_count' : 'album_count',{count:currentItems.length})}${route.genre ? ' · '+esc(route.genre) : ''}${state.demo ? ' · DISC Sessions' : ''}</p><div class="detail-actions"><button id="play-collection" class="primary-button" ${!canPlay || !currentItems.length ? 'disabled' : ''}>${icon('play')} ${route.view === 'album' ? t('play_album') : t('listen')}</button></div></div></div>`;
+    if(route.view==='album' && !route.artist && !route.genre && artists.length>1) {
       heading+=`<div class="album-scope"><p>${t('album_scope_note')}</p><div class="filter-chips">${artists.map(artist=>`<a class="chip" href="${esc(routeHash({view:'album',name:route.name,artist}))}">${esc(artist)}</a>`).join('')}</div></div>`;
     }
 
   } else {
     heading = `<div class="view-heading"><div><span class="eyebrow">${t('my_collection')}</span><h1>${esc(t(titleKeys[route.view]))}</h1><p>${query ? t('found') : t('in_this_section')}: ${count}${state.demo ? t('demo_collection') : ''}</p></div></div>`;
-    if (!isTracks && state.demo && route.view === 'albums') {
-      const genres = [...new Set(currentItems.map(i=>i.genre).filter(Boolean))];
-      heading += `<div class="filter-chips"><button class="chip ${!genre ? 'active' : ''}" data-genre="">${t('all_albums')}</button>${genres.map(g=>`<button class="chip ${genre===g ? 'active' : ''}" data-genre="${esc(g)}">${esc(g)}</button>`).join('')}</div>`;
+    if (['albums','tracks'].includes(route.view)) {
+      if(genres?.length) heading += `<div class="filter-chips genre-filters" role="group" aria-label="${t('genre_filter')}"><button class="chip ${!route.genre?'active':''}" data-genre="" aria-pressed="${!route.genre}">${t('all_genres')}</button>${genres.map(g=>`<button class="chip ${route.genre===g.name?'active':''}" data-genre="${esc(g.name)}" aria-pressed="${route.genre===g.name}" ${!g.available?'disabled':''} title="${esc(g.available?g.name:t('genre_unavailable'))}">${esc(g.name)}</button>`).join('')}</div>`;
+      else if(genres===null&&!state.demo) heading += `<p class="scope-note">${t('genres_need_sync')}</p>`;
+      if(route.genre) heading += `<div class="genre-heading"><span>${esc(route.genre)}</span><button id="play-genre" class="secondary-button" ${!genreSelection||state.connection!=='ready'||state.busy||busy?'disabled':''}>${icon('play')} ${t('play_genre')}</button><button id="genre-view" class="text-button">${t(route.view==='albums'?'all_tracks':'all_albums')} ${icon('arrow')}</button></div>`;
     }
 
   }
@@ -353,9 +354,11 @@ function renderView() {
   bindCards(items); bindTracks($('main'), items);
   if ($('create-playlist')) $('create-playlist').onclick=()=>openPlaylistEditor('create');
   if ($('rename-playlist')) $('rename-playlist').onclick=()=>openPlaylistEditor('rename');
-  for (const chip of $('main').querySelectorAll('[data-genre]')) chip.onclick = () => {genre=chip.dataset.genre; renderView();};
-  if ($('back')) $('back').onclick = () => route.artist ? navigate('artist',{title:route.artist}) : navigate(`${route.view}s`);
-  if ($('play-collection')) $('play-collection').onclick = () => command(route.view, {name:route.name,...(route.artist ? {artist:route.artist} : {}),...(route.view==='playlist'&&!state.demo?{selection:currentItems[0]?.selection}:{})});
+  for (const chip of $('main').querySelectorAll('[data-genre]')) chip.onclick = () => {location.hash=routeHash({...route,genre:chip.dataset.genre});};
+  if($('play-genre')) $('play-genre').onclick=()=>command('genre',{selection:genreSelection,genre:route.genre});
+  if($('genre-view')) $('genre-view').onclick=()=>navigate(route.view==='albums'?'tracks':'albums',{scope_genre:route.genre});
+  if ($('back')) $('back').onclick = () => route.genre ? navigate('albums',{scope_genre:route.genre}) : route.artist ? navigate('artist',{title:route.artist}) : navigate(`${route.view}s`);
+  if ($('play-collection')) $('play-collection').onclick = () => route.genre ? command('genre',{selection:genreSelection,genre:route.genre,album:route.name}) : command(route.view, {name:route.name,...(route.artist ? {artist:route.artist} : {}),...(route.view==='playlist'&&!state.demo?{selection:currentItems[0]?.selection}:{})});
 }
 function renderHome(items) {
   const albumItems = items.slice(0,4), tracks = homeTracks.slice(0,3), featured = items[0];
@@ -426,6 +429,7 @@ function updatePlayer() {
   $('repeat').setAttribute('aria-pressed',p.mode==='repeat_list');
   for (const id of ['play','next','previous','favorite','shuffle','repeat','volume']) $(id).disabled = !ready || busy || state?.busy || (['play','next','previous','favorite'].includes(id) && !track);
   $('queue-button').disabled = !ready;
+  for(const id of ['play-genre','play-collection']) if($(id)) $(id).disabled=!ready||busy||state?.busy||libraryLoading||!currentItems.length||Boolean(route.genre&&!genreSelection);
   $('position').textContent = timeLabel(Number.isFinite(p.position_ms) ? p.position_ms/1000 : null);
   $('duration').textContent = timeLabel(trackDuration(track));
   updateSeek();

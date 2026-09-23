@@ -407,5 +407,10 @@
   "metadata_channels": "Каналы",
   "metadata_genre": "Жанр",
   "metadata_track_number": "Номер трека",
-  "metadata_source": "Источник"
+  "metadata_source": "Источник",
+  "genre_filter": "Фильтр по жанру",
+  "all_genres": "Все жанры",
+  "play_genre": "Слушать жанр",
+  "genre_unavailable": "Плеер не предоставил доступный список этого жанра",
+  "genres_need_sync": "Синхронизируйте коллекцию, чтобы добавить фильтры по жанрам."
 }

@@ -16,8 +16,9 @@ ALIASES = {'artists': {'Linkin Park': ['линкин парк']}, 'titles': {'Nu
 
 
 class Catalog:
-    def __init__(self, tracks=TRACKS):
+    def __init__(self, tracks=TRACKS, genres=None):
         self.tracks = tracks
+        self.genres = genres if genres is not None else ['Fixture Genre'] * len(tracks)
         self.calls = []
         self.change = None
 
@@ -25,6 +26,17 @@ class Catalog:
         self.calls.append((category, offset, limit, filters))
         if category == 'all/song':
             rows = [dict(t.raw, pos=i) for i, t in enumerate(self.tracks)]
+        elif category == 'style':
+            counts = Counter(self.genres)
+            rows = [dict(pos=i, name=name, count=count) for i, (name, count) in enumerate(counts.items())]
+        elif category.startswith('style/'):
+            selected = [t for t, genre in zip(self.tracks, self.genres) if genre == filters['style']
+                        and ('album' not in filters or t.album == filters['album'])]
+            if category == 'style/album':
+                counts = Counter(t.album for t in selected)
+                rows = [dict(pos=i, name=name, count=count) for i, (name, count) in enumerate(counts.items())]
+            else:
+                rows = [dict(t.raw, pos=i) for i, t in enumerate(selected)]
         elif category == 'album':
             counts = Counter(t.album for t in self.tracks)
             rows = [dict(pos=i, name=name, count=count) for i, (name, count) in enumerate(counts.items())]

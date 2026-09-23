@@ -163,3 +163,12 @@ test('metadata shows observed values in both locales without invented quality or
   assert.deepEqual(trackMetadata({}),[]);
   assert.deepEqual(trackMetadata({sample_rate_hz:0,channels:true,bit_depth:'24',is_dsd:1}),[]);
 });
+
+test('genre album links never inherit an artist scope and retain literal genre in URL', async () => {
+  const {navigationRoute,routeHash,parseRoute}=await core;
+  const route=navigationRoute('album',{title:'Shared',artist:'A',scope_genre:'Rock & Jazz'});
+  assert.deepEqual(route,{view:'album',name:'Shared',artist:'',genre:'Rock & Jazz'});
+  assert.deepEqual(parseRoute(routeHash(route)),route);
+  assert.equal(navigationRoute('artist',{title:'A',scope_genre:'Jazz'}).genre,undefined);
+  assert.equal(parseRoute('#view=home&genre=Rock').genre,undefined);
+});
