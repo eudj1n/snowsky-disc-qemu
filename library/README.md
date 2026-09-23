@@ -13,7 +13,7 @@ databases, snapshot IDs and search signatures remain unchanged by the move.
   full membership comparison with duplicate multiplicities; two equal reads.
 - `snapshot.py`: offline artist/album projections and duplicate-preserving selection context.
 - `sync.py`: common stable-catalog synchronization and optional enrichment stage.
-- `observation.py`: current-track duration/artwork observation and conservative
+- `observation.py`: current-track metadata/artwork observation and conservative
   association with a catalog row, using the application's existing session lease.
 - `enrichment.py`: separate snapshot-scoped observations and bounded artwork storage.
 - `store.py`: SQLite schema 1, snapshot-scoped internal IDs, literal source
@@ -118,8 +118,8 @@ enrichment against its new generation. Optional metadata failures preserve the
 complete catalog; observed scans or cancellation still block publication.
 
 `observe_current()` is also the common path for enrichment during listening.
-Stock HTTP only exposes the current cover, and Link only exposes current-track
-duration. Library never advances playback to obtain metadata. Association requires
+Stock HTTP exposes the current cover; Link exposes current-track duration and
+optional audio properties, genre, track number and source flags. Library never advances playback to obtain metadata. Association requires
 an exact title/artist/album match unique within that snapshot and two fresh album
 reads matching its full ordered membership. Shortened names and ambiguous
 duplicates, including repeated CUE entries, remain unassociated. Track path,
@@ -142,3 +142,12 @@ track; these are field-availability counts, not unique images or album coverage.
 Local-file tag extraction and external providers can extend this Library stage
 later; neither is implemented or contacted by this source. Full-collection
 durations/artwork are therefore not promised by a stock-only synchronization.
+
+The current-track enrichment also stores available `Track.metadata` in a separate
+JSON column, with an additive migration preserving old observations and artwork.
+This is the same guarded observation used during sync and current-cover loading;
+no extra polling or playback commands are added. Missing descriptive values are
+not filled from a previous observation. A valid metadata-only observation may be
+stored when duration and artwork are unavailable. `reported_bit_rate` remains a
+literal device report, not a measured compressed bitrate. Original tags and
+catalog schema 1 are unchanged; duplicate, scan and snapshot guards still apply.

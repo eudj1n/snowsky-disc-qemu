@@ -365,3 +365,20 @@ outside the checkout, and runs real synthetic-peer operations. It checks the typ
 marker and bridge HTML, core operation without aiohttp, and optional-extra imports
 after installation. Building/testing neither publishes the package nor creates a
 new repository.
+
+## Current-track descriptive metadata
+
+`Track` retains optional `sample_rate_hz`, `bit_depth`, `channels`,
+`reported_bit_rate`, `genre`, `track_number` and `is_dsd` / `is_sacd` / `is_cue` /
+`is_m3u` observations. Missing, zero, negative or malformed optional numeric
+values become `None`; booleans are never coerced from integers or strings.
+Raw clients still retain the original extra firmware fields for diagnostics.
+`Track.metadata` projects available descriptive values; snapshots serialize the
+optional fields alongside the existing title/artist/album/path/duration fields.
+
+`reported_bit_rate` is the literal positive `song_bit_rate` integer, not a promise
+of measured compressed-file bitrate. Observed FLAC values match a PCM data-rate
+scale. These properties describe the current source, not the active DAC, Bluetooth
+route, negotiated output format or measured audio quality. No album-artist identity
+is inferred. The six-field `Track.identity` preserves existing seek selection
+checks independently of newly available descriptive fields.

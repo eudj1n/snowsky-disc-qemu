@@ -85,8 +85,9 @@ or exposed control service is started. Demo disables connection and discovery.
 - Persistent bottom player and a spacious Now Playing screen with artwork,
   album/artist navigation, playback status and an adjacent queue. On mobile,
   switch between player and queue. Both queue views offer explicit refresh.
-  A format badge uses the observed file extension only; it does not claim
-  bit depth, sample rate or output-device identity.
+  A format badge uses the observed file extension. Available device metadata
+  adds sample rate, bit depth, channels, genre, track number and source flags
+  below the controls; these describe the source, not the output device.
 - Missing album/artist artwork uses stable colored typographic placeholders with
   subtle hover/focus motion. These decorations never count as observed covers.
 - Light, dark and system appearance; RU/EN interface with saved browser preferences.
@@ -113,7 +114,7 @@ or exposed control service is started. Demo disables connection and discovery.
   after its observed end. Transfer and scan are separate user actions.
 - Current-track cover from stock HTTP. Library retains safely associated artwork
   and durations for offline track/album display; missing fields use placeholders.
-  The stock API only supplies the currently playing cover and duration.
+  The stock API supplies this enrichment for the current track only.
 - An isolated demo with eight original SVG covers and fictional names, genre
   filtering, track/queue selections, simulated playback and favorites. It has no
   stored music files, audible output, persistence or real-device mutations.
@@ -179,7 +180,7 @@ request may use its socket timeout). Browsing the previous snapshot remains poss
 while sync owns the connection. Other device operations fail busy rather than queue.
 
 Library synchronization includes an optional enrichment stage for available
-current-track artwork and duration. The same Library mechanism runs when Web
+current-track artwork, duration and descriptive metadata. The same Library mechanism runs when Web
 loads current artwork during listening. Exact, unique tags, fresh album membership
 and stable current-track reads are required; duplicate or shortened metadata is
 not guessed. This does not fill every track or cycle playback. New catalog
@@ -243,3 +244,9 @@ utility and preference tests, not to run the application.
 - [Saved implementation plan](docs/plan.md)
 - [Current status and next stages](docs/status.md)
 - [Contributor instructions](AGENTS.md)
+
+Current-track audio properties also appear in the track action menu for safely
+associated saved rows, including offline. Unknown values are hidden; source DSD
+suppresses the PCM bit-depth presentation. Device-reported bitrate is retained by
+Library but not displayed as compressed-file bitrate. Demo properties are explicit
+fictional examples and never substitute for missing device observations.

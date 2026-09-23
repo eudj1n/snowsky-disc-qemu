@@ -71,3 +71,18 @@ export function queueTrackMatches(item, track) {
   return Number.isInteger(track?.queue_position) && item.position === track.queue_position
     && item.title === track.title && (item.artist || '') === (track.artist || '');
 }
+
+// Optional observations only: no quality tier, output route or compressed-bitrate inference.
+export function trackMetadata(track, language='en') {
+  const data=track?.metadata || track || {}, rows=[];
+  const positive=value=>Number.isInteger(value)&&value>0;
+  if(positive(data.sample_rate_hz)) rows.push(['metadata_sample_rate',
+    new Intl.NumberFormat(language,{maximumFractionDigits:3}).format(data.sample_rate_hz/1000)]);
+  if(positive(data.bit_depth) && data.is_dsd!==true) rows.push(['metadata_bit_depth',data.bit_depth]);
+  if(positive(data.channels)) rows.push(['metadata_channels',data.channels]);
+  if(typeof data.genre==='string' && data.genre.trim()) rows.push(['metadata_genre',data.genre]);
+  if(positive(data.track_number)) rows.push(['metadata_track_number',data.track_number]);
+  const flags=['dsd','sacd','cue','m3u'].filter(key=>data['is_'+key]===true).map(key=>key.toUpperCase());
+  if(flags.length) rows.push(['metadata_source',flags.join(' · ')]);
+  return rows;
+}

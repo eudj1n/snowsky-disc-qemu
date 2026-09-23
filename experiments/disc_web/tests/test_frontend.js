@@ -152,3 +152,14 @@ test('album navigation keeps the artist from cards, track menus and playback met
   assert.deepEqual(navigationRoute('album',{title}),{view:'album',name:title,artist:''});
   assert.deepEqual(navigationRoute('artist',{title:artist,artist:'Unrelated'}),{view:'artist',name:artist,artist:''});
 });
+
+test('metadata shows observed values in both locales without invented quality or DSD bit depth', async () => {
+  const {trackMetadata}=await core;
+  const data={sample_rate_hz:44100,bit_depth:24,channels:2,genre:'Literal genre',track_number:3,reported_bit_rate:1411,is_cue:true};
+  const en=trackMetadata(data,'en');
+  assert.deepEqual(en,[['metadata_sample_rate','44.1'],['metadata_bit_depth',24],['metadata_channels',2],['metadata_genre','Literal genre'],['metadata_track_number',3],['metadata_source','CUE']]);
+  assert.equal(trackMetadata({metadata:data},'ru')[0][1],'44,1');
+  assert.equal(trackMetadata({...data,is_dsd:true}).some(([key])=>key==='metadata_bit_depth'),false);
+  assert.deepEqual(trackMetadata({}),[]);
+  assert.deepEqual(trackMetadata({sample_rate_hz:0,channels:true,bit_depth:'24',is_dsd:1}),[]);
+});

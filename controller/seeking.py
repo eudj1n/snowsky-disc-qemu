@@ -14,14 +14,14 @@ def seek(client, position_ms, *, expected, source, timeout):
     client.wait_for_mutation()
     before, _ = observe(client)
     track = Track.from_wire(before)
-    if track != expected or before.get('playerflag') != source:
+    if (track is None or track.identity != expected.identity) or before.get('playerflag') != source:
         raise ValueError('displayed track changed; no seek sent')
     if track.duration_ms is None or not 0 <= position_ms < track.duration_ms:
         raise ValueError('seek requires a known duration and a position before the end')
     # Consume preflight events before send, and retain only subsequent observations.
     client.scan_guard()
     with client.condition:
-        if Track.from_wire(client.state) != expected or client.state.get('playerflag') != source:
+        if not same_track(client.state, expected) or client.state.get('playerflag') != source:
             raise ValueError('track changed immediately before seek')
         client.seek(position_ms)
         client.position = None
@@ -39,7 +39,7 @@ def seek(client, position_ms, *, expected, source, timeout):
             state, position = observe(client)
         except (TimeoutError, UnknownPlayback):
             continue
-        if Track.from_wire(state) != expected or state.get('playerflag') != source:
+        if not same_track(state, expected) or state.get('playerflag') != source:
             break
         elapsed = (time.monotonic() - sent) * 1000
         if position is not None and target <= position <= target + elapsed + 1000:
@@ -48,3 +48,8 @@ def seek(client, position_ms, *, expected, source, timeout):
         time.sleep(.1)
     return {'status': 'uncertain', 'mutation_attempted': True, 'confirmation': confirmation,
             'reason': 'seek position not observed on the same track; command was not retried'}
+
+
+def same_track(state, expected):
+    track = Track.from_wire(state)
+    return track is not None and track.identity == expected.identity

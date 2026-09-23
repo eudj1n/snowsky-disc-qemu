@@ -81,4 +81,18 @@ the proposed next implementation; local-file enrichment belongs in Library sync
 for mounted SD/USB Storage/source folders as well as Web imports. Stock local
 lyric support does not establish a remote lyric-text API. Full catalog tags,
 artwork and lyrics cannot be promised over the verified stock network surface.
-These are proposed follow-ups, not completed or independently accepted stages.
+The current-track stage below was subsequently approved. Local-file enrichment
+and lyrics remain separate follow-ups.
+
+## 5. Current-track metadata through Controller → Library → Web — complete
+
+Expose observed sample rate, bit depth, channels, reported rate, genre, track
+number and DSD/SACD/CUE/M3U flags in the public Track. Store them in the existing
+snapshot-scoped observation pipeline, with additive migration. Show known source
+properties in Now Playing and saved-track menus in RU/EN and both themes. Preserve
+selection identity, duplicate and scan guards; do not add device reads or cycle
+playback. Implementation and validation are recorded in [status](status.md).
+
+Next candidate: optional Library enrichment from mounted SD/USB Storage or an
+explicit source folder. Path mapping, duplicate/CUE identity and local-file
+provenance need their own design; it is not limited to files imported through Web.

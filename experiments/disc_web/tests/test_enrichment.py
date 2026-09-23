@@ -1,4 +1,5 @@
 from contextlib import nullcontext
+from dataclasses import asdict
 import hashlib
 import http.client
 import tempfile
@@ -33,6 +34,9 @@ class WebEnrichmentTests(unittest.TestCase):
         self.session.snapshot.return_value.to_dict.return_value['connection'] = 'disconnected'
         tracks = self.device.browse('tracks')['items']
         self.assertEqual(tracks[0]['duration'], 123)
+        self.assertEqual(tracks[0]['metadata']['sample_rate_hz'], 44100)
+        self.assertEqual(tracks[0]['metadata']['genre'], 'Synthetic genre')
+        self.assertEqual(tracks[1]['metadata'], {})
         self.assertEqual(tracks[0]['art'], '/api/artwork/' + hashlib.sha256(PNG).hexdigest())
         self.assertIsNone(tracks[1]['duration'])
         albums = self.device.browse('albums')['items']
@@ -43,6 +47,7 @@ class WebEnrichmentTests(unittest.TestCase):
         with Store(self.device.catalogue.directory) as store:
             store.publish(self.device.catalogue.key(), TRACKS, {}, expected_generation=self.head['generation'])
         self.assertIsNone(self.device.browse('tracks')['items'][0]['duration'])
+        self.assertEqual(self.device.browse('tracks')['items'][0]['metadata'], {})
 
     def test_wrong_connection_or_track_cannot_read_or_cache_cover_for_stale_browser(self):
         expected = cover_identity(Track.from_wire(STATE), 4)
@@ -80,3 +85,13 @@ class WebEnrichmentTests(unittest.TestCase):
             finally:
                 server.shutdown()
                 worker.join(2)
+
+    def test_seek_accepts_extended_public_track_but_rejects_unknown_fields(self):
+        track = Track.from_wire(STATE)
+        body = dict(action='seek', generation=5, source=1, position_ms=1000, expected=asdict(track))
+        self.device.action(body)
+        self.session.seek.assert_called_once_with(1000, expected=track, source=1)
+        self.session.seek.reset_mock()
+        with self.assertRaises(ValueError):
+            self.device.action(dict(body, expected=dict(body['expected'], arbitrary='field')))
+        self.session.seek.assert_not_called()

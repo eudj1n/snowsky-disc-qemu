@@ -29,7 +29,8 @@ class Demo:
                                     type='album', art=art, count=len(songs), year=2026 - i % 3))
             for j, song in enumerate(songs):
                 self.tracks.append(dict(id=f'{i}-{j}', title=song, artist=artist, album=title,
-                                        type='track', art=art, duration=187 + (i * 31 + j * 23) % 150))
+                                        type='track', art=art, metadata=dict(sample_rate_hz=44100 if i%2 else 96000,
+                                            bit_depth=16 if i%2 else 24, channels=2, genre=genre, track_number=j+1), duration=187 + (i * 31 + j * 23) % 150))
         self.playlists = [dict(id='0', title='Медленное утро', artist='Время для себя', type='playlist', art='/art/cover-2.svg', count=8),
                           dict(id='1', title='После заката', artist='Город звучит иначе', type='playlist', art='/art/cover-0.svg', count=7)]
         self.queue_items = deepcopy(self.tracks[:5])

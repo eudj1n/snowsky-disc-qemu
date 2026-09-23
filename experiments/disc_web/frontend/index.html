@@ -71,6 +71,7 @@
 </dialog>
 <dialog id="track-dialog" class="track-dialog" aria-label="Действия с треком" data-i18n-aria-label="track_actions">
   <div class="track-menu-heading"><div id="menu-art"></div><div><strong id="menu-title"></strong><small id="menu-artist"></small></div><button class="icon-button" id="close-track-menu" aria-label="Закрыть" data-i18n-aria-label="close"><span data-icon="close"></span></button></div>
+  <dl id="menu-metadata" class="track-metadata" hidden></dl>
   <div role="menu" id="track-menu">
     <button role="menuitem" data-track-action="play"><span data-icon="play"></span><span data-i18n="play">Воспроизвести</span></button>
     <button role="menuitem" data-track-action="add"><span data-icon="playlist"></span><span data-i18n="add_to_playlist">Добавить в плейлист</span></button>
@@ -95,6 +96,7 @@
         <button id="large-artist" class="metadata-link"></button>
         <button id="large-album" class="metadata-link album-link"></button>
         <input id="large-progress" class="seek-slider" type="range" min="0" max="100" value="0" step="1" disabled aria-label="Перемотка" data-i18n-aria-label="seek_position"><p id="seek-feedback" class="seek-feedback" role="status"></p><div class="large-timeline"><span id="large-position">—:—</span><span id="large-duration">—:—</span></div><div class="large-controls"><button id="large-previous" class="icon-button" aria-label="Предыдущий трек" data-i18n-aria-label="previous_track"><span data-icon="previous"></span></button><button id="large-play" class="play-button" aria-label="Воспроизвести" data-i18n-aria-label="play"><span data-icon="play"></span></button><button id="large-next" class="icon-button" aria-label="Следующий трек" data-i18n-aria-label="next_track"><span data-icon="next"></span></button></div><div class="large-secondary"><button id="large-shuffle" class="icon-button" aria-label="Случайный порядок" aria-pressed="false" data-i18n-aria-label="shuffle"><span data-icon="shuffle"></span></button><button id="large-favorite" class="icon-button" aria-label="Любимый трек" aria-pressed="false" data-i18n-aria-label="favorite_track"><span data-icon="heart"></span></button><button id="large-repeat" class="icon-button" aria-label="Повторять очередь" aria-pressed="false" data-i18n-aria-label="repeat_queue"><span data-icon="repeat"></span></button></div><label class="large-volume"><span data-icon="volume"></span><input id="large-volume" type="range" min="0" max="120" value="0" aria-label="Громкость плеера" data-i18n-aria-label="player_volume"><output id="large-volume-value">—</output></label>
+        <dl id="large-metadata" class="track-metadata" hidden></dl>
         <div class="listening-output"><span data-icon="device"></span><div><strong>SNOWSKY DISC</strong><p id="large-output"></p></div></div>
       </div>
     </section>

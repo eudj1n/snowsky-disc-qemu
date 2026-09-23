@@ -393,5 +393,11 @@
   "catalogue_connect_first": "Connect DISC to update your collection. Saved albums are available offline.",
   "catalogue_retry_note": "Check your connection, then start sync again.",
   "catalogue_demo": "This is a demo collection. Sync requires a connected DISC outside demo mode.",
-  "catalogue_reload_view": "Refresh current list"
+  "catalogue_reload_view": "Refresh current list",
+  "metadata_sample_rate": "Sample rate, kHz",
+  "metadata_bit_depth": "Bit depth, bits",
+  "metadata_channels": "Channels",
+  "metadata_genre": "Genre",
+  "metadata_track_number": "Track number",
+  "metadata_source": "Source"
 }

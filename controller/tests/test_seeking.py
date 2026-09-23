@@ -55,3 +55,9 @@ class SeekingTests(unittest.TestCase):
         self.assertTrue(result.mutation_attempted)
         until(lambda: self.peer.accepts >= 2)
         self.assertEqual(self.peer.tags.count('0103'), 1)
+
+    def test_descriptive_metadata_does_not_change_guarded_seek_identity(self):
+        enriched = replace(self.track, sample_rate_hz=44100, bit_depth=16, is_cue=False)
+        result = self.seek(10000, enriched)
+        self.assertTrue(result.mutation_attempted)
+        self.assertEqual(self.peer.tags.count('0103'), 1)

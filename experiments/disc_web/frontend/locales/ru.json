@@ -401,5 +401,11 @@
   "catalogue_connect_first": "Подключите DISC, чтобы обновить коллекцию. Сохранённые альбомы доступны и без плеера.",
   "catalogue_retry_note": "Проверьте подключение и запустите синхронизацию ещё раз.",
   "catalogue_demo": "Это демонстрационная коллекция. Для синхронизации нужен подключённый DISC в обычном режиме.",
-  "catalogue_reload_view": "Обновить текущий список"
+  "catalogue_reload_view": "Обновить текущий список",
+  "metadata_sample_rate": "Частота, кГц",
+  "metadata_bit_depth": "Разрядность, бит",
+  "metadata_channels": "Каналы",
+  "metadata_genre": "Жанр",
+  "metadata_track_number": "Номер трека",
+  "metadata_source": "Источник"
 }

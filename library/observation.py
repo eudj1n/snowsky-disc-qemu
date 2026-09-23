@@ -51,7 +51,7 @@ def observe_current(client, http, snapshot, *, expected_track=None):
     track = Track.from_wire(before)
     if track is None or before.get('state') not in (0, 1):
         raise ValueError('Current track is unavailable')
-    if expected_track is not None and track != expected_track:
+    if expected_track is not None and track.identity != expected_track.identity:
         raise ValueError('Current track changed before artwork read')
     # Duration can still be observed if the optional cover endpoint is unavailable.
     try:

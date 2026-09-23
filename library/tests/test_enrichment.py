@@ -1,6 +1,9 @@
 """Synthetic artwork and metadata: no private media, sockets or player writes."""
+from contextlib import closing
 from copy import deepcopy
 import hashlib
+import sqlite3
+from pathlib import Path
 import struct
 import tempfile
 import unittest
@@ -23,6 +26,8 @@ def chunk(name, body):
 PNG = (b'\x89PNG\r\n\x1a\n' + chunk(b'IHDR', struct.pack('>IIBBBBB', 1, 1, 8, 2, 0, 0, 0))
        + chunk(b'IDAT', zlib.compress(b'\x00\xc0\x40\x30')) + chunk(b'IEND', b''))
 STATE = dict(state=1, playerflag=1, song=dict(song_name='Numb', song_artist_name='Linkin Park',
+    song_sample_rate=44100, song_encoding_rate=16, song_channel=2, song_bit_rate=1411,
+    song_style_name='Synthetic genre', song_track=1, is_dsd=False, is_cue=False,
     song_album_name='Meteora', song_file_path='/tmp/sdcard/fixture.flac', song_duration_time=123000, pos_id=1))
 
 
@@ -66,6 +71,7 @@ class EnrichmentTests(unittest.TestCase):
                              (PNG, 'image/png'))
         with Enrichment(self.directory) as reopened:
             self.assertEqual(reopened.state('device', generation)['count'], 1)
+            self.assertEqual(reopened.rows('device', generation)[generation + ':0']['metadata']['sample_rate_hz'], 44100)
             self.assertEqual(reopened.rows('other-device', generation), {})
             self.assertEqual(reopened.rows('device', self.head['generation']), {})
             self.assertIsNone(reopened.artwork('other-device', generation, hashlib.sha256(PNG).hexdigest()))
@@ -88,7 +94,7 @@ class EnrichmentTests(unittest.TestCase):
 
     def test_track_path_position_duration_and_source_changes_reject_the_observation(self):
         for fields in ({'song_file_path': '/tmp/sdcard/other.flac'}, {'pos_id': 2},
-                       {'song_duration_time': 124000}, {'song_name': 'Other'}):
+                       {'song_duration_time': 124000}, {'song_sample_rate': 96000}, {'song_name': 'Other'}):
             client = client_fixture()
             after = deepcopy(STATE)
             after['song'].update(fields)
@@ -164,3 +170,34 @@ class EnrichmentTests(unittest.TestCase):
             updated = enrichment.state('device', generation)
             self.assertEqual(updated['artwork_count'], 1)
             self.assertNotEqual(updated['revision'], state['revision'])
+
+    def test_migration_preserves_existing_artwork_duration_and_provenance(self):
+        with closing(sqlite3.connect(Path(self.directory) / 'observations.sqlite3')) as db, db:
+            db.execute("CREATE TABLE observations (device TEXT, generation TEXT, track TEXT, duration_ms INTEGER, artwork TEXT, provenance TEXT, observed_at TEXT, revision TEXT, PRIMARY KEY(device,generation,track))")
+            db.execute("CREATE TABLE artwork (digest TEXT PRIMARY KEY, mime TEXT NOT NULL, body BLOB NOT NULL)")
+            digest = hashlib.sha256(PNG).hexdigest()
+            db.execute("INSERT INTO artwork VALUES (?, 'image/png', ?)", (digest, PNG))
+            db.execute("INSERT INTO observations VALUES ('device','old','old:0',123000,NULL,'{}','then','revision')")
+            db.execute("UPDATE observations SET artwork=? WHERE generation='old'", (digest,))
+        with Enrichment(self.directory) as store:
+            self.assertEqual(store.artwork('device', 'old', digest), (PNG, 'image/png'))
+            row = store.rows('device', 'old')['old:0']
+            self.assertEqual((row['duration_ms'], row['metadata'], row['revision']), (123000, {}, 'revision'))
+        with Enrichment(self.directory) as store:
+            self.assertEqual(store.rows('device', 'old')['old:0']['observed_at'], 'then')
+
+    def test_metadata_can_be_saved_without_duration_or_cover_and_missing_values_are_not_retained(self):
+        client, http = client_fixture(), http_fixture()
+        client.now_playing.return_value['song'].pop('song_duration_time')
+        http.cover.side_effect = TimeoutError
+        with Enrichment(self.directory) as store:
+            observation = observe_current(client, http, self.snapshot)
+            generation = self.head['generation']
+            self.assertTrue(store.record_observation('device', generation, observation))
+            row = store.rows('device', generation)[generation + ':0']
+            self.assertIsNone(row['duration_ms'])
+            self.assertIsNone(row['artwork'])
+            self.assertEqual(row['metadata']['reported_bit_rate'], 1411)
+            client.now_playing.return_value['song'].pop('song_sample_rate')
+            store.record_observation('device', generation, observe_current(client, http, self.snapshot))
+            self.assertNotIn('sample_rate_hz', store.rows('device', generation)[generation + ':0']['metadata'])

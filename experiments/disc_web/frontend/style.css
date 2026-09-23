@@ -2164,3 +2164,11 @@ main .track-row.no-album.no-duration { grid-template-columns:28px 40px minmax(10
 .album-scope p { margin:0; color:var(--secondary); font-size:12px; line-height:1.6; }
 .album-scope .filter-chips { margin:12px 0 0; flex-wrap:wrap; }
 .album-scope .chip { text-decoration:none; }
+
+/* Available device observations, shared by Now Playing and saved track details. */
+.track-metadata { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:14px 12px; margin:18px 0; padding:16px 0; border-block:1px solid var(--line); text-align:left; }
+.track-metadata[hidden] { display:none; }
+.track-metadata div { min-width:0; }
+.track-metadata dt { color:var(--muted); font-size:10px; line-height:1.4; }
+.track-metadata dd { margin:5px 0 0; color:var(--ink); font-size:12px; line-height:1.4; overflow-wrap:anywhere; }
+#menu-metadata { margin:0 3px 8px; }

@@ -421,3 +421,29 @@ import through synchronization, then reviewed sound settings.
 
 Do not expose placeholder settings as functioning controls or use diagnostic
 clients to bypass the persistent facade.
+
+## Current-track metadata — 2026-09-23
+
+- Public Controller Track now retains observed sample rate, bit depth, channels,
+  reported rate, genre, track number and DSD/SACD/CUE/M3U flags. Invalid optional
+  values remain unknown. Seek retains the original six-field track identity and
+  fresh source/generation protection; descriptions are not playback selectors.
+- Library records the fields through the existing stable current-track observation
+  during sync and artwork loading. An additive enrichment migration preserves
+  prior data. Association, duplicate and scan guards remain unchanged; nothing is
+  carried into another snapshot. Metadata can survive an unavailable cover/duration.
+- Now Playing and saved-track action menus show available source properties in
+  RU/EN and both themes. DSD suppresses PCM bit depth; reported bitrate is retained
+  but not labelled compressed bitrate. No output-route or quality tier is inferred.
+  Demo properties are explicitly fictional and isolated.
+- Validation: firmware-free suite passed 521 Python / 61 JavaScript tests and four
+  shim builds. Final focused checks passed 16 model/Library tests and 47 Web Python /
+  24 JavaScript tests, including extended seek payloads. Ruff, strict mypy (12
+  files), isolated sdist/wheel core and optional-extras checks passed. Markdown
+  targets and whitespace were checked. Browser demo review covered desktop and
+  390/320 px layouts, dark RU and light EN, Now Playing and track menus; no console
+  errors or horizontal overflow were observed. No new physical connection or
+  firmware execution was performed; device command semantics are unchanged.
+- The current-track stage is complete in [the plan](plan.md). Mounted SD/USB/source
+  folder enrichment remains the next candidate, with separate mapping/provenance
+  work. This implementation does not promise complete metadata over stock Wi-Fi.

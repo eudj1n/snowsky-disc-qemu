@@ -36,6 +36,12 @@ class Enrichment:
                 observed_at TEXT NOT NULL, revision TEXT NOT NULL,
                 PRIMARY KEY(device,generation,track));
         ''')
+        # Additive migration keeps prior duration/artwork observations intact.
+        with self.db:
+            self.db.execute('BEGIN IMMEDIATE')
+            columns = {row['name'] for row in self.db.execute('PRAGMA table_info(observations)')}
+            if 'metadata' not in columns:
+                self.db.execute("ALTER TABLE observations ADD COLUMN metadata TEXT NOT NULL DEFAULT '{}'")
 
     def __enter__(self):
         return self
@@ -48,13 +54,14 @@ class Enrichment:
             return False
         return self.record(device, generation, f'{generation}:{observation.ordinal}',
             duration_ms=observation.track.duration_ms, cover=observation.cover,
-            provenance=observation.provenance)
+            provenance=observation.provenance, metadata=observation.track.metadata)
 
-    def record(self, device, generation, track, *, duration_ms, cover, provenance):
+    def record(self, device, generation, track, *, duration_ms, cover, provenance, metadata=None):
         if type(duration_ms) is not int or not 0 < duration_ms <= 7 * 24 * 3600 * 1000:
             duration_ms = None
+        metadata = metadata or {}
         mime = image_type(cover)
-        if duration_ms is None and mime is None:
+        if duration_ms is None and mime is None and not metadata:
             return False
         digest = hashlib.sha256(cover).hexdigest() if mime else None
         with self.db:
@@ -65,18 +72,20 @@ class Enrichment:
                     self.db.execute('INSERT INTO artwork VALUES(?,?,?)', (digest, mime, cover))
                 else:
                     digest = None
-            if duration_ms is None and digest is None:
+            if duration_ms is None and digest is None and not metadata:
                 return False
             # An absent current image must not resurrect a previous track's artwork.
-            self.db.execute('''INSERT OR REPLACE INTO observations VALUES(?,?,?,?,?,?,
-                strftime('%Y-%m-%dT%H:%M:%fZ','now'),?)''',
+            self.db.execute('''INSERT OR REPLACE INTO observations
+                (device,generation,track,duration_ms,artwork,provenance,observed_at,revision,metadata)
+                VALUES(?,?,?,?,?,?,strftime('%Y-%m-%dT%H:%M:%fZ','now'),?,?)''',
                 (device, generation, track, duration_ms, digest,
-                 json.dumps(provenance, ensure_ascii=False), uuid4().hex))
+                 json.dumps(provenance, ensure_ascii=False), uuid4().hex,
+                 json.dumps(metadata, ensure_ascii=False)))
         return True
 
     def rows(self, device, generation):
-        return {row['track']: dict(row) for row in self.db.execute('''
-            SELECT track,duration_ms,artwork,observed_at,revision FROM observations
+        return {row['track']: dict(row, metadata=json.loads(row['metadata'])) for row in self.db.execute('''
+            SELECT track,duration_ms,artwork,observed_at,revision,metadata FROM observations
             WHERE device=? AND generation=?''', (device, generation))}
 
     def state(self, device, generation):

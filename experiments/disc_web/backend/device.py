@@ -189,7 +189,7 @@ class Device:
             fields = metadata.get(row['id'], {})
             duration = fields.get('duration_ms')
             digest = fields.get('artwork')
-            return dict(duration=duration / 1000 if duration is not None else None,
+            return dict(metadata=fields.get('metadata', {}), duration=duration / 1000 if duration is not None else None,
                         art='/api/artwork/' + digest if digest else None)
         token = None
         if kind in ('tracks', 'album'):
@@ -300,7 +300,8 @@ class Device:
             elif action == 'seek':
                 expected = body.get('expected')
                 fields = {'title', 'artist', 'album', 'queue_position', 'path', 'duration_ms'}
-                if not isinstance(expected, dict) or set(expected) != fields or type(body.get('source')) is not int:
+                allowed = set(Track.__dataclass_fields__)
+                if not isinstance(expected, dict) or not fields <= set(expected) <= allowed or type(body.get('source')) is not int:
                     raise ValueError('displayed track and source are required')
                 result = self.session.seek(body.get('position_ms'), expected=Track(**expected),
                                            source=PlaybackSource(body['source']))

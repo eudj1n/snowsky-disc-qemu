@@ -6,7 +6,7 @@ import {createImporter} from './imports.mjs';
 import {createSound} from './sound.mjs';
 import {t, initLocale, setLocale, getLocale} from './i18n.mjs';
 await initLocale();
-import {escapeHTML as esc, timeLabel, trackColumns, mediaFormat, queueTrackMatches, filterItems, searchKind, routeHash, parseRoute, navigationRoute, albumScope, trackDuration, playbackIdentity, seekAllowed, coverIdentity, artworkSource} from './core.mjs';
+import {escapeHTML as esc, timeLabel, trackColumns, trackMetadata, mediaFormat, queueTrackMatches, filterItems, searchKind, routeHash, parseRoute, navigationRoute, albumScope, trackDuration, playbackIdentity, seekAllowed, coverIdentity, artworkSource} from './core.mjs';
 
 const paths = {
  moon:'M20.8 13.3A9 9 0 0 1 10.7 3.2a9 9 0 1 0 10.1 10.1Z',
@@ -277,10 +277,16 @@ function bindTracks(root, items, queue=false) {
   for (const button of root.querySelectorAll('[data-track-menu]')) button.onclick=()=>openTrackMenu(items[Number(button.dataset.trackMenu)],origin,button);
   for (const button of root.querySelectorAll('[data-track]')) button.onclick=()=>playItem(items[Number(button.dataset.track)],origin,queue);
 }
+function renderMetadata(id, track) {
+  const rows=trackMetadata(track,getLocale());
+  $(id).hidden=!rows.length;
+  $(id).innerHTML=rows.map(([key,value])=>`<div><dt>${esc(t(key))}</dt><dd>${esc(value)}</dd></div>`).join('');
+}
 function openTrackMenu(item, origin, anchor) {
   menuContext={item,origin};
   $('menu-title').textContent=item.title; $('menu-artist').textContent=item.artist || '';
   $('menu-art').innerHTML=art(item);
+  renderMetadata('menu-metadata',item);
   const connected=state.connection==='ready'&&!state.busy;
   const enabled={play:connected&&(state.demo||item.playable),add:connected&&(state.demo||(item.editable&&origin.view!=='playlist')),album:!!item.album,artist:!!item.artist,remove:connected&&origin.view==='playlist'&&(state.demo||item.editable)};
   for (const button of $('track-menu').querySelectorAll('button')) {
@@ -292,6 +298,7 @@ function openTrackMenu(item, origin, anchor) {
   dialog.style.setProperty('--menu-x',`${Math.max(12,Math.min(innerWidth-332,rect.right-320))}px`);
   dialog.style.setProperty('--menu-y',`${Math.max(12,Math.min(innerHeight-370,rect.bottom+6))}px`);
   dialog.showModal();
+  dialog.style.setProperty('--menu-y',`${Math.max(12,Math.min(innerHeight-dialog.getBoundingClientRect().height-12,rect.bottom+6))}px`);
   $('track-menu').querySelector('button:not(:disabled)').focus();
 }
 $('close-track-menu').onclick=()=>$('track-dialog').close();
@@ -432,6 +439,7 @@ function updatePlayer() {
   $('large-album').disabled = !track?.album;
   $('large-album').hidden = !track?.album;
   $('large-status').textContent = !ready ? t('disconnected') : t('playback_'+(['playing','paused','stopped','loading'].includes(p.state)?p.state:'unknown'));
+  renderMetadata('large-metadata',track);
   const format=mediaFormat(track);
   $('large-format').hidden=!format;
   $('large-format').textContent=format || '';

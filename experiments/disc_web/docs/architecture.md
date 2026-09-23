@@ -172,7 +172,7 @@ SQLite schema 1, unchanged for Assistant; Typesense is not imported by Web.
 `library/sync.py` owns the catalog/enrichment/publication stages. Web's worker
 supplies its owned lease, cancellation/generation guard and bounded HTTP adapter.
 `library/observation.py` owns current-track association and guarded artwork reads;
-`library/enrichment.py` stores provenance, durations and deduplicated image bodies
+`library/enrichment.py` stores provenance, durations, optional descriptive metadata and deduplicated image bodies
 separately from raw tags. `backend/enrichment.py` only adapts these Library APIs to
 the active endpoint, browser identity and local artwork route. Browsing projects
 known durations and track artwork; album art represents an observed member's cover.
@@ -297,3 +297,15 @@ Assistant can later use a shared application runtime/adapter. The current server
 is not a generic Controller daemon and does not make independent Assistant and
 Web processes simultaneous TCP owners. This integration and root-level promotion
 are separate decisions.
+
+Current-track `Track` fields reach Now Playing through the existing cached state.
+Saved row projections expose Library's snapshot-scoped `metadata` for the track
+action menu. Both use the same RU/EN formatter and hide unknown fields; DSD source
+flags suppress PCM bit depth. Reported bitrate is retained without a compressed
+bitrate label. Cover requests retain their existing six-field track identity plus
+connection generation; Library still compares the complete before/after Track,
+including descriptive properties, to reject transitions during observation.
+The seek adapter accepts the extended public Track while preserving all existing
+identity/source/generation checks. No new endpoint, device query or mutation was
+introduced. Enrichment migration adds a default-empty JSON column without
+changing catalog schema 1 or discarding previous observations.
