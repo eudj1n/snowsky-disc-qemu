@@ -39,12 +39,9 @@
   <main id="main" tabindex="-1"><div class="loading-shell"><span data-i18n="loading_your_collection">Загружаем вашу коллекцию…</span></div></main>
   <footer class="page-footer"><span><span data-i18n="collected_by_you_played_your_way">Собрано вами. Звучит по-вашему.</span></span><span>DISC WEB · EXPERIMENTAL</span></footer>
 </div>
-<aside id="queue" class="queue-panel" aria-label="Очередь воспроизведения" hidden data-i18n-aria-label="playback_queue">
-  <div class="queue-heading"><div><span class="eyebrow"><span data-i18n="keep_the_music_going">СЛЕДОМ ЗА МУЗЫКОЙ</span></span><h2><span data-i18n="queue">Очередь</span></h2></div><button id="close-queue" class="icon-button" aria-label="Закрыть очередь" data-i18n-aria-label="close_queue"><span data-icon="close"></span></button></div>
-  <button id="refresh-queue" class="text-button queue-refresh" data-i18n="refresh_queue"></button><div id="queue-content"></div>
-</aside>
+
 <section class="player" aria-label="Плеер" data-i18n-aria-label="player">
-  <div class="now-playing"><button id="now-open" class="art-open" aria-label="Открыть экран воспроизведения" data-i18n-aria-label="open_now_playing"><span id="now-art" class="now-art"></span></button><div class="now-copy"><strong id="now-title"><span data-i18n="your_music_awaits">Ваша музыка ждёт</span></strong><span id="now-artist"><span data-i18n="choose_an_album">Выберите альбом</span></span></div><button id="favorite" class="icon-button" aria-label="Добавить текущий трек в любимое" aria-pressed="false" disabled data-i18n-aria-label="favorite_the_current_track"><span data-icon="heart"></span></button></div>
+  <div class="now-playing"><button id="now-open" class="art-open" aria-controls="now-panel" aria-expanded="false" aria-label="Открыть панель воспроизведения" data-i18n-aria-label="open_now_playing"><span id="now-art" class="now-art"></span></button><div class="now-copy"><strong id="now-title"><span data-i18n="your_music_awaits">Ваша музыка ждёт</span></strong><span id="now-artist"><span data-i18n="choose_an_album">Выберите альбом</span></span></div><button id="favorite" class="icon-button" aria-label="Добавить текущий трек в любимое" aria-pressed="false" disabled data-i18n-aria-label="favorite_the_current_track"><span data-icon="heart"></span></button></div>
   <div class="transport">
     <div class="transport-buttons">
       <button id="shuffle" class="icon-button" aria-label="Случайный порядок" aria-pressed="false" disabled data-i18n-aria-label="shuffle"><span data-icon="shuffle"></span></button>
@@ -55,7 +52,7 @@
     </div>
     <div class="timeline"><span id="position">—:—</span><input id="progress" class="seek-slider" type="range" min="0" max="100" value="0" step="1" disabled aria-label="Перемотка" data-i18n-aria-label="seek_position"><span id="duration">—:—</span></div>
   </div>
-  <div class="player-tools"><span class="output-label" id="output-label"><span data-i18n="on_disc">НА DISC</span></span><span data-icon="volume"></span><input id="volume" type="range" min="0" max="120" value="0" aria-label="Громкость DISC" disabled data-i18n-aria-label="disc_volume"><output id="volume-value">—</output><span class="tool-divider"></span><button id="queue-button" class="icon-button" aria-label="Открыть очередь" aria-expanded="false" data-i18n-aria-label="open_queue"><span data-icon="queue"></span></button></div>
+  <div class="player-tools"><span class="output-label" id="output-label"><span data-i18n="on_disc">НА DISC</span></span><span data-icon="volume"></span><input id="volume" type="range" min="0" max="120" value="0" aria-label="Громкость DISC" disabled data-i18n-aria-label="disc_volume"><output id="volume-value">—</output><span class="tool-divider"></span><button id="queue-button" class="icon-button" aria-controls="now-panel" aria-label="Открыть очередь" aria-expanded="false" data-i18n-aria-label="open_queue"><span data-icon="queue"></span></button></div>
 </section>
 <dialog id="device-dialog" class="connection-dialog" aria-labelledby="connection-title">
   <div class="dialog-heading"><span class="eyebrow" data-i18n="your_player"></span><button class="icon-button" id="close-dialog" aria-label="Закрыть" data-i18n-aria-label="close"><span data-icon="close"></span></button></div>
@@ -83,8 +80,8 @@
     <button role="menuitem" class="menu-remove" data-track-action="remove"><span data-icon="close"></span><span data-i18n="remove_from_playlist">Убрать из плейлиста</span></button>
   </div>
 </dialog>
-<dialog id="now-dialog" class="now-dialog" aria-label="Сейчас играет" data-i18n-aria-label="now_playing">
-<div class="dialog-heading"><span class="eyebrow"><span data-i18n="now_playing_label">СЕЙЧАС ИГРАЕТ</span></span><button id="close-now" class="icon-button" aria-label="Свернуть плеер" data-i18n-aria-label="minimize_player"><span data-icon="close"></span></button></div>
+<aside id="now-panel" class="now-panel" aria-label="Плеер" data-i18n-aria-label="player" hidden>
+<div class="listening-heading"><span class="eyebrow">SNOWSKY DISC</span><button id="close-now" class="icon-button" aria-label="Свернуть плеер" data-i18n-aria-label="minimize_player"><span data-icon="close"></span></button></div>
   <div class="listening-tabs" role="group" data-i18n-aria-label="player_view">
     <button id="listening-tab" aria-pressed="true" aria-controls="listening-main" data-i18n="now_playing"></button>
     <button id="listening-queue-tab" aria-pressed="false" aria-controls="listening-queue" data-i18n="queue"></button>
@@ -101,12 +98,12 @@
         <div class="listening-output"><span data-icon="device"></span><div><strong>SNOWSKY DISC</strong><p id="large-output"></p></div></div>
       </div>
     </section>
-    <section id="listening-queue" class="listening-queue" data-i18n-aria-label="playback_queue">
+    <section id="listening-queue" class="listening-queue" hidden data-i18n-aria-label="playback_queue">
       <div class="listening-queue-heading"><div><span class="eyebrow" data-i18n="your_selection"></span><h2 data-i18n="queue"></h2></div><button id="large-refresh-queue" class="icon-button" data-i18n-aria-label="refresh_queue"><span data-icon="refresh"></span></button></div>
       <div id="large-queue-content"></div>
     </section>
   </div>
-</dialog>
+</aside>
 <div id="toast" class="toast" role="status" hidden></div>
 <dialog id="theme-dialog" aria-labelledby="theme-title"><div class="dialog-heading"><span class="eyebrow"><span data-i18n="your_space">ВАШЕ ПРОСТРАНСТВО</span></span><button class="icon-button" id="close-theme" aria-label="Закрыть оформление" data-i18n-aria-label="close_appearance_settings"><span data-icon="close"></span></button></div><h2 id="theme-title"><span data-i18n="in_your_own_light">В своём свете.</span></h2><p><span data-i18n="set_the_mood_for_your_music">Выберите настроение интерфейса.</span></p><div class="theme-options"><button data-theme-choice="light" aria-pressed="false"><span class="theme-swatch swatch-light"></span><span data-i18n="light">Светлая</span></button><button data-theme-choice="dark" aria-pressed="false"><span class="theme-swatch swatch-dark"></span><span data-i18n="dark">Тёмная</span></button><button data-theme-choice="system" aria-pressed="false"><span class="theme-swatch swatch-system"></span><span data-i18n="system">Системная</span></button></div><p class="dialog-footnote"><span data-i18n="saved_in_this_browser_system_follows_your_device_s_appearance">Выбор сохраняется в этом браузере. Системная тема следует настройкам устройства.</span></p></dialog>
 <dialog id="playlist-dialog" aria-labelledby="playlist-dialog-title">

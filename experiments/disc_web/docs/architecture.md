@@ -128,7 +128,13 @@ Volume is the last value read back after this server's volume operation, or
 unknown. Changes made using physical buttons are not yet tracked by this field.
 The queue is a snapshot refreshed on opening or after this browser's commands;
 continuous multi-browser queue invalidation is not implemented yet.
-The expanded player and drawer share one queue snapshot and explicit refresh.
+Now Playing and Queue occupy two sections of one non-modal right panel, with
+one queue snapshot and explicit refresh. The panel reserves collection space on
+wide screens and overlays it below 1200 px. Its fixed header stays visible while
+each section scrolls independently. The mini-player remains accessible; opening
+the panel does not lock background scrolling. Escape closes a native modal first,
+then the panel; explicit panel dismissal restores focus to its opener. Additional
+sections such as lyrics can reuse this shell when real content is available.
 Late responses from an older request/connection generation are discarded, and
 disconnect invalidates the displayed queue. Current-row highlighting requires
 both the observed position and matching title/artist; it does not predict the next
@@ -250,7 +256,7 @@ mode. Both preferences tolerate unavailable localStorage and sync between tabs.
 These modules have no device side effects or build dependencies.
 
 The responsive design includes a fixed desktop sidebar, mobile bottom
-navigation, persistent mini-player and queue drawer. Album and artist links are
+navigation, persistent mini-player and shared listening panel. Album and artist links are
 deep-linkable and retain Unicode names.
 
 The visual direction is an original music-library interface: warm paper surfaces,

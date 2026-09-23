@@ -383,6 +383,21 @@ boundaries, cancelled pointers, stacked dialogs and navigation. Web passed 43
 Python / 22 JavaScript tests; firmware-free CI passed 514 Python / 59 JavaScript
 tests and four shim builds. No physical player was used.
 
+## Listening side panel — 2026-09-23
+
+Now Playing and Queue share one non-modal right panel. Wide layouts reserve space
+beside the collection; narrow layouts keep the mini-player visible below an
+overlaid panel. Artwork scales with viewport height, section scrolling is
+independent, and the header stays accessible. Track controls, queue selection,
+metadata navigation and generation guards remain shared with the mini-player.
+The shell can gain a lyrics section later; no empty lyrics control is exposed.
+
+Browser demo checks covered RU/dark desktop and EN/light at 390 px, play/next,
+queue selection, browsing alongside the panel, separate scroll positions, nested
+modal Escape, focus restoration and mobile album navigation. Web passed 43 Python
+/ 22 JavaScript tests; firmware-free CI passed 514 Python / 59 JavaScript tests
+and four shim builds. No physical player was used.
+
 ## Next implementation stages
 
 The [saved implementation plan](plan.md) owns the agreed stage order and
