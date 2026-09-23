@@ -62,7 +62,7 @@
   <div class="connection-intro"><div class="dialog-disc"></div><div><h2 id="connection-title" data-i18n="connection_title"></h2><p id="device-description"></p></div></div>
   <div id="device-endpoint" class="connection-status" role="status"></div>
   <form id="connection-form">
-    <div class="connection-presets"><button type="button" id="preset-player" class="secondary-button" data-i18n="connection_physical"></button><button type="button" id="preset-emulator" class="secondary-button" data-i18n="connection_emulator"></button></div>
+    <div id="connection-presets" class="connection-presets" hidden><button type="button" id="preset-player" class="secondary-button" data-i18n="connection_physical"></button><button type="button" id="preset-emulator" class="secondary-button" data-i18n="connection_emulator"></button></div>
     <label class="connection-field"><span data-i18n="connection_ip"></span><input id="connection-host" type="text" inputmode="decimal" autocomplete="off" spellcheck="false" placeholder="192.168.1.100" required></label>
     <details id="connection-advanced"><summary data-i18n="connection_advanced"></summary><div class="connection-ports"><label class="connection-field"><span data-i18n="connection_tcp"></span><input id="connection-tcp" type="number" min="1" max="65535" step="1" required></label><label class="connection-field"><span data-i18n="connection_http"></span><input id="connection-http" type="number" min="1" max="65535" step="1" required></label></div></details>
     <p class="connection-hint" data-i18n="connection_saved"></p>

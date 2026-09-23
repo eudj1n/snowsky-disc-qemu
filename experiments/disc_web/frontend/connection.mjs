@@ -13,8 +13,17 @@ export function normalizeConnection(value) {
   if(![value.tcp_port,value.http_port].every(port=>Number.isInteger(port)&&port>=1&&port<=65535)) return null;
   return {host,tcp_port:value.tcp_port,http_port:value.http_port};
 }
-export function savedConnection(storage) {
-  try {return normalizeConnection(JSON.parse(storage.getItem(storageKey)));} catch {return null;}
+const connectionKey=emulator=>storageKey+(emulator?'.emulator':'');
+export function savedConnection(storage, emulator=false) {
+  try {
+    const config=normalizeConnection(JSON.parse(storage.getItem(connectionKey(emulator))));
+    return !emulator&&config?.host.startsWith('127.')?null:config;
+  } catch {return null;}
+}
+export function connectionDraft(state, saved) {
+  if(state?.demo) return {host:'',tcp_port:12100,http_port:12103};
+  if(!state?.endpoint&&saved) return saved;
+  return {host:state?.endpoint||'',tcp_port:state?.tcp_port||12100,http_port:state?.http_port||12103};
 }
 
 export function createConnection({getState,isBusy,refreshState,api,command,setBusy}) {
@@ -41,6 +50,7 @@ export function createConnection({getState,isBusy,refreshState,api,command,setBu
       }
     }
     $('device-description').textContent=t(demo?'connection_demo':'control_your_music_over_a_local_connection_audio_stays_on_your_player');
+    $('connection-presets').hidden=!state?.emulator;
     const statusKey={ready:'connected',disconnected:'disconnected',connecting:'connecting',reconnecting:'reconnecting'}[state?.connection]||'disconnected';
     $('device-endpoint').textContent=demo?t('demo_mode'):t(statusKey)+(state?.endpoint?' · '+state.endpoint:'');
     $('device-endpoint').classList.toggle('is-connected',!demo&&state?.connection==='ready');
@@ -64,8 +74,8 @@ export function createConnection({getState,isBusy,refreshState,api,command,setBu
     connectionAttempt=null;
     const state=getState();
     let saved=null;
-    try {saved=savedConnection(localStorage);} catch { /* Storage may be unavailable. */ }
-    fill(!state?.enabled&&saved?saved:{host:state?.demo?'':state?.endpoint||'',tcp_port:state?.tcp_port||12100,http_port:state?.http_port||12103});
+    try {saved=savedConnection(localStorage,state?.emulator);} catch { /* Storage may be unavailable. */ }
+    fill(connectionDraft(state,saved));
     generation=state?.generation; feedback=''; searchFeedback=''; candidates=[];
     $('device-dialog').showModal(); render();
     const version=++requestVersion;
@@ -98,7 +108,7 @@ export function createConnection({getState,isBusy,refreshState,api,command,setBu
     try {
       await api('/api/connection',{...config,generation,request_id:requestId()});
       attempt.accepted=true;
-      try {localStorage.setItem(storageKey,JSON.stringify(config));} catch { /* Session-only connection still works. */ }
+      try {localStorage.setItem(connectionKey(getState()?.emulator),JSON.stringify(config));} catch { /* Session-only connection still works. */ }
       feedback='';
     } catch {if(connectionAttempt===attempt) connectionAttempt=null;feedback='connection_changed';}
     finally {pending=false;setBusy(false);await refreshState();generation=getState()?.generation;render();}

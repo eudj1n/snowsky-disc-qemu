@@ -17,6 +17,20 @@ test('saved connection is only a validated local draft; invalid or unavailable s
   for(const tcp_port of [true,0,65536,'12100']) assert.equal(normalizeConnection({...config,tcp_port}),null);
 });
 
+test('physical and emulator drafts stay separate; explicit server target wins over saved drafts',async()=>{
+  const {savedConnection,connectionDraft}=await import('../frontend/connection.mjs');
+  const player={host:'192.168.2.10',tcp_port:12100,http_port:12103};
+  const emulator={host:'127.0.0.1',tcp_port:12100,http_port:12113};
+  const storage={getItem:key=>JSON.stringify(key.endsWith('.emulator')?emulator:player)};
+  assert.deepEqual(savedConnection(storage),player);
+  assert.deepEqual(savedConnection(storage,true),emulator);
+  assert.equal(savedConnection({getItem:()=>JSON.stringify(emulator)}),null);
+  assert.deepEqual(connectionDraft({endpoint:'',http_port:12103},null),{...player,host:''});
+  assert.deepEqual(connectionDraft({endpoint:'',http_port:12103},player),player);
+  assert.deepEqual(connectionDraft({endpoint:emulator.host,tcp_port:12100,http_port:12113},player),emulator);
+  assert.deepEqual(connectionDraft({demo:true},player),{...player,host:''});
+});
+
 test('theme preferences distinguish system appearance from explicit choices',()=>{
   assert.equal(theme.resolve('system',true),'dark');
   assert.equal(theme.resolve('system',false),'light');

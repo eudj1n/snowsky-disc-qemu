@@ -16,6 +16,27 @@ from experiments.disc_web.tests import test_device
 
 
 class CatalogueTests(unittest.TestCase):
+    def test_unconfigured_start_never_connects_or_exposes_a_loopback_snapshot(self):
+        peer = Peer()
+        self.addCleanup(peer.close)
+        config = DeviceConfig('127.0.0.1', peer.server_address[1], timeout=.3)
+        with tempfile.TemporaryDirectory() as directory, Device(config, configured=False) as device:
+            with Server(('127.0.0.1', 0), device, directory) as server:
+                key = json.dumps([config.host, config.tcp_port, config.http_port], separators=(',', ':'))
+                with Store(directory) as store:
+                    store.publish(key, TRACKS, {}, expected_generation=None)
+                self.assertEqual(device.state()['endpoint'], '')
+                self.assertFalse(server.catalogue.state()['available'])
+                with self.assertRaisesRegex(ValueError, 'Choose a player address'):
+                    device.action({'action': 'connect'})
+                self.assertEqual(peer.accepts, 0)
+                self.assertFalse(device.session.snapshot().enabled)
+                device.configure(config, device.state()['generation'])
+                self.assertTrue(device.session.wait_ready(3))
+                self.assertEqual(device.state()['endpoint'], config.host)
+                self.assertTrue(server.catalogue.state()['available'])
+                self.assertEqual(peer.accepts, 1)
+
     def cached_device(self):
         temporary = tempfile.TemporaryDirectory()
         self.addCleanup(temporary.cleanup)

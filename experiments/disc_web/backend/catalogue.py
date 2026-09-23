@@ -30,6 +30,8 @@ class Catalogue:
             pass
 
     def key(self):
+        if not self.device.configured:
+            return '[null]'
         config = self.device.config
         return json.dumps([config.host, config.tcp_port, config.http_port], separators=(',', ':'))
 

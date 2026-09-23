@@ -23,8 +23,9 @@ class Server(ThreadingHTTPServer):
     daemon_threads = True
     block_on_close = False
 
-    def __init__(self, address, device, data_dir=None):
+    def __init__(self, address, device, data_dir=None, *, emulator=False):
         self.device = device
+        self.emulator = emulator
         self.imports = Imports(device)
         self.catalogue = Catalogue(device, self.imports.gate, data_dir) if data_dir and not device.demo else None
         if self.catalogue:
@@ -90,6 +91,7 @@ class Handler(BaseHTTPRequestHandler):
             if url.path == '/api/state':
                 job = self.server.imports.state()
                 return self.reply({**self.server.device.state(), 'token': self.server.token,
+                                   'emulator': self.server.emulator,
                                    'busy': self.server.imports.gate.locked(), 'job': job,
                                    'catalogue': self.server.catalogue.state() if self.server.catalogue else None})
             if url.path == '/api/interfaces':
@@ -211,20 +213,32 @@ def bind_address(value):
         raise argparse.ArgumentTypeError('Use a local IPv4 address or 0.0.0.0') from exc
 
 
-def main():
+def parse_args(argv=None):
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('--demo', action='store_true', help='Isolated fictional collection, no device connection')
+    mode = parser.add_mutually_exclusive_group()
+    mode.add_argument('--demo', action='store_true', help='Isolated fictional collection, no device connection')
+    mode.add_argument('--emulator', action='store_true', help='Developer mode: show emulator preset, default to 127.0.0.1 / HTTP 12113')
     parser.add_argument('--port', type=int, default=8091)
     parser.add_argument('--host', type=bind_address, default='127.0.0.1',
                         help='Web bind IPv4 (default: 127.0.0.1); 0.0.0.0 exposes control to the trusted LAN')
-    parser.add_argument('--device', default='127.0.0.1')
+    parser.add_argument('--device', type=local_address, help='Initial player IPv4; otherwise enter its address in the browser')
     parser.add_argument('--tcp-port', type=int, default=12100)
-    parser.add_argument('--http-port', type=int, default=12113, help='12113 for emulator; set 12103 for physical DISC')
+    parser.add_argument('--http-port', type=int, help='Override device HTTP port (default: 12103, or 12113 with --emulator)')
     parser.add_argument('--data-dir', type=Path, default=Path.home() / '.local/share/disc-web',
                         help='Private local Library directory, separate from Assistant storage')
-    args = parser.parse_args()
-    device = Demo() if args.demo else Device(DeviceConfig(args.device, args.tcp_port, args.http_port))
-    with device, Server((args.host, args.port), device, args.data_dir.expanduser()) as server:
+    args = parser.parse_args(argv)
+    if args.emulator and args.device is None:
+        args.device = '127.0.0.1'
+    if args.http_port is None:
+        args.http_port = 12113 if args.emulator else 12103
+    return args
+
+
+def main():
+    args = parse_args()
+    device = Demo() if args.demo else Device(DeviceConfig(args.device or '127.0.0.1', args.tcp_port, args.http_port),
+                                           configured=args.device is not None)
+    with device, Server((args.host, args.port), device, args.data_dir.expanduser(), emulator=args.emulator) as server:
         display_host = '127.0.0.1' if args.host == '0.0.0.0' else args.host
         print(f'DISC Web: http://{display_host}:{server.server_port} · {"isolated demo" if args.demo else "disconnected; connect in browser"}', flush=True)
         if args.host != '127.0.0.1':

@@ -17,8 +17,9 @@ class BusyError(ValueError):
 class Device:
     demo = False
 
-    def __init__(self, config: DeviceConfig, *, session=None, http=None):
+    def __init__(self, config: DeviceConfig, *, session=None, http=None, configured=True):
         self.config = config
+        self.configured = configured
         self.session = session or DiscSession(config)
         self.http = http or HTTPClient(config.host, config.http_port, config.timeout)
         self.lock = threading.Lock()
@@ -83,7 +84,7 @@ class Device:
             if value['connection'] != 'ready':
                 self.volume = None
             return {**value, 'demo': False, 'volume': self.volume,
-                    'busy': self.lock.locked(), 'endpoint': self.config.host,
+                    'busy': self.lock.locked(), 'endpoint': self.config.host if self.configured else '',
                     'tcp_port': self.config.tcp_port, 'http_port': self.config.http_port}
 
     def sound_settings(self):
@@ -113,6 +114,8 @@ class Device:
                     self.volume = None
                     self.clear_sources()
                     self.session.__enter__()
+            with self.state_guard:
+                self.configured = True
             self.session.connect()
             return {'status': 'observed', 'state': self.state()}
         finally:
@@ -248,6 +251,8 @@ class Device:
             if not isinstance(action, str):
                 raise ValueError('A named action is required')
             if action in ('connect', 'disconnect'):
+                if action == 'connect' and not self.configured:
+                    raise ValueError('Choose a player address before connecting')
                 if 'generation' in body:
                     self.protocol_generation(body['generation'])
                 getattr(self.session, action)()

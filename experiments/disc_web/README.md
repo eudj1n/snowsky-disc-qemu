@@ -15,14 +15,17 @@ external fonts, CDNs or frontend build steps to install.
 # Fictional interactive collection. Never opens a connection to a device.
 ./experiments/disc_web/run.sh --demo
 
-# Emulator: starts disconnected; click Connect in the device dialog.
+# Physical DISC: enter its address or find it from the connection dialog.
 ./experiments/disc_web/run.sh
+
+# Developer-only emulator preset, still requires Connect in the browser.
+./experiments/disc_web/run.sh --emulator
 
 # Open the Web UI to devices on your trusted LAN (no user authentication).
 ./experiments/disc_web/run.sh --host 0.0.0.0
 
 # Optional initial player address; it can also be entered in the browser.
-./experiments/disc_web/run.sh --device 192.168.1.50 --http-port 12103
+./experiments/disc_web/run.sh --device 192.168.1.50
 ```
 
 Open [127.0.0.1:8091](http://127.0.0.1:8091). Stop the process with Ctrl+C.
@@ -31,7 +34,8 @@ Use `--host 0.0.0.0` to listen on all IPv4 interfaces, or `--host 192.168.1.20`
 to bind one local interface. Open `http://<computer-LAN-IP>:8091` on a phone
 on the same network; startup prints detected LAN URLs. `0.0.0.0` is a bind
 address, not the address to enter on another device. `--host` selects the Web
-server address; `--device` selects the player. Both work with `--demo`.
+server address; `--device` selects the player. `--emulator` and `--demo` are
+mutually exclusive. Both modes support the Web bind/port options.
 
 LAN mode exposes the collection and player controls to reachable network clients.
 There is no user authentication or TLS; use it only on a trusted network, without
@@ -46,10 +50,15 @@ download firmware or open a physical device during tests.
 ## Connect your player
 
 Open the DISC connection card, enter the player's local IPv4 address and press
-**Connect**. **Physical player** sets TCP 12100 / HTTP 12103; **Emulator** sets
-127.0.0.1 with TCP 12100 / direct HTTP 12113. Ports are editable under
+**Connect**. Normal startup has no selected player and uses TCP 12100 / HTTP 12103.
+Developer mode `--emulator` selects 127.0.0.1 / TCP 12100 / HTTP 12113 and exposes
+the physical/emulator preset buttons; ordinary users do not see these buttons.
+Explicit `--device`, `--tcp-port` and `--http-port` override the initial target.
+Neither mode connects automatically. Ports are editable under
 **Connection ports**. The last submitted address is saved in this browser as a
-draft; page load never initiates a connection. An already enabled server session
+draft, separately for normal and emulator modes; old loopback drafts are ignored
+in normal mode. A server-selected target takes precedence over a browser draft.
+Page load never initiates a connection. An already enabled server session
 survives page reload. **Disconnect** stops its automatic connection recovery.
 Changing the target closes the old session and invalidates old library selections.
 The dialog closes after the submitted target reaches connected state. Failed
@@ -81,7 +90,8 @@ or exposed control service is started. Demo disables connection and discovery.
 - Missing album/artist artwork uses stable colored typographic placeholders with
   subtle hover/focus motion. These decorations never count as observed covers.
 - Light, dark and system appearance; RU/EN interface with saved browser preferences.
-- Browser connection settings, physical/emulator presets and passive LAN discovery.
+- Browser connection settings and passive LAN discovery; developer emulator
+  presets are enabled only with `--emulator`.
 - Sound panel with observed gain, L20..R20 channel balance, six DAC filters and DRE;
   each change requires an explicit Apply and fresh device confirmation.
 - Live whole-album/artist/playlist playback, indexed tracks from albums, the

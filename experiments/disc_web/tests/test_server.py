@@ -8,7 +8,7 @@ from unittest.mock import Mock
 from uuid import uuid4
 
 from experiments.disc_web.backend.demo import Demo
-from experiments.disc_web.backend.server import Handler, Server, bind_address
+from experiments.disc_web.backend.server import Handler, Server, bind_address, parse_args
 
 
 class WebTests(unittest.TestCase):
@@ -34,6 +34,9 @@ class WebTests(unittest.TestCase):
         return status, content, response_headers
 
     def test_page_assets_and_synthetic_catalog(self):
+        self.assertFalse(json.loads(self.request('GET', '/api/state')[1])['emulator'])
+        self.server.emulator = True
+        self.assertTrue(json.loads(self.request('GET', '/api/state')[1])['emulator'])
         status, body, headers = self.request('GET', '/')
         self.assertEqual(status, 200)
         self.assertIn('frame-ancestors', headers['Content-Security-Policy'])
@@ -110,6 +113,21 @@ class WebTests(unittest.TestCase):
         for value in ['evil.example', 'https://127.0.0.1', '8.8.8.8', '::', '224.0.0.1']:
             with self.assertRaises(argparse.ArgumentTypeError):
                 bind_address(value)
+
+    def test_emulator_is_an_explicit_launch_mode_with_physical_defaults_otherwise(self):
+        from contextlib import redirect_stderr
+        import io
+        normal = parse_args([])
+        self.assertEqual((normal.device, normal.http_port, normal.tcp_port, normal.emulator),
+                         (None, 12103, 12100, False))
+        physical = parse_args(['--device', '192.168.2.10', '--host', '0.0.0.0'])
+        self.assertEqual((physical.device, physical.http_port, physical.emulator), ('192.168.2.10', 12103, False))
+        emulator = parse_args(['--emulator'])
+        self.assertEqual((emulator.device, emulator.http_port, emulator.emulator), ('127.0.0.1', 12113, True))
+        override = parse_args(['--emulator', '--device', '192.168.2.10', '--http-port', '12103'])
+        self.assertEqual((override.device, override.http_port), ('192.168.2.10', 12103))
+        with redirect_stderr(io.StringIO()), self.assertRaises(SystemExit):
+            parse_args(['--demo', '--emulator'])
 
     def test_duplicate_request_never_changes_state_twice(self):
         command = {'action': 'next', 'request_id': uuid4().hex}

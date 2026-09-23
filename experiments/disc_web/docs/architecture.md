@@ -20,6 +20,11 @@ Physical DISC or emulator
 
 ## Ownership
 
+Normal startup has no selected target and uses physical DISC port defaults. The
+unconfigured session cannot connect or expose a prior loopback catalog. Explicit
+`--emulator` selects emulator defaults and exposes developer presets through the
+state projection; browser drafts are separated by mode. CLI targets take priority.
+
 The server starts a session lifetime without enabling its connection. An explicit
 Connect enables it. Each device operation takes a nonblocking application lock:
 conflicting requests fail rather than waiting to execute later. Public session

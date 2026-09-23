@@ -354,6 +354,23 @@ JavaScript checks, including wildcard-listener admission and forged/duplicate
 Host/Origin rejection. Firmware-free CI passed 512 Python / 56 JavaScript tests
 and four shim builds. Access from a separate phone was not tested.
 
+## Explicit emulator mode — 2026-09-23
+
+Normal startup now waits for a player address with physical DISC port defaults
+(TCP 12100 / HTTP 12103); developer preset buttons are hidden. `--emulator`
+selects loopback with HTTP 12113 and exposes physical/emulator presets. Explicit
+address/port overrides remain available. Neither mode connects automatically;
+`--demo` and `--emulator` are mutually exclusive.
+
+Unconfigured startup cannot connect via the legacy action or expose a prior
+loopback catalog. Connection drafts are separate by mode; normal mode ignores
+old loopback drafts, and explicit server targets take precedence. Unit checks
+cover the first configured connection, snapshot isolation and CLI defaults.
+Browser checks verified normal EN/light at 390 px and developer RU controls with
+correct ports, without connecting a physical player or emulator. Web passed 43
+Python / 20 JavaScript tests; firmware-free CI passed 514 Python / 57 JavaScript
+tests and four shim builds.
+
 ## Next implementation stages
 
 The [saved implementation plan](plan.md) owns the agreed stage order and
