@@ -183,7 +183,7 @@ function art(item, css='art') {
   const letters=esc(Array.from(title.trim()).slice(0,2).join('').toUpperCase());
   return src
     ? `<img class="${css}" src="${src}" alt="" loading="lazy">`
-    : `<div class="card-placeholder sleeve-${hash%6} ${item?.type==='artist'?'artist-placeholder':''}" aria-hidden="true"><span class="sleeve-orbit"></span><span class="sleeve-type">${letters}</span><span class="sleeve-label">${letters}</span></div>`;
+    : `<div class="card-placeholder sleeve-${hash%6} ${item?.type==='artist'?'artist-placeholder':''}" aria-hidden="true"><span class="sleeve-orbit"></span><span class="sleeve-type">${letters}</span></div>`;
 }
 function navigate(view, item=null) {
   activeItem = item;
