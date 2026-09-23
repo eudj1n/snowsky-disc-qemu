@@ -2156,3 +2156,11 @@ main .track-row.no-album.no-duration { grid-template-columns:28px 40px minmax(10
 .sound-balance input { width:100%; accent-color:var(--accent); }
 .sound-range-labels { display:flex; justify-content:space-between; color:var(--secondary); font-size:10px; margin-top:4px; }
 @media(max-width:540px) { .sound-dialog { padding:20px; } .sound-input { gap:10px; } .sound-input button { padding:10px; font-size:11px; } .topbar .search { min-width:0; } }
+
+/* Metadata links preserve literal artist names and album scope. */
+.detail-artist-link { color:inherit; text-decoration:none; text-underline-offset:3px; }
+.detail-artist-link:hover,.detail-artist-link:focus-visible { color:var(--ink); text-decoration:underline; }
+.album-scope { padding:16px 18px; margin:0 0 24px; border:1px solid var(--line); border-radius:12px; background:var(--raised); }
+.album-scope p { margin:0; color:var(--secondary); font-size:12px; line-height:1.6; }
+.album-scope .filter-chips { margin:12px 0 0; flex-wrap:wrap; }
+.album-scope .chip { text-decoration:none; }

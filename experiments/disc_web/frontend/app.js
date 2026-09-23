@@ -6,7 +6,7 @@ import {createImporter} from './imports.mjs';
 import {createSound} from './sound.mjs';
 import {t, initLocale, setLocale, getLocale} from './i18n.mjs';
 await initLocale();
-import {escapeHTML as esc, timeLabel, trackColumns, mediaFormat, queueTrackMatches, filterItems, searchKind, routeHash, parseRoute, trackDuration, playbackIdentity, seekAllowed, coverIdentity, artworkSource} from './core.mjs';
+import {escapeHTML as esc, timeLabel, trackColumns, mediaFormat, queueTrackMatches, filterItems, searchKind, routeHash, parseRoute, navigationRoute, albumScope, trackDuration, playbackIdentity, seekAllowed, coverIdentity, artworkSource} from './core.mjs';
 
 const paths = {
  moon:'M20.8 13.3A9 9 0 0 1 10.7 3.2a9 9 0 1 0 10.1 10.1Z',
@@ -48,7 +48,7 @@ document.querySelector('.skip-link').onclick = event => {event.preventDefault();
 const titleKeys = {home:'home',albums:'albums',artists:'artists',tracks:'tracks',favorites:'favorites',playlists:'playlists',album:'album',artist:'artist',playlist:'playlist'};
 let state = null, route = parseRoute(location.hash), currentItems = [], homeTracks = [], activeItem = null;
 let requestSequence = 0, busy = false, genre = '', toastTimer, pollTimer, lastTrack = '', libraryLoading = false;
-let artistScope = '', displayedSnapshot=null;
+let displayedSnapshot=null;
 let lastCoverRequest='';
 let queueItems=null, queueGeneration=null, queueRequest=0, queueLoading=false, queueError='';
 const cachedViews=new Set(['home','albums','artists','tracks','album','artist']);
@@ -189,13 +189,12 @@ function art(item, css='art') {
 }
 function navigate(view, item=null) {
   activeItem = item;
-  artistScope = item?.scope_artist || '';
-  const next = {view,name:item?.title || '',artist:artistScope};
+  const next = navigationRoute(view,item);
   if (location.hash === routeHash(next)) {route=next; loadView();}
   else location.hash = routeHash(next);
 }
 window.addEventListener('hashchange', () => {
-  route = parseRoute(location.hash); artistScope = route.artist;
+  route = parseRoute(location.hash);
   $('search').value = ''; genre = ''; window.scrollTo(0,0); loadView();
 });
 for (const button of document.querySelectorAll('[data-view]')) button.addEventListener('click', () => navigate(button.dataset.view));
@@ -267,7 +266,7 @@ function bindCards(items) {
 }
 function playItem(item, origin, queue=false) {
   if (origin.generation!==state?.generation) return toast(t('track_changed'),true);
-  const extras=state.demo ? (queue ? {index:item.position} : {name:item.id,source_view:origin.view==='home'?'tracks':origin.view,source_name:origin.name}) : {selection:item.selection};
+  const extras=state.demo ? (queue ? {index:item.position} : {name:item.id,source_view:origin.view==='home'?'tracks':origin.view,source_name:origin.name,source_artist:origin.artist}) : {selection:item.selection};
   return command(queue ? 'queue' : 'track',extras);
 }
 function bindTracks(root, items, queue=false) {
@@ -308,7 +307,7 @@ for (const button of $('track-menu').querySelectorAll('button')) button.onclick=
   if(origin.generation!==state.generation) return toast(t('track_changed'),true);
   if(action==='play') playItem(item,origin);
   if(action==='add'||action==='remove') openPlaylistEditor(action,item,origin);
-  if(action==='album') navigate('album',{title:item.album,art:item.art,scope_artist:origin.artist||''});
+  if(action==='album') navigate('album',{title:item.album,art:item.art,scope_artist:origin.artist||item.artist||''});
   if(action==='artist') navigate('artist',{title:item.artist});
 };
 function renderView() {
@@ -325,9 +324,13 @@ function renderView() {
   if (detail) {
     const item = activeItem?.title === route.name ? {...activeItem} : {title:route.name,art:items[0]?.art};
     if(route.view==='album') item.art=currentItems.find(track=>track.art)?.art||null;
-    const artist = route.artist || item.artist || (items.length && items.every(i => i.artist === items[0].artist) ? items[0].artist : '');
+    const artists=route.view==='album' ? (route.artist ? [route.artist] : [...new Set(currentItems.map(track=>track.artist).filter(Boolean))]) : [];
+    const artistLinks=artists.map(name=>`<a class="detail-artist-link" href="${esc(routeHash({view:'artist',name}))}">${esc(name)}</a>`).join(' · ');
     const canPlay = true;
-    heading = `<button class="text-button" id="back">${icon('back')} ${route.view === 'album' && route.artist ? esc(route.artist) : t('back_to_collection')}</button><div class="detail-heading"><div class="detail-art">${art(item)}</div><div class="detail-copy"><span class="eyebrow">${esc(t(titleKeys[route.view]))}</span><h1>${esc(route.name)}</h1><p>${esc(artist)}${artist ? ' · ' : ''}${t(isTracks ? 'track_count' : 'album_count',{count:currentItems.length})}${state.demo ? ' · DISC Sessions' : ''}</p><div class="detail-actions"><button id="play-collection" class="primary-button" ${!canPlay || !currentItems.length ? 'disabled' : ''}>${icon('play')} ${route.view === 'album' ? t('play_album') : t('listen')}</button></div></div></div>`;
+    heading = `<button class="text-button" id="back">${icon('back')} ${route.view === 'album' && route.artist ? esc(route.artist) : t('back_to_collection')}</button><div class="detail-heading"><div class="detail-art">${art(item)}</div><div class="detail-copy"><span class="eyebrow">${esc(t(titleKeys[route.view]))}</span><h1>${esc(route.name)}</h1><p>${artistLinks}${artistLinks ? ' · ' : ''}${t(isTracks ? 'track_count' : 'album_count',{count:currentItems.length})}${state.demo ? ' · DISC Sessions' : ''}</p><div class="detail-actions"><button id="play-collection" class="primary-button" ${!canPlay || !currentItems.length ? 'disabled' : ''}>${icon('play')} ${route.view === 'album' ? t('play_album') : t('listen')}</button></div></div></div>`;
+    if(route.view==='album' && !route.artist && artists.length>1) {
+      heading+=`<div class="album-scope"><p>${t('album_scope_note')}</p><div class="filter-chips">${artists.map(artist=>`<a class="chip" href="${esc(routeHash({view:'album',name:route.name,artist}))}">${esc(artist)}</a>`).join('')}</div></div>`;
+    }
 
   } else {
     heading = `<div class="view-heading"><div><span class="eyebrow">${t('my_collection')}</span><h1>${esc(t(titleKeys[route.view]))}</h1><p>${query ? t('found') : t('in_this_section')}: ${count}${state.demo ? t('demo_collection') : ''}</p></div></div>`;
@@ -355,7 +358,7 @@ function renderHome(items) {
     <div class="home-bottom"><section><div class="section-heading"><h2>${t('from_your_collection')}</h2><button class="text-button" id="all-tracks">${t('all_tracks')} ${icon('arrow')}</button></div>${rows(tracks)}</section><section><div class="section-heading"><h2>${t('room_for_music')}</h2></div><div class="listening-note"><span class="eyebrow">${t('just_listen')}</span><h3>${t('less_noise')}<br>${t('more_music')}</h3><p>${t('your_player_your_records')}<br>${t('everything_that_matters_right_here')}</p><span class="note-ring"></span></div></section></div>`;
   bindCards(albumItems); bindTracks($('main'),tracks);
   $('all-albums').onclick = () => navigate('albums'); $('all-tracks').onclick = () => navigate('tracks');
-  $('hero-play').onclick = () => command('album',{name:featured.title});
+  $('hero-play').onclick = () => command('album',{name:featured.title,...(albumScope(featured)?{artist:albumScope(featured)}:{})});
 }
 async function refreshState() {
   try {
@@ -601,7 +604,7 @@ for(const kind of ['artist','album']) $('large-'+kind).onclick=()=>{
   const name=state?.playback?.track?.[kind];
   if(name) {
     if(window.matchMedia('(max-width:1199px)').matches) closeListeningPanel(false);
-    navigate(kind,{title:name});
+    navigate(kind,{title:name,artist:state?.playback?.track?.artist});
   }
 };
 function showDevice() {connection.open();}

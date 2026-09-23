@@ -22,6 +22,15 @@ export function filterItems(items, query) {
 export function searchKind(view) {
   return ({home:'albums',albums:'albums',artist:'albums',artists:'artists',playlists:'playlists'})[view] || 'tracks';
 }
+// A track artist scopes a selection; it is not an inferred album-artist tag.
+export function albumScope(item) {
+  if(item?.scope_artist) return item.scope_artist;
+  if(item?.artists?.length>1) return '';
+  return item?.artist || item?.artists?.[0] || '';
+}
+export function navigationRoute(view,item=null) {
+  return {view,name:item?.title || '',artist:view==='album'?albumScope(item):''};
+}
 export function routeHash(route) {
   return '#' + new URLSearchParams({view:route.view, ...(route.name ? {name:route.name} : {}), ...(route.artist ? {artist:route.artist} : {})});
 }

@@ -398,6 +398,21 @@ modal Escape, focus restoration and mobile album navigation. Web passed 43 Pytho
 / 22 JavaScript tests; firmware-free CI passed 514 Python / 59 JavaScript tests
 and four shim builds. No physical player was used.
 
+## Album identity and artist navigation — 2026-09-23
+
+Album links now retain known artist scope from cards, track menus and Now
+Playing. Album-page artists are clickable. Name-only links remain stock title
+groups and offer artist filters when several artists are present, preserving
+compilations without assuming album-artist tags. Demo browse, album playback and
+track queues now honor the same artist scope as live Controller selections.
+
+Duplicate-title fixtures cover demo queue isolation, rejected cross-artist track
+selection, cached live browse and guarded scoped playback. Browser checks covered
+legacy and scoped links, artist navigation, Now Playing, and mobile selection of
+a one-track album sharing its title with another artist's five-track album.
+Web passed 46 Python / 23 JavaScript tests; firmware-free CI passed 517 Python /
+60 JavaScript tests and four shim builds. No physical player was used.
+
 ## Next implementation stages
 
 The [saved implementation plan](plan.md) owns the agreed stage order and

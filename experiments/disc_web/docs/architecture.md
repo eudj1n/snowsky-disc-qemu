@@ -141,6 +141,15 @@ both the observed position and matching title/artist; it does not predict the ne
 track in random mode. The expanded player's format badge comes only from a
 recognized observed filename extension, without codec-quality inference.
 
+Album links preserve the known artist scope from cards, track actions and Now
+Playing, including in demo browse and playback queues. Artist names on album
+pages are navigation links. A legacy album URL without `artist` intentionally
+represents the stock title group: multiple artists may be separate releases or a
+compilation, so the UI offers explicit artist filters instead of guessing an
+album-artist identity. The unfiltered group remains available. Search does not
+change this metadata or scope. Artist-scoped playback uses the existing public
+Controller selector and fresh membership guards.
+
 Displayed track/queue rows carry opaque source tokens. The server keeps up to
 32 source snapshots for ten minutes, tied to the connection generation. Commands
 resolve the original scope and position from that snapshot; browser filtering

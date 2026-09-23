@@ -140,3 +140,15 @@ test('queue highlighting requires position and metadata; formats never imply aud
   assert.equal(mediaFormat({path:'/tmp/sdcard/Album/Track.m4a'}),'M4A');
   for(const value of [null,{}, {title:'Track.flac'}, {path:'/tmp/sdcard/Track'}, {path:'/tmp/sdcard/Track.xyz'}]) assert.equal(mediaFormat(value),null);
 });
+
+test('album navigation keeps the artist from cards, track menus and playback metadata', async () => {
+  const {navigationRoute,albumScope,routeHash,parseRoute}=await core;
+  const title='Greatest Hits & More', artist='Артист + Guest';
+  for(const item of [{title,artist},{title,scope_artist:artist},{title,artists:[artist]}]) {
+    assert.deepEqual(parseRoute(routeHash(navigationRoute('album',item))),{view:'album',name:title,artist});
+  }
+  assert.equal(albumScope({artist:'Other',scope_artist:artist}),artist);
+  assert.equal(albumScope({artists:[artist,'Other'],artist}), '');
+  assert.deepEqual(navigationRoute('album',{title}),{view:'album',name:title,artist:''});
+  assert.deepEqual(navigationRoute('artist',{title:artist,artist:'Unrelated'}),{view:'artist',name:artist,artist:''});
+});

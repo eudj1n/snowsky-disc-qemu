@@ -8,6 +8,7 @@ import json
 from controller import DeviceConfig, QueueItem
 from controller.tests.session_fixture import Server as Peer
 from library.store import Store
+from library.catalog import Track
 from library.tests.helpers import Catalog, TRACKS
 from experiments.disc_web.backend.catalogue import Catalogue
 from experiments.disc_web.backend.device import BusyError, Device
@@ -37,13 +38,13 @@ class CatalogueTests(unittest.TestCase):
                 self.assertTrue(server.catalogue.state()['available'])
                 self.assertEqual(peer.accepts, 1)
 
-    def cached_device(self):
+    def cached_device(self, tracks=TRACKS):
         temporary = tempfile.TemporaryDirectory()
         self.addCleanup(temporary.cleanup)
         device, session, _, _ = test_device.DeviceTests().fixture()
         device.catalogue = Catalogue(device, threading.Lock(), temporary.name)
         with Store(temporary.name) as store:
-            head = store.publish(device.catalogue.key(), TRACKS, {}, expected_generation=None)
+            head = store.publish(device.catalogue.key(), tracks, {}, expected_generation=None)
         return device, session, head
 
     def test_offline_snapshot_has_album_metadata_and_selects_the_exact_recording(self):
@@ -77,6 +78,22 @@ class CatalogueTests(unittest.TestCase):
         self.assertFalse(device.catalogue.state()['available'])
         with self.assertRaises(ValueError):
             device._selection(item['selection'])
+
+    def test_same_title_artists_stay_separate_in_saved_browse_and_playback(self):
+        tracks = [Track('First', 'Artist A', 'Shared', 0, {'pos': 0}),
+                  Track('Second', 'Artist B', 'Shared', 1, {'pos': 1})]
+        device, session, head = self.cached_device(tracks)
+        group = device.browse('albums')['items'][0]
+        self.assertEqual(group['artists'], ['Artist A', 'Artist B'])
+        self.assertEqual(group['artist'], '')
+        self.assertEqual(len(device.browse('album', 'Shared')['items']), 2)
+        scoped = device.browse('album', 'Shared', 'Artist B')['items']
+        self.assertEqual([row['title'] for row in scoped], ['Second'])
+        device.action(dict(action='album', name='Shared', artist='Artist B',
+                           snapshot=head['generation'], generation=5))
+        session.play_artist.assert_called_once_with('Artist B', album='Shared',
+            expected=(QueueItem(0, 'Second', 'Artist B'),))
+        session.play_album.assert_not_called()
 
     def test_whole_saved_album_passes_expected_membership_to_controller(self):
         device, session, head = self.cached_device()

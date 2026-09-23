@@ -76,9 +76,9 @@ class Demo:
             elif kind == 'playlists':
                 items = self.playlists
             elif kind == 'album':
-                items = [t for t in self.tracks if t['album'] == name]
+                items = [t for t in self.tracks if t['album'] == name and (not artist or t['artist'] == artist)]
             elif kind == 'artist':
-                items = [a for a in self.albums if a['artist'] == name]
+                items = [dict(a, scope_artist=name) for a in self.albums if a['artist'] == name]
             elif kind == 'playlist':
                 if name not in self.members:
                     raise ValueError('playlist not found')
@@ -138,12 +138,13 @@ class Demo:
                 else:
                     field = {'album': 'album', 'artist': 'artist', 'track': 'id'}.get(action)
                     tracks = (self.browse('playlist', body.get('name'))['items'] if action == 'playlist'
+                              else self.browse('album', body.get('name'), body.get('artist', ''))['items'] if action == 'album'
                               else [t for t in self.tracks if t[field] == body.get('name')])
                     if not tracks:
                         raise ValueError('Selection is empty')
                     index = 0
                     if action == 'track' and body.get('source_view') in ('album', 'tracks', 'favorites', 'playlist'):
-                        tracks = self.browse(body['source_view'], body.get('source_name', ''))['items']
+                        tracks = self.browse(body['source_view'], body.get('source_name', ''), body.get('source_artist', ''))['items']
                         index = next((i for i, row in enumerate(tracks) if row['id'] == body.get('name')), None)
                         if index is None:
                             raise ValueError('track left displayed source')
