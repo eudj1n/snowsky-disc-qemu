@@ -53,6 +53,13 @@ presentation are future work.
 Cached browsing uses a separate short source-token lock, so device cover reads or
 an active synchronization cannot block reading the previous local snapshot.
 
+All native dialogs share backdrop dismissal and page scroll ownership. Only a
+primary pointer click beginning and ending outside the dialog dismisses it;
+inside padding and drag-out gestures do not. The document remains fixed while
+any dialog is open, with scrolling contained inside the modal. Closing the last
+one restores the previous page position unless navigation changed the route.
+Native Escape, focus return and existing operation lifetimes are preserved.
+
 The top-bar sync icon opens a dedicated dialog; opening it never starts sync.
 It renders actual server stages/page counts with indeterminate progress, preserves
 errors and offline coverage, and can be dismissed while the server continues.

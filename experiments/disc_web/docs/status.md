@@ -371,6 +371,18 @@ correct ports, without connecting a physical player or emulator. Web passed 43
 Python / 20 JavaScript tests; firmware-free CI passed 514 Python / 57 JavaScript
 tests and four shim builds.
 
+## Dialog interaction refinement — 2026-09-23
+
+All dialogs now dismiss on a backdrop click, with inside padding and drag-out
+protection. A shared scroll lock preserves the background position across modal
+transitions and restores it after closing; long dialogs scroll internally.
+Browser demo checks covered backdrop/escape dismissal, internal scrolling,
+background wheel blocking, track-menu to playlist transitions, scroll restoration
+from a deep track-list position, and the 390 px layout. Unit checks cover gesture
+boundaries, cancelled pointers, stacked dialogs and navigation. Web passed 43
+Python / 22 JavaScript tests; firmware-free CI passed 514 Python / 59 JavaScript
+tests and four shim builds. No physical player was used.
+
 ## Next implementation stages
 
 The [saved implementation plan](plan.md) owns the agreed stage order and

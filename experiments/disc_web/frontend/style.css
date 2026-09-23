@@ -33,6 +33,17 @@ body {
   margin:0;
 }
 
+html { scrollbar-gutter:stable; }
+html.modal-open { overflow:hidden; overscroll-behavior:none; }
+.modal-open body {
+  position:fixed;
+  top:var(--dialog-scroll-y);
+  left:0;
+  right:0;
+  overflow:hidden;
+  overscroll-behavior:none;
+}
+
 button,input {
   font:inherit;
 }
@@ -1254,11 +1265,15 @@ dialog {
   text-align:center;
   color:var(--ink);
   box-shadow:0 30px 100px #27341c30;
+  max-height:calc(100dvh - 32px);
+  overflow:auto;
+  overscroll-behavior:contain;
 }
 
 dialog::backdrop {
   background:#25301a50;
   backdrop-filter:blur(5px);
+  touch-action:none;
 }
 
 .dialog-heading {

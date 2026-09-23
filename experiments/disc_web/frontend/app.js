@@ -1,4 +1,5 @@
 import {createAlbumInfo} from './album-info.mjs';
+import {setupDialogs} from './dialogs.mjs';
 import {requestJSON, requestId} from './request.mjs';
 import {createConnection} from './connection.mjs';
 import {createImporter} from './imports.mjs';
@@ -32,6 +33,7 @@ const paths = {
 const icon = name => `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="${paths[name] || paths.music}"/></svg>`;
 for (const node of document.querySelectorAll('[data-icon]')) node.innerHTML = icon(node.dataset.icon);
 const $ = id => document.getElementById(id);
+setupDialogs();
 function updateThemeChoice() {
   const preference=window.DiscTheme.get();
   for (const choice of document.querySelectorAll('[data-theme-choice]')) choice.setAttribute('aria-pressed',choice.dataset.themeChoice===preference);
@@ -294,7 +296,6 @@ function openTrackMenu(item, origin, anchor) {
   $('track-menu').querySelector('button:not(:disabled)').focus();
 }
 $('close-track-menu').onclick=()=>$('track-dialog').close();
-$('track-dialog').onclick=event=>{if(event.target===$('track-dialog')) $('track-dialog').close();};
 $('track-menu').onkeydown=event=>{
   const keys=['ArrowDown','ArrowUp','Home','End']; if(!keys.includes(event.key)) return;
   event.preventDefault();
