@@ -2,6 +2,21 @@ const {test} = require('node:test');
 const assert = require('node:assert/strict');
 const core = import('../frontend/core.mjs');
 
+test('request IDs work on HTTP LAN origins without randomUUID and retain random entropy', async () => {
+  const {requestId}=await import('../frontend/request.mjs');
+  let calls=0;
+  const httpCrypto={getRandomValues(bytes) {
+    assert.equal(bytes.length,16);
+    bytes.set(Array.from({length:16},(_,i)=>i+calls++));
+    return bytes;
+  }};
+  const first=requestId(httpCrypto), second=requestId(httpCrypto);
+  assert.match(first,/^[0-9a-f]{32}$/);
+  assert.match(second,/^[0-9a-f]{32}$/);
+  assert.notEqual(first,second);
+  assert.throws(()=>requestId({})); // No weak or constant fallback.
+});
+
 test('saved artwork is local and cover identity distinguishes paths, duplicate positions and reconnects', async () => {
   const {coverIdentity,artworkSource}=await core;
   const track={title:'Same',artist:'Artist',album:'Album',path:'/tmp/sdcard/one.flac',queue_position:0,duration_ms:5000};

@@ -1,3 +1,8 @@
+// getRandomValues also works on HTTP LAN origins where randomUUID is unavailable.
+export function requestId(random=globalThis.crypto) {
+  return Array.from(random.getRandomValues(new Uint8Array(16)), byte=>byte.toString(16).padStart(2,'0')).join('');
+}
+
 // Only a busy read may be retried. Mutations and transport failures are never replayed.
 export async function requestJSON(path, options={}, fetcher=fetch, pause=ms=>new Promise(resolve=>setTimeout(resolve,ms))) {
   const write=options.body!==undefined;

@@ -337,6 +337,23 @@ Existing Web and firmware-free checks pass; no connection behavior changed.
   was used. Web tests passed 38 Python / 18 JavaScript checks; firmware-free CI
   passed 509 Python / 55 JavaScript tests and four shim builds.
 
+## Optional LAN listener — 2026-09-23
+
+`run.sh --host 0.0.0.0` explicitly enables all IPv4 interfaces; a specific local
+IPv4 is also accepted. Default startup remains loopback-only and disconnected.
+Startup prints detected LAN URLs. All browsers share the existing Controller
+owner; LAN mode has no user authentication or TLS and requires a trusted network.
+Host validation follows the accepted socket's actual local destination and port,
+while Origin, request-token, generation and replay guards remain enabled.
+Request IDs use cryptographic random bytes on HTTP LAN origins as well as localhost.
+
+Browser validation opened the demo through the computer's LAN IP and successfully
+changed the selected demo track with no console errors. The temporary listener
+was closed; no physical player was connected. Web tests passed 41 Python / 19
+JavaScript checks, including wildcard-listener admission and forged/duplicate
+Host/Origin rejection. Firmware-free CI passed 512 Python / 56 JavaScript tests
+and four shim builds. Access from a separate phone was not tested.
+
 ## Next implementation stages
 
 The [saved implementation plan](plan.md) owns the agreed stage order and

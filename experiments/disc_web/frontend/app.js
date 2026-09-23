@@ -1,5 +1,5 @@
 import {createAlbumInfo} from './album-info.mjs';
-import {requestJSON} from './request.mjs';
+import {requestJSON, requestId} from './request.mjs';
 import {createConnection} from './connection.mjs';
 import {createImporter} from './imports.mjs';
 import {createSound} from './sound.mjs';
@@ -165,7 +165,7 @@ function renderCatalogue() {
 async function startCatalogueSync() {
   if(state?.demo||state?.connection!=='ready'||busy||state.busy||libraryLoading||state.catalogue?.phase==='syncing') return;
   busy=true;updatePlayer();renderCatalogue();
-  try {await api('/api/sync',{generation:state.generation,request_id:crypto.randomUUID()});}
+  try {await api('/api/sync',{generation:state.generation,request_id:requestId()});}
   catch {toast(t('catalogue_failed'),true);}
   finally {busy=false;await refreshState();renderCatalogue();}
 }
@@ -499,7 +499,7 @@ async function command(action, extras={}) {
   busy = true; updatePlayer();
   let success=false;
   try {
-    const result = await api('/api/action',{action,...extras,...(action==='album'&&displayedSnapshot?{snapshot:displayedSnapshot}:{}),generation:state?.generation,request_id:crypto.randomUUID()});
+    const result = await api('/api/action',{action,...extras,...(action==='album'&&displayedSnapshot?{snapshot:displayedSnapshot}:{}),generation:state?.generation,request_id:requestId()});
     if (action==='seek') {
       if(result.outcome==='seek_waiting_for_playback') pendingSeek={target:result.confirmation.rounded_ms,resumedAt:null};
       seekFeedback=result.outcome==='seek_waiting_for_playback'?'seek_paused':result.status==='confirmed'?'seek_confirmed':'seek_unconfirmed';

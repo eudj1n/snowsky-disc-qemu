@@ -18,14 +18,25 @@ external fonts, CDNs or frontend build steps to install.
 # Emulator: starts disconnected; click Connect in the device dialog.
 ./experiments/disc_web/run.sh
 
-# Optional initial address; it can also be entered in the browser.
+# Open the Web UI to devices on your trusted LAN (no user authentication).
+./experiments/disc_web/run.sh --host 0.0.0.0
+
+# Optional initial player address; it can also be entered in the browser.
 ./experiments/disc_web/run.sh --device 192.168.1.50 --http-port 12103
 ```
 
 Open [127.0.0.1:8091](http://127.0.0.1:8091). Stop the process with Ctrl+C.
-Use `--port` for another local application port. The server binds only to
-127.0.0.1. Mobile layouts can be inspected in browser device emulation; this is
-not a LAN-exposed phone service.
+Use `--port` for another application port. The default bind remains `127.0.0.1`.
+Use `--host 0.0.0.0` to listen on all IPv4 interfaces, or `--host 192.168.1.20`
+to bind one local interface. Open `http://<computer-LAN-IP>:8091` on a phone
+on the same network; startup prints detected LAN URLs. `0.0.0.0` is a bind
+address, not the address to enter on another device. `--host` selects the Web
+server address; `--device` selects the player. Both work with `--demo`.
+
+LAN mode exposes the collection and player controls to reachable network clients.
+There is no user authentication or TLS; use it only on a trusted network, without
+router port forwarding. Same-origin checks and request tokens remain enabled,
+but they do not authenticate LAN users. All browsers share one Controller owner.
 
 Disconnect Assistant or FiiO Control before connecting DISC Web. There is one
 stock TCP owner. Closing a browser tab does not disconnect the server or stop

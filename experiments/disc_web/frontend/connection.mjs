@@ -1,3 +1,4 @@
+import {requestId} from './request.mjs';
 import {t} from './i18n.mjs';
 import {escapeHTML as esc} from './core.mjs';
 
@@ -95,7 +96,7 @@ export function createConnection({getState,isBusy,refreshState,api,command,setBu
     connectionAttempt=attempt;
     pending=true;feedback='connection_starting';setBusy(true);render();
     try {
-      await api('/api/connection',{...config,generation,request_id:crypto.randomUUID()});
+      await api('/api/connection',{...config,generation,request_id:requestId()});
       attempt.accepted=true;
       try {localStorage.setItem(storageKey,JSON.stringify(config));} catch { /* Session-only connection still works. */ }
       feedback='';
@@ -106,7 +107,7 @@ export function createConnection({getState,isBusy,refreshState,api,command,setBu
     if(searching||getState()?.demo||!$('discovery-interface').value) return;
     searching=true;searchFeedback='connection_searching';candidates=[];render();
     try {
-      const data=await api('/api/discover',{interface:$('discovery-interface').value,request_id:crypto.randomUUID()});
+      const data=await api('/api/discover',{interface:$('discovery-interface').value,request_id:requestId()});
       candidates=data.devices.map(normalizeConnection).filter(Boolean);
       searchFeedback=candidates.length?'connection_found':'connection_none';
     } catch {searchFeedback='connection_search_failed';}

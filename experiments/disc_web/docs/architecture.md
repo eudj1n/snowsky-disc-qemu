@@ -7,7 +7,7 @@ No path mutation or Assistant storage is needed.
 ```text
 Browser (HTML / CSS / JavaScript modules)
     | same-origin JSON requests, cached-state polling
-Loopback HTTP server (backend/server.py)
+HTTP server (backend/server.py), loopback by default
     | token / request ID / operation admission
 Device projection (backend/device.py) <-> Library snapshots / SQLite
     | one DiscSession + same-target HTTPClient
@@ -84,7 +84,12 @@ scope. A current-track duration is not applied to other catalog rows by name.
 | `POST /api/scan` | JSON request ID/generation, one async observed scan |
 | `POST /api/action` | Explicit allowlisted command, request ID, connection generation and session token |
 
-The process binds to loopback. Host and Origin checks reject cross-site and DNS
+The process binds to loopback by default; explicit `--host` enables a local IPv4
+or wildcard listener. Host validation uses the accepted socket’s local destination
+and exact port, never arbitrary private addresses or forwarded headers. LAN mode
+has no user authentication or TLS and is intended for trusted networks only.
+Browser request IDs use cryptographic random bytes, including on HTTP LAN origins
+where `randomUUID` is unavailable. Host and Origin checks reject cross-site and DNS
 rebinding requests; POST also requires `X-Disc-Token`; action/scan JSON and raw upload bodies have separate bounds. No CORS is
 enabled. Connection/discovery JSON uses the same 16 KiB bound. CSP restricts scripts, styles, images and connections to local assets;
 live covers accept only JPEG/PNG. Error messages and names are inserted as text

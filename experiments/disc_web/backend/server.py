@@ -1,4 +1,4 @@
-"""Dependency-free loopback HTTP adapter. A browser never owns a device socket."""
+"""Dependency-free HTTP adapter, loopback by default. A browser never owns a device socket."""
 import argparse
 from collections import OrderedDict
 import json
@@ -13,7 +13,7 @@ from controller import DeviceConfig
 from experiments.disc_web.backend.demo import Demo
 from experiments.disc_web.backend.device import BusyError, Device
 from experiments.disc_web.backend.imports import Imports
-from experiments.disc_web.backend.connections import Discovery, connection_config, interfaces
+from experiments.disc_web.backend.connections import Discovery, connection_config, interfaces, local_address
 from experiments.disc_web.backend.catalogue import Catalogue, CACHED_VIEWS
 
 FRONTEND = Path(__file__).resolve().parents[1] / 'frontend'
@@ -65,10 +65,20 @@ class Handler(BaseHTTPRequestHandler):
         self.wfile.write(body)
 
     def same_origin(self):
-        allowed = {f'127.0.0.1:{self.server.server_port}', f'localhost:{self.server.server_port}'}
+        # The accepted socket supplies the actual local destination, including
+        # for a wildcard listener. Never trust arbitrary Host/forwarded headers.
+        address = self.connection.getsockname()[0]
+        names = {address}
+        if address.startswith('127.'):
+            names.add('localhost')
+        allowed = {f'{name}:{self.server.server_port}' for name in names}
+        if self.server.server_port == 80:
+            allowed.update(names)
         host = self.headers.get('Host')
         origin = self.headers.get('Origin')
-        return (host in allowed and (origin is None or origin == f'http://{host}')
+        return (len(self.headers.get_all('Host', [])) == 1
+                and len(self.headers.get_all('Origin', [])) <= 1
+                and host in allowed and (origin is None or origin == f'http://{host}')
                 and self.headers.get('Sec-Fetch-Site') not in ('cross-site',))
 
     def do_GET(self):
@@ -192,10 +202,21 @@ class Handler(BaseHTTPRequestHandler):
             self.server.requests[request_id] = None
 
 
+def bind_address(value):
+    if value == '0.0.0.0':
+        return value
+    try:
+        return local_address(value)
+    except ValueError as exc:
+        raise argparse.ArgumentTypeError('Use a local IPv4 address or 0.0.0.0') from exc
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--demo', action='store_true', help='Isolated fictional collection, no device connection')
     parser.add_argument('--port', type=int, default=8091)
+    parser.add_argument('--host', type=bind_address, default='127.0.0.1',
+                        help='Web bind IPv4 (default: 127.0.0.1); 0.0.0.0 exposes control to the trusted LAN')
     parser.add_argument('--device', default='127.0.0.1')
     parser.add_argument('--tcp-port', type=int, default=12100)
     parser.add_argument('--http-port', type=int, default=12113, help='12113 for emulator; set 12103 for physical DISC')
@@ -203,8 +224,14 @@ def main():
                         help='Private local Library directory, separate from Assistant storage')
     args = parser.parse_args()
     device = Demo() if args.demo else Device(DeviceConfig(args.device, args.tcp_port, args.http_port))
-    with device, Server(('127.0.0.1', args.port), device, args.data_dir.expanduser()) as server:
-        print(f'DISC Web: http://127.0.0.1:{server.server_port} · {"isolated demo" if args.demo else "disconnected; connect in browser"}', flush=True)
+    with device, Server((args.host, args.port), device, args.data_dir.expanduser()) as server:
+        display_host = '127.0.0.1' if args.host == '0.0.0.0' else args.host
+        print(f'DISC Web: http://{display_host}:{server.server_port} · {"isolated demo" if args.demo else "disconnected; connect in browser"}', flush=True)
+        if args.host != '127.0.0.1':
+            print(f'Listening on {args.host}:{server.server_port}. Trusted network only: no user authentication.', flush=True)
+        if args.host == '0.0.0.0':
+            for address in sorted({row['address'] for row in interfaces()}):
+                print(f'LAN: http://{address}:{server.server_port}', flush=True)
         try:
             server.serve_forever()
         except KeyboardInterrupt:

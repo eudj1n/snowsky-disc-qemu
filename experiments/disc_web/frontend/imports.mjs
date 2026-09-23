@@ -1,3 +1,4 @@
+import {requestId} from './request.mjs';
 import {t, getLocale} from './i18n.mjs';
 import {escapeHTML as esc} from './core.mjs';
 import {importFlow} from './import-flow.mjs';
@@ -120,7 +121,7 @@ export function createImporter({getState,isBusy,refreshState,loadView,api,toast,
     try {
       for(const item of files.filter(item=>item.phase==='waiting')) {
         if(getState()?.generation!==original.generation||getState()?.connection!=='ready') throw new Error('Connection changed');
-        item.id=crypto.randomUUID(); item.phase='receiving'; render();
+        item.id=requestId(); item.phase='receiving'; render();
         try {
           await send(item,original);
           const job=await observe(item.id);
@@ -136,7 +137,7 @@ export function createImporter({getState,isBusy,refreshState,loadView,api,toast,
     if($('scan-import').disabled) return;
     transferring=true; feedback='';render();
     try {
-      await api('/api/scan',{generation:getState().generation,request_id:crypto.randomUUID()});
+      await api('/api/scan',{generation:getState().generation,request_id:requestId()});
     } catch {toast(t('import_scan_uncertain'),true);}
     finally {transferring=false;await refreshState();render();}
   };

@@ -1,11 +1,14 @@
 import http.client
+from email.message import Message
 import json
 import threading
+from types import SimpleNamespace
 import unittest
+from unittest.mock import Mock
 from uuid import uuid4
 
 from experiments.disc_web.backend.demo import Demo
-from experiments.disc_web.backend.server import Server
+from experiments.disc_web.backend.server import Handler, Server, bind_address
 
 
 class WebTests(unittest.TestCase):
@@ -48,6 +51,65 @@ class WebTests(unittest.TestCase):
                 self.assertEqual(self.request('POST', '/api/action', command, headers)[0], 403)
         self.assertFalse(self.demo.playing)
         self.assertEqual(self.request('GET', '/api/state', headers={'Host': 'evil.example'})[0], 403)
+
+    def test_origin_uses_local_socket_destination_not_arbitrary_lan_or_forwarded_host(self):
+        def accepts(host, origin=None, address='192.168.2.10', port=8091, extra=()):
+            headers = Message()
+            headers['Host'] = host
+            if origin is not None:
+                headers['Origin'] = origin
+            for key, value in extra:
+                headers[key] = value
+            handler = SimpleNamespace(headers=headers, server=SimpleNamespace(server_port=port),
+                                      connection=Mock(getsockname=Mock(return_value=(address, port))))
+            return Handler.same_origin(handler)
+
+        authority = '192.168.2.10:8091'
+        self.assertTrue(accepts(authority))
+        self.assertTrue(accepts(authority, f'http://{authority}'))
+        self.assertTrue(accepts('localhost:8091', 'http://localhost:8091', address='127.0.0.1'))
+        self.assertTrue(accepts('192.168.2.10', 'http://192.168.2.10', port=80))
+        for host in ['192.168.2.11:8091', '0.0.0.0:8091', 'evil.example:8091',
+                     '127.0.0.1:8091', '192.168.2.10:8092']:
+            self.assertFalse(accepts(host), host)
+        self.assertFalse(accepts(authority, 'http://192.168.2.11:8091'))
+        self.assertFalse(accepts(authority, extra=[('Sec-Fetch-Site', 'cross-site')]))
+        self.assertFalse(accepts(authority, extra=[('Host', authority)]))
+        self.assertFalse(accepts(authority, f'http://{authority}', extra=[('Origin', f'http://{authority}')]))
+        self.assertFalse(accepts('evil.example', extra=[('X-Forwarded-Host', authority)]))
+        self.assertEqual(self.request('GET', '/api/state', headers={'Host': authority})[0], 403)
+
+    def test_wildcard_listener_keeps_token_and_origin_guards(self):
+        with Server(('0.0.0.0', 0), Demo()) as server:
+            worker = threading.Thread(target=server.serve_forever, daemon=True)
+            worker.start()
+            try:
+                authority = f'127.0.0.1:{server.server_port}'
+                connection = http.client.HTTPConnection('127.0.0.1', server.server_port, timeout=3)
+                connection.request('GET', '/api/state', headers={'Origin': f'http://{authority}'})
+                response = connection.getresponse()
+                self.assertEqual(response.status, 200)
+                token = json.loads(response.read())['token']
+                for supplied, origin, expected in [('', f'http://{authority}', 403),
+                    (token, 'http://evil.example', 403), (token, f'http://{authority}', 200)]:
+                    connection.request('POST', '/api/action', json.dumps({'action':'next', 'request_id':uuid4().hex}),
+                        {'Content-Type':'application/json', 'X-Disc-Token':supplied, 'Origin':origin})
+                    response = connection.getresponse()
+                    self.assertEqual(response.status, expected)
+                    response.read()
+                connection.close()
+            finally:
+                server.shutdown()
+                worker.join(2)
+
+    def test_bind_option_accepts_wildcard_or_local_ipv4(self):
+        import argparse
+        for value in ['127.0.0.1', '192.168.2.10', '0.0.0.0']:
+            self.assertEqual(bind_address(value), value)
+        self.assertEqual(bind_address('localhost'), '127.0.0.1')
+        for value in ['evil.example', 'https://127.0.0.1', '8.8.8.8', '::', '224.0.0.1']:
+            with self.assertRaises(argparse.ArgumentTypeError):
+                bind_address(value)
 
     def test_duplicate_request_never_changes_state_twice(self):
         command = {'action': 'next', 'request_id': uuid4().hex}

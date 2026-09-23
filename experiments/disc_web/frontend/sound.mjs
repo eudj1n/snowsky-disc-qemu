@@ -1,3 +1,4 @@
+import {requestId} from './request.mjs';
 import {t} from './i18n.mjs';
 
 const names=['gain','balance','filter','dre'];
@@ -51,7 +52,7 @@ export function createSound({getState,isBusy,api,refreshState}) {
       pending=true;feedback='sound_applying';render();
       try {
         const result=await api('/api/action',{action:'sound_setting',name,value:target,expected,
-          generation,request_id:crypto.randomUUID()});
+          generation,request_id:requestId()});
         if(current!==sequence||getState().generation!==generation) return;
         if(['confirmed','already_satisfied'].includes(result.status)&&result.confirmation?.name===name&&result.confirmation.value===target) {
           values[name]=target;feedback='sound_confirmed';
