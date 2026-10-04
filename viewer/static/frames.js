@@ -103,22 +103,33 @@ class FrameStream {
 if (typeof module !== 'undefined') module.exports = {FrameParser, FrameStream};
 if (typeof document !== 'undefined') {
   const image = document.getElementById('scr');
-  let fallbackTimer = null;
-  let nativeStream = false;
-  let frameDisplayed = false;
-  const startNativeStream = () => {
-    if (nativeStream) return;
-    nativeStream = true;
+  let fallbackStarted = false;
+  let watchdog = null;
+  const startFrameFallback = () => {
+    if (fallbackStarted) return;
+    fallbackStarted = true;
     frames.stop();
-    // Let the browser render the multipart stream natively.
-    // This avoids the fetch -> ReadableStream -> Blob -> Image.decode()
-    // pipeline on browsers where that path stalls.
-    image.src = `/stream?t=${Date.now()}`;
-  };
-  const stopNativeStream = () => {
-    if (!nativeStream) return;
-    nativeStream = false;
-    image.removeAttribute('src');
+    let stopped = false;
+    let timer = null;
+    const nextFrame = () => {
+      if (stopped) return;
+      const frame = new Image();
+      frame.onload = () => {
+        if (stopped) return;
+        image.src = frame.src;
+        timer = setTimeout(nextFrame, 83);
+      };
+      frame.onerror = () => {
+        if (stopped) return;
+        timer = setTimeout(nextFrame, 250);
+      };
+      frame.src = `/frame?t=${Date.now()}`;
+    };
+    window.addEventListener('pagehide', () => {
+      stopped = true;
+      clearTimeout(timer);
+    });
+    nextFrame();
   };
   const frames = new FrameStream(image, {
     fetch: (...args) => fetch(...args),
@@ -130,11 +141,7 @@ if (typeof document !== 'undefined') {
       try {
         preview.src = url;
         await preview.decode();
-        frameDisplayed = true;
-        if (fallbackTimer !== null) {
-          clearTimeout(fallbackTimer);
-          fallbackTimer = null;
-        }
+        clearTimeout(watchdog);
         return {
           url,
           close: () => URL.revokeObjectURL(url)
@@ -149,41 +156,8 @@ if (typeof document !== 'undefined') {
       clear: id => clearTimeout(id)
     }
   });
-  const start = () => {
-    stopNativeStream();
-    frameDisplayed = false;
-    if (fallbackTimer !== null) {
-      clearTimeout(fallbackTimer);
-    }
-    frames.start();
-    /*
-     * Some browsers can receive /stream correctly but fail to render
-     * frames through the fetch -> ReadableStream -> Blob -> Image.decode()
-     * pipeline.
-     *
-     * If no frame is displayed shortly after startup, fall back to
-     * assigning the multipart stream directly to the <img>.
-     */
-    fallbackTimer = setTimeout(() => {
-      fallbackTimer = null;
-
-      if (!frameDisplayed) {
-        startNativeStream();
-      }
-    }, 2000);
-  };
-  const stop = () => {
-    if (fallbackTimer !== null) {
-      clearTimeout(fallbackTimer);
-      fallbackTimer = null;
-    }
-    frames.stop();
-    stopNativeStream();
-  };
-  window.addEventListener('viewer-reconnected', start);
-  window.addEventListener('pagehide', stop);
-  window.addEventListener('pageshow', event => {
-    if (event.persisted) start();
-  });
-  start();
+  frames.start();
+  watchdog = setTimeout(() => {
+    startFrameFallback();
+  }, 2000);
 }
