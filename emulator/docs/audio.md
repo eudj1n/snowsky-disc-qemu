@@ -23,7 +23,16 @@ when the decoded chunk contains only zero samples. The captured duration include
 stock service silence while paused; it is not proof of music playback.
 WAV export also works without a browser.
 Each `pcm_open` starts a new recording, replacing `/audio.pcm`; export before switching
-tracks if you want to keep it.
+tracks if you want to keep it. A write that would take the recording past 1 GiB empties it
+first: stock keeps the output open and feeds it zeros while paused, so without a bound
+the file grows at the full byte rate for as long as the player is on (it reached 83 GB
+on a phone). 1 GiB is about 50 minutes of 44.1 kHz 32-bit stereo (the output format of a
+16-bit 44.1 kHz file too, see below) and 23 minutes of 96 kHz 32-bit stereo. When the file
+is emptied, live sound skips to the new recording and drops the audio it had queued from
+the old one (up to about a second), Replay jumps to the start of the new recording, and a WAV
+export holds only the audio since then. The USB/BT interposer `asndshim` follows the same
+bound, and each process that writes through it starts a new recording instead of appending
+to the previous one. The bound is `CAPTURE_MAX` in `emulator/shims/capture.h`.
 
 ## Output stream state
 
@@ -136,7 +145,8 @@ The firmware's format enum differs from the initial assumption: playback uses **
 16-bit, 5 for packed 24-bit, 7 for 32-bit**.
 
 Writes sleep for their audio duration, approximating a blocking DAC. Without pacing,
-firmware-generated silence can grow the capture rapidly. Input is not implemented.
+firmware-generated silence can grow the capture rapidly. Pacing limits the rate and the
+1 GiB bound above limits the size. Input is not implemented.
 `asndshim.c` remains the separate USB/BT interposer; those routes and native
 DSD/DoP output are unvalidated. DSD source metadata/selection is covered separately
 in [FORMATS.md](../../docs/protocol/formats.md).

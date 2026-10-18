@@ -1,12 +1,14 @@
 """The audio shim's stream reporting, read back by output_state (no firmware)."""
 import os
 from pathlib import Path
+import struct
 import subprocess
 import tempfile
 import threading
+import time
 import unittest
 
-from emulator.runtime.audio import STREAM, output_state, reset_output
+from emulator.runtime.audio import STREAM, capture_info, output_state, reset_output
 
 REPO = Path(__file__).resolve().parents[2]
 RUNNING = 'access: RW_INTERLEAVED\nformat: S32_LE\nsubformat: STD\nchannels: 2\nrate: 44100 (44100/1)\n'
@@ -23,11 +25,12 @@ class OutputStreamTests(unittest.TestCase):
             path.write_text('closed\n')
         (self.root / 'emu/audio-state').write_bytes(b'c')
 
-    def probe(self, name):
+    def probe(self, name, *defines):
         """streamprobe.c with the real shim, built for MIPS with a file prefix."""
         probe = self.root / name
         subprocess.run(['mipsel-linux-gnu-gcc', '-static', '-O1', f'-DTINYSHIM_ROOT="{self.root}"',
-                        '-DTINYSHIM_NO_FOPEN', '-o', str(probe), str(REPO / 'emulator/tests/guest/streamprobe.c'),
+                        '-DTINYSHIM_NO_FOPEN', *defines, '-o', str(probe),
+                        str(REPO / 'emulator/tests/guest/streamprobe.c'),
                         str(REPO / 'emulator/shims/tinyshim.c')], check=True)
         return probe
 
@@ -65,15 +68,47 @@ class OutputStreamTests(unittest.TestCase):
         self.assertLessEqual(elapsed, expected + 15, run.stdout)
         self.assertGreaterEqual(elapsed, expected - 10, run.stdout)
 
+    def test_capture_past_the_size_limit_starts_a_new_recording(self):
+        """The pace probe makes 40 paced writes of 8192 bytes in one stream. With the limit at
+        20 writes, write 21 empties the file first, so 20 writes are left, and a reader polling
+        meanwhile sees two generations (the viewer rejoins on a change)."""
+        probe = self.probe('capprobe', f'-DCAPTURE_MAX={20 * 8192}')
+        run = subprocess.Popen(['qemu-mipsel-static', str(probe), 'pace'], stdout=subprocess.DEVNULL)
+        generations = set()
+        while run.poll() is None:
+            try:
+                generations.add(capture_info(self.root)['generation'])
+            except (OSError, ValueError, struct.error):
+                pass                                                        # not created yet
+            time.sleep(0.005)
+        self.assertEqual(run.returncode, 0)
+        self.assertEqual((self.root / 'audio.pcm').stat().st_size, 20 * 8192)
+        self.assertGreaterEqual(len(generations), 2, generations)
+
+    def test_alsa_shim_bounds_its_capture_too(self):
+        """asndshim (the libasound route) with the limit at 20 writes of 8192 bytes: 30 writes
+        leave the 10 made after write 21 emptied the file, and a new process starts a new
+        recording instead of appending to the last one."""
+        probe = self.root / 'asndprobe'
+        subprocess.run(['mipsel-linux-gnu-gcc', '-static', '-O1', f'-DASNDSHIM_ROOT="{self.root}"',
+                        f'-DCAPTURE_MAX={20 * 8192}', '-o', str(probe),
+                        str(REPO / 'emulator/tests/guest/asndprobe.c'),
+                        str(REPO / 'emulator/shims/asndshim.c')], check=True)
+        subprocess.run(['qemu-mipsel-static', str(probe), '30'], check=True)
+        self.assertEqual(capture_info(self.root)['bytes'], 10 * 8192)
+        subprocess.run(['qemu-mipsel-static', str(probe), '3'], check=True)
+        self.assertEqual((self.root / 'audio.pcm').stat().st_size, 3 * 8192)
+
     def test_built_shim_needs_no_library_symbols(self):
         """build_shims.sh links with -nostdlib and -shared, which leaves undefined symbols to
-        load time. The only one the shim may use is the guest libc's fopen64 (its fopen
-        redirect); a helper such as 64-bit division (__udivdi3) has no library there."""
+        load time. The only one the audio shims may use is the guest libc's fopen64 (tinyshim's
+        fopen redirect); a helper such as 64-bit division (__udivdi3) has no library there."""
         subprocess.run(['bash', str(REPO / 'emulator/shims/build_shims.sh')], check=True,
                        env={**os.environ, 'WORK': str(self.root)}, capture_output=True)
-        undefined = subprocess.run(['mipsel-linux-gnu-nm', '-u', str(self.root / 'tinyshim.so')], check=True,
-                                   capture_output=True, text=True).stdout
-        self.assertEqual(undefined.split()[1::2], ['fopen64'], undefined)
+        for shim, allowed in (('tinyshim.so', ['fopen64']), ('asndshim.so', [])):
+            undefined = subprocess.run(['mipsel-linux-gnu-nm', '-u', str(self.root / shim)], check=True,
+                                       capture_output=True, text=True).stdout
+            self.assertEqual(undefined.split()[1::2], allowed, (shim, undefined))
 
     def test_half_replaced_pair_is_reported_as_closed_not_an_error(self):
         self.files['status'].write_text('state: RUNNING\nowner_pid   : 7\n')          # hw_params still closed

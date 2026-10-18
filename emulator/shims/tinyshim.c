@@ -5,8 +5,9 @@
  * Under emulation there's no card, so pcm_params_get()/pcm_open() would fail and playback aborts
  * ("error config pcm params"). We interpose libtinyalsa (preloaded via /etc/ld.so.preload, ahead
  * of libtinyalsa.so.1): pcm_params_* report a permissive card, pcm_open returns a fake handle and
- * records the config, and pcm_write appends the raw PCM to /audio.pcm. tinyalsa's pcm_write takes
- * a BYTE count, so capture is exact without knowing the frame size.
+ * records the config, and pcm_write appends the raw PCM to /audio.pcm (emptied past CAPTURE_MAX,
+ * see capture.h). tinyalsa's pcm_write takes a BYTE count, so capture is exact without knowing
+ * the frame size.
  *
  * Freestanding (-nostdlib, raw MIPS syscalls) — device glibc 2.29 != host toolchain glibc, same as
  * fbshim. The negotiated format (channels, sample-bytes, rate) goes to /audio.fmt as 3x u32 LE so
@@ -24,6 +25,7 @@
 #ifndef TINYSHIM_ROOT  /* tests run the shim outside a chroot and prefix its files */
 #define TINYSHIM_ROOT ""
 #endif
+#include "capture.h"
 
 static long sys3(long n, long a, long b, long c){
   register long v0 asm("$2")=n, a0 asm("$4")=a, a1 asm("$5")=b, a2 asm("$6")=c;
@@ -35,6 +37,7 @@ static long sys3(long n, long a, long b, long c){
 
 static char g_pcm[16], g_params[16];
 static int g_fd = -1, g_ch = 2, g_sb = 4;
+static unsigned g_pcm_bytes;               /* bytes in /audio.pcm since it was last emptied */
 static unsigned g_rate = 48000;
 static unsigned g_buffer_frames = 8192;
 /* The emulated DAC clock (see pace()): when everything written so far has played. */
@@ -142,8 +145,9 @@ struct pcm *pcm_open(unsigned card, unsigned device, unsigned flags, const void 
     g_sb = fmt == 0 ? 2 : fmt == 5 ? 3 : 4;
     g_buffer_frames = c[2]*c[3];
     g_period = c[2];
-    g_fd = sys3(__NR_open, (long)(TINYSHIM_ROOT "/audio.pcm"), O_WCT, 0644);
+    g_fd = sys3(__NR_open, (long)(TINYSHIM_ROOT "/audio.pcm"), O_CAPTURE, 0644);
     if (g_fd < 0) return (struct pcm *)0;
+    g_pcm_bytes = 0;
     if (fmt_write() < 0){ sys3(__NR_close,g_fd,0,0); g_fd=-1; return (struct pcm *)0; }
   }
   g_stream = -1;                            /* a new configuration is always published */
@@ -182,8 +186,8 @@ static void sleep_for(long *wait){
  * decoding overlaps playback. Sleeping for the length of every write after the writer's
  * own work instead made the output slower than real time by that work (928 ms of audio
  * took 1009-1011 ms in test_output_stream), and the browser's buffer emptied. The sleep also
- * keeps firmware-generated silence from filling the disk, so without a clock
- * (clock_gettime failing) the shim falls back to it.
+ * limits firmware-generated silence to the sample rate (CAPTURE_MAX limits the file size),
+ * so without a clock (clock_gettime failing) the shim falls back to it.
  * The deadline is kept as whole monotonic seconds plus a frame count below the rate: the
  * sum never drifts, and nothing needs 64-bit division, which the -nostdlib build has no
  * library for (test_output_stream checks the built shim needs no symbols). */
@@ -213,6 +217,11 @@ static void pace(unsigned frames){
 int pcm_write(struct pcm *p, const void *data, unsigned count){
   (void)p;
   if (g_fd < 0 || !data) return -1;
+  if (g_pcm_bytes && g_pcm_bytes + (unsigned long long)count > CAPTURE_MAX &&
+      sys3(__NR_ftruncate, g_fd, 0, 0) == 0){   /* if it fails: append, retry on the next write */
+    g_pcm_bytes = 0;
+    fmt_write();
+  }
   if (g_fd >= 0 && data && count){
     unsigned off = 0;
     while (off < count){
@@ -220,6 +229,7 @@ int pcm_write(struct pcm *p, const void *data, unsigned count){
       if (w == -4) continue; /* EINTR */
       if (w <= 0) return -1;
       off += (unsigned)w;
+      g_pcm_bytes += (unsigned)w;
     }
   }
   if (count){

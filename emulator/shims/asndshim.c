@@ -4,8 +4,9 @@
  * redirected by asound.conf (hw: is kernel-direct). The LinuxKit VM has no snd modules either. So
  * we interpose libasound at the symbol level (preloaded via /etc/ld.so.preload, ahead of
  * libasound.so.2): snd_pcm_open returns a fake handle, every hw/sw-params call succeeds, and
- * snd_pcm_writei appends the raw PCM to /audio.pcm. The negotiated format (channels, sample bytes,
- * rate) is written to /audio.fmt as three 32-bit LE ints so the host can wrap it into a WAV.
+ * snd_pcm_writei appends the raw PCM to /audio.pcm: a new recording in each process, emptied past
+ * CAPTURE_MAX (capture.h). The negotiated format (channels, sample bytes, rate) is written to
+ * /audio.fmt as three 32-bit LE ints so the host can wrap it into a WAV.
  *
  * Freestanding (-nostdlib, raw MIPS syscalls) for the same reason as fbshim: device glibc 2.29 !=
  * host toolchain glibc, so a normal .so won't load. Only the ~35 PCM symbols are interposed; the
@@ -15,8 +16,11 @@
 #define __NR_write 4004
 #define __NR_close 4006
 #define __NR_lseek 4019
-#define O_WRONLY_CREAT_APPEND 0x109   /* MIPS: O_WRONLY|O_CREAT|O_APPEND */
 #define O_WRONLY_CREAT_TRUNC  0x301   /* MIPS: O_WRONLY(1)|O_CREAT(0x100)|O_TRUNC(0x200) */
+#ifndef ASNDSHIM_ROOT  /* tests run the shim outside a chroot and prefix its files */
+#define ASNDSHIM_ROOT ""
+#endif
+#include "capture.h"
 
 static long sys3(long n, long a, long b, long c){
   register long v0 asm("$2")=n, a0 asm("$4")=a, a1 asm("$5")=b, a2 asm("$6")=c;
@@ -33,7 +37,7 @@ static int g_ch = 2, g_sb = 4;      /* channels, sample bytes (default S32_LE st
 static unsigned g_rate = 48000;
 
 static void fmt_write(void){       /* overwrite /audio.fmt with ch, sb, rate (3x u32 LE) */
-  long fd = sys3(__NR_open, (long)"/audio.fmt", O_WRONLY_CREAT_TRUNC, 0644);
+  long fd = sys3(__NR_open, (long)(ASNDSHIM_ROOT "/audio.fmt"), O_WRONLY_CREAT_TRUNC, 0644);
   if (fd >= 0){
     unsigned rec[3] = { (unsigned)g_ch, (unsigned)g_sb, g_rate };
     sys3(__NR_write, fd, (long)rec, sizeof rec);
@@ -53,16 +57,23 @@ int snd_pcm_nonblock(void *p, int n){ (void)p;(void)n; return 0; }
 const char *snd_pcm_name(void *p){ (void)p; return "cap"; }
 const char *snd_strerror(int e){ (void)e; return "ok"; }
 
+static unsigned g_pcm_bytes;                   /* bytes in /audio.pcm since it was last emptied */
+
 long snd_pcm_writei(void *p, const void *buf, unsigned long size){
   (void)p;
-  if (g_fd < 0) g_fd = sys3(__NR_open, (long)"/audio.pcm", O_WRONLY_CREAT_APPEND, 0644);
+  long bytes = (long)size * g_ch * g_sb;
+  int fresh = g_fd < 0;                        /* a process starts a new recording */
+  if (fresh) g_fd = sys3(__NR_open, (long)(ASNDSHIM_ROOT "/audio.pcm"), O_CAPTURE, 0644);
+  else if (g_pcm_bytes && g_pcm_bytes + (unsigned long long)bytes > CAPTURE_MAX)
+    fresh = sys3(__NR_ftruncate, g_fd, 0, 0) == 0;
+  if (fresh){ g_pcm_bytes = 0; fmt_write(); }  /* new /audio.fmt mtime: a new generation */
   if (g_fd >= 0 && buf && size){
-    long bytes = (long)size * g_ch * g_sb;
     long off = 0;
     while (off < bytes){                       /* write() may be partial */
       long w = sys3(__NR_write, g_fd, (long)((const char*)buf + off), bytes - off);
       if (w <= 0) break;
       off += w;
+      g_pcm_bytes += (unsigned)w;
     }
   }
   return (long)size;
