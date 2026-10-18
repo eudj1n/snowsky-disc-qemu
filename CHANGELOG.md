@@ -170,6 +170,12 @@ Active firmware: **V2.57**. Local protocol research is finalized in
 - Live sound in the viewer no longer slowly falls behind the player when the host can
   decode in real time: the emulated audio output now plays at the sample rate. Live sound
   now plays 0.3 s behind the player instead of 0.15 s. [Audio](emulator/docs/audio.md).
+- The audio capture `/audio.pcm` no longer grows until the disk is full while the player
+  stays on: stock feeds the open output zeros while paused, and one capture reached 83 GB
+  on a phone. A capture is now emptied when it would pass 1 GiB (about 50 min of 44.1 kHz
+  32-bit stereo); the viewer's live sound then skips up to about a second, and a WAV export
+  holds only the audio since then. The unvalidated USB/BT capture route follows the same
+  limit and starts a new capture in each process. [Audio](emulator/docs/audio.md).
 - Setup and cleanup of a fresh work volume no longer detach the card image of
   another running emulator container (loop devices are shared by the Docker VM).
 - WebSocket bridge releases its connection slot even when an invalid peer disconnects

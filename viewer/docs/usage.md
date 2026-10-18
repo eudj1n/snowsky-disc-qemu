@@ -32,7 +32,8 @@ The audio sockets at the lower left share the **Enable sound** control. Enabling
 shows a plug in the 3.5 mm socket; clicking again mutes sound and removes the plug.
 The 4.4/3.5 labels represent their physical locations; this shared browser audio
 switch does not select a hardware output or inject stock headphone detection. **Replay capture** lives
-inside **Debug** and starts the current recording again. Select tracks and pause in
+inside **Debug** and starts the current recording again; a recording holds at most 1 GiB,
+the output since it was last emptied (see [audio capture](../../emulator/docs/audio.md)). Select tracks and pause in
 the device UI. Volume remains controlled by the existing physical buttons and stock
 menus; DAC attenuation already drives the browser audio gains. There are no extra sliders.
 
